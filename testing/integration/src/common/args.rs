@@ -1,7 +1,7 @@
 use crate::tasks::daemon::DaemonArgs;
 #[cfg(feature = "devnet-prealloc")]
 use kaspa_addresses::Address;
-use kaspad_lib::args::Args;
+use karlsend_lib::args::Args;
 
 pub struct ArgsBuilder {
     args: Args,

@@ -17,7 +17,7 @@ use kaspa_notify::{
 };
 use kaspa_rpc_core::{api::rpc::RpcApi, model::*, Notification};
 use kaspa_utils::{fd_budget, networking::ContextualNetAddress};
-use kaspad_lib::args::Args;
+use karlsend_lib::args::Args;
 use tokio::task::JoinHandle;
 
 #[macro_export]

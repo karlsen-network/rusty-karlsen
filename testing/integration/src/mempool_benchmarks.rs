@@ -20,7 +20,7 @@ use kaspa_notify::{
 use kaspa_rpc_core::{api::rpc::RpcApi, Notification, RpcError};
 use kaspa_txscript::pay_to_address_script;
 use kaspa_utils::fd_budget;
-use kaspad_lib::args::Args;
+use karlsend_lib::args::Args;
 use parking_lot::Mutex;
 use rand::thread_rng;
 use rand_distr::{Distribution, Exp};

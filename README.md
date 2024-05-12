@@ -222,12 +222,12 @@ The framework is compatible with all major desktop and mobile browsers.
   **Start a mainnet node**
 
   ```bash
-  cargo run --release --bin kaspad
+  cargo run --release --bin karlsend
   ```
   **Start a testnet node**
 
   ```bash
-cargo run --release --bin kaspad -- --testnet
+cargo run --release --bin karlsend -- --testnet
   ```
 
 <details>
@@ -237,9 +237,9 @@ Using a configuration file
   </summary>
 
   ```bash
-cargo run --release --bin kaspad -- --configfile /path/to/configfile.toml
+cargo run --release --bin karlsend -- --configfile /path/to/configfile.toml
 # or
-cargo run --release --bin kaspad -- -C /path/to/configfile.toml
+cargo run --release --bin karlsend -- -C /path/to/configfile.toml
   ```
   - The config file should be a list of \<CLI argument\> = \<value\> separated by newlines. 
   - Whitespace around the `=` is fine, `arg=value` and `arg = value` are both parsed correctly.
@@ -259,7 +259,7 @@ addpeer = ["10.0.0.1", "1.2.3.4"]
  Pass the `--help` flag to view all possible arguments
 
   ```bash
-cargo run --release --bin kaspad -- --help
+cargo run --release --bin karlsend -- --help
   ```
 </details>
 
@@ -269,7 +269,7 @@ cargo run --release --bin kaspad -- --help
 wRPC
   </summary>
 
-  wRPC subsystem is disabled by default in `kaspad` and can be enabled via:
+  wRPC subsystem is disabled by default in `karlsend` and can be enabled via:
 
 
   JSON protocol:
@@ -337,7 +337,7 @@ Mining is currently supported only on testnet, so once you've setup a test node,
 
 <summary>Simulation framework (Simpa)</summary>
 
-Logging in `kaspad` and `simpa` can be [filtered](https://docs.rs/env_logger/0.10.0/env_logger/#filtering-results) by either:
+Logging in `karlsend` and `simpa` can be [filtered](https://docs.rs/env_logger/0.10.0/env_logger/#filtering-results) by either:
 
 The current codebase supports a full in-process network simulation, building an actual DAG over virtual time with virtual delay and benchmarking validation time (following the simulation generation). 
 
@@ -361,10 +361,10 @@ cargo run --release --bin simpa -- -t=200 -d=2 -b=8 -n=1000
 
 <summary>Heap Profiling</summary>
 
-Heap-profiling in `kaspad` and `simpa` can be done by enabling `heap` feature and profile using the `--features` argument
+Heap-profiling in `karlsend` and `simpa` can be done by enabling `heap` feature and profile using the `--features` argument
 
 ```bash
-cargo run --bin kaspad --profile heap --features=heap
+cargo run --bin karlsend --profile heap --features=heap
 ```
 
 It will produce `{bin-name}-heap.json` file in the root of the workdir, that can be inspected by the [dhat-viewer](https://github.com/unofficial-mirror/valgrind/tree/master/dhat)
@@ -414,13 +414,13 @@ cargo bench
 
 <summary>Logging</summary>
 
-Logging in `kaspad` and `simpa` can be [filtered](https://docs.rs/env_logger/0.10.0/env_logger/#filtering-results) by either:
+Logging in `karlsend` and `simpa` can be [filtered](https://docs.rs/env_logger/0.10.0/env_logger/#filtering-results) by either:
 
 1. Defining the environment variable `RUST_LOG`
 2. Adding the --loglevel argument like in the following example:
 
     ```
-    (cargo run --bin kaspad -- --loglevel info,kaspa_rpc_core=trace,kaspa_grpc_core=trace,consensus=trace,kaspa_core=trace) 2>&1 | tee ~/rusty-kaspa.log
+    (cargo run --bin karlsend -- --loglevel info,kaspa_rpc_core=trace,kaspa_grpc_core=trace,consensus=trace,kaspa_core=trace) 2>&1 | tee ~/rusty-kaspa.log
     ```
     In this command we set the `loglevel` to `INFO`.
 

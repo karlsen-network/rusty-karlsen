@@ -7,7 +7,7 @@ use std::sync::Arc;
 use kaspa_alloc::init_allocator_with_default_settings;
 use kaspa_core::{info, signals::Signals};
 use kaspa_utils::fd_budget;
-use kaspad_lib::{
+use karlsend_lib::{
     args::parse_args,
     daemon::{create_core, DESIRED_DAEMON_SOFT_FD_LIMIT, MINIMUM_DAEMON_SOFT_FD_LIMIT},
 };

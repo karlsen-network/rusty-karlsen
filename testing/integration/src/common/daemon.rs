@@ -7,7 +7,7 @@ use kaspa_notify::subscription::context::SubscriptionContext;
 use kaspa_rpc_core::notify::mode::NotificationMode;
 use kaspa_rpc_service::service::RpcCoreService;
 use kaspa_utils::triggers::Listener;
-use kaspad_lib::{args::Args, daemon::create_core_with_runtime};
+use karlsend_lib::{args::Args, daemon::create_core_with_runtime};
 use parking_lot::RwLock;
 use std::{ops::Deref, sync::Arc, time::Duration};
 use tempfile::TempDir;

@@ -8,7 +8,7 @@ use kaspa_addresses::Address;
 use kaspa_consensus_core::network::NetworkType;
 use kaspa_core::{trace, warn};
 use kaspa_utils::{fd_budget, triggers::SingleTrigger};
-use kaspad_lib::args::Args;
+use karlsend_lib::args::Args;
 use std::{iter::once, sync::Arc};
 use tokio::task::JoinHandle;
 

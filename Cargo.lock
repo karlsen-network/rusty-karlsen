@@ -2435,6 +2435,51 @@ dependencies = [
 ]
 
 [[package]]
+name = "karlsend"
+version = "0.14.1"
+dependencies = [
+ "async-channel 2.2.1",
+ "clap 4.5.4",
+ "dhat",
+ "dirs",
+ "futures-util",
+ "kaspa-addresses",
+ "kaspa-addressmanager",
+ "kaspa-alloc",
+ "kaspa-consensus",
+ "kaspa-consensus-core",
+ "kaspa-consensus-notify",
+ "kaspa-consensusmanager",
+ "kaspa-core",
+ "kaspa-database",
+ "kaspa-grpc-server",
+ "kaspa-hashes",
+ "kaspa-index-processor",
+ "kaspa-mining",
+ "kaspa-notify",
+ "kaspa-p2p-flows",
+ "kaspa-perf-monitor",
+ "kaspa-rpc-core",
+ "kaspa-rpc-service",
+ "kaspa-txscript",
+ "kaspa-utils",
+ "kaspa-utils-tower",
+ "kaspa-utxoindex",
+ "kaspa-wrpc-server",
+ "log",
+ "num_cpus",
+ "rand 0.8.5",
+ "rayon",
+ "serde",
+ "serde_with",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "toml 0.8.12",
+ "workflow-log",
+]
+
+[[package]]
 name = "kaspa-addresses"
 version = "0.14.1"
 dependencies = [
@@ -3308,6 +3353,7 @@ dependencies = [
  "futures-util",
  "indexmap 2.2.6",
  "itertools 0.11.0",
+ "karlsend",
  "kaspa-addresses",
  "kaspa-alloc",
  "kaspa-bip32",
@@ -3334,7 +3380,6 @@ dependencies = [
  "kaspa-utils",
  "kaspa-utxoindex",
  "kaspa-wrpc-server",
- "kaspad",
  "log",
  "parking_lot",
  "rand 0.8.5",
@@ -3758,51 +3803,6 @@ dependencies = [
  "workflow-log",
  "workflow-rpc",
  "workflow-wasm",
-]
-
-[[package]]
-name = "kaspad"
-version = "0.14.1"
-dependencies = [
- "async-channel 2.2.1",
- "clap 4.5.4",
- "dhat",
- "dirs",
- "futures-util",
- "kaspa-addresses",
- "kaspa-addressmanager",
- "kaspa-alloc",
- "kaspa-consensus",
- "kaspa-consensus-core",
- "kaspa-consensus-notify",
- "kaspa-consensusmanager",
- "kaspa-core",
- "kaspa-database",
- "kaspa-grpc-server",
- "kaspa-hashes",
- "kaspa-index-processor",
- "kaspa-mining",
- "kaspa-notify",
- "kaspa-p2p-flows",
- "kaspa-perf-monitor",
- "kaspa-rpc-core",
- "kaspa-rpc-service",
- "kaspa-txscript",
- "kaspa-utils",
- "kaspa-utils-tower",
- "kaspa-utxoindex",
- "kaspa-wrpc-server",
- "log",
- "num_cpus",
- "rand 0.8.5",
- "rayon",
- "serde",
- "serde_with",
- "tempfile",
- "thiserror",
- "tokio",
- "toml 0.8.12",
- "workflow-log",
 ]
 
 [[package]]
