@@ -13,9 +13,9 @@ repository.workspace = true
 [dependencies]
 futures.workspace = true
 karlsen-consensus-core.workspace = true
-kaspa-rpc-core.workspace = true
+karlsen-rpc-core.workspace = true
 karlsen-wrpc-client.workspace = true
-kaspa-notify.workspace = true
+karlsen-notify.workspace = true
 tokio.workspace = true
 workflow-core.workspace = true
 workflow-log.workspace = true

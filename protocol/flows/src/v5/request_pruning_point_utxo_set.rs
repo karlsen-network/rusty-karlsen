@@ -2,8 +2,8 @@ use crate::{flow_context::FlowContext, flow_trait::Flow, v5::ibd::IBD_BATCH_SIZE
 use itertools::Itertools;
 use karlsen_consensus_core::errors::consensus::ConsensusError;
 use karlsen_core::debug;
-use kaspa_hashes::Hash;
-use kaspa_p2p_lib::{
+use karlsen_hashes::Hash;
+use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, make_message,
     pb::{

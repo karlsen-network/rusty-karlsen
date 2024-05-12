@@ -32,7 +32,7 @@ declare -a crates=(
     "karlsen-wallet-cli-wasm"
     "karlsen-wasm"
     "karlsen-cli"
-    "kaspa-daemon"
+    "karlsen-daemon"
 )
 
 for crate in "${crates[@]}"

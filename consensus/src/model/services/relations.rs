@@ -1,7 +1,7 @@
 use crate::model::stores::relations::RelationsStoreReader;
 use karlsen_consensus_core::BlockHashSet;
-use kaspa_database::prelude::{ReadLock, StoreError, StoreResult};
-use kaspa_hashes::Hash;
+use karlsen_database::prelude::{ReadLock, StoreError, StoreResult};
+use karlsen_hashes::Hash;
 use parking_lot::RwLock;
 use std::sync::Arc;
 

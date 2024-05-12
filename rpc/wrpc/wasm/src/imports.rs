@@ -6,7 +6,7 @@ pub use cfg_if::cfg_if;
 pub use futures::*;
 pub use js_sys::Function;
 pub use karlsen_consensus_core::network::{NetworkId, NetworkIdError, NetworkIdT};
-pub use kaspa_notify::{
+pub use karlsen_notify::{
     error::{Error as NotifyError, Result as NotifyResult},
     events::EVENT_TYPE_ARRAY,
     listener::ListenerId,
@@ -14,7 +14,7 @@ pub use kaspa_notify::{
     scope::*,
     subscriber::{Subscriber, SubscriptionManager},
 };
-pub use kaspa_rpc_core::{
+pub use karlsen_rpc_core::{
     api::ops::RpcApiOps,
     api::rpc::RpcApi,
     error::RpcResult,

@@ -4,7 +4,7 @@ use rand_chacha::{
     ChaCha8Rng,
 };
 
-use kaspa_muhash::MuHash;
+use karlsen_muhash::MuHash;
 
 fn bench_muhash(c: &mut Criterion) {
     let mut rng = ChaCha8Rng::from_seed([42u8; 32]);

@@ -7,7 +7,7 @@
 use crate::{model::*, notify::connection::ChannelConnection, RpcResult};
 use async_trait::async_trait;
 use downcast::{downcast_sync, AnySync};
-use kaspa_notify::{listener::ListenerId, scope::Scope, subscription::Command};
+use karlsen_notify::{listener::ListenerId, scope::Scope, subscription::Command};
 use std::sync::Arc;
 
 pub const MAX_SAFE_WINDOW_SIZE: u32 = 10_000;

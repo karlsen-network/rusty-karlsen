@@ -8,13 +8,13 @@ pub use client_pool::ClientPool;
 use connection_event::ConnectionEvent;
 use futures::{future::FutureExt, pin_mut, select};
 use karlsen_core::{debug, error, trace};
-use kaspa_grpc_core::{
+use karlsen_grpc_core::{
     channel::NotificationChannel,
     ops::KaspadPayloadOps,
     protowire::{kaspad_request, rpc_client::RpcClient, GetInfoRequestMessage, KaspadRequest, KaspadResponse},
     RPC_MAX_MESSAGE_SIZE,
 };
-use kaspa_notify::{
+use karlsen_notify::{
     collector::{Collector, CollectorFrom},
     error::{Error as NotifyError, Result as NotifyResult},
     events::{EventArray, EventType, EVENT_TYPE_ARRAY},
@@ -27,7 +27,7 @@ use kaspa_notify::{
         UtxosChangedMutationPolicy,
     },
 };
-use kaspa_rpc_core::{
+use karlsen_rpc_core::{
     api::rpc::RpcApi,
     error::RpcError,
     error::RpcResult,
@@ -35,8 +35,8 @@ use kaspa_rpc_core::{
     notify::{collector::RpcCoreConverter, connection::ChannelConnection, mode::NotificationMode},
     Notification,
 };
-use kaspa_utils::{channel::Channel, triggers::DuplexTrigger};
-use kaspa_utils_tower::{
+use karlsen_utils::{channel::Channel, triggers::DuplexTrigger};
+use karlsen_utils_tower::{
     counters::TowerConnectionCounters,
     middleware::{measure_request_body_size_layer, CountBytesBody, MapResponseBodyLayer, ServiceBuilder},
 };

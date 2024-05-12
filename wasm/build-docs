@@ -8,7 +8,7 @@ if [ "$1" == "--keygen" ]; then
     typedoc --name "Kaspa WASM32 SDK - Key Generation" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out ./docs/kaspa-keygen ./build/docs/kaspa-keygen.ts
 elif [ "$1" == "--rpc" ]; then
     echo "building rpc"
-    typedoc --name "Kaspa WASM32 SDK - RPC" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out ./docs/kaspa-rpc ./build/docs/kaspa-rpc.ts
+    typedoc --name "Kaspa WASM32 SDK - RPC" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out ./docs/karlsen-rpc ./build/docs/karlsen-rpc.ts
 elif [ "$1" == "--core" ]; then
     echo "building core"
     typedoc --name "Kaspa WASM32 SDK - Core" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out ./docs/karlsen-core ./build/docs/karlsen-core.ts
@@ -19,7 +19,7 @@ else
     echo "building keygen"
     typedoc --name "Kaspa WASM32 SDK - Key Generation" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out ./docs/kaspa-keygen ./build/docs/kaspa-keygen.ts
     echo "building rpc"
-    typedoc --name "Kaspa WASM32 SDK - RPC" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out ./docs/kaspa-rpc ./build/docs/kaspa-rpc.ts
+    typedoc --name "Kaspa WASM32 SDK - RPC" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out ./docs/karlsen-rpc ./build/docs/karlsen-rpc.ts
     echo "building core"
     typedoc --name "Kaspa WASM32 SDK - Core" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out ./docs/karlsen-core ./build/docs/karlsen-core.ts
     echo "building full"

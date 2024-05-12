@@ -13,9 +13,9 @@ use karlsen_consensus_core::{
     errors::{block::RuleError, difficulty::DifficultyResult},
     BlockHashSet, BlueWorkType,
 };
-use kaspa_hashes::Hash;
-use kaspa_math::Uint256;
-use kaspa_utils::refs::Refs;
+use karlsen_hashes::Hash;
+use karlsen_math::Uint256;
+use karlsen_utils::refs::Refs;
 use once_cell::unsync::Lazy;
 use std::{cmp::Reverse, iter::once, ops::Deref, sync::Arc};
 

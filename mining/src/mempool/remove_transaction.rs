@@ -5,7 +5,7 @@ use crate::mempool::{
 };
 use karlsen_consensus_core::tx::TransactionId;
 use karlsen_core::{debug, warn};
-use kaspa_utils::iter::IterExtensions;
+use karlsen_utils::iter::IterExtensions;
 
 impl Mempool {
     pub(crate) fn remove_transaction(

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use karlsen_consensus_core::errors::{consensus::ConsensusError, sync::SyncManagerError};
-use kaspa_p2p_lib::{
+use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue_with_request_id, make_response,
     pb::{kaspad_message::Payload, IbdChainBlockLocatorMessage},

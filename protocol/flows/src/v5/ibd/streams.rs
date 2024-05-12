@@ -8,7 +8,7 @@ use karlsen_consensus_core::{
     tx::{TransactionOutpoint, UtxoEntry},
 };
 use karlsen_core::{debug, info};
-use kaspa_p2p_lib::{
+use karlsen_p2p_lib::{
     common::{ProtocolError, DEFAULT_TIMEOUT},
     convert::model::trusted::TrustedDataEntry,
     make_message,

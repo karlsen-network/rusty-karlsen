@@ -21,11 +21,11 @@ use karlsen_consensus_core::{
 };
 use karlsen_consensus_notify::root::ConsensusNotificationRoot;
 use karlsen_core::{info, task::service::AsyncService, task::tick::TickService, time::unix_now, trace, warn};
-use kaspa_database::prelude::ConnBuilder;
-use kaspa_database::{create_temp_db, load_existing_db};
-use kaspa_hashes::Hash;
-use kaspa_perf_monitor::{builder::Builder, counters::CountersSnapshot};
-use kaspa_utils::fd_budget;
+use karlsen_database::prelude::ConnBuilder;
+use karlsen_database::{create_temp_db, load_existing_db};
+use karlsen_hashes::Hash;
+use karlsen_perf_monitor::{builder::Builder, counters::CountersSnapshot};
+use karlsen_utils::fd_budget;
 use simulator::network::KaspaNetworkSimulator;
 use std::{collections::VecDeque, sync::Arc, time::Duration};
 
@@ -152,8 +152,8 @@ fn main_impl(mut args: Args) {
         let ts = Arc::new(TickService::new());
 
         let cb = move |counters: CountersSnapshot| {
-            trace!("[{}] {}", kaspa_perf_monitor::SERVICE_NAME, counters.to_process_metrics_display());
-            trace!("[{}] {}", kaspa_perf_monitor::SERVICE_NAME, counters.to_io_metrics_display());
+            trace!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_process_metrics_display());
+            trace!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_io_metrics_display());
             #[cfg(feature = "heap")]
             trace!("heap stats: {:?}", dhat::HeapStats::get());
         };

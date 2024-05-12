@@ -5,9 +5,9 @@ use karlsen_core::{
     task::service::{AsyncService, AsyncServiceError, AsyncServiceFuture},
     trace, warn,
 };
-use kaspa_rpc_core::api::ops::RpcApiOps;
-use kaspa_rpc_service::service::RpcCoreService;
-use kaspa_utils::triggers::SingleTrigger;
+use karlsen_rpc_core::api::ops::RpcApiOps;
+use karlsen_rpc_service::service::RpcCoreService;
+use karlsen_utils::triggers::SingleTrigger;
 use std::sync::Arc;
 use tokio::sync::oneshot::{channel as oneshot_channel, Sender as OneshotSender};
 use workflow_rpc::server::prelude::*;

@@ -1,4 +1,4 @@
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 use thiserror::Error;
 
 use super::{difficulty::DifficultyError, sync::SyncManagerError, traversal::TraversalError};

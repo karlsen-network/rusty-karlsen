@@ -3,7 +3,7 @@
 //!
 
 use karlsen_consensus_core::tx::TransactionId;
-use kaspa_utils::hex::ToHex;
+use karlsen_utils::hex::ToHex;
 use std::cmp::Eq;
 use std::fmt::Debug;
 use std::hash::Hash;

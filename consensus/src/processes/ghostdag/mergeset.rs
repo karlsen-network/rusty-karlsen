@@ -3,7 +3,7 @@ use crate::model::stores::ghostdag::GhostdagStoreReader;
 use crate::model::stores::relations::RelationsStoreReader;
 use crate::model::{services::reachability::ReachabilityService, stores::headers::HeaderStoreReader};
 use karlsen_consensus_core::{BlockHashSet, HashMapCustomHasher};
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 use std::collections::VecDeque;
 
 pub fn unordered_mergeset_without_selected_parent<S: RelationsStoreReader + ?Sized, U: ReachabilityService + ?Sized>(

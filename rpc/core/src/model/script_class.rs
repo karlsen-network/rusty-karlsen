@@ -1,3 +1,3 @@
-use kaspa_txscript::script_class::ScriptClass;
+use karlsen_txscript::script_class::ScriptClass;
 
 pub type RpcScriptClass = ScriptClass;

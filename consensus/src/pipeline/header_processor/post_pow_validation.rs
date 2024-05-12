@@ -3,7 +3,7 @@ use crate::errors::{BlockProcessResult, RuleError, TwoDimVecDisplay};
 use crate::model::services::reachability::ReachabilityService;
 use crate::processes::window::WindowManager;
 use karlsen_consensus_core::header::Header;
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 use std::collections::HashSet;
 
 impl HeaderProcessor {

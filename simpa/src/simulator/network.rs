@@ -9,11 +9,11 @@ use super::miner::Miner;
 use karlsen_consensus::config::Config;
 use karlsen_consensus::consensus::Consensus;
 use karlsen_consensus_core::block::Block;
-use kaspa_database::prelude::ConnBuilder;
-use kaspa_database::utils::DbLifetime;
-use kaspa_database::{create_permanent_db, create_temp_db};
-use kaspa_utils::fd_budget;
-use kaspa_utils::sim::Simulation;
+use karlsen_database::prelude::ConnBuilder;
+use karlsen_database::utils::DbLifetime;
+use karlsen_database::{create_permanent_db, create_temp_db};
+use karlsen_utils::fd_budget;
+use karlsen_utils::sim::Simulation;
 
 type ConsensusWrapper = (Arc<Consensus>, Vec<JoinHandle<()>>, DbLifetime);
 

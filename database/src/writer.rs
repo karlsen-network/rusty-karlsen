@@ -1,4 +1,4 @@
-use kaspa_utils::refs::Refs;
+use karlsen_utils::refs::Refs;
 use rocksdb::WriteBatch;
 
 use crate::prelude::DB;

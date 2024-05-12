@@ -6,7 +6,7 @@ use crate::{
 use karlsen_consensus_core::tx::{Transaction, TransactionId};
 use karlsen_consensusmanager::ConsensusProxy;
 use karlsen_core::{time::unix_now, warn};
-use kaspa_mining::{
+use karlsen_mining::{
     errors::MiningManagerError,
     mempool::{
         errors::RuleError,
@@ -15,7 +15,7 @@ use kaspa_mining::{
     model::tx_query::TransactionQuery,
     P2pTxCountSample,
 };
-use kaspa_p2p_lib::{
+use karlsen_p2p_lib::{
     common::{ProtocolError, DEFAULT_TIMEOUT},
     dequeue, make_message,
     pb::{kaspad_message::Payload, RequestTransactionsMessage, TransactionNotFoundMessage},

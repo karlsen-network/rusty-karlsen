@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-hashes"
+name = "karlsen-hashes"
 description = "Karlsen hashing functions"
 rust-version.workspace = true
 version.workspace = true
@@ -17,7 +17,7 @@ blake2b_simd.workspace = true
 borsh.workspace = true
 faster-hex.workspace = true
 js-sys.workspace = true
-kaspa-utils.workspace = true
+karlsen-utils.workspace = true
 keccak = { workspace = true, optional = true }
 blake3 = { workspace = true, optional = true }
 once_cell.workspace = true

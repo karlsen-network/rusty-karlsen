@@ -6,17 +6,17 @@ use karlsen_addresses::{Address, Prefix, Version};
 use karlsen_consensus::params::SIMNET_GENESIS;
 use karlsen_consensus_core::{constants::MAX_SOMPI, subnets::SubnetworkId, tx::Transaction};
 use karlsen_core::info;
-use kaspa_grpc_core::ops::KaspadPayloadOps;
-use kaspa_hashes::Hash;
-use kaspa_notify::{
+use karlsen_grpc_core::ops::KaspadPayloadOps;
+use karlsen_hashes::Hash;
+use karlsen_notify::{
     connection::{ChannelConnection, ChannelType},
     scope::{
         BlockAddedScope, FinalityConflictScope, NewBlockTemplateScope, PruningPointUtxoSetOverrideScope, Scope,
         SinkBlueScoreChangedScope, UtxosChangedScope, VirtualChainChangedScope, VirtualDaaScoreChangedScope,
     },
 };
-use kaspa_rpc_core::{api::rpc::RpcApi, model::*, Notification};
-use kaspa_utils::{fd_budget, networking::ContextualNetAddress};
+use karlsen_rpc_core::{api::rpc::RpcApi, model::*, Notification};
+use karlsen_utils::{fd_budget, networking::ContextualNetAddress};
 use karlsend_lib::args::Args;
 use tokio::task::JoinHandle;
 

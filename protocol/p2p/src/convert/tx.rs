@@ -4,7 +4,7 @@ use karlsen_consensus_core::{
     subnets::SubnetworkId,
     tx::{ScriptPublicKey, Transaction, TransactionId, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry},
 };
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 
 // ----------------------------------------------------------------------------
 // consensus_core to protowire

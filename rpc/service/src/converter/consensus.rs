@@ -10,15 +10,15 @@ use karlsen_consensus_core::{
 };
 use karlsen_consensus_notify::notification::{self as consensus_notify, Notification as ConsensusNotification};
 use karlsen_consensusmanager::{ConsensusManager, ConsensusProxy};
-use kaspa_math::Uint256;
-use kaspa_mining::model::{owner_txs::OwnerTransactions, TransactionIdSet};
-use kaspa_notify::converter::Converter;
-use kaspa_rpc_core::{
+use karlsen_math::Uint256;
+use karlsen_mining::model::{owner_txs::OwnerTransactions, TransactionIdSet};
+use karlsen_notify::converter::Converter;
+use karlsen_rpc_core::{
     BlockAddedNotification, Notification, RpcAcceptedTransactionIds, RpcBlock, RpcBlockVerboseData, RpcHash, RpcMempoolEntry,
     RpcMempoolEntryByAddress, RpcResult, RpcTransaction, RpcTransactionInput, RpcTransactionOutput, RpcTransactionOutputVerboseData,
     RpcTransactionVerboseData,
 };
-use kaspa_txscript::{extract_script_pub_key_address, script_class::ScriptClass};
+use karlsen_txscript::{extract_script_pub_key_address, script_class::ScriptClass};
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 
 /// Conversion of consensus_core to rpc_core structures

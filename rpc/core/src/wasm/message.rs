@@ -7,7 +7,7 @@ use karlsen_addresses::Address;
 use karlsen_addresses::AddressOrStringArrayT;
 use karlsen_consensus_client::Transaction;
 use karlsen_consensus_client::UtxoEntryReference;
-use kaspa_rpc_macros::declare_typescript_wasm_interface as declare;
+use karlsen_rpc_macros::declare_typescript_wasm_interface as declare;
 pub use serde_wasm_bindgen::from_value;
 use wasm_bindgen::prelude::*;
 use workflow_wasm::convert::*;

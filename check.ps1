@@ -7,7 +7,7 @@ $crates = @(
   "karlsen-wasm",
   "karlsen-cli",
   "kaspa-os",
-  "kaspa-daemon"
+  "karlsen-daemon"
 )
 
 $env:AR="llvm-ar"

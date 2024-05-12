@@ -1,7 +1,7 @@
 use crate::tasks::Task;
 use async_trait::async_trait;
 use karlsen_core::{trace, warn};
-use kaspa_utils::triggers::SingleTrigger;
+use karlsen_utils::triggers::SingleTrigger;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 

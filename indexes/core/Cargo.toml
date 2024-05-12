@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-index-core"
+name = "karlsen-index-core"
 description = "Karlsen index core"
 rust-version.workspace = true
 version.workspace = true
@@ -15,9 +15,9 @@ async-trait.workspace = true
 derive_more.workspace = true
 futures.workspace = true
 karlsen-consensus-core.workspace = true
-kaspa-hashes.workspace = true
-kaspa-notify.workspace = true
-kaspa-utils.workspace = true
+karlsen-hashes.workspace = true
+karlsen-notify.workspace = true
+karlsen-utils.workspace = true
 log.workspace = true
 paste.workspace = true
 serde.workspace = true

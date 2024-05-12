@@ -1,1 +1,1 @@
-export * from "../../web/kaspa-rpc";
+export * from "../../web/karlsen-rpc";

@@ -1,7 +1,7 @@
 use super::{daemon::Daemon, listener::Listener};
-use kaspa_grpc_client::GrpcClient;
-use kaspa_notify::{events::EventType, scope::Scope, subscription::Command};
-use kaspa_rpc_core::RpcResult;
+use karlsen_grpc_client::GrpcClient;
+use karlsen_notify::{events::EventType, scope::Scope, subscription::Command};
+use karlsen_rpc_core::RpcResult;
 use std::{
     collections::{hash_map::Entry, HashMap},
     ops::Deref,

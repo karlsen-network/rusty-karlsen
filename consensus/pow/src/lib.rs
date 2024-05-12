@@ -10,9 +10,9 @@ use std::cmp::max;
 
 use crate::matrix::Matrix;
 use karlsen_consensus_core::{hashing, header::Header, BlockLevel};
-//use kaspa_hashes::Pow;
-use kaspa_hashes::PowB3Hash;
-use kaspa_math::Uint256;
+//use karlsen_hashes::Pow;
+use karlsen_hashes::PowB3Hash;
+use karlsen_math::Uint256;
 
 /// State is an intermediate data structure with pre-computed values to speed up mining.
 pub struct State {

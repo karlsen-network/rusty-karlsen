@@ -10,7 +10,7 @@ use crate::tx::{DataKind, Generator};
 use crate::utxo::{UtxoContext, UtxoEntryId, UtxoEntryReference};
 use karlsen_consensus_core::sign::sign_with_multiple_v2;
 use karlsen_consensus_core::tx::{SignableTransaction, Transaction, TransactionId};
-use kaspa_rpc_core::{RpcTransaction, RpcTransactionId};
+use karlsen_rpc_core::{RpcTransaction, RpcTransactionId};
 
 pub(crate) struct PendingTransactionInner {
     /// Generator that produced the transaction

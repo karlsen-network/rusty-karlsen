@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-utils"
+name = "karlsen-utils"
 description = "Karlsen utilities"
 rust-version.workspace = true
 version.workspace = true

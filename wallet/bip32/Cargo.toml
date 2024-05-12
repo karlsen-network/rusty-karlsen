@@ -17,7 +17,7 @@ bs58.workspace = true
 getrandom = { workspace = true, features = ["js"] }
 hmac.workspace = true
 js-sys.workspace = true
-kaspa-utils.workspace = true
+karlsen-utils.workspace = true
 once_cell.workspace = true
 pbkdf2.workspace = true
 rand_core.workspace = true

@@ -1,6 +1,6 @@
 use crate::connection::{Connection, ConnectionId};
 use karlsen_core::{debug, info, warn};
-use kaspa_notify::connection::Connection as ConnectionT;
+use karlsen_notify::connection::Connection as ConnectionT;
 use parking_lot::RwLock;
 use std::{
     collections::{hash_map::Entry::Occupied, HashMap, HashSet},

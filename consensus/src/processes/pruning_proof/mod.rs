@@ -10,7 +10,7 @@ use std::{
 };
 
 use itertools::Itertools;
-use kaspa_math::int::SignedInteger;
+use karlsen_math::int::SignedInteger;
 use parking_lot::{Mutex, RwLock};
 use rocksdb::WriteBatch;
 
@@ -26,10 +26,10 @@ use karlsen_consensus_core::{
     BlockHashMap, BlockHashSet, BlockLevel, HashMapCustomHasher, KType,
 };
 use karlsen_core::{debug, info, trace};
-use kaspa_database::prelude::{CachePolicy, ConnBuilder, StoreResultEmptyTuple, StoreResultExtensions};
-use kaspa_hashes::Hash;
-use kaspa_pow::calc_block_level;
-use kaspa_utils::{binary_heap::BinaryHeapExtensions, vec::VecExtensions};
+use karlsen_database::prelude::{CachePolicy, ConnBuilder, StoreResultEmptyTuple, StoreResultExtensions};
+use karlsen_hashes::Hash;
+use karlsen_pow::calc_block_level;
+use karlsen_utils::{binary_heap::BinaryHeapExtensions, vec::VecExtensions};
 use thiserror::Error;
 
 use crate::{
@@ -181,7 +181,7 @@ impl PruningProofManager {
                 continue;
             }
 
-            let state = kaspa_pow::State::new(header);
+            let state = karlsen_pow::State::new(header);
             let (_, pow) = state.check_pow(header.nonce);
             let signed_block_level = self.max_block_level as i64 - pow.bits() as i64;
             let block_level = max(signed_block_level, 0) as BlockLevel;
@@ -299,7 +299,7 @@ impl PruningProofManager {
         let mut up_heap = BinaryHeap::with_capacity(capacity_estimate);
         for header in proof.iter().flatten().cloned() {
             if let Vacant(e) = dag.entry(header.hash) {
-                let state = kaspa_pow::State::new(&header);
+                let state = karlsen_pow::State::new(&header);
                 let (_, pow) = state.check_pow(header.nonce); // TODO: Check if pow passes
                 let signed_block_level = self.max_block_level as i64 - pow.bits() as i64;
                 let block_level = max(signed_block_level, 0) as BlockLevel;
@@ -399,7 +399,7 @@ impl PruningProofManager {
         let proof_pp_header = proof[0].last().expect("checked if empty");
         let proof_pp = proof_pp_header.hash;
         let proof_pp_level = calc_block_level(proof_pp_header, self.max_block_level);
-        let (db_lifetime, db) = kaspa_database::create_temp_db!(ConnBuilder::default().with_files_limit(10));
+        let (db_lifetime, db) = karlsen_database::create_temp_db!(ConnBuilder::default().with_files_limit(10));
         let cache_policy = CachePolicy::Count(2 * self.pruning_proof_m as usize);
         let headers_store =
             Arc::new(DbHeadersStore::new(db.clone(), CachePolicy::Count(headers_estimate), CachePolicy::Count(headers_estimate)));

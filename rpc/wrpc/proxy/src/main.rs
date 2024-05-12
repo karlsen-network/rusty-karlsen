@@ -3,7 +3,7 @@ mod result;
 
 use clap::Parser;
 use karlsen_consensus_core::network::NetworkType;
-use kaspa_rpc_core::api::ops::RpcApiOps;
+use karlsen_rpc_core::api::ops::RpcApiOps;
 use karlsen_wrpc_server::{
     connection::Connection,
     router::Router,

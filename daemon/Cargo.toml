@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-daemon"
+name = "karlsen-daemon"
 description = "Utilities for running Kaspa node and tools as a child processes"
 rust-version.workspace = true
 version.workspace = true

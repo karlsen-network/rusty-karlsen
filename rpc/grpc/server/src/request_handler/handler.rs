@@ -8,7 +8,7 @@ use crate::{
     error::GrpcServerResult,
 };
 use karlsen_core::debug;
-use kaspa_grpc_core::{
+use karlsen_grpc_core::{
     ops::KaspadPayloadOps,
     protowire::{KaspadRequest, KaspadResponse},
 };

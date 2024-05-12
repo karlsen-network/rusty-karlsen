@@ -356,7 +356,7 @@ mod tests {
     #[test]
     #[allow(clippy::redundant_clone)]
     fn test_utxos_changed_compounding() {
-        karlsen_core::log::try_init_logger("trace,kaspa_notify=trace");
+        karlsen_core::log::try_init_logger("trace,karlsen_notify=trace");
         let a_stock = get_3_addresses(true);
 
         let a = |indexes: &[usize]| indexes.iter().map(|idx| (a_stock[*idx]).clone()).collect::<Vec<_>>();

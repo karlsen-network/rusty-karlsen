@@ -15,7 +15,7 @@ use itertools::Itertools;
 use karlsen_consensus_core::hashing::sighash::{calc_ecdsa_signature_hash, calc_schnorr_signature_hash, SigHashReusedValues};
 use karlsen_consensus_core::hashing::sighash_type::SigHashType;
 use karlsen_consensus_core::tx::{ScriptPublicKey, TransactionInput, UtxoEntry, VerifiableTransaction};
-use kaspa_txscript_errors::TxScriptError;
+use karlsen_txscript_errors::TxScriptError;
 use log::trace;
 use opcodes::codes::OpReturn;
 use opcodes::{codes, to_small_int, OpCond};

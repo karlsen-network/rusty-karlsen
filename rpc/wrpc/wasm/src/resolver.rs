@@ -1,7 +1,7 @@
 use crate::client::{RpcClient, RpcConfig};
 use crate::imports::*;
 use js_sys::Array;
-pub use kaspa_rpc_macros::declare_typescript_wasm_interface as declare;
+pub use karlsen_rpc_macros::declare_typescript_wasm_interface as declare;
 use karlsen_wrpc_client::node::NodeDescriptor;
 use karlsen_wrpc_client::Resolver as NativeResolver;
 use serde::ser;

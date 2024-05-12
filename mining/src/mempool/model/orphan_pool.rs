@@ -13,7 +13,7 @@ use karlsen_consensus_core::{
     tx::{TransactionId, TransactionOutpoint},
 };
 use karlsen_core::{debug, warn};
-use kaspa_utils::iter::IterExtensions;
+use karlsen_utils::iter::IterExtensions;
 use std::sync::Arc;
 
 /// Pool of orphan transactions depending on some missing utxo entries

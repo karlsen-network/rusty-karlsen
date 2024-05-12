@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-txscript"
+name = "karlsen-txscript"
 description = "Karlsen txscript engine library"
 rust-version.workspace = true
 version.workspace = true
@@ -16,8 +16,8 @@ indexmap.workspace = true
 itertools.workspace = true
 karlsen-addresses.workspace = true
 karlsen-consensus-core.workspace = true
-kaspa-hashes.workspace = true
-kaspa-txscript-errors.workspace = true
+karlsen-hashes.workspace = true
+karlsen-txscript-errors.workspace = true
 log.workspace = true
 parking_lot.workspace = true
 rand.workspace = true

@@ -1,7 +1,7 @@
 use crate::imports::*;
 use crate::result::Result;
-use kaspa_hashes as native;
-use kaspa_hashes::HasherBase;
+use karlsen_hashes as native;
+use karlsen_hashes::HasherBase;
 use karlsen_wasm_core::types::BinaryT;
 
 /// @category Wallet SDK

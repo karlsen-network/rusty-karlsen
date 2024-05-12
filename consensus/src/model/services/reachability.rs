@@ -6,7 +6,7 @@ use parking_lot::RwLock;
 
 use crate::model::stores::reachability::ReachabilityStoreReader;
 use crate::processes::reachability::{inquirer, Result};
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 
 pub trait ReachabilityService {
     fn is_chain_ancestor_of(&self, this: Hash, queried: Hash) -> bool;

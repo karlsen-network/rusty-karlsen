@@ -5,11 +5,11 @@ use karlsen_consensus_core::{
         utxo_view::UtxoView,
     },
 };
-use kaspa_database::prelude::StoreResultExtensions;
-use kaspa_database::prelude::DB;
-use kaspa_database::prelude::{BatchDbWriter, CachedDbAccess, DirectDbWriter};
-use kaspa_database::prelude::{CachePolicy, StoreError};
-use kaspa_hashes::Hash;
+use karlsen_database::prelude::StoreResultExtensions;
+use karlsen_database::prelude::DB;
+use karlsen_database::prelude::{BatchDbWriter, CachedDbAccess, DirectDbWriter};
+use karlsen_database::prelude::{CachePolicy, StoreError};
+use karlsen_hashes::Hash;
 use rocksdb::WriteBatch;
 use std::{error::Error, fmt::Display, sync::Arc};
 
@@ -28,7 +28,7 @@ pub trait UtxoSetStore: UtxoSetStoreReader {
     fn write_many(&mut self, utxos: &[(TransactionOutpoint, UtxoEntry)]) -> Result<(), StoreError>;
 }
 
-pub const UTXO_KEY_SIZE: usize = kaspa_hashes::HASH_SIZE + std::mem::size_of::<TransactionIndexType>();
+pub const UTXO_KEY_SIZE: usize = karlsen_hashes::HASH_SIZE + std::mem::size_of::<TransactionIndexType>();
 
 #[derive(Eq, Hash, PartialEq, Debug, Copy, Clone)]
 struct UtxoKey([u8; UTXO_KEY_SIZE]);
@@ -38,8 +38,8 @@ impl AsRef<[u8]> for UtxoKey {
         // In every practical case a transaction output index needs at most 2 bytes, so the overall
         // DB key structure will be { prefix byte || TX ID (32 bytes) || TX INDEX (2) } = 35 bytes
         // which fit on the smallvec without requiring heap allocation (see key.rs)
-        let rposition = self.0[kaspa_hashes::HASH_SIZE..].iter().rposition(|&v| v != 0).unwrap_or(0);
-        &self.0[..=kaspa_hashes::HASH_SIZE + rposition]
+        let rposition = self.0[karlsen_hashes::HASH_SIZE..].iter().rposition(|&v| v != 0).unwrap_or(0);
+        &self.0[..=karlsen_hashes::HASH_SIZE + rposition]
     }
 }
 
@@ -50,7 +50,7 @@ impl TryFrom<&[u8]> for UtxoKey {
         if UTXO_KEY_SIZE < slice.len() {
             return Err("src slice is too large");
         }
-        if slice.len() < kaspa_hashes::HASH_SIZE + 1 {
+        if slice.len() < karlsen_hashes::HASH_SIZE + 1 {
             return Err("src slice is too short");
         }
         // If the slice is shorter than HASH len + u32 len then we pad with zeros, effectively
@@ -71,17 +71,17 @@ impl Display for UtxoKey {
 impl From<TransactionOutpoint> for UtxoKey {
     fn from(outpoint: TransactionOutpoint) -> Self {
         let mut bytes = [0; UTXO_KEY_SIZE];
-        bytes[..kaspa_hashes::HASH_SIZE].copy_from_slice(&outpoint.transaction_id.as_bytes());
-        bytes[kaspa_hashes::HASH_SIZE..].copy_from_slice(&outpoint.index.to_le_bytes());
+        bytes[..karlsen_hashes::HASH_SIZE].copy_from_slice(&outpoint.transaction_id.as_bytes());
+        bytes[karlsen_hashes::HASH_SIZE..].copy_from_slice(&outpoint.index.to_le_bytes());
         Self(bytes)
     }
 }
 
 impl From<UtxoKey> for TransactionOutpoint {
     fn from(k: UtxoKey) -> Self {
-        let transaction_id = Hash::from_slice(&k.0[..kaspa_hashes::HASH_SIZE]);
+        let transaction_id = Hash::from_slice(&k.0[..karlsen_hashes::HASH_SIZE]);
         let index = TransactionIndexType::from_le_bytes(
-            <[u8; std::mem::size_of::<TransactionIndexType>()]>::try_from(&k.0[kaspa_hashes::HASH_SIZE..])
+            <[u8; std::mem::size_of::<TransactionIndexType>()]>::try_from(&k.0[karlsen_hashes::HASH_SIZE..])
                 .expect("expecting index size"),
         );
         Self::new(transaction_id, index)

@@ -6,7 +6,7 @@ pub use data::{Metric, MetricGroup, MetricsData, MetricsSnapshot};
 
 use crate::result::Result;
 use futures::{pin_mut, select, FutureExt, StreamExt};
-use kaspa_rpc_core::{api::rpc::RpcApi, GetMetricsResponse};
+use karlsen_rpc_core::{api::rpc::RpcApi, GetMetricsResponse};
 use std::{
     future::Future,
     pin::Pin,

@@ -5,9 +5,9 @@ use karlsen_core::{
     task::service::{AsyncService, AsyncServiceFuture},
     trace, warn,
 };
-use kaspa_rpc_service::service::RpcCoreService;
-use kaspa_utils::{networking::NetAddress, triggers::SingleTrigger};
-use kaspa_utils_tower::counters::TowerConnectionCounters;
+use karlsen_rpc_service::service::RpcCoreService;
+use karlsen_utils::{networking::NetAddress, triggers::SingleTrigger};
+use karlsen_utils_tower::counters::TowerConnectionCounters;
 use std::sync::Arc;
 use triggered::Listener;
 

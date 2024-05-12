@@ -68,10 +68,10 @@ use crossbeam_channel::{
 use itertools::Itertools;
 use karlsen_consensusmanager::{SessionLock, SessionReadGuard};
 
-use kaspa_database::prelude::StoreResultExtensions;
-use kaspa_hashes::Hash;
-use kaspa_muhash::MuHash;
-use kaspa_txscript::caches::TxScriptCacheCounters;
+use karlsen_database::prelude::StoreResultExtensions;
+use karlsen_hashes::Hash;
+use karlsen_muhash::MuHash;
+use karlsen_txscript::caches::TxScriptCacheCounters;
 
 use std::{
     future::Future,

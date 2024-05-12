@@ -9,10 +9,10 @@ use crate::{
 use karlsen_consensus_core::{tx::ScriptPublicKeys, utxo::utxo_diff::UtxoDiff, BlockHashSet};
 use karlsen_consensusmanager::{ConsensusManager, ConsensusResetHandler};
 use karlsen_core::{info, trace};
-use kaspa_database::prelude::{StoreError, StoreResult, DB};
-use kaspa_hashes::Hash;
-use kaspa_index_core::indexed_utxos::BalanceByScriptPublicKey;
-use kaspa_utils::arc::ArcExtensions;
+use karlsen_database::prelude::{StoreError, StoreResult, DB};
+use karlsen_hashes::Hash;
+use karlsen_index_core::indexed_utxos::BalanceByScriptPublicKey;
+use karlsen_utils::arc::ArcExtensions;
 use parking_lot::RwLock;
 use std::{
     fmt::Debug,
@@ -229,8 +229,8 @@ mod tests {
     };
     use karlsen_consensusmanager::ConsensusManager;
     use karlsen_core::info;
-    use kaspa_database::create_temp_db;
-    use kaspa_database::prelude::ConnBuilder;
+    use karlsen_database::create_temp_db;
+    use karlsen_database::prelude::ConnBuilder;
     use std::{collections::HashSet, sync::Arc, time::Instant};
 
     /// TODO: use proper Simnet when implemented.

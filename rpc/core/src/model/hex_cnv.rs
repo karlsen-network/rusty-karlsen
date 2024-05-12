@@ -2,7 +2,7 @@ use karlsen_consensus_core::BlueWorkType;
 use smallvec::{smallvec, SmallVec};
 use std::str;
 
-// TODO combine this with kaspa-utils::hex
+// TODO combine this with karlsen-utils::hex
 
 pub trait ToRpcHex {
     fn to_rpc_hex(&self) -> String;

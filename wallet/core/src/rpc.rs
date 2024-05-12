@@ -4,11 +4,11 @@
 
 use std::sync::Arc;
 
-pub use kaspa_rpc_core::api::ctl::RpcCtl;
-pub use kaspa_rpc_core::api::rpc::RpcApi;
+pub use karlsen_rpc_core::api::ctl::RpcCtl;
+pub use karlsen_rpc_core::api::rpc::RpcApi;
 pub type DynRpcApi = dyn RpcApi;
-pub type NotificationChannel = kaspa_utils::channel::Channel<kaspa_rpc_core::Notification>;
-pub use kaspa_rpc_core::notify::mode::NotificationMode;
+pub type NotificationChannel = karlsen_utils::channel::Channel<karlsen_rpc_core::Notification>;
+pub use karlsen_rpc_core::notify::mode::NotificationMode;
 pub use karlsen_wrpc_client::client::{ConnectOptions, ConnectStrategy};
 pub use karlsen_wrpc_client::Resolver;
 pub use karlsen_wrpc_client::WrpcEncoding;

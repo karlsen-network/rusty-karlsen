@@ -12,8 +12,8 @@ use karlsen_consensus_core::network::NetworkType;
 use karlsen_consensus_core::network::NetworkTypeT;
 use karlsen_consensus_core::subnets::{self, SubnetworkId};
 use karlsen_consensus_core::tx::UtxoEntry;
-use kaspa_txscript::extract_script_pub_key_address;
-use kaspa_utils::hex::*;
+use karlsen_txscript::extract_script_pub_key_address;
+use karlsen_utils::hex::*;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_TRANSACTION: &'static str = r#"

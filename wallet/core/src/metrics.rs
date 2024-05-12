@@ -1,5 +1,5 @@
 use crate::imports::*;
-// use kaspa_metrics_core::MetricsSnapshot;
+// use karlsen_metrics_core::MetricsSnapshot;
 
 #[derive(Debug, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(tag = "type", content = "data")]

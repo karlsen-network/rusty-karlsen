@@ -7,11 +7,11 @@
 
 use crate::imports::*;
 // use futures::pin_mut;
-use kaspa_notify::{
+use karlsen_notify::{
     listener::ListenerId,
     scope::{Scope, UtxosChangedScope, VirtualDaaScoreChangedScope},
 };
-use kaspa_rpc_core::{
+use karlsen_rpc_core::{
     api::{
         ctl::{RpcCtl, RpcState},
         ops::RPC_API_VERSION,
@@ -29,12 +29,12 @@ use crate::utxo::{
     Maturity, OutgoingTransaction, PendingUtxoEntryReference, SyncMonitor, UtxoContext, UtxoEntryId, UtxoEntryReference,
 };
 use crate::wallet::WalletBusMessage;
-use kaspa_rpc_core::{
+use karlsen_rpc_core::{
     notify::connection::{ChannelConnection, ChannelType},
     Notification,
 };
 // use workflow_core::task;
-// use kaspa_metrics_core::{Metrics,Metric};
+// use karlsen_metrics_core::{Metrics,Metric};
 
 pub struct Inner {
     /// Coinbase UTXOs in stasis

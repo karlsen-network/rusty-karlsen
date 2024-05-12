@@ -13,13 +13,13 @@ use karlsen_addresses::Address;
 use karlsen_consensus::params::Params;
 use karlsen_consensus_core::{constants::SOMPI_PER_KASPA, network::NetworkType, tx::Transaction};
 use karlsen_core::{debug, info};
-use kaspa_notify::{
+use karlsen_notify::{
     listener::ListenerId,
     scope::{NewBlockTemplateScope, Scope},
 };
-use kaspa_rpc_core::{api::rpc::RpcApi, Notification, RpcError};
-use kaspa_txscript::pay_to_address_script;
-use kaspa_utils::fd_budget;
+use karlsen_rpc_core::{api::rpc::RpcApi, Notification, RpcError};
+use karlsen_txscript::pay_to_address_script;
+use karlsen_utils::fd_budget;
 use karlsend_lib::args::Args;
 use parking_lot::Mutex;
 use rand::thread_rng;
@@ -39,7 +39,7 @@ use tokio::join;
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_bbt_latency() {
-    karlsen_core::log::try_init_logger("info,karlsen_core::time=debug,kaspa_mining::monitor=debug");
+    karlsen_core::log::try_init_logger("info,karlsen_core::time=debug,karlsen_mining::monitor=debug");
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();
 
@@ -126,7 +126,7 @@ async fn bench_bbt_latency() {
     let submit_block_pool_tasks = submit_block_pool.start(|c, block| async move {
         let _sw = karlsen_core::time::Stopwatch::<500>::with_threshold("sb");
         let response = c.submit_block(block, false).await.unwrap();
-        assert_eq!(response.report, kaspa_rpc_core::SubmitBlockReport::Success);
+        assert_eq!(response.report, karlsen_rpc_core::SubmitBlockReport::Success);
         false
     });
 
@@ -287,7 +287,7 @@ async fn bench_bbt_latency() {
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_bbt_latency_2() {
-    karlsen_core::log::try_init_logger("info,karlsen_core::time=debug,kaspa_mining::monitor=debug");
+    karlsen_core::log::try_init_logger("info,karlsen_core::time=debug,karlsen_mining::monitor=debug");
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();
 

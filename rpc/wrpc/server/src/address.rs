@@ -1,6 +1,6 @@
 use crate::service::WrpcEncoding;
 use karlsen_consensus_core::network::NetworkType;
-use kaspa_utils::networking::ContextualNetAddress;
+use karlsen_utils::networking::ContextualNetAddress;
 use serde::Deserialize;
 use std::{net::AddrParseError, str::FromStr};
 

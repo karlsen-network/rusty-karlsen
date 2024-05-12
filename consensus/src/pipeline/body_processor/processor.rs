@@ -31,8 +31,8 @@ use karlsen_consensus_notify::{
     root::ConsensusNotificationRoot,
 };
 use karlsen_consensusmanager::SessionLock;
-use kaspa_hashes::Hash;
-use kaspa_notify::notifier::Notify;
+use karlsen_hashes::Hash;
+use karlsen_notify::notifier::Notify;
 use parking_lot::RwLock;
 use rayon::ThreadPool;
 use rocksdb::WriteBatch;

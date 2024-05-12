@@ -2,7 +2,7 @@ use super::process_queue::ProcessQueue;
 use itertools::Itertools;
 use karlsen_consensus_core::tx::TransactionId;
 use karlsen_core::debug;
-use kaspa_p2p_lib::{
+use karlsen_p2p_lib::{
     make_message,
     pb::{kaspad_message::Payload, InvTransactionsMessage, KaspadMessage},
     Hub,

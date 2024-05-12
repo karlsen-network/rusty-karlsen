@@ -37,9 +37,9 @@ use karlsen_consensus_core::{
     BlockHashSet, BlockLevel,
 };
 use karlsen_consensusmanager::SessionLock;
-use kaspa_database::prelude::{StoreResultEmptyTuple, StoreResultExtensions};
-use kaspa_hashes::Hash;
-use kaspa_utils::vec::VecExtensions;
+use karlsen_database::prelude::{StoreResultEmptyTuple, StoreResultExtensions};
+use karlsen_hashes::Hash;
+use karlsen_utils::vec::VecExtensions;
 use parking_lot::RwLock;
 use rayon::ThreadPool;
 use rocksdb::WriteBatch;

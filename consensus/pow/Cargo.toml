@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-pow"
+name = "karlsen-pow"
 description = "Karlsen proof-of-work"
 rust-version.workspace = true
 version.workspace = true
@@ -16,9 +16,9 @@ wasm32-sdk = []
 js-sys.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-consensus-client.workspace = true
-kaspa-hashes.workspace = true
-kaspa-math.workspace = true
-kaspa-utils.workspace = true
+karlsen-hashes.workspace = true
+karlsen-math.workspace = true
+karlsen-utils.workspace = true
 wasm-bindgen.workspace = true
 workflow-wasm.workspace = true
 num.workspace = true

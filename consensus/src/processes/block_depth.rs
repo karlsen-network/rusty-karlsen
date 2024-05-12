@@ -1,5 +1,5 @@
 use karlsen_consensus_core::blockhash::ORIGIN;
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 use std::sync::Arc;
 
 use crate::model::{

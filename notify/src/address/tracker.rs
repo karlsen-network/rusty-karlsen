@@ -4,7 +4,7 @@ use itertools::Itertools;
 use karlsen_addresses::{Address, Prefix};
 use karlsen_consensus_core::tx::ScriptPublicKey;
 use karlsen_core::{debug, trace};
-use kaspa_txscript::{extract_script_pub_key_address, pay_to_address_script};
+use karlsen_txscript::{extract_script_pub_key_address, pay_to_address_script};
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::{
     collections::{hash_map, hash_set, HashMap, HashSet},
@@ -611,7 +611,7 @@ impl<'a> TrackerReadGuard<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use kaspa_math::Uint256;
+    use karlsen_math::Uint256;
 
     fn create_addresses(start: usize, count: usize) -> Vec<Address> {
         (start..start + count)

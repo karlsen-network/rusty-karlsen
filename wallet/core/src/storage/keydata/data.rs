@@ -5,7 +5,7 @@
 use crate::derivation::create_xpub_from_xprv;
 use crate::imports::*;
 use karlsen_bip32::{ExtendedPrivateKey, ExtendedPublicKey, Language, Mnemonic};
-use kaspa_utils::hex::ToHex;
+use karlsen_utils::hex::ToHex;
 use secp256k1::SecretKey;
 use xxhash_rust::xxh3::xxh3_64;
 

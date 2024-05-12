@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use karlsen_addresses::{Address, Prefix};
-use kaspa_math::Uint256;
-use kaspa_notify::{address::tracker::Indexes, subscription::context::SubscriptionContext};
+use karlsen_math::Uint256;
+use karlsen_notify::{address::tracker::Indexes, subscription::context::SubscriptionContext};
 
 fn create_addresses(count: usize) -> Vec<Address> {
     (0..count)
@@ -25,6 +25,6 @@ pub fn bench_subscription_context(c: &mut Criterion) {
     });
 }
 
-// `cargo bench --package kaspa-notify --bench bench`
+// `cargo bench --package karlsen-notify --bench bench`
 criterion_group!(benches, bench_subscription_context);
 criterion_main!(benches);

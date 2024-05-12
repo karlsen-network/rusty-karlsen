@@ -5,15 +5,15 @@ use crate::{
 use async_trait::async_trait;
 use karlsen_consensus_notify::{notification as consensus_notification, notification::Notification as ConsensusNotification};
 use karlsen_core::{debug, trace};
-use kaspa_index_core::notification::{Notification, PruningPointUtxoSetOverrideNotification, UtxosChangedNotification};
-use kaspa_notify::{
+use karlsen_index_core::notification::{Notification, PruningPointUtxoSetOverrideNotification, UtxosChangedNotification};
+use karlsen_notify::{
     collector::{Collector, CollectorNotificationReceiver},
     error::Result,
     events::EventType,
     notification::Notification as NotificationTrait,
     notifier::DynNotify,
 };
-use kaspa_utils::triggers::SingleTrigger;
+use karlsen_utils::triggers::SingleTrigger;
 use karlsen_utxoindex::api::UtxoIndexProxy;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -132,10 +132,10 @@ mod tests {
     use karlsen_consensus::{config::Config, consensus::test_consensus::TestConsensus, params::DEVNET_PARAMS, test_helpers::*};
     use karlsen_consensus_core::utxo::{utxo_collection::UtxoCollection, utxo_diff::UtxoDiff};
     use karlsen_consensusmanager::ConsensusManager;
-    use kaspa_database::create_temp_db;
-    use kaspa_database::prelude::ConnBuilder;
-    use kaspa_database::utils::DbLifetime;
-    use kaspa_notify::notifier::test_helpers::NotifyMock;
+    use karlsen_database::create_temp_db;
+    use karlsen_database::prelude::ConnBuilder;
+    use karlsen_database::utils::DbLifetime;
+    use karlsen_notify::notifier::test_helpers::NotifyMock;
     use karlsen_utxoindex::UtxoIndex;
     use rand::{rngs::SmallRng, SeedableRng};
     use std::sync::Arc;

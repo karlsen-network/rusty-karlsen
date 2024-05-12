@@ -123,7 +123,7 @@ mod tests {
 
     #[tokio::test]
     async fn monitor_works() {
-        karlsen_core::log::try_init_logger("info, kaspa_perf_monitor=trace");
+        karlsen_core::log::try_init_logger("info, karlsen_perf_monitor=trace");
 
         let ts = Arc::new(TickService::new());
         let call_count = Arc::new(AtomicUsize::new(0));

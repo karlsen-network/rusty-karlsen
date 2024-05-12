@@ -8,13 +8,13 @@ use karlsen_consensus_core::{
 use karlsen_consensus_notify::{notification::Notification, root::ConsensusNotificationRoot};
 use karlsen_consensusmanager::{ConsensusFactory, ConsensusInstance, DynConsensusCtl};
 use karlsen_core::{core::Core, service::Service};
-use kaspa_database::utils::DbLifetime;
-use kaspa_hashes::Hash;
-use kaspa_notify::subscription::context::SubscriptionContext;
+use karlsen_database::utils::DbLifetime;
+use karlsen_hashes::Hash;
+use karlsen_notify::subscription::context::SubscriptionContext;
 use parking_lot::RwLock;
 
-use kaspa_database::create_temp_db;
-use kaspa_database::prelude::ConnBuilder;
+use karlsen_database::create_temp_db;
+use karlsen_database::prelude::ConnBuilder;
 use std::future::Future;
 use std::{sync::Arc, thread::JoinHandle};
 

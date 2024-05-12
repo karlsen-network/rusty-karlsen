@@ -11,10 +11,10 @@ use karlsen_consensus_core::{
     tx::{MutableTransaction, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry},
 };
 use karlsen_core::{info, kaspad_env::version, time::unix_now, warn};
-use kaspa_grpc_client::{ClientPool, GrpcClient};
-use kaspa_notify::subscription::context::SubscriptionContext;
-use kaspa_rpc_core::{api::rpc::RpcApi, notify::mode::NotificationMode};
-use kaspa_txscript::pay_to_address_script;
+use karlsen_grpc_client::{ClientPool, GrpcClient};
+use karlsen_notify::subscription::context::SubscriptionContext;
+use karlsen_rpc_core::{api::rpc::RpcApi, notify::mode::NotificationMode};
+use karlsen_txscript::pay_to_address_script;
 use parking_lot::Mutex;
 use rayon::prelude::*;
 use secp256k1::{rand::thread_rng, Keypair};

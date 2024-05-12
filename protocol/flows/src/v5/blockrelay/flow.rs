@@ -6,14 +6,14 @@ use crate::{
 use karlsen_consensus_core::{api::BlockValidationFutures, block::Block, blockstatus::BlockStatus, errors::block::RuleError};
 use karlsen_consensusmanager::{BlockProcessingBatch, ConsensusProxy};
 use karlsen_core::debug;
-use kaspa_hashes::Hash;
-use kaspa_p2p_lib::{
+use karlsen_hashes::Hash;
+use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, dequeue_with_timeout, make_message, make_request,
     pb::{kaspad_message::Payload, InvRelayBlockMessage, RequestBlockLocatorMessage, RequestRelayBlocksMessage},
     IncomingRoute, Router, SharedIncomingRoute,
 };
-use kaspa_utils::channel::{JobSender, JobTrySendError as TrySendError};
+use karlsen_utils::channel::{JobSender, JobTrySendError as TrySendError};
 use std::{collections::VecDeque, sync::Arc};
 
 pub struct RelayInvMessage {

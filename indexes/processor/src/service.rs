@@ -6,15 +6,15 @@ use karlsen_core::{
     task::service::{AsyncService, AsyncServiceError, AsyncServiceFuture},
     trace, warn,
 };
-use kaspa_index_core::notifier::IndexNotifier;
-use kaspa_notify::{
+use karlsen_index_core::notifier::IndexNotifier;
+use karlsen_notify::{
     connection::ChannelType,
     events::{EventSwitches, EventType},
     listener::ListenerLifespan,
     scope::{PruningPointUtxoSetOverrideScope, UtxosChangedScope},
     subscription::{context::SubscriptionContext, MutationPolicies, UtxosChangedMutationPolicy},
 };
-use kaspa_utils::{channel::Channel, triggers::SingleTrigger};
+use karlsen_utils::{channel::Channel, triggers::SingleTrigger};
 use karlsen_utxoindex::api::UtxoIndexProxy;
 use std::sync::Arc;
 

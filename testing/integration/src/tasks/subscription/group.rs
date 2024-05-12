@@ -11,8 +11,8 @@ use crate::{
 use async_trait::async_trait;
 use itertools::{chain, Itertools};
 use karlsen_addresses::Address;
-use kaspa_notify::scope::Scope;
-use kaspa_utils::triggers::SingleTrigger;
+use karlsen_notify::scope::Scope;
+use karlsen_utils::triggers::SingleTrigger;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 

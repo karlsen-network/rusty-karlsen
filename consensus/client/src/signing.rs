@@ -9,11 +9,11 @@ use karlsen_consensus_core::hashing::*;
 use karlsen_consensus_core::hashing::sighash_type::{SigHashType, SIG_HASH_ALL};
 use karlsen_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
 use karlsen_consensus_core::tx::{TransactionOutpoint, TransactionOutput, VerifiableTransaction};
-// use kaspa_hashes::{Hash, Hasher, HasherBase, TransactionSigningHash};
+// use karlsen_hashes::{Hash, Hasher, HasherBase, TransactionSigningHash};
 use crate::transaction::{Transaction,ITransaction};
 use crate::input::{ITransactionInput, TransactionInput};
 use crate::utxo::{IUtxoEntry,UtxoEntryReference};
-use kaspa_hashes::{Hash, Hasher, HasherBase, TransactionSigningHash, TransactionSigningHashECDSA, ZERO_HASH};
+use karlsen_hashes::{Hash, Hasher, HasherBase, TransactionSigningHash, TransactionSigningHashECDSA, ZERO_HASH};
 use karlsen_consensus_core::hashing::HasherExtensions;
 use karlsen_consensus_core::hashing::sighash::*;
 

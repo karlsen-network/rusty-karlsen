@@ -7,15 +7,15 @@ use karlsen_consensus_core::config::Config;
 use karlsen_consensus_notify::root::ConsensusNotificationRoot;
 use karlsen_consensusmanager::{ConsensusFactory, ConsensusInstance, DynConsensusCtl, SessionLock};
 use karlsen_core::{debug, time::unix_now, warn};
-use kaspa_database::{
+use karlsen_database::{
     prelude::{
         BatchDbWriter, CachePolicy, CachedDbAccess, CachedDbItem, DirectDbWriter, StoreError, StoreResult, StoreResultExtensions, DB,
     },
     registry::DatabaseStorePrefixes,
 };
 
-use kaspa_txscript::caches::TxScriptCacheCounters;
-use kaspa_utils::mem_size::MemSizeEstimator;
+use karlsen_txscript::caches::TxScriptCacheCounters;
+use karlsen_utils::mem_size::MemSizeEstimator;
 use parking_lot::RwLock;
 use rocksdb::WriteBatch;
 use serde::{Deserialize, Serialize};
@@ -292,7 +292,7 @@ impl ConsensusFactory for Factory {
         };
 
         let dir = self.db_root_dir.join(entry.directory_name.clone());
-        let db = kaspa_database::prelude::ConnBuilder::default()
+        let db = karlsen_database::prelude::ConnBuilder::default()
             .with_db_path(dir)
             .with_parallelism(self.db_parallelism)
             .with_files_limit(self.fd_budget / 2) // active and staging consensuses should have equal budgets
@@ -326,7 +326,7 @@ impl ConsensusFactory for Factory {
 
         let entry = self.management_store.write().new_staging_consensus_entry().unwrap();
         let dir = self.db_root_dir.join(entry.directory_name);
-        let db = kaspa_database::prelude::ConnBuilder::default()
+        let db = karlsen_database::prelude::ConnBuilder::default()
             .with_db_path(dir)
             .with_parallelism(self.db_parallelism)
             .with_files_limit(self.fd_budget / 2) // active and staging consensuses should have equal budgets

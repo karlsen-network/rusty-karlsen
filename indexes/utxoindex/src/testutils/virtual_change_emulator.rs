@@ -5,7 +5,7 @@ use karlsen_consensus_core::{
     utxo::{utxo_collection::UtxoCollection, utxo_diff::UtxoDiff},
     BlockHashSet, HashMapCustomHasher,
 };
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 #[cfg(test)]
 use rand::Rng;
 use rand::{rngs::SmallRng, SeedableRng};

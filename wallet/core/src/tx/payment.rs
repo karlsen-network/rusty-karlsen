@@ -4,7 +4,7 @@
 
 use crate::imports::*;
 use karlsen_consensus_client::{TransactionOutput, TransactionOutputInner};
-use kaspa_txscript::pay_to_address_script;
+use karlsen_txscript::pay_to_address_script;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_PAYMENT_OUTPUTS: &'static str = r#"

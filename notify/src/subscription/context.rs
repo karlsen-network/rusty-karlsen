@@ -86,7 +86,7 @@ mod tests {
     use karlsen_addresses::{Address, Prefix};
     use karlsen_alloc::init_allocator_with_default_settings;
     use karlsen_core::trace;
-    use kaspa_math::Uint256;
+    use karlsen_math::Uint256;
     use std::collections::{HashMap, HashSet};
     use workflow_perf_monitor::mem::get_process_memory_info;
 
@@ -137,7 +137,7 @@ mod tests {
         length_and_capacity: F2,
     ) -> Vec<T> {
         init_allocator_with_default_settings();
-        karlsen_core::log::try_init_logger("INFO,kaspa_notify::subscription::context=trace");
+        karlsen_core::log::try_init_logger("INFO,karlsen_notify::subscription::context=trace");
         measure_consumed_memory(item_len, num_items, ctor, length_and_capacity)
     }
 
@@ -161,7 +161,7 @@ mod tests {
         const NUM_ITEMS: usize = 5;
 
         init_allocator_with_default_settings();
-        karlsen_core::log::try_init_logger("INFO,kaspa_notify::subscription::context=trace");
+        karlsen_core::log::try_init_logger("INFO,karlsen_notify::subscription::context=trace");
 
         trace!("Creating addresses...");
         let addresses = create_addresses(ITEM_LEN);
@@ -392,7 +392,7 @@ mod tests {
     //     const NUM_ITEMS: usize = 1_000_000;
 
     //     init_allocator_with_default_settings();
-    //     karlsen_core::log::try_init_logger("INFO,kaspa_notify::subscription::context=trace");
+    //     karlsen_core::log::try_init_logger("INFO,karlsen_notify::subscription::context=trace");
 
     //     let before = get_process_memory_info().unwrap();
     //     trace!("Creating sets...");

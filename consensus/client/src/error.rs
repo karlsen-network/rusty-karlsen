@@ -14,7 +14,7 @@ pub enum Error {
     Wasm(#[from] workflow_wasm::error::Error),
 
     #[error(transparent)]
-    ScriptBuilder(#[from] kaspa_txscript::script_builder::ScriptBuilderError),
+    ScriptBuilder(#[from] karlsen_txscript::script_builder::ScriptBuilderError),
 
     #[error("{0}")]
     ParseInt(#[from] std::num::ParseIntError),

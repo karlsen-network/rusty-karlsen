@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use karlsen_consensus_core::BlockHasher;
-use kaspa_database::prelude::CachePolicy;
-use kaspa_database::prelude::StoreError;
-use kaspa_database::prelude::DB;
-use kaspa_database::prelude::{BatchDbWriter, CachedDbAccess, DirectDbWriter};
-use kaspa_database::registry::DatabaseStorePrefixes;
-use kaspa_hashes::Hash;
-use kaspa_utils::mem_size::MemSizeEstimator;
+use karlsen_database::prelude::CachePolicy;
+use karlsen_database::prelude::StoreError;
+use karlsen_database::prelude::DB;
+use karlsen_database::prelude::{BatchDbWriter, CachedDbAccess, DirectDbWriter};
+use karlsen_database::registry::DatabaseStorePrefixes;
+use karlsen_hashes::Hash;
+use karlsen_utils::mem_size::MemSizeEstimator;
 use rocksdb::WriteBatch;
 use serde::{Deserialize, Serialize};
 

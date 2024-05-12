@@ -9,7 +9,7 @@ use karlsen_consensus_core::{
     tx::{ScriptPublicKey, ScriptVec, Transaction},
     BlockHashSet,
 };
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 use std::{collections::VecDeque, thread::JoinHandle};
 
 struct OnetimeTxSelector {

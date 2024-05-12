@@ -4,7 +4,7 @@ use crate::pb::{kaspad_message::Payload as KaspadMessagePayload, KaspadMessage};
 use crate::{common::ProtocolError, KaspadMessagePayloadType};
 use crate::{make_message, Peer};
 use karlsen_core::{debug, error, info, trace, warn};
-use kaspa_utils::networking::PeerId;
+use karlsen_utils::networking::PeerId;
 use parking_lot::{Mutex, RwLock};
 use seqlock::SeqLock;
 use std::fmt::{Debug, Display};

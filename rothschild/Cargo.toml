@@ -13,11 +13,11 @@ repository.workspace = true
 karlsen-addresses.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-core.workspace = true
-kaspa-grpc-client.workspace = true
-kaspa-notify.workspace = true
-kaspa-rpc-core.workspace = true
-kaspa-txscript.workspace = true
-kaspa-utils.workspace = true
+karlsen-grpc-client.workspace = true
+karlsen-notify.workspace = true
+karlsen-rpc-core.workspace = true
+karlsen-txscript.workspace = true
+karlsen-utils.workspace = true
 
 async-channel.workspace = true
 clap.workspace = true

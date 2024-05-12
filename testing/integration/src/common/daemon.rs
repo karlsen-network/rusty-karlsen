@@ -1,18 +1,18 @@
 use karlsen_consensus_core::network::NetworkId;
 use karlsen_core::{core::Core, signals::Shutdown, task::runtime::AsyncRuntime};
-use kaspa_database::utils::get_kaspa_tempdir;
-use kaspa_grpc_client::GrpcClient;
-use kaspa_grpc_server::service::GrpcService;
-use kaspa_notify::subscription::context::SubscriptionContext;
-use kaspa_rpc_core::notify::mode::NotificationMode;
-use kaspa_rpc_service::service::RpcCoreService;
-use kaspa_utils::triggers::Listener;
+use karlsen_database::utils::get_kaspa_tempdir;
+use karlsen_grpc_client::GrpcClient;
+use karlsen_grpc_server::service::GrpcService;
+use karlsen_notify::subscription::context::SubscriptionContext;
+use karlsen_rpc_core::notify::mode::NotificationMode;
+use karlsen_rpc_service::service::RpcCoreService;
+use karlsen_utils::triggers::Listener;
 use karlsend_lib::{args::Args, daemon::create_core_with_runtime};
 use parking_lot::RwLock;
 use std::{ops::Deref, sync::Arc, time::Duration};
 use tempfile::TempDir;
 
-use kaspa_grpc_client::ClientPool;
+use karlsen_grpc_client::ClientPool;
 
 pub struct ClientManager {
     pub args: RwLock<Args>,

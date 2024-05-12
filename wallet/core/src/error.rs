@@ -7,7 +7,7 @@ use base64::DecodeError;
 use downcast::DowncastError;
 use karlsen_bip32::Error as BIP32Error;
 use karlsen_consensus_core::sign::Error as CoreSignError;
-use kaspa_rpc_core::RpcError as KaspaRpcError;
+use karlsen_rpc_core::RpcError as KaspaRpcError;
 use karlsen_wrpc_client::error::Error as KaspaWorkflowRpcError;
 use std::sync::PoisonError;
 use thiserror::Error;
@@ -148,7 +148,7 @@ pub enum Error {
     FromUtf8Error(#[from] std::string::FromUtf8Error),
 
     #[error(transparent)]
-    ScriptBuilderError(#[from] kaspa_txscript::script_builder::ScriptBuilderError),
+    ScriptBuilderError(#[from] karlsen_txscript::script_builder::ScriptBuilderError),
 
     #[error("argon2 -> {0}")]
     Argon2(argon2::Error),
@@ -277,10 +277,10 @@ pub enum Error {
     InvalidRange(u64, u64),
 
     #[error(transparent)]
-    MultisigCreateError(#[from] kaspa_txscript::MultisigCreateError),
+    MultisigCreateError(#[from] karlsen_txscript::MultisigCreateError),
 
     #[error(transparent)]
-    TxScriptError(#[from] kaspa_txscript_errors::TxScriptError),
+    TxScriptError(#[from] karlsen_txscript_errors::TxScriptError),
 
     #[error("Legacy account is not initialized")]
     LegacyAccountNotInitialized,
@@ -325,7 +325,7 @@ pub enum Error {
     InvalidPublicKeyLength,
 
     #[error(transparent)]
-    Metrics(#[from] kaspa_metrics_core::error::Error),
+    Metrics(#[from] karlsen_metrics_core::error::Error),
 }
 
 impl From<Aborted> for Error {

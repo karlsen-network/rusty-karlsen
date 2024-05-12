@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-muhash"
+name = "karlsen-muhash"
 description = "Karlsen Muhash library"
 rust-version.workspace = true
 version.workspace = true
@@ -10,8 +10,8 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-kaspa-hashes.workspace = true
-kaspa-math.workspace = true
+karlsen-hashes.workspace = true
+karlsen-math.workspace = true
 rand_chacha.workspace = true
 serde.workspace = true
 

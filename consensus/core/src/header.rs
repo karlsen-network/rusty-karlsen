@@ -1,6 +1,6 @@
 use crate::{hashing, BlueWorkType};
 use borsh::{BorshDeserialize, BorshSerialize};
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 use serde::{Deserialize, Serialize};
 
 /// @category Consensus
@@ -95,7 +95,7 @@ impl Header {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use kaspa_math::Uint192;
+    use karlsen_math::Uint192;
     use serde_json::Value;
 
     #[test]

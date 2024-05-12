@@ -286,7 +286,7 @@ impl DataStack for Stack {
 mod tests {
     use super::OpcodeData;
     use crate::data_stack::SizedEncodeInt;
-    use kaspa_txscript_errors::TxScriptError;
+    use karlsen_txscript_errors::TxScriptError;
 
     // TestScriptNumBytes
     #[test]

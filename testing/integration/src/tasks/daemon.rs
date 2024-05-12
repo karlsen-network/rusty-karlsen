@@ -7,7 +7,7 @@ use clap::Parser;
 use karlsen_addresses::Address;
 use karlsen_consensus_core::network::NetworkType;
 use karlsen_core::{trace, warn};
-use kaspa_utils::{fd_budget, triggers::SingleTrigger};
+use karlsen_utils::{fd_budget, triggers::SingleTrigger};
 use karlsend_lib::args::Args;
 use std::{iter::once, sync::Arc};
 use tokio::task::JoinHandle;

@@ -6,8 +6,8 @@ pub use crate::account::{bip32, keypair, legacy, multisig};
 use crate::encryption::sha256_hash;
 use crate::imports::*;
 use crate::storage::PrvKeyDataId;
-use kaspa_hashes::Hash;
-use kaspa_utils::as_slice::AsSlice;
+use karlsen_hashes::Hash;
+use karlsen_utils::as_slice::AsSlice;
 use secp256k1::PublicKey;
 
 /// Deterministic byte sequence derived from account data (can be used for auxiliary data storage encryption).

@@ -6,7 +6,7 @@ use crate::{
 use blake2b_simd::Params;
 use karlsen_addresses::{Address, Prefix, Version};
 use karlsen_consensus_core::tx::{ScriptPublicKey, ScriptVec};
-use kaspa_txscript_errors::TxScriptError;
+use karlsen_txscript_errors::TxScriptError;
 use smallvec::SmallVec;
 use std::iter::once;
 

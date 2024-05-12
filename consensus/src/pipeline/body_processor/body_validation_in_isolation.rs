@@ -142,7 +142,7 @@ mod tests {
         tx::{scriptvec, ScriptPublicKey, Transaction, TransactionId, TransactionInput, TransactionOutpoint, TransactionOutput},
     };
     use karlsen_core::assert_match;
-    use kaspa_hashes::Hash;
+    use karlsen_hashes::Hash;
 
     #[test]
     fn validate_body_in_isolation_test() {

@@ -141,9 +141,9 @@ mod test {
 
         #[derive(Debug, Default, Deserialize)]
         struct EncryptedMnemonicIntermediate {
-            #[serde(with = "kaspa_utils::serde_bytes")]
+            #[serde(with = "karlsen_utils::serde_bytes")]
             cipher: Vec<u8>,
-            #[serde(with = "kaspa_utils::serde_bytes")]
+            #[serde(with = "karlsen_utils::serde_bytes")]
             salt: Vec<u8>,
         }
         impl From<EncryptedMnemonicIntermediate> for EncryptedMnemonic<Vec<u8>> {

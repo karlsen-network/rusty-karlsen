@@ -20,7 +20,7 @@ impl AsRef<KaspadResponse> for KaspadResponse {
 
 pub mod kaspad_request_convert {
     use crate::protowire::*;
-    use kaspa_rpc_core::{RpcError, RpcResult};
+    use karlsen_rpc_core::{RpcError, RpcResult};
 
     impl_into_kaspad_request!(Shutdown);
     impl_into_kaspad_request!(SubmitBlock);
@@ -70,7 +70,7 @@ pub mod kaspad_request_convert {
     macro_rules! impl_into_kaspad_request {
         ($name:tt) => {
             paste::paste! {
-                impl_into_kaspad_request_ex!(kaspa_rpc_core::[<$name Request>],[<$name RequestMessage>],[<$name Request>]);
+                impl_into_kaspad_request_ex!(karlsen_rpc_core::[<$name Request>],[<$name RequestMessage>],[<$name Request>]);
             }
         };
     }
@@ -151,7 +151,7 @@ pub mod kaspad_request_convert {
 
 pub mod kaspad_response_convert {
     use crate::protowire::*;
-    use kaspa_rpc_core::{RpcError, RpcResult};
+    use karlsen_rpc_core::{RpcError, RpcResult};
 
     impl_into_kaspad_response!(Shutdown);
     impl_into_kaspad_response!(SubmitBlock);
@@ -204,12 +204,12 @@ pub mod kaspad_response_convert {
     macro_rules! impl_into_kaspad_response {
         ($name:tt) => {
             paste::paste! {
-                impl_into_kaspad_response_ex!(kaspa_rpc_core::[<$name Response>],[<$name ResponseMessage>],[<$name Response>]);
+                impl_into_kaspad_response_ex!(karlsen_rpc_core::[<$name Response>],[<$name ResponseMessage>],[<$name Response>]);
             }
         };
         ($core_name:tt, $protowire_name:tt) => {
             paste::paste! {
-                impl_into_kaspad_response_base!(kaspa_rpc_core::[<$core_name Response>],[<$protowire_name ResponseMessage>],[<$protowire_name Response>]);
+                impl_into_kaspad_response_base!(karlsen_rpc_core::[<$core_name Response>],[<$protowire_name ResponseMessage>],[<$protowire_name Response>]);
             }
         };
     }
@@ -314,14 +314,14 @@ pub mod kaspad_response_convert {
             impl_into_kaspad_response!($name);
 
             paste::paste! {
-                impl_into_kaspad_notify_response_ex!(kaspa_rpc_core::[<$name Response>],[<$name ResponseMessage>]);
+                impl_into_kaspad_notify_response_ex!(karlsen_rpc_core::[<$name Response>],[<$name ResponseMessage>]);
             }
         };
         ($core_name:tt, $protowire_name:tt) => {
             impl_into_kaspad_response!($core_name, $protowire_name);
 
             paste::paste! {
-                impl_into_kaspad_notify_response_ex!(kaspa_rpc_core::[<$core_name Response>],[<$protowire_name ResponseMessage>]);
+                impl_into_kaspad_notify_response_ex!(karlsen_rpc_core::[<$core_name Response>],[<$protowire_name ResponseMessage>]);
             }
         };
     }

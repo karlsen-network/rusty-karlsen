@@ -4,10 +4,10 @@ use karlsen_consensus_core::tx::{
     ScriptPublicKey, ScriptPublicKeyVersion, ScriptPublicKeys, ScriptVec, TransactionIndexType, TransactionOutpoint,
 };
 use karlsen_core::debug;
-use kaspa_database::prelude::{CachePolicy, CachedDbAccess, DirectDbWriter, StoreResult, DB};
-use kaspa_database::registry::DatabaseStorePrefixes;
-use kaspa_hashes::Hash;
-use kaspa_index_core::indexed_utxos::BalanceByScriptPublicKey;
+use karlsen_database::prelude::{CachePolicy, CachedDbAccess, DirectDbWriter, StoreResult, DB};
+use karlsen_database::registry::DatabaseStorePrefixes;
+use karlsen_hashes::Hash;
+use karlsen_index_core::indexed_utxos::BalanceByScriptPublicKey;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fmt::Display;
@@ -56,7 +56,7 @@ impl AsRef<[u8]> for ScriptPublicKeyBucket {
 
 // TransactionOutpoint:
 /// Size of the [TransactionOutpointKey] in bytes.
-pub const TRANSACTION_OUTPOINT_KEY_SIZE: usize = kaspa_hashes::HASH_SIZE + size_of::<TransactionIndexType>();
+pub const TRANSACTION_OUTPOINT_KEY_SIZE: usize = karlsen_hashes::HASH_SIZE + size_of::<TransactionIndexType>();
 
 /// [TransactionOutpoint] key which references the [CompactUtxoEntry] within a [ScriptPublicKeyBucket]
 /// Consists of 32 bytes of [TransactionId], followed by 4 bytes of little endian [TransactionIndexType]
@@ -65,9 +65,9 @@ struct TransactionOutpointKey([u8; TRANSACTION_OUTPOINT_KEY_SIZE]);
 
 impl From<TransactionOutpointKey> for TransactionOutpoint {
     fn from(key: TransactionOutpointKey) -> Self {
-        let transaction_id = Hash::from_slice(&key.0[..kaspa_hashes::HASH_SIZE]);
+        let transaction_id = Hash::from_slice(&key.0[..karlsen_hashes::HASH_SIZE]);
         let index = TransactionIndexType::from_le_bytes(
-            <[u8; std::mem::size_of::<TransactionIndexType>()]>::try_from(&key.0[kaspa_hashes::HASH_SIZE..])
+            <[u8; std::mem::size_of::<TransactionIndexType>()]>::try_from(&key.0[karlsen_hashes::HASH_SIZE..])
                 .expect("expected index size"),
         );
         Self::new(transaction_id, index)
@@ -77,8 +77,8 @@ impl From<TransactionOutpointKey> for TransactionOutpoint {
 impl From<&TransactionOutpoint> for TransactionOutpointKey {
     fn from(outpoint: &TransactionOutpoint) -> Self {
         let mut bytes = [0; TRANSACTION_OUTPOINT_KEY_SIZE];
-        bytes[..kaspa_hashes::HASH_SIZE].copy_from_slice(&outpoint.transaction_id.as_bytes());
-        bytes[kaspa_hashes::HASH_SIZE..].copy_from_slice(&outpoint.index.to_le_bytes());
+        bytes[..karlsen_hashes::HASH_SIZE].copy_from_slice(&outpoint.transaction_id.as_bytes());
+        bytes[karlsen_hashes::HASH_SIZE..].copy_from_slice(&outpoint.index.to_le_bytes());
         Self(bytes)
     }
 }

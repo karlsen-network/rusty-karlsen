@@ -6,9 +6,9 @@ use karlsen_core::{
     task::service::{AsyncService, AsyncServiceFuture},
     trace,
 };
-use kaspa_p2p_lib::Adaptor;
-use kaspa_utils::triggers::SingleTrigger;
-use kaspa_utils_tower::counters::TowerConnectionCounters;
+use karlsen_p2p_lib::Adaptor;
+use karlsen_utils::triggers::SingleTrigger;
+use karlsen_utils_tower::counters::TowerConnectionCounters;
 
 use crate::flow_context::FlowContext;
 

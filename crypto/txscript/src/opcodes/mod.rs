@@ -2713,7 +2713,7 @@ mod test {
     }
 
     fn make_mock_transaction(lock_time: u64) -> (VerifiableTransactionMock, TransactionInput, UtxoEntry) {
-        let dummy_prev_out = TransactionOutpoint::new(kaspa_hashes::Hash::from_u64_word(1), 1);
+        let dummy_prev_out = TransactionOutpoint::new(karlsen_hashes::Hash::from_u64_word(1), 1);
         let dummy_sig_script = vec![0u8; 65];
         let dummy_tx_input = TransactionInput::new(dummy_prev_out, dummy_sig_script, 10, 1);
         let addr_hash = vec![1u8; 32];

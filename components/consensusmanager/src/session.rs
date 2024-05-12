@@ -15,7 +15,7 @@ use karlsen_consensus_core::{
     tx::{MutableTransaction, Transaction, TransactionOutpoint, UtxoEntry},
     BlockHashSet, BlueWorkType, ChainPath, Hash,
 };
-use kaspa_utils::sync::rwlock::*;
+use karlsen_utils::sync::rwlock::*;
 use std::{ops::Deref, sync::Arc};
 
 pub use tokio::task::spawn_blocking;

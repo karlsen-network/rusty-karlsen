@@ -5,7 +5,7 @@ use crate::modules::miner::Miner;
 use crate::modules::node::Node;
 use crate::notifier::{Notification, Notifier};
 use crate::result::Result;
-use kaspa_daemon::{DaemonEvent, DaemonKind, Daemons};
+use karlsen_daemon::{DaemonEvent, DaemonKind, Daemons};
 use karlsen_wallet_core::rpc::DynRpcApi;
 use karlsen_wallet_core::storage::{IdT, PrvKeyDataInfo};
 use karlsen_wrpc_client::KaspaRpcClient;

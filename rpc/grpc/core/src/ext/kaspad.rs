@@ -1,4 +1,4 @@
-use kaspa_notify::{scope::Scope, subscription::Command};
+use karlsen_notify::{scope::Scope, subscription::Command};
 
 use crate::protowire::{
     kaspad_request, kaspad_response, KaspadRequest, KaspadResponse, NotifyBlockAddedRequestMessage,

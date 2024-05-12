@@ -4,8 +4,8 @@ use super::IbdFlow;
 use karlsen_consensus_core::blockstatus::BlockStatus;
 use karlsen_consensusmanager::ConsensusProxy;
 use karlsen_core::{debug, warn};
-use kaspa_hashes::Hash;
-use kaspa_p2p_lib::{
+use karlsen_hashes::Hash;
+use karlsen_p2p_lib::{
     common::{ProtocolError, DEFAULT_TIMEOUT},
     dequeue_with_timeout, make_message,
     pb::{kaspad_message::Payload, RequestIbdChainBlockLocatorMessage},

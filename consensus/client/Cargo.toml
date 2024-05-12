@@ -15,10 +15,10 @@ wasm32-types = []
 [dependencies]
 karlsen-addresses.workspace = true
 karlsen-consensus-core.workspace = true
-kaspa-hashes.workspace = true
-kaspa-math.workspace = true
-kaspa-txscript.workspace = true
-kaspa-utils.workspace = true
+karlsen-hashes.workspace = true
+karlsen-math.workspace = true
+karlsen-txscript.workspace = true
+karlsen-utils.workspace = true
 karlsen-wasm-core.workspace = true
 
 ahash.workspace = true

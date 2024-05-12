@@ -1,8 +1,8 @@
 use crate::RpcUtxosByAddressesEntry;
 use karlsen_addresses::Prefix;
 use karlsen_consensus_core::tx::UtxoEntry;
-use kaspa_index_core::indexed_utxos::UtxoSetByScriptPublicKey;
-use kaspa_txscript::extract_script_pub_key_address;
+use karlsen_index_core::indexed_utxos::UtxoSetByScriptPublicKey;
+use karlsen_txscript::extract_script_pub_key_address;
 
 // ----------------------------------------------------------------------------
 // index to rpc_core

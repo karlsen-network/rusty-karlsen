@@ -5,8 +5,8 @@ use karlsen_consensus_core::{
     BlockHashSet,
 };
 use karlsen_core::trace;
-use kaspa_database::prelude::{CachePolicy, StoreResult, DB};
-use kaspa_index_core::indexed_utxos::BalanceByScriptPublicKey;
+use karlsen_database::prelude::{CachePolicy, StoreResult, DB};
+use karlsen_index_core::indexed_utxos::BalanceByScriptPublicKey;
 
 use crate::{
     model::UtxoSetByScriptPublicKey,

@@ -1,6 +1,6 @@
 use crate::errors::BlockProcessResult;
 use karlsen_consensus_core::{block::Block, blockstatus::BlockStatus};
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 use parking_lot::{Condvar, Mutex};
 use std::collections::{
     hash_map::Entry::{Occupied, Vacant},

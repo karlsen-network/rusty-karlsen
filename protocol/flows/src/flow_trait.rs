@@ -1,6 +1,6 @@
 use karlsen_core::warn;
-use kaspa_p2p_lib::{common::ProtocolError, Router};
-use kaspa_utils::any::type_name_short;
+use karlsen_p2p_lib::{common::ProtocolError, Router};
+use karlsen_utils::any::type_name_short;
 use std::sync::Arc;
 
 #[async_trait::async_trait]

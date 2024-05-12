@@ -12,8 +12,8 @@ use karlsen_consensus_core::{
     pruning::{PruningPointProof, PruningPointsList},
     tx::{TransactionId, TransactionOutpoint, UtxoEntry},
 };
-use kaspa_hashes::Hash;
-use kaspa_utils::networking::{IpAddress, PeerId};
+use karlsen_hashes::Hash;
+use karlsen_utils::networking::{IpAddress, PeerId};
 
 use std::sync::Arc;
 

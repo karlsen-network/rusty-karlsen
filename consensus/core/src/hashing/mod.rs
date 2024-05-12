@@ -1,5 +1,5 @@
 use crate::BlueWorkType;
-use kaspa_hashes::HasherBase;
+use karlsen_hashes::HasherBase;
 
 pub mod header;
 pub mod sighash;

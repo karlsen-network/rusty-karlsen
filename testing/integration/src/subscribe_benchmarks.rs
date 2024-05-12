@@ -22,10 +22,10 @@ use karlsen_alloc::init_allocator_with_default_settings;
 use karlsen_consensus::params::Params;
 use karlsen_consensus_core::network::{NetworkId, NetworkType};
 use karlsen_core::{info, task::tick::TickService, trace};
-use kaspa_math::Uint256;
-use kaspa_notify::scope::VirtualDaaScoreChangedScope;
-use kaspa_rpc_core::api::rpc::RpcApi;
-use kaspa_txscript::pay_to_address_script;
+use karlsen_math::Uint256;
+use karlsen_notify::scope::VirtualDaaScoreChangedScope;
+use karlsen_rpc_core::api::rpc::RpcApi;
+use karlsen_txscript::pay_to_address_script;
 use rand::thread_rng;
 use std::{sync::Arc, time::Duration};
 
@@ -76,7 +76,7 @@ fn create_client_addresses(index: usize, network_id: &NetworkId) -> Vec<Address>
 async fn utxos_changed_subscriptions_sanity_check() {
     init_allocator_with_default_settings();
     karlsen_core::log::try_init_logger(
-        "INFO, karlsen_core::time=debug, kaspa_rpc_core=debug, kaspa_grpc_client=debug, kaspa_notify=info, kaspa_notify::address::tracker=debug, kaspa_notify::listener=debug, kaspa_notify::subscription::single=debug, kaspa_mining::monitor=debug, kaspa_testing_integration::subscribe_benchmarks=trace",
+        "INFO, karlsen_core::time=debug, karlsen_rpc_core=debug, karlsen_grpc_client=debug, karlsen_notify=info, karlsen_notify::address::tracker=debug, karlsen_notify::listener=debug, karlsen_notify::subscription::single=debug, karlsen_mining::monitor=debug, kaspa_testing_integration::subscribe_benchmarks=trace",
     );
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();
@@ -133,7 +133,7 @@ async fn utxos_changed_subscriptions_sanity_check() {
 async fn bench_utxos_changed_subscriptions_daemon() {
     init_allocator_with_default_settings();
     karlsen_core::log::try_init_logger(
-        "INFO, karlsen_core::core=trace, karlsen_core::time=debug, kaspa_rpc_core=debug, kaspa_grpc_client=debug, kaspa_notify=info, kaspa_notify::address::tracker=debug, kaspa_notify::listener=debug, kaspa_notify::subscription::single=debug, kaspa_mining::monitor=debug, kaspa_testing_integration::subscribe_benchmarks=trace",
+        "INFO, karlsen_core::core=trace, karlsen_core::time=debug, karlsen_rpc_core=debug, karlsen_grpc_client=debug, karlsen_notify=info, karlsen_notify::address::tracker=debug, karlsen_notify::listener=debug, karlsen_notify::subscription::single=debug, karlsen_mining::monitor=debug, kaspa_testing_integration::subscribe_benchmarks=trace",
     );
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();
@@ -160,7 +160,7 @@ async fn bench_utxos_changed_subscriptions_daemon() {
 async fn utxos_changed_subscriptions_client(address_cycle_seconds: u64, address_max_cycles: usize) {
     init_allocator_with_default_settings();
     karlsen_core::log::try_init_logger(
-        "INFO, karlsen_core::time=debug, kaspa_rpc_core=debug, kaspa_grpc_client=debug, kaspa_notify=info, kaspa_notify::address::tracker=debug, kaspa_notify::listener=debug, kaspa_notify::subscription::single=debug, kaspa_mining::monitor=debug, kaspa_testing_integration::subscribe_benchmarks=trace",
+        "INFO, karlsen_core::time=debug, karlsen_rpc_core=debug, karlsen_grpc_client=debug, karlsen_notify=info, karlsen_notify::address::tracker=debug, karlsen_notify::listener=debug, karlsen_notify::subscription::single=debug, karlsen_mining::monitor=debug, kaspa_testing_integration::subscribe_benchmarks=trace",
     );
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();

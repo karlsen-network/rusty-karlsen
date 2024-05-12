@@ -35,10 +35,10 @@ use karlsen_consensus_core::{
 };
 use karlsen_consensusmanager::SessionLock;
 use karlsen_core::{debug, info, warn};
-use kaspa_database::prelude::{BatchDbWriter, MemoryWriter, StoreResultExtensions, DB};
-use kaspa_hashes::Hash;
-use kaspa_muhash::MuHash;
-use kaspa_utils::iter::IterExtensions;
+use karlsen_database::prelude::{BatchDbWriter, MemoryWriter, StoreResultExtensions, DB};
+use karlsen_hashes::Hash;
+use karlsen_muhash::MuHash;
+use karlsen_utils::iter::IterExtensions;
 use parking_lot::RwLockUpgradableReadGuard;
 use rocksdb::WriteBatch;
 use std::{

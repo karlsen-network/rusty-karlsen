@@ -11,7 +11,7 @@ use karlsen_consensus_core::{
     BlockHashSet, ChainPath,
 };
 use karlsen_core::trace;
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 
 #[derive(Clone)]
 pub struct DagTraversalManager<T: GhostdagStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> {

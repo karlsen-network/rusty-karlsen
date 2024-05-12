@@ -986,21 +986,21 @@ mod tests {
 
     #[tokio::test]
     async fn test_overall() {
-        karlsen_core::log::try_init_logger("trace,kaspa_notify=trace");
+        karlsen_core::log::try_init_logger("trace,karlsen_notify=trace");
         let test = Test::new("BlockAdded broadcast (OverallSubscription type)", 2, overall_test_steps(SUBSCRIPTION_MANAGER_ID));
         test.run().await;
     }
 
     #[tokio::test]
     async fn test_virtual_chain_changed() {
-        karlsen_core::log::try_init_logger("trace,kaspa_notify=trace");
+        karlsen_core::log::try_init_logger("trace,karlsen_notify=trace");
         let test = Test::new("VirtualChainChanged broadcast", 2, virtual_chain_changed_test_steps(SUBSCRIPTION_MANAGER_ID));
         test.run().await;
     }
 
     #[tokio::test]
     async fn test_utxos_changed() {
-        karlsen_core::log::try_init_logger("trace,kaspa_notify=trace");
+        karlsen_core::log::try_init_logger("trace,karlsen_notify=trace");
         let test = Test::new("UtxosChanged broadcast", 3, utxos_changed_test_steps(SUBSCRIPTION_MANAGER_ID));
         test.run().await;
     }

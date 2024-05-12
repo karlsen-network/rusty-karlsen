@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-metrics-core"
+name = "karlsen-metrics-core"
 description = "Tools for collecting and reporting Kaspa p2p node metrics"
 rust-version.workspace = true
 version.workspace = true
@@ -14,7 +14,7 @@ async-trait.workspace = true
 borsh.workspace = true
 futures.workspace = true
 karlsen-core.workspace = true
-kaspa-rpc-core.workspace = true
+karlsen-rpc-core.workspace = true
 separator.workspace = true
 serde.workspace = true
 thiserror.workspace = true

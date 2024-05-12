@@ -28,8 +28,8 @@ use crate::{
 use super::cache_policy_builder::CachePolicyBuilder as PolicyBuilder;
 use itertools::Itertools;
 use karlsen_consensus_core::{blockstatus::BlockStatus, BlockHashSet};
-use kaspa_database::registry::DatabaseStorePrefixes;
-use kaspa_hashes::Hash;
+use karlsen_database::registry::DatabaseStorePrefixes;
+use karlsen_hashes::Hash;
 use parking_lot::RwLock;
 use std::{mem::size_of, ops::DerefMut, sync::Arc};
 

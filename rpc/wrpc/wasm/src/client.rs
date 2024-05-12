@@ -7,13 +7,13 @@ use js_sys::{Function, Object};
 use karlsen_addresses::{Address, AddressOrStringArrayT};
 use karlsen_consensus_client::UtxoEntryReference;
 use karlsen_consensus_core::network::{NetworkType, NetworkTypeT};
-use kaspa_notify::connection::ChannelType;
-use kaspa_notify::events::EventType;
-use kaspa_notify::listener;
-use kaspa_notify::notification::Notification as NotificationT;
-use kaspa_rpc_core::api::ctl;
-pub use kaspa_rpc_core::wasm::message::*;
-pub use kaspa_rpc_macros::{
+use karlsen_notify::connection::ChannelType;
+use karlsen_notify::events::EventType;
+use karlsen_notify::listener;
+use karlsen_notify::notification::Notification as NotificationT;
+use karlsen_rpc_core::api::ctl;
+pub use karlsen_rpc_core::wasm::message::*;
+pub use karlsen_rpc_macros::{
     build_wrpc_wasm_bindgen_interface, build_wrpc_wasm_bindgen_subscriptions, declare_typescript_wasm_interface as declare,
 };
 use karlsen_wasm_core::events::{get_event_targets, Sink};
@@ -137,7 +137,7 @@ pub struct Inner {
     notification_ctl: DuplexChannel,
     callbacks: Arc<Mutex<AHashMap<NotificationEvent, Vec<Sink>>>>,
     listener_id: Arc<Mutex<Option<ListenerId>>>,
-    notification_channel: Channel<kaspa_rpc_core::Notification>,
+    notification_channel: Channel<karlsen_rpc_core::Notification>,
 }
 
 impl Inner {
@@ -698,7 +698,7 @@ impl RpcClient {
                     msg = notification_receiver.recv().fuse() => {
                         if let Ok(notification) = &msg {
                             match &notification {
-                                kaspa_rpc_core::Notification::UtxosChanged(utxos_changed_notification) => {
+                                karlsen_rpc_core::Notification::UtxosChanged(utxos_changed_notification) => {
 
                                     let event_type = EventType::UtxosChanged;
                                     let notification_event = NotificationEvent::Notification(event_type);

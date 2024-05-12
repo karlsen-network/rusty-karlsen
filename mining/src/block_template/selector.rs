@@ -270,7 +270,7 @@ mod tests {
         subnets::SUBNETWORK_ID_NATIVE,
         tx::{Transaction, TransactionId, TransactionInput, TransactionOutpoint, TransactionOutput},
     };
-    use kaspa_txscript::{pay_to_script_hash_signature_script, test_helpers::op_true_script};
+    use karlsen_txscript::{pay_to_script_hash_signature_script, test_helpers::op_true_script};
     use std::{collections::HashSet, sync::Arc};
 
     use crate::{mempool::config::DEFAULT_MINIMUM_RELAY_TRANSACTION_FEE, model::candidate_tx::CandidateTransaction};

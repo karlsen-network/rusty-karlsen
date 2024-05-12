@@ -1,5 +1,5 @@
 use crate::imports::*;
-use kaspa_daemon::KaspadConfig;
+use karlsen_daemon::KaspadConfig;
 use workflow_core::task::sleep;
 use workflow_node::process;
 pub use workflow_node::process::Event;
@@ -20,7 +20,7 @@ impl DefaultSettings for KaspadSettings {
         let mut settings = vec![(Self::Mute, to_value(true).unwrap())];
 
         let root = nw_sys::app::folder();
-        if let Ok(binaries) = kaspa_daemon::locate_binaries(&root, "kaspad").await {
+        if let Ok(binaries) = karlsen_daemon::locate_binaries(&root, "kaspad").await {
             if let Some(path) = binaries.first() {
                 settings.push((Self::Location, to_value(path.to_string_lossy().to_string()).unwrap()));
             }
@@ -205,7 +205,7 @@ impl Node {
 
         match path {
             None => {
-                let binaries = kaspa_daemon::locate_binaries(root.as_str(), "kaspad").await?;
+                let binaries = karlsen_daemon::locate_binaries(root.as_str(), "kaspad").await?;
 
                 if binaries.is_empty() {
                     tprintln!(ctx, "No kaspad binaries found");

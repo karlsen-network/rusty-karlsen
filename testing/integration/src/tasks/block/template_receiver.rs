@@ -5,10 +5,10 @@ use crate::{
 use async_trait::async_trait;
 use karlsen_addresses::Address;
 use karlsen_core::warn;
-use kaspa_grpc_client::GrpcClient;
-use kaspa_notify::{listener::ListenerId, scope::NewBlockTemplateScope};
-use kaspa_rpc_core::{api::rpc::RpcApi, GetBlockTemplateResponse, Notification};
-use kaspa_utils::{channel::Channel, triggers::SingleTrigger};
+use karlsen_grpc_client::GrpcClient;
+use karlsen_notify::{listener::ListenerId, scope::NewBlockTemplateScope};
+use karlsen_rpc_core::{api::rpc::RpcApi, GetBlockTemplateResponse, Notification};
+use karlsen_utils::{channel::Channel, triggers::SingleTrigger};
 use parking_lot::Mutex;
 use std::sync::Arc;
 use tokio::task::JoinHandle;

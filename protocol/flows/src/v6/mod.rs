@@ -14,8 +14,8 @@ use crate::v5::{
 };
 use crate::{flow_context::FlowContext, flow_trait::Flow};
 
-use kaspa_p2p_lib::{KaspadMessagePayloadType, Router, SharedIncomingRoute};
-use kaspa_utils::channel;
+use karlsen_p2p_lib::{KaspadMessagePayloadType, Router, SharedIncomingRoute};
+use karlsen_utils::channel;
 use std::sync::Arc;
 
 use crate::v6::request_pruning_point_and_anticone::PruningPointAndItsAnticoneRequestsFlow;

@@ -52,7 +52,7 @@ impl PrivateKey {
     /// Returns the [`PrivateKey`] key encoded as a hex string.
     #[wasm_bindgen(js_name = toString)]
     pub fn to_hex(&self) -> String {
-        use kaspa_utils::hex::ToHex;
+        use karlsen_utils::hex::ToHex;
         self.secret_bytes().to_vec().to_hex()
     }
 

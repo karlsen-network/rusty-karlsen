@@ -7,7 +7,7 @@ use crate::imports::*;
 use crate::storage::interface::{StorageStream, TransactionRangeResult};
 use crate::storage::TransactionRecord;
 use crate::storage::{Binding, TransactionKind, TransactionRecordStore};
-use kaspa_utils::hex::ToHex;
+use karlsen_utils::hex::ToHex;
 use std::{
     collections::VecDeque,
     path::{Path, PathBuf},

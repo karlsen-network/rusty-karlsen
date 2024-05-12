@@ -104,7 +104,7 @@ macro_rules! default_opts {
         }
 
         opts.optimize_level_style_compaction($self.mem_budget);
-        let guard = kaspa_utils::fd_budget::acquire_guard($self.files_limit)?;
+        let guard = karlsen_utils::fd_budget::acquire_guard($self.files_limit)?;
         opts.set_max_open_files($self.files_limit);
         opts.create_if_missing($self.create_if_missing);
         Ok((opts, guard))
@@ -112,7 +112,7 @@ macro_rules! default_opts {
 }
 
 impl ConnBuilder<PathBuf, false, Unspecified, i32> {
-    pub fn build(self) -> Result<Arc<DB>, kaspa_utils::fd_budget::Error> {
+    pub fn build(self) -> Result<Arc<DB>, karlsen_utils::fd_budget::Error> {
         let (opts, guard) = default_opts!(self)?;
         let db = Arc::new(DB::new(<DBWithThreadMode<MultiThreaded>>::open(&opts, self.db_path.to_str().unwrap()).unwrap(), guard));
         Ok(db)
@@ -120,7 +120,7 @@ impl ConnBuilder<PathBuf, false, Unspecified, i32> {
 }
 
 impl ConnBuilder<PathBuf, true, Unspecified, i32> {
-    pub fn build(self) -> Result<Arc<DB>, kaspa_utils::fd_budget::Error> {
+    pub fn build(self) -> Result<Arc<DB>, karlsen_utils::fd_budget::Error> {
         let (mut opts, guard) = default_opts!(self)?;
         opts.enable_statistics();
         let db = Arc::new(DB::new(<DBWithThreadMode<MultiThreaded>>::open(&opts, self.db_path.to_str().unwrap()).unwrap(), guard));
@@ -129,7 +129,7 @@ impl ConnBuilder<PathBuf, true, Unspecified, i32> {
 }
 
 impl ConnBuilder<PathBuf, true, u32, i32> {
-    pub fn build(self) -> Result<Arc<DB>, kaspa_utils::fd_budget::Error> {
+    pub fn build(self) -> Result<Arc<DB>, karlsen_utils::fd_budget::Error> {
         let (mut opts, guard) = default_opts!(self)?;
         opts.enable_statistics();
         opts.set_report_bg_io_stats(true);

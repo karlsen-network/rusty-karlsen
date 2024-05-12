@@ -21,10 +21,10 @@ karlsen-addresses.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-consensus-wasm.workspace = true
 karlsen-core.workspace = true
-kaspa-math.workspace = true
-kaspa-pow.workspace = true
-kaspa-rpc-core.workspace = true
-kaspa-utils.workspace = true
+karlsen-math.workspace = true
+karlsen-pow.workspace = true
+karlsen-rpc-core.workspace = true
+karlsen-utils.workspace = true
 karlsen-wasm-core.workspace = true
 karlsen-wallet-core.workspace = true
 karlsen-wallet-keys.workspace = true
@@ -39,11 +39,11 @@ workflow-wasm.workspace = true
 [features] 
 wasm32-sdk = [
     "karlsen-wallet-core/wasm32-sdk",
-    "kaspa-pow/wasm32-sdk",
+    "karlsen-pow/wasm32-sdk",
 ]
 wasm32-core = [
     "karlsen-wallet-core/wasm32-core",
-    "kaspa-pow/wasm32-sdk",
+    "karlsen-pow/wasm32-sdk",
 ]
 wasm32-rpc = [
     "karlsen-consensus-core/wasm32-sdk",

@@ -44,7 +44,7 @@ For NodeJS, the SDK is built as a single package containing all features.
 The following is a brief overview of the SDK folder structure (as available in the release):
 
 - `web/kaspa` - **full** Rusty Kaspa WASM32 SDK bindings for use in web browsers.
-- `web/kaspa-rpc` - only the RPC bindings for use in web browsers (reduced WASM binary size).
+- `web/karlsen-rpc` - only the RPC bindings for use in web browsers (reduced WASM binary size).
 - `nodejs/kaspa` - **full** Rusty Kaspa WASM32 SDK bindings for use with NodeJS.
 - `docs` - Rusty Kaspa WASM32 SDK documentation.
 - `examples` folders contain examples for NodeJS and web browsers.

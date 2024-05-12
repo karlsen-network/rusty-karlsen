@@ -38,8 +38,8 @@ use karlsen_consensus_notify::service::NotifyService;
 use karlsen_consensusmanager::ConsensusManager;
 use karlsen_core::task::tick::TickService;
 use karlsen_core::time::unix_now;
-use kaspa_database::utils::get_kaspa_tempdir;
-use kaspa_hashes::Hash;
+use karlsen_database::utils::get_kaspa_tempdir;
+use karlsen_hashes::Hash;
 
 use flate2::read::GzDecoder;
 use futures_util::future::try_join_all;
@@ -48,13 +48,13 @@ use karlsen_core::core::Core;
 use karlsen_core::signals::Shutdown;
 use karlsen_core::task::runtime::AsyncRuntime;
 use karlsen_core::{assert_match, info};
-use kaspa_database::create_temp_db;
-use kaspa_database::prelude::{CachePolicy, ConnBuilder};
-use kaspa_index_processor::service::IndexService;
-use kaspa_math::Uint256;
-use kaspa_muhash::MuHash;
-use kaspa_notify::subscription::context::SubscriptionContext;
-use kaspa_txscript::caches::TxScriptCacheCounters;
+use karlsen_database::create_temp_db;
+use karlsen_database::prelude::{CachePolicy, ConnBuilder};
+use karlsen_index_processor::service::IndexService;
+use karlsen_math::Uint256;
+use karlsen_muhash::MuHash;
+use karlsen_notify::subscription::context::SubscriptionContext;
+use karlsen_txscript::caches::TxScriptCacheCounters;
 use karlsen_utxoindex::api::{UtxoIndexApi, UtxoIndexProxy};
 use karlsen_utxoindex::UtxoIndex;
 use serde::{Deserialize, Serialize};
@@ -1726,7 +1726,7 @@ async fn staging_consensus_test() {
     let consensus_db_dir = db_path.join("consensus");
     let meta_db_dir = db_path.join("meta");
 
-    let meta_db = kaspa_database::prelude::ConnBuilder::default().with_db_path(meta_db_dir).with_files_limit(5).build().unwrap();
+    let meta_db = karlsen_database::prelude::ConnBuilder::default().with_db_path(meta_db_dir).with_files_limit(5).build().unwrap();
 
     let (notification_send, _notification_recv) = unbounded();
     let notification_root = Arc::new(ConsensusNotificationRoot::new(notification_send));

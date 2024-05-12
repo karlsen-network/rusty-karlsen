@@ -3,7 +3,7 @@ use async_channel::{SendError, Sender};
 use futures_util::Future;
 use itertools::Itertools;
 use karlsen_core::trace;
-use kaspa_utils::{any::type_name_short, channel::Channel, triggers::SingleTrigger};
+use karlsen_utils::{any::type_name_short, channel::Channel, triggers::SingleTrigger};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,

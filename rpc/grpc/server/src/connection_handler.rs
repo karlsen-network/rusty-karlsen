@@ -6,14 +6,14 @@ use crate::{
 };
 use futures::{FutureExt, Stream};
 use karlsen_core::{debug, info, warn};
-use kaspa_grpc_core::{
+use karlsen_grpc_core::{
     protowire::{
         rpc_server::{Rpc, RpcServer},
         KaspadRequest, KaspadResponse,
     },
     RPC_MAX_MESSAGE_SIZE,
 };
-use kaspa_notify::{
+use karlsen_notify::{
     connection::ChannelType,
     events::EVENT_TYPE_ARRAY,
     listener::ListenerLifespan,
@@ -21,13 +21,13 @@ use kaspa_notify::{
     subscriber::Subscriber,
     subscription::{context::SubscriptionContext, MutationPolicies, UtxosChangedMutationPolicy},
 };
-use kaspa_rpc_core::{
+use karlsen_rpc_core::{
     api::rpc::DynRpcService,
     notify::{channel::NotificationChannel, connection::ChannelConnection},
     Notification, RpcResult,
 };
-use kaspa_utils::networking::NetAddress;
-use kaspa_utils_tower::{
+use karlsen_utils::networking::NetAddress;
+use karlsen_utils_tower::{
     counters::TowerConnectionCounters,
     middleware::{measure_request_body_size_layer, CountBytesBody, MapResponseBodyLayer},
 };

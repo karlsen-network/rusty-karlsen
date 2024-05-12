@@ -6,7 +6,7 @@ if [ "$1" == "--keygen" ]; then
     wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa-keygen --features wasm32-keygen
 elif [ "$1" == "--rpc" ]; then
     echo "building wasm32-rpc"
-    wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa-rpc --features wasm32-rpc
+    wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/karlsen-rpc --features wasm32-rpc
 elif [ "$1" == "--core" ]; then
     echo "building wasm32-core"
     wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/karlsen-core --features wasm32-core
@@ -19,7 +19,7 @@ else
     echo "building wasm32-keygen"
     wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa-keygen --features wasm32-keygen
     echo "building wasm32-rpc"
-    wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa-rpc --features wasm32-rpc
+    wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/karlsen-rpc --features wasm32-rpc
     echo "building wasm32-core"
     wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/karlsen-core --features wasm32-core
     echo "building wasm32-sdk"

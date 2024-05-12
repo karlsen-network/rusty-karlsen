@@ -420,7 +420,7 @@ Logging in `karlsend` and `simpa` can be [filtered](https://docs.rs/env_logger/0
 2. Adding the --loglevel argument like in the following example:
 
     ```
-    (cargo run --bin karlsend -- --loglevel info,kaspa_rpc_core=trace,kaspa_grpc_core=trace,consensus=trace,karlsen_core=trace) 2>&1 | tee ~/rusty-kaspa.log
+    (cargo run --bin karlsend -- --loglevel info,karlsen_rpc_core=trace,karlsen_grpc_core=trace,consensus=trace,karlsen_core=trace) 2>&1 | tee ~/rusty-kaspa.log
     ```
     In this command we set the `loglevel` to `INFO`.
 

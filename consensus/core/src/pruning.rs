@@ -2,7 +2,7 @@ use crate::{
     header::Header,
     trusted::{TrustedGhostdagData, TrustedHeader},
 };
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 use std::sync::Arc;
 
 pub type PruningPointProof = Vec<Vec<Arc<Header>>>;

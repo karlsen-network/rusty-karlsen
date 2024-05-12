@@ -7,7 +7,7 @@ use karlsen_consensus_core::{
     block::BlockTemplate, blockhash::ORIGIN, coinbase::MinerData, errors::block::RuleError, tx::Transaction,
     utxo::utxo_view::UtxoViewComposition,
 };
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 
 use super::VirtualStateProcessor;
 

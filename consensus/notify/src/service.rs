@@ -9,12 +9,12 @@ use karlsen_core::{
     task::service::{AsyncService, AsyncServiceError, AsyncServiceFuture},
     trace, warn,
 };
-use kaspa_notify::{
+use karlsen_notify::{
     events::{EventSwitches, EVENT_TYPE_ARRAY},
     subscriber::Subscriber,
     subscription::{context::SubscriptionContext, MutationPolicies, UtxosChangedMutationPolicy},
 };
-use kaspa_utils::triggers::SingleTrigger;
+use karlsen_utils::triggers::SingleTrigger;
 use std::sync::Arc;
 
 const NOTIFY_SERVICE: &str = "notify-service";

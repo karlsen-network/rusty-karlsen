@@ -4,8 +4,8 @@ use karlsen_consensus_core::{
     network::{NetworkId, NetworkType},
 };
 use karlsen_core::kaspad_env::version;
-use kaspa_notify::address::tracker::Tracker;
-use kaspa_utils::networking::ContextualNetAddress;
+use karlsen_notify::address::tracker::Tracker;
+use karlsen_utils::networking::ContextualNetAddress;
 use karlsen_wrpc_server::address::WrpcNetAddress;
 use serde::Deserialize;
 use serde_with::{serde_as, DisplayFromStr};
@@ -17,7 +17,7 @@ use karlsen_addresses::Address;
 #[cfg(feature = "devnet-prealloc")]
 use karlsen_consensus_core::tx::{TransactionOutpoint, UtxoEntry};
 #[cfg(feature = "devnet-prealloc")]
-use kaspa_txscript::pay_to_address_script;
+use karlsen_txscript::pay_to_address_script;
 #[cfg(feature = "devnet-prealloc")]
 use std::sync::Arc;
 

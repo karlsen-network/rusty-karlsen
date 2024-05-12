@@ -2,7 +2,7 @@ use crate::model::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 use karlsen_consensus_core::api::stats::BlockCount;
 use karlsen_core::debug;
-use kaspa_notify::subscription::{context::SubscriptionContext, single::UtxosChangedSubscription, Command};
+use karlsen_notify::subscription::{context::SubscriptionContext, single::UtxosChangedSubscription, Command};
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{Display, Formatter},

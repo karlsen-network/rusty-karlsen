@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-p2p-lib"
+name = "karlsen-p2p-lib"
 description = "Karlsen p2p library"
 rust-version.workspace = true
 version.workspace = true
@@ -13,21 +13,21 @@ repository.workspace = true
 path = "./src/lib.rs"
 
 [[bin]]
-name = "kaspa_p2p_client"
+name = "karlsen_p2p_client"
 path = "./src/bin/client.rs"
 
 [[bin]]
-name = "kaspa_p2p_server"
+name = "karlsen_p2p_server"
 path = "./src/bin/server.rs"
 
 [dependencies]
 karlsen-core.workspace = true
 karlsen-consensus-core.workspace = true
-kaspa-mining-errors.workspace = true
-kaspa-hashes.workspace = true
-kaspa-math.workspace = true
-kaspa-utils.workspace = true
-kaspa-utils-tower.workspace = true
+karlsen-mining-errors.workspace = true
+karlsen-hashes.workspace = true
+karlsen-math.workspace = true
+karlsen-utils.workspace = true
+karlsen-utils-tower.workspace = true
 
 borsh.workspace = true
 ctrlc.workspace = true

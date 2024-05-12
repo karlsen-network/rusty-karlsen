@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-p2p-flows"
+name = "karlsen-p2p-flows"
 description = "Karlsen p2p flows"
 rust-version.workspace = true
 version.workspace = true
@@ -13,16 +13,16 @@ repository.workspace = true
 karlsen-core.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-consensus-notify.workspace = true
-kaspa-p2p-lib.workspace = true
-kaspa-utils.workspace = true
-kaspa-utils-tower.workspace = true
-kaspa-hashes.workspace = true
-kaspa-muhash.workspace = true
+karlsen-p2p-lib.workspace = true
+karlsen-utils.workspace = true
+karlsen-utils-tower.workspace = true
+karlsen-hashes.workspace = true
+karlsen-muhash.workspace = true
 karlsen-connectionmanager.workspace = true
 karlsen-addressmanager.workspace = true
 karlsen-consensusmanager.workspace = true
-kaspa-mining.workspace = true
-kaspa-notify.workspace = true
+karlsen-mining.workspace = true
+karlsen-notify.workspace = true
 
 async-trait.workspace = true
 futures = { workspace = true, features = ["alloc"] }

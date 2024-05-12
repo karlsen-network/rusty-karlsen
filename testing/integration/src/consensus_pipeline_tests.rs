@@ -5,8 +5,8 @@ use karlsen_consensus::{
     processes::reachability::tests::StoreValidationExtensions,
 };
 use karlsen_consensus_core::{api::ConsensusApi, blockhash};
-use kaspa_database::prelude::CachePolicy;
-use kaspa_hashes::Hash;
+use karlsen_database::prelude::CachePolicy;
+use karlsen_hashes::Hash;
 use rand_distr::{Distribution, Poisson};
 use std::cmp::min;
 use tokio::join;

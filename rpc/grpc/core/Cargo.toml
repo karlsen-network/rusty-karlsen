@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-grpc-core"
+name = "karlsen-grpc-core"
 description = "Karlsen gRPC core"
 rust-version.workspace = true
 version.workspace = true
@@ -12,9 +12,9 @@ repository.workspace = true
 [dependencies]
 karlsen-consensus-core.workspace = true
 karlsen-core.workspace = true
-kaspa-notify.workspace = true
-kaspa-rpc-core.workspace = true
-kaspa-utils.workspace = true
+karlsen-notify.workspace = true
+karlsen-rpc-core.workspace = true
+karlsen-utils.workspace = true
 
 async-channel.workspace = true
 async-stream.workspace = true

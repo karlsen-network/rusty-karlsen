@@ -27,8 +27,8 @@ mod tests {
             TransactionOutput, UtxoEntry,
         },
     };
-    use kaspa_hashes::Hash;
-    use kaspa_txscript::{
+    use karlsen_hashes::Hash;
+    use karlsen_txscript::{
         pay_to_address_script, pay_to_script_hash_signature_script,
         test_helpers::{create_transaction, op_true_script},
     };

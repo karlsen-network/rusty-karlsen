@@ -16,7 +16,7 @@ use karlsen_consensus_core::{
     utxo::utxo_collection::UtxoCollection,
 };
 use karlsen_core::time::unix_now;
-use kaspa_hashes::ZERO_HASH;
+use karlsen_hashes::ZERO_HASH;
 
 use parking_lot::RwLock;
 use std::{collections::HashMap, sync::Arc};

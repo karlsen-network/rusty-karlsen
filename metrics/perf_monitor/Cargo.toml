@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-perf-monitor"
+name = "karlsen-perf-monitor"
 description = "Karlsen process performance monitoring tools"
 rust-version.workspace = true
 version.workspace = true

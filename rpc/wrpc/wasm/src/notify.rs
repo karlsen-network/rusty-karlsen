@@ -1,5 +1,5 @@
 use crate::imports::*;
-use kaspa_rpc_macros::declare_typescript_wasm_interface as declare;
+use karlsen_rpc_macros::declare_typescript_wasm_interface as declare;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_HEADER: &'static str = r#"

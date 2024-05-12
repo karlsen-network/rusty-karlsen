@@ -10,7 +10,7 @@ pub use cfg_if::cfg_if;
 pub use futures::stream::{Stream, StreamExt, TryStreamExt};
 pub use futures::{future::FutureExt, select};
 pub use karlsen_consensus_core::network::{NetworkId, NetworkType};
-pub use kaspa_utils::hex::*;
+pub use karlsen_utils::hex::*;
 pub use karlsen_wallet_core::compat::*;
 pub use karlsen_wallet_core::prelude::*;
 pub use karlsen_wallet_core::settings::{DefaultSettings, SettingsStore, WalletSettings};

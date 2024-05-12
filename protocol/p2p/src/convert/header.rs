@@ -1,6 +1,6 @@
 use crate::pb as protowire;
 use karlsen_consensus_core::{header::Header, BlueWorkType};
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 
 use super::error::ConversionError;
 use super::option::TryIntoOptionEx;

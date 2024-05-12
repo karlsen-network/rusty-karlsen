@@ -1,12 +1,12 @@
 extern crate karlsen_consensus;
 extern crate karlsen_core;
-extern crate kaspa_hashes;
+extern crate karlsen_hashes;
 
 use std::sync::Arc;
 
 use karlsen_alloc::init_allocator_with_default_settings;
 use karlsen_core::{info, signals::Signals};
-use kaspa_utils::fd_budget;
+use karlsen_utils::fd_budget;
 use karlsend_lib::{
     args::parse_args,
     daemon::{create_core, DESIRED_DAEMON_SOFT_FD_LIMIT, MINIMUM_DAEMON_SOFT_FD_LIMIT},

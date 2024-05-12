@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-mining-errors"
+name = "karlsen-mining-errors"
 description = "Karlsen mining error definitions"
 rust-version.workspace = true
 version.workspace = true

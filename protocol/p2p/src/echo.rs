@@ -150,7 +150,7 @@ mod tests {
     use super::*;
     use crate::{Adaptor, Hub};
     use karlsen_core::debug;
-    use kaspa_utils::networking::NetAddress;
+    use karlsen_utils::networking::NetAddress;
 
     #[tokio::test]
     async fn test_handshake() {

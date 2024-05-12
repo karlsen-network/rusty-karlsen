@@ -1,4 +1,4 @@
-use kaspa_notify::events::EventType;
+use karlsen_notify::events::EventType;
 use karlsen_utxoindex::errors::UtxoIndexError;
 use thiserror::Error;
 

@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-rpc-service"
+name = "karlsen-rpc-service"
 description = "Karlsen RPC service"
 rust-version.workspace = true
 version.workspace = true
@@ -15,18 +15,18 @@ karlsen-consensus-core.workspace = true
 karlsen-consensus-notify.workspace = true
 karlsen-consensusmanager.workspace = true
 karlsen-core.workspace = true
-kaspa-hashes.workspace = true
-kaspa-index-core.workspace = true
-kaspa-math.workspace = true
-kaspa-mining.workspace = true
-kaspa-notify.workspace = true
-kaspa-p2p-flows.workspace = true
-kaspa-p2p-lib.workspace = true
-kaspa-perf-monitor.workspace = true
-kaspa-rpc-core.workspace = true
-kaspa-txscript.workspace = true
-kaspa-utils.workspace = true
-kaspa-utils-tower.workspace = true
+karlsen-hashes.workspace = true
+karlsen-index-core.workspace = true
+karlsen-math.workspace = true
+karlsen-mining.workspace = true
+karlsen-notify.workspace = true
+karlsen-p2p-flows.workspace = true
+karlsen-p2p-lib.workspace = true
+karlsen-perf-monitor.workspace = true
+karlsen-rpc-core.workspace = true
+karlsen-txscript.workspace = true
+karlsen-utils.workspace = true
+karlsen-utils-tower.workspace = true
 karlsen-utxoindex.workspace = true
 
 async-trait.workspace = true

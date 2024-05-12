@@ -4,7 +4,7 @@ use karlsen_consensus_core::{
     trusted::{ExternalGhostdagData, TrustedGhostdagData, TrustedHeader},
     BlockHashMap, BlueWorkType, HashMapCustomHasher, KType,
 };
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 use std::sync::Arc;
 
 // ----------------------------------------------------------------------------

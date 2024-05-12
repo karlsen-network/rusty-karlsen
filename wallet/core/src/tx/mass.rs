@@ -6,7 +6,7 @@ use crate::utxo::NetworkParams;
 use karlsen_consensus_client::UtxoEntryReference;
 use karlsen_consensus_core::tx::{Transaction, TransactionInput, TransactionOutput, SCRIPT_VECTOR_SIZE};
 use karlsen_consensus_core::{config::params::Params, constants::*, subnets::SUBNETWORK_ID_SIZE};
-use kaspa_hashes::HASH_SIZE;
+use karlsen_hashes::HASH_SIZE;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MassCombinationStrategy {

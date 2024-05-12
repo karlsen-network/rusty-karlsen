@@ -6,7 +6,7 @@ use crate::account::Inner;
 use crate::derivation::{AddressDerivationManager, AddressDerivationManagerTrait};
 use crate::imports::*;
 
-pub const MULTISIG_ACCOUNT_KIND: &str = "kaspa-multisig-standard";
+pub const MULTISIG_ACCOUNT_KIND: &str = "karlsen-multisig-standard";
 
 pub struct Ctor {}
 

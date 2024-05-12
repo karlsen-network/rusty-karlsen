@@ -6,12 +6,12 @@
             import { log, logToId, randomId, stringify, currentNetwork, disconnectHandler } from './resources/utils.js';
 
             // import WASM32 SDK
-            import * as kaspa from '../../web/kaspa-rpc/kaspa.js';
+            import * as kaspa from '../../web/karlsen-rpc/kaspa.js';
             let { Resolver, RpcClient, Encoding } = kaspa;
 
             (async () => {
                 // load WASM32 SDK binaries 
-                await kaspa.default('../../web/kaspa-rpc/kaspa_bg.wasm');
+                await kaspa.default('../../web/karlsen-rpc/kaspa_bg.wasm');
 
                 // try {
                     

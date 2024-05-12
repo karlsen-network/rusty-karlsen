@@ -6,8 +6,8 @@ use crate::pb::{
 use crate::{ConnectionInitializer, Router};
 use futures::FutureExt;
 use karlsen_core::{debug, info};
-use kaspa_utils::networking::NetAddress;
-use kaspa_utils_tower::{
+use karlsen_utils::networking::NetAddress;
+use karlsen_utils_tower::{
     counters::TowerConnectionCounters,
     middleware::{measure_request_body_size_layer, CountBytesBody, MapResponseBodyLayer, ServiceBuilder},
 };

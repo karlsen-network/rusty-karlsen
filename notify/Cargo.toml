@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-notify"
+name = "karlsen-notify"
 description = "Karlsen notification subsystem"
 rust-version.workspace = true
 version.workspace = true
@@ -21,10 +21,10 @@ itertools.workspace = true
 karlsen-addresses.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-core.workspace = true
-kaspa-hashes.workspace = true
-kaspa-txscript-errors.workspace = true
-kaspa-txscript.workspace = true
-kaspa-utils.workspace = true
+karlsen-hashes.workspace = true
+karlsen-txscript-errors.workspace = true
+karlsen-txscript.workspace = true
+karlsen-utils.workspace = true
 log.workspace = true
 parking_lot.workspace = true
 paste.workspace = true
@@ -38,7 +38,7 @@ workflow-log.workspace = true
 [dev-dependencies]
 criterion.workspace = true
 karlsen-alloc.workspace = true
-kaspa-math.workspace = true
+karlsen-math.workspace = true
 tokio = { workspace = true, features = ["rt", "macros"] }
 workflow-perf-monitor.workspace = true
 

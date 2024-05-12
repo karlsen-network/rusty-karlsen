@@ -1,7 +1,7 @@
 use crate::constants::{MAX_SOMPI, SEQUENCE_LOCK_TIME_DISABLED, SEQUENCE_LOCK_TIME_MASK};
 use karlsen_consensus_core::{hashing::sighash::SigHashReusedValues, tx::VerifiableTransaction};
 use karlsen_core::warn;
-use kaspa_txscript::{get_sig_op_count, TxScriptEngine};
+use karlsen_txscript::{get_sig_op_count, TxScriptEngine};
 
 use super::{
     errors::{TxResult, TxRuleError},
@@ -165,7 +165,7 @@ mod tests {
     use karlsen_consensus_core::subnets::SubnetworkId;
     use karlsen_consensus_core::tx::{MutableTransaction, PopulatedTransaction, ScriptVec, TransactionId, UtxoEntry};
     use karlsen_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput};
-    use kaspa_txscript_errors::TxScriptError;
+    use karlsen_txscript_errors::TxScriptError;
     use secp256k1::Secp256k1;
     use smallvec::SmallVec;
     use std::iter::once;

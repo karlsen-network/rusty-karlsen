@@ -2,7 +2,7 @@ use crate::imports::*;
 use crate::result::Result;
 use crate::TransactionOutpoint;
 use crate::UtxoEntryReference;
-use kaspa_utils::hex::*;
+use karlsen_utils::hex::*;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_TRANSACTION: &'static str = r#"

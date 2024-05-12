@@ -1,6 +1,6 @@
 use crate::tasks::{DynTask, Task};
 use async_trait::async_trait;
-use kaspa_utils::triggers::SingleTrigger;
+use karlsen_utils::triggers::SingleTrigger;
 use std::{
     io::{BufWriter, Write},
     path::PathBuf,

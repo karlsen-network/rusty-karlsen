@@ -3,16 +3,16 @@ use karlsen_consensus_core::{
     blockhash::{self, BlockHashes},
     BlockHashMap, BlockHashSet, BlockHasher, BlockLevel, HashMapCustomHasher,
 };
-use kaspa_database::{
+use karlsen_database::{
     prelude::{
         BatchDbWriter, Cache, CachePolicy, CachedDbAccess, CachedDbItem, DbKey, DbSetAccess, DbWriter, DirectDbWriter, StoreError, DB,
     },
     registry::{DatabaseStorePrefixes, SEPARATOR},
 };
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 
 use itertools::Itertools;
-use kaspa_utils::mem_size::MemSizeEstimator;
+use karlsen_utils::mem_size::MemSizeEstimator;
 use parking_lot::{RwLockUpgradableReadGuard, RwLockWriteGuard};
 use rocksdb::WriteBatch;
 use serde::{Deserialize, Serialize};
@@ -628,7 +628,7 @@ impl ReachabilityStoreReader for StagingReachabilityStore<'_> {
             .access
             .iterator()
             .map(|r| r.unwrap().0)
-            .map(|k| <[u8; kaspa_hashes::HASH_SIZE]>::try_from(&k[..]).unwrap())
+            .map(|k| <[u8; karlsen_hashes::HASH_SIZE]>::try_from(&k[..]).unwrap())
             .map(Hash::from_bytes)
             .chain(self.staging_writes.keys().copied())
             .collect::<BlockHashSet>()

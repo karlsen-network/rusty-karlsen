@@ -3,7 +3,7 @@ use crate::{
     resolver::{KaspadResponseReceiver, KaspadResponseSender, Resolver},
 };
 use karlsen_core::trace;
-use kaspa_grpc_core::{
+use karlsen_grpc_core::{
     ops::KaspadPayloadOps,
     protowire::{KaspadRequest, KaspadResponse},
 };

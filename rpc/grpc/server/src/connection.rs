@@ -11,17 +11,17 @@ use crate::{
 use async_channel::{bounded, Receiver as MpmcReceiver, Sender as MpmcSender, TrySendError as MpmcTrySendError};
 use itertools::Itertools;
 use karlsen_core::{debug, info, trace, warn};
-use kaspa_grpc_core::{
+use karlsen_grpc_core::{
     ops::KaspadPayloadOps,
     protowire::{KaspadRequest, KaspadResponse},
 };
-use kaspa_notify::{
+use karlsen_notify::{
     connection::Connection as ConnectionT,
     error::Error as NotificationError,
     listener::{ListenerId, ListenerLifespan},
     notifier::Notifier,
 };
-use kaspa_rpc_core::Notification;
+use karlsen_rpc_core::Notification;
 use parking_lot::Mutex;
 use std::{
     collections::{hash_map::Entry, HashMap},
@@ -412,7 +412,7 @@ impl ConnectionT for Connection {
         GrpcEncoding::ProtowireResponse
     }
 
-    fn into_message(notification: &kaspa_rpc_core::Notification, _: &Self::Encoding) -> Self::Message {
+    fn into_message(notification: &karlsen_rpc_core::Notification, _: &Self::Encoding) -> Self::Message {
         Arc::new((notification).into())
     }
 

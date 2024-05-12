@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 
 pub use conn_builder::ConnBuilder;
-use kaspa_utils::fd_budget::FDGuard;
+use karlsen_utils::fd_budget::FDGuard;
 
 mod conn_builder;
 

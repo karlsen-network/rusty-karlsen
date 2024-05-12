@@ -9,7 +9,7 @@ use crate::{
     BlockLevel, KType,
 };
 use karlsen_addresses::Prefix;
-use kaspa_math::Uint256;
+use karlsen_math::Uint256;
 use std::{
     cmp::min,
     time::{SystemTime, UNIX_EPOCH},

@@ -1,8 +1,8 @@
 use std::{cmp::max, sync::Arc};
 
 use karlsen_consensus_core::api::ConsensusApi;
-use kaspa_hashes::Hash;
-use kaspa_p2p_lib::{
+use karlsen_hashes::Hash;
+use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, dequeue_with_request_id, make_response,
     pb::{self, kaspad_message::Payload, BlockHeadersMessage, DoneHeadersMessage},

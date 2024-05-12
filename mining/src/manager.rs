@@ -29,7 +29,7 @@ use karlsen_consensus_core::{
 };
 use karlsen_consensusmanager::{spawn_blocking, ConsensusProxy};
 use karlsen_core::{debug, error, info, time::Stopwatch, warn};
-use kaspa_mining_errors::{manager::MiningManagerError, mempool::RuleError};
+use karlsen_mining_errors::{manager::MiningManagerError, mempool::RuleError};
 use parking_lot::RwLock;
 use std::sync::Arc;
 use tokio::sync::mpsc::UnboundedSender;

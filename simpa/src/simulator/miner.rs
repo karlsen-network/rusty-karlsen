@@ -14,7 +14,7 @@ use karlsen_consensus_core::tx::{
 };
 use karlsen_consensus_core::utxo::utxo_view::UtxoView;
 use karlsen_core::trace;
-use kaspa_utils::sim::{Environment, Process, Resumption, Suspension};
+use karlsen_utils::sim::{Environment, Process, Resumption, Suspension};
 use rand::rngs::ThreadRng;
 use rand::Rng;
 use rand_distr::{Distribution, Exp};

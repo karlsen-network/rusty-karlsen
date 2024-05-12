@@ -8,8 +8,8 @@ use karlsen_consensus_core::{
     blockhash::{BlockHashIteratorExtensions, BlockHashes, ORIGIN},
     BlockHashSet,
 };
-use kaspa_database::prelude::{BatchDbWriter, DbWriter, DirectWriter, StoreError};
-use kaspa_hashes::Hash;
+use karlsen_database::prelude::{BatchDbWriter, DbWriter, DirectWriter, StoreError};
+use karlsen_hashes::Hash;
 use rocksdb::WriteBatch;
 
 /// Initializes this relations store with an `origin` root
@@ -153,8 +153,8 @@ mod tests {
     use super::*;
     use crate::model::stores::relations::{DbRelationsStore, RelationsStoreReader, StagingRelationsStore};
     use karlsen_core::assert_match;
-    use kaspa_database::prelude::{CachePolicy, ConnBuilder};
-    use kaspa_database::{create_temp_db, prelude::MemoryWriter};
+    use karlsen_database::prelude::{CachePolicy, ConnBuilder};
+    use karlsen_database::{create_temp_db, prelude::MemoryWriter};
     use std::sync::Arc;
 
     #[test]

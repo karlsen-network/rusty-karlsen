@@ -5,8 +5,8 @@ use karlsen_consensus_core::{
 };
 use karlsen_consensusmanager::{BlockProcessingBatch, ConsensusProxy};
 use karlsen_core::debug;
-use kaspa_hashes::Hash;
-use kaspa_utils::option::OptionExtensions;
+use karlsen_hashes::Hash;
+use karlsen_utils::option::OptionExtensions;
 use rand::Rng;
 use std::{
     collections::{HashMap, HashSet, VecDeque},

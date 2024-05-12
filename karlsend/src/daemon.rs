@@ -8,13 +8,13 @@ use karlsen_consensus_core::{
 use karlsen_consensus_notify::{root::ConsensusNotificationRoot, service::NotifyService};
 use karlsen_core::{core::Core, info, trace};
 use karlsen_core::{kaspad_env::version, task::tick::TickService};
-use kaspa_database::prelude::CachePolicy;
-use kaspa_grpc_server::service::GrpcService;
-use kaspa_notify::{address::tracker::Tracker, subscription::context::SubscriptionContext};
-use kaspa_rpc_service::service::RpcCoreService;
-use kaspa_txscript::caches::TxScriptCacheCounters;
-use kaspa_utils::networking::ContextualNetAddress;
-use kaspa_utils_tower::counters::TowerConnectionCounters;
+use karlsen_database::prelude::CachePolicy;
+use karlsen_grpc_server::service::GrpcService;
+use karlsen_notify::{address::tracker::Tracker, subscription::context::SubscriptionContext};
+use karlsen_rpc_service::service::RpcCoreService;
+use karlsen_txscript::caches::TxScriptCacheCounters;
+use karlsen_utils::networking::ContextualNetAddress;
+use karlsen_utils_tower::counters::TowerConnectionCounters;
 
 use karlsen_addressmanager::AddressManager;
 use karlsen_consensus::{consensus::factory::Factory as ConsensusFactory, pipeline::ProcessingCounters};
@@ -23,15 +23,15 @@ use karlsen_consensus::{
 };
 use karlsen_consensusmanager::ConsensusManager;
 use karlsen_core::task::runtime::AsyncRuntime;
-use kaspa_index_processor::service::IndexService;
-use kaspa_mining::{
+use karlsen_index_processor::service::IndexService;
+use karlsen_mining::{
     manager::{MiningManager, MiningManagerProxy},
     monitor::MiningMonitor,
     MiningCounters,
 };
-use kaspa_p2p_flows::{flow_context::FlowContext, service::P2pService};
+use karlsen_p2p_flows::{flow_context::FlowContext, service::P2pService};
 
-use kaspa_perf_monitor::{builder::Builder as PerfMonitorBuilder, counters::CountersSnapshot};
+use karlsen_perf_monitor::{builder::Builder as PerfMonitorBuilder, counters::CountersSnapshot};
 use karlsen_utxoindex::{api::UtxoIndexProxy, UtxoIndex};
 use karlsen_wrpc_server::service::{Options as WrpcServerOptions, WebSocketCounters as WrpcServerCounters, WrpcEncoding, WrpcService};
 
@@ -264,7 +264,7 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
     }
 
     // DB used for addresses store and for multi-consensus management
-    let mut meta_db = kaspa_database::prelude::ConnBuilder::default()
+    let mut meta_db = karlsen_database::prelude::ConnBuilder::default()
         .with_db_path(meta_db_dir.clone())
         .with_files_limit(META_DB_FILE_LIMIT)
         .build()
@@ -279,7 +279,7 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
 
         match active_consensus_dir_name {
             Some(dir_name) => {
-                let consensus_db = kaspa_database::prelude::ConnBuilder::default()
+                let consensus_db = karlsen_database::prelude::ConnBuilder::default()
                     .with_db_path(consensus_db_dir.clone().join(dir_name))
                     .with_files_limit(1)
                     .build()
@@ -335,7 +335,7 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
         }
 
         // Reopen the DB
-        meta_db = kaspa_database::prelude::ConnBuilder::default()
+        meta_db = karlsen_database::prelude::ConnBuilder::default()
             .with_db_path(meta_db_dir)
             .with_files_limit(META_DB_FILE_LIMIT)
             .build()
@@ -392,10 +392,10 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
         .with_tick_service(tick_service.clone());
     let perf_monitor = if args.perf_metrics {
         let cb = move |counters: CountersSnapshot| {
-            trace!("[{}] {}", kaspa_perf_monitor::SERVICE_NAME, counters.to_process_metrics_display());
-            trace!("[{}] {}", kaspa_perf_monitor::SERVICE_NAME, counters.to_io_metrics_display());
+            trace!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_process_metrics_display());
+            trace!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_io_metrics_display());
             #[cfg(feature = "heap")]
-            trace!("[{}] heap stats: {:?}", kaspa_perf_monitor::SERVICE_NAME, dhat::HeapStats::get());
+            trace!("[{}] heap stats: {:?}", karlsen_perf_monitor::SERVICE_NAME, dhat::HeapStats::get());
         };
         Arc::new(perf_monitor_builder.with_fetch_cb(cb).build())
     } else {
@@ -405,7 +405,7 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
     let notify_service = Arc::new(NotifyService::new(notification_root.clone(), notification_recv, subscription_context.clone()));
     let index_service: Option<Arc<IndexService>> = if args.utxoindex {
         // Use only a single thread for none-consensus databases
-        let utxoindex_db = kaspa_database::prelude::ConnBuilder::default()
+        let utxoindex_db = karlsen_database::prelude::ConnBuilder::default()
             .with_db_path(utxoindex_db_dir)
             .with_files_limit(utxo_files_limit)
             .build()

@@ -17,9 +17,9 @@ wasm32-types = []
 karlsen-consensus-core.workspace = true
 karlsen-consensus-client.workspace = true
 karlsen-addresses.workspace = true
-kaspa-txscript.workspace = true
-kaspa-hashes.workspace = true
-kaspa-utils.workspace = true
+karlsen-txscript.workspace = true
+karlsen-hashes.workspace = true
+karlsen-utils.workspace = true
 
 cfg-if.workspace = true
 faster-hex.workspace = true

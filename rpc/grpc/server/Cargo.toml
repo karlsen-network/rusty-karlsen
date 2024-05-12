@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-grpc-server"
+name = "karlsen-grpc-server"
 description = "Karlsen gRPC server"
 rust-version.workspace = true
 version.workspace = true
@@ -12,13 +12,13 @@ repository.workspace = true
 [dependencies]
 karlsen-consensus-core.workspace = true
 karlsen-core.workspace = true
-kaspa-grpc-core.workspace = true
-kaspa-notify.workspace = true
-kaspa-rpc-core.workspace = true
-kaspa-rpc-macros.workspace = true
-kaspa-rpc-service.workspace = true
-kaspa-utils-tower.workspace = true
-kaspa-utils.workspace = true
+karlsen-grpc-core.workspace = true
+karlsen-notify.workspace = true
+karlsen-rpc-core.workspace = true
+karlsen-rpc-macros.workspace = true
+karlsen-rpc-service.workspace = true
+karlsen-utils-tower.workspace = true
+karlsen-utils.workspace = true
 
 async-channel.workspace = true
 async-stream.workspace = true
@@ -41,4 +41,4 @@ triggered.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
-kaspa-grpc-client.workspace = true
+karlsen-grpc-client.workspace = true

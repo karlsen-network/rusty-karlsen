@@ -4,7 +4,7 @@ use async_channel::{Receiver, Sender};
 use async_trait::async_trait;
 use core::fmt::Debug;
 use karlsen_core::{debug, trace};
-use kaspa_utils::{channel::Channel, triggers::SingleTrigger};
+use karlsen_utils::{channel::Channel, triggers::SingleTrigger};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,

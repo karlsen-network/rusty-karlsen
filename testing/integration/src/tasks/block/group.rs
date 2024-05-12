@@ -10,7 +10,7 @@ use itertools::chain;
 use karlsen_addresses::Address;
 use karlsen_consensus_core::network::NetworkId;
 use karlsen_core::debug;
-use kaspa_utils::triggers::SingleTrigger;
+use karlsen_utils::triggers::SingleTrigger;
 use rand::thread_rng;
 use std::sync::Arc;
 use tokio::task::JoinHandle;

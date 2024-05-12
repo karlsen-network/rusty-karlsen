@@ -9,10 +9,10 @@ use karlsen_alloc::init_allocator_with_default_settings;
 use karlsen_consensus::params::SIMNET_PARAMS;
 use karlsen_consensusmanager::ConsensusManager;
 use karlsen_core::{task::runtime::AsyncRuntime, trace};
-use kaspa_grpc_client::GrpcClient;
-use kaspa_notify::scope::{BlockAddedScope, UtxosChangedScope, VirtualDaaScoreChangedScope};
-use kaspa_rpc_core::{api::rpc::RpcApi, Notification, RpcTransactionId};
-use kaspa_txscript::pay_to_address_script;
+use karlsen_grpc_client::GrpcClient;
+use karlsen_notify::scope::{BlockAddedScope, UtxosChangedScope, VirtualDaaScoreChangedScope};
+use karlsen_rpc_core::{api::rpc::RpcApi, Notification, RpcTransactionId};
+use karlsen_txscript::pay_to_address_script;
 use karlsend_lib::args::Args;
 use rand::thread_rng;
 use std::{sync::Arc, time::Duration};
@@ -22,7 +22,7 @@ async fn daemon_sanity_test() {
     init_allocator_with_default_settings();
     karlsen_core::log::try_init_logger("INFO");
 
-    // let total_fd_limit =  kaspa_utils::fd_budget::get_limit() / 2 - 128;
+    // let total_fd_limit =  karlsen_utils::fd_budget::get_limit() / 2 - 128;
     let total_fd_limit = 10;
     let mut kaspad1 = Daemon::new_random(total_fd_limit);
     let rpc_client1 = kaspad1.start().await;
@@ -54,7 +54,7 @@ async fn daemon_mining_test() {
         disable_upnp: true, // UPnP registration might take some time and is not needed for this test
         ..Default::default()
     };
-    // let total_fd_limit = kaspa_utils::fd_budget::get_limit() / 2 - 128;
+    // let total_fd_limit = karlsen_utils::fd_budget::get_limit() / 2 - 128;
     let total_fd_limit = 10;
 
     let mut kaspad1 = Daemon::new_random_with_args(args.clone(), total_fd_limit);
@@ -120,7 +120,7 @@ async fn daemon_utxos_propagation_test() {
     let _profiler = dhat::Profiler::builder().file_name("kaspa-testing-integration-heap.json").build();
 
     karlsen_core::log::try_init_logger(
-        "INFO,kaspa_testing_integration=trace,kaspa_notify=debug,kaspa_rpc_core=debug,kaspa_grpc_client=debug",
+        "INFO,kaspa_testing_integration=trace,karlsen_notify=debug,karlsen_rpc_core=debug,karlsen_grpc_client=debug",
     );
 
     let args = Args {
@@ -326,7 +326,7 @@ async fn daemon_utxos_propagation_test() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn daemon_cleaning_test() {
     init_allocator_with_default_settings();
-    karlsen_core::log::try_init_logger("info,kaspa_grpc_core=trace,kaspa_grpc_server=trace,kaspa_grpc_client=trace,karlsen_core=trace");
+    karlsen_core::log::try_init_logger("info,karlsen_grpc_core=trace,karlsen_grpc_server=trace,karlsen_grpc_client=trace,karlsen_core=trace");
     let args = Args { devnet: true, ..Default::default() };
     let consensus_manager;
     let async_runtime;

@@ -15,8 +15,8 @@ use itertools::{
 };
 use karlsen_consensus_core::config::Config;
 use karlsen_core::{debug, info, task::tick::TickService, time::unix_now, warn};
-use kaspa_database::prelude::{CachePolicy, StoreResultExtensions, DB};
-use kaspa_utils::networking::IpAddress;
+use karlsen_database::prelude::{CachePolicy, StoreResultExtensions, DB};
+use karlsen_utils::networking::IpAddress;
 use local_ip_address::list_afinet_netifas;
 use parking_lot::Mutex;
 use stores::banned_address_store::{BannedAddressesStore, BannedAddressesStoreReader, ConnectionBanTimestamp, DbBannedAddressesStore};
@@ -337,8 +337,8 @@ mod address_store_with_cache {
     };
 
     use itertools::Itertools;
-    use kaspa_database::prelude::{CachePolicy, DB};
-    use kaspa_utils::networking::PrefixBucket;
+    use karlsen_database::prelude::{CachePolicy, DB};
+    use karlsen_utils::networking::PrefixBucket;
     use rand::{
         distributions::{WeightedError, WeightedIndex},
         prelude::Distribution,
@@ -517,9 +517,9 @@ mod address_store_with_cache {
         use address_manager::AddressManager;
         use karlsen_consensus_core::config::{params::SIMNET_PARAMS, Config};
         use karlsen_core::task::tick::TickService;
-        use kaspa_database::create_temp_db;
-        use kaspa_database::prelude::ConnBuilder;
-        use kaspa_utils::networking::IpAddress;
+        use karlsen_database::create_temp_db;
+        use karlsen_database::prelude::ConnBuilder;
+        use karlsen_utils::networking::IpAddress;
         use statest::ks::KSTest;
         use statrs::distribution::Uniform;
         use std::net::{IpAddr, Ipv6Addr};

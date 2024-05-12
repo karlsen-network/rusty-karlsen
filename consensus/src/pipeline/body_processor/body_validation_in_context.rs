@@ -5,9 +5,9 @@ use crate::{
     processes::window::WindowManager,
 };
 use karlsen_consensus_core::block::Block;
-use kaspa_database::prelude::StoreResultExtensions;
-use kaspa_hashes::Hash;
-use kaspa_utils::option::OptionExtensions;
+use karlsen_database::prelude::StoreResultExtensions;
+use karlsen_hashes::Hash;
+use karlsen_utils::option::OptionExtensions;
 use std::sync::Arc;
 
 impl BlockBodyProcessor {
@@ -99,7 +99,7 @@ mod tests {
         tx::{Transaction, TransactionInput, TransactionOutpoint},
     };
     use karlsen_core::assert_match;
-    use kaspa_hashes::Hash;
+    use karlsen_hashes::Hash;
 
     #[tokio::test]
     async fn validate_body_in_context_test() {

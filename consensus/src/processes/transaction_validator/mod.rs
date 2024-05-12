@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::model::stores::ghostdag;
 
-use kaspa_txscript::{
+use karlsen_txscript::{
     caches::{Cache, TxScriptCacheCounters},
     SigCacheKey,
 };

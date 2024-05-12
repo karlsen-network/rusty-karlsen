@@ -15,9 +15,9 @@ use karlsen_consensus_core::{
 };
 use karlsen_consensusmanager::{spawn_blocking, ConsensusProxy, StagingConsensus};
 use karlsen_core::{debug, info, time::unix_now, warn};
-use kaspa_hashes::Hash;
-use kaspa_muhash::MuHash;
-use kaspa_p2p_lib::{
+use karlsen_hashes::Hash;
+use karlsen_muhash::MuHash;
+use karlsen_p2p_lib::{
     common::ProtocolError,
     convert::model::trusted::TrustedDataPackage,
     dequeue_with_timeout, make_message,
@@ -27,7 +27,7 @@ use kaspa_p2p_lib::{
     },
     IncomingRoute, Router,
 };
-use kaspa_utils::channel::JobReceiver;
+use karlsen_utils::channel::JobReceiver;
 use std::{
     sync::Arc,
     time::{Duration, Instant},

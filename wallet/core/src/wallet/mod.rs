@@ -17,7 +17,7 @@ use crate::storage::local::interface::LocalStore;
 use crate::storage::local::Storage;
 use crate::wallet::maps::ActiveAccountMap;
 use karlsen_bip32::{ExtendedKey, Language, Mnemonic, Prefix as KeyPrefix, WordCount};
-use kaspa_notify::{
+use karlsen_notify::{
     listener::ListenerId,
     scope::{Scope, VirtualDaaScoreChangedScope},
 };
@@ -1625,7 +1625,7 @@ mod test {
     use karlsen_bip32::{ChildNumber, ExtendedPrivateKey, SecretKey};
     use karlsen_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
     use karlsen_consensus_wasm::{sign_transaction, SignableTransaction, Transaction, TransactionInput, TransactionOutput};
-    use kaspa_txscript::pay_to_address_script;
+    use karlsen_txscript::pay_to_address_script;
 
     async fn create_utxos_context_with_addresses(
         rpc: Arc<DynRpcApi>,

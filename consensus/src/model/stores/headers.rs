@@ -2,12 +2,12 @@ use std::mem::size_of;
 use std::sync::Arc;
 
 use karlsen_consensus_core::{header::Header, BlockHasher, BlockLevel};
-use kaspa_database::prelude::{BatchDbWriter, CachedDbAccess};
-use kaspa_database::prelude::{CachePolicy, DB};
-use kaspa_database::prelude::{StoreError, StoreResult};
-use kaspa_database::registry::DatabaseStorePrefixes;
-use kaspa_hashes::Hash;
-use kaspa_utils::mem_size::MemSizeEstimator;
+use karlsen_database::prelude::{BatchDbWriter, CachedDbAccess};
+use karlsen_database::prelude::{CachePolicy, DB};
+use karlsen_database::prelude::{StoreError, StoreResult};
+use karlsen_database::registry::DatabaseStorePrefixes;
+use karlsen_hashes::Hash;
+use karlsen_utils::mem_size::MemSizeEstimator;
 use rocksdb::WriteBatch;
 use serde::{Deserialize, Serialize};
 

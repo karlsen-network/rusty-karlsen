@@ -3,8 +3,8 @@ use karlsen_consensus_core::{
     utxo::utxo_diff::UtxoDiff,
     BlockHashSet, HashMapCustomHasher,
 };
-use kaspa_hashes::Hash;
-use kaspa_utils::hashmap::NestedHashMapExtensions;
+use karlsen_hashes::Hash;
+use karlsen_utils::hashmap::NestedHashMapExtensions;
 
 use crate::model::{CirculatingSupplyDiff, CompactUtxoEntry, UtxoChanges, UtxoSetByScriptPublicKey};
 

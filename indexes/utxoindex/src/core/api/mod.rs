@@ -4,9 +4,9 @@ use karlsen_consensus_core::{
     BlockHashSet,
 };
 use karlsen_consensusmanager::spawn_blocking;
-use kaspa_database::prelude::StoreResult;
-use kaspa_hashes::Hash;
-use kaspa_index_core::indexed_utxos::BalanceByScriptPublicKey;
+use karlsen_database::prelude::StoreResult;
+use karlsen_hashes::Hash;
+use karlsen_index_core::indexed_utxos::BalanceByScriptPublicKey;
 use parking_lot::RwLock;
 use std::{collections::HashSet, fmt::Debug, sync::Arc};
 

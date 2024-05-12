@@ -31,7 +31,7 @@ pub enum Error {
     WrpcError(#[from] karlsen_wrpc_client::error::Error),
 
     #[error(transparent)]
-    RpcError(#[from] kaspa_rpc_core::RpcError),
+    RpcError(#[from] karlsen_rpc_core::RpcError),
 
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
@@ -103,7 +103,7 @@ pub enum Error {
     NodeJs(#[from] workflow_node::error::Error),
 
     #[error(transparent)]
-    Daemon(#[from] kaspa_daemon::error::Error),
+    Daemon(#[from] karlsen_daemon::error::Error),
 
     #[error(transparent)]
     Dom(#[from] workflow_dom::error::Error),
@@ -118,7 +118,7 @@ pub enum Error {
     PrivateKeyAlreadyExists(String),
 
     #[error(transparent)]
-    MetricsError(kaspa_metrics_core::error::Error),
+    MetricsError(karlsen_metrics_core::error::Error),
 
     #[error(transparent)]
     KaspaWalletKeys(#[from] karlsen_wallet_keys::error::Error),

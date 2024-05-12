@@ -2460,8 +2460,8 @@ dependencies = [
  "itertools 0.11.0",
  "karlsen-consensus-core",
  "karlsen-core",
- "kaspa-database",
- "kaspa-utils",
+ "karlsen-database",
+ "karlsen-utils",
  "local-ip-address",
  "log",
  "parking_lot",
@@ -2491,7 +2491,7 @@ dependencies = [
  "getrandom 0.2.14",
  "hmac",
  "js-sys",
- "kaspa-utils",
+ "karlsen-utils",
  "once_cell",
  "pbkdf2",
  "rand 0.8.5",
@@ -2524,13 +2524,13 @@ dependencies = [
  "karlsen-bip32",
  "karlsen-consensus-core",
  "karlsen-core",
+ "karlsen-daemon",
+ "karlsen-metrics-core",
+ "karlsen-rpc-core",
+ "karlsen-utils",
  "karlsen-wallet-core",
  "karlsen-wallet-keys",
  "karlsen-wrpc-client",
- "kaspa-daemon",
- "kaspa-metrics-core",
- "kaspa-rpc-core",
- "kaspa-utils",
  "nw-sys",
  "pad",
  "regex",
@@ -2561,8 +2561,8 @@ dependencies = [
  "itertools 0.11.0",
  "karlsen-addressmanager",
  "karlsen-core",
- "kaspa-p2p-lib",
- "kaspa-utils",
+ "karlsen-p2p-lib",
+ "karlsen-utils",
  "log",
  "parking_lot",
  "rand 0.8.5",
@@ -2587,16 +2587,16 @@ dependencies = [
  "karlsen-consensus-notify",
  "karlsen-consensusmanager",
  "karlsen-core",
- "kaspa-database",
- "kaspa-hashes",
- "kaspa-math",
- "kaspa-merkle",
- "kaspa-muhash",
- "kaspa-notify",
- "kaspa-pow",
- "kaspa-txscript",
- "kaspa-txscript-errors",
- "kaspa-utils",
+ "karlsen-database",
+ "karlsen-hashes",
+ "karlsen-math",
+ "karlsen-merkle",
+ "karlsen-muhash",
+ "karlsen-notify",
+ "karlsen-pow",
+ "karlsen-txscript",
+ "karlsen-txscript-errors",
+ "karlsen-utils",
  "log",
  "once_cell",
  "parking_lot",
@@ -2624,11 +2624,11 @@ dependencies = [
  "js-sys",
  "karlsen-addresses",
  "karlsen-consensus-core",
+ "karlsen-hashes",
+ "karlsen-math",
+ "karlsen-txscript",
+ "karlsen-utils",
  "karlsen-wasm-core",
- "kaspa-hashes",
- "kaspa-math",
- "kaspa-txscript",
- "kaspa-utils",
  "rand 0.8.5",
  "secp256k1",
  "serde",
@@ -2656,12 +2656,12 @@ dependencies = [
  "js-sys",
  "karlsen-addresses",
  "karlsen-core",
- "kaspa-hashes",
- "kaspa-math",
- "kaspa-merkle",
- "kaspa-muhash",
- "kaspa-txscript-errors",
- "kaspa-utils",
+ "karlsen-hashes",
+ "karlsen-math",
+ "karlsen-merkle",
+ "karlsen-muhash",
+ "karlsen-txscript-errors",
+ "karlsen-utils",
  "rand 0.8.5",
  "secp256k1",
  "serde",
@@ -2687,9 +2687,9 @@ dependencies = [
  "futures",
  "karlsen-consensus-core",
  "karlsen-core",
- "kaspa-hashes",
- "kaspa-notify",
- "kaspa-utils",
+ "karlsen-hashes",
+ "karlsen-notify",
+ "karlsen-utils",
  "log",
  "paste",
  "thiserror",
@@ -2706,9 +2706,9 @@ dependencies = [
  "karlsen-addresses",
  "karlsen-consensus-client",
  "karlsen-consensus-core",
- "kaspa-hashes",
- "kaspa-txscript",
- "kaspa-utils",
+ "karlsen-hashes",
+ "karlsen-txscript",
+ "karlsen-utils",
  "rand 0.8.5",
  "secp256k1",
  "serde",
@@ -2731,7 +2731,7 @@ dependencies = [
  "karlsen-consensus-core",
  "karlsen-consensus-notify",
  "karlsen-core",
- "kaspa-utils",
+ "karlsen-utils",
  "log",
  "parking_lot",
  "rand 0.8.5",
@@ -2757,6 +2757,430 @@ dependencies = [
 ]
 
 [[package]]
+name = "karlsen-daemon"
+version = "0.14.1"
+dependencies = [
+ "async-trait",
+ "borsh",
+ "cfg-if 1.0.0",
+ "downcast-rs",
+ "futures",
+ "karlsen-addresses",
+ "karlsen-consensus-core",
+ "karlsen-wallet-core",
+ "nw-sys",
+ "serde",
+ "thiserror",
+ "workflow-core",
+ "workflow-log",
+ "workflow-node",
+ "workflow-nw",
+ "workflow-store",
+]
+
+[[package]]
+name = "karlsen-database"
+version = "0.14.1"
+dependencies = [
+ "bincode",
+ "enum-primitive-derive",
+ "faster-hex 0.6.1",
+ "indexmap 2.2.6",
+ "itertools 0.11.0",
+ "karlsen-hashes",
+ "karlsen-utils",
+ "num-traits",
+ "num_cpus",
+ "parking_lot",
+ "rand 0.8.5",
+ "rocksdb",
+ "serde",
+ "smallvec",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "karlsen-grpc-client"
+version = "0.14.1"
+dependencies = [
+ "async-channel 2.2.1",
+ "async-stream",
+ "async-trait",
+ "faster-hex 0.6.1",
+ "futures",
+ "futures-util",
+ "h2",
+ "itertools 0.11.0",
+ "karlsen-core",
+ "karlsen-grpc-core",
+ "karlsen-notify",
+ "karlsen-rpc-core",
+ "karlsen-utils",
+ "karlsen-utils-tower",
+ "log",
+ "parking_lot",
+ "paste",
+ "prost",
+ "rand 0.8.5",
+ "regex",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "triggered",
+]
+
+[[package]]
+name = "karlsen-grpc-core"
+version = "0.14.1"
+dependencies = [
+ "async-channel 2.2.1",
+ "async-stream",
+ "async-trait",
+ "faster-hex 0.6.1",
+ "futures",
+ "h2",
+ "karlsen-consensus-core",
+ "karlsen-core",
+ "karlsen-notify",
+ "karlsen-rpc-core",
+ "karlsen-utils",
+ "log",
+ "paste",
+ "prost",
+ "rand 0.8.5",
+ "regex",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tonic-build",
+ "triggered",
+ "workflow-core",
+]
+
+[[package]]
+name = "karlsen-grpc-server"
+version = "0.14.1"
+dependencies = [
+ "async-channel 2.2.1",
+ "async-stream",
+ "async-trait",
+ "faster-hex 0.6.1",
+ "futures",
+ "h2",
+ "itertools 0.11.0",
+ "karlsen-consensus-core",
+ "karlsen-core",
+ "karlsen-grpc-client",
+ "karlsen-grpc-core",
+ "karlsen-notify",
+ "karlsen-rpc-core",
+ "karlsen-rpc-macros",
+ "karlsen-rpc-service",
+ "karlsen-utils",
+ "karlsen-utils-tower",
+ "log",
+ "once_cell",
+ "parking_lot",
+ "paste",
+ "prost",
+ "rand 0.8.5",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "triggered",
+ "uuid 1.6.1",
+]
+
+[[package]]
+name = "karlsen-hashes"
+version = "0.14.1"
+dependencies = [
+ "blake2b_simd",
+ "blake3",
+ "borsh",
+ "cc",
+ "criterion",
+ "faster-hex 0.6.1",
+ "js-sys",
+ "karlsen-utils",
+ "keccak",
+ "once_cell",
+ "rand 0.8.5",
+ "serde",
+ "sha2",
+ "sha3",
+ "wasm-bindgen",
+ "workflow-wasm",
+]
+
+[[package]]
+name = "karlsen-index-core"
+version = "0.14.1"
+dependencies = [
+ "async-channel 2.2.1",
+ "async-trait",
+ "derive_more",
+ "futures",
+ "karlsen-consensus-core",
+ "karlsen-hashes",
+ "karlsen-notify",
+ "karlsen-utils",
+ "log",
+ "paste",
+ "serde",
+ "thiserror",
+ "triggered",
+]
+
+[[package]]
+name = "karlsen-index-processor"
+version = "0.14.1"
+dependencies = [
+ "async-channel 2.2.1",
+ "async-trait",
+ "derive_more",
+ "futures",
+ "karlsen-consensus",
+ "karlsen-consensus-core",
+ "karlsen-consensus-notify",
+ "karlsen-consensusmanager",
+ "karlsen-core",
+ "karlsen-database",
+ "karlsen-hashes",
+ "karlsen-index-core",
+ "karlsen-notify",
+ "karlsen-utils",
+ "karlsen-utxoindex",
+ "log",
+ "parking_lot",
+ "paste",
+ "rand 0.8.5",
+ "thiserror",
+ "tokio",
+ "triggered",
+]
+
+[[package]]
+name = "karlsen-math"
+version = "0.14.1"
+dependencies = [
+ "borsh",
+ "criterion",
+ "faster-hex 0.6.1",
+ "js-sys",
+ "karlsen-utils",
+ "malachite-base",
+ "malachite-nz",
+ "rand_chacha 0.3.1",
+ "serde",
+ "serde-wasm-bindgen",
+ "thiserror",
+ "wasm-bindgen",
+ "workflow-core",
+ "workflow-log",
+ "workflow-wasm",
+]
+
+[[package]]
+name = "karlsen-merkle"
+version = "0.14.1"
+dependencies = [
+ "karlsen-hashes",
+]
+
+[[package]]
+name = "karlsen-metrics-core"
+version = "0.14.1"
+dependencies = [
+ "async-trait",
+ "borsh",
+ "futures",
+ "karlsen-core",
+ "karlsen-rpc-core",
+ "separator",
+ "serde",
+ "thiserror",
+ "workflow-core",
+ "workflow-log",
+]
+
+[[package]]
+name = "karlsen-mining"
+version = "0.14.1"
+dependencies = [
+ "criterion",
+ "futures-util",
+ "itertools 0.11.0",
+ "karlsen-addresses",
+ "karlsen-consensus-core",
+ "karlsen-consensusmanager",
+ "karlsen-core",
+ "karlsen-hashes",
+ "karlsen-mining-errors",
+ "karlsen-muhash",
+ "karlsen-txscript",
+ "karlsen-utils",
+ "log",
+ "parking_lot",
+ "rand 0.8.5",
+ "secp256k1",
+ "serde",
+ "smallvec",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "karlsen-mining-errors"
+version = "0.14.1"
+dependencies = [
+ "karlsen-consensus-core",
+ "thiserror",
+]
+
+[[package]]
+name = "karlsen-muhash"
+version = "0.14.1"
+dependencies = [
+ "criterion",
+ "karlsen-hashes",
+ "karlsen-math",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
+ "rayon",
+ "serde",
+]
+
+[[package]]
+name = "karlsen-notify"
+version = "0.14.1"
+dependencies = [
+ "async-channel 2.2.1",
+ "async-trait",
+ "borsh",
+ "criterion",
+ "derive_more",
+ "futures",
+ "futures-util",
+ "indexmap 2.2.6",
+ "itertools 0.11.0",
+ "karlsen-addresses",
+ "karlsen-alloc",
+ "karlsen-consensus-core",
+ "karlsen-core",
+ "karlsen-hashes",
+ "karlsen-math",
+ "karlsen-txscript",
+ "karlsen-txscript-errors",
+ "karlsen-utils",
+ "log",
+ "parking_lot",
+ "paste",
+ "rand 0.8.5",
+ "serde",
+ "thiserror",
+ "tokio",
+ "triggered",
+ "workflow-core",
+ "workflow-log",
+ "workflow-perf-monitor",
+]
+
+[[package]]
+name = "karlsen-p2p-flows"
+version = "0.14.1"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "indexmap 2.2.6",
+ "itertools 0.11.0",
+ "karlsen-addressmanager",
+ "karlsen-connectionmanager",
+ "karlsen-consensus-core",
+ "karlsen-consensus-notify",
+ "karlsen-consensusmanager",
+ "karlsen-core",
+ "karlsen-hashes",
+ "karlsen-mining",
+ "karlsen-muhash",
+ "karlsen-notify",
+ "karlsen-p2p-lib",
+ "karlsen-utils",
+ "karlsen-utils-tower",
+ "log",
+ "parking_lot",
+ "rand 0.8.5",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "uuid 1.6.1",
+]
+
+[[package]]
+name = "karlsen-p2p-lib"
+version = "0.14.1"
+dependencies = [
+ "borsh",
+ "ctrlc",
+ "futures",
+ "h2",
+ "hex",
+ "itertools 0.11.0",
+ "karlsen-consensus-core",
+ "karlsen-core",
+ "karlsen-hashes",
+ "karlsen-math",
+ "karlsen-mining-errors",
+ "karlsen-utils",
+ "karlsen-utils-tower",
+ "log",
+ "parking_lot",
+ "prost",
+ "rand 0.8.5",
+ "seqlock",
+ "serde",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tonic-build",
+ "uuid 1.6.1",
+]
+
+[[package]]
+name = "karlsen-perf-monitor"
+version = "0.14.1"
+dependencies = [
+ "karlsen-core",
+ "log",
+ "portable-atomic",
+ "thiserror",
+ "tokio",
+ "workflow-perf-monitor",
+]
+
+[[package]]
+name = "karlsen-pow"
+version = "0.14.1"
+dependencies = [
+ "criterion",
+ "js-sys",
+ "karlsen-consensus-client",
+ "karlsen-consensus-core",
+ "karlsen-hashes",
+ "karlsen-math",
+ "karlsen-utils",
+ "num",
+ "wasm-bindgen",
+ "workflow-wasm",
+]
+
+[[package]]
 name = "karlsen-resolver"
 version = "0.14.1"
 dependencies = [
@@ -2768,9 +3192,9 @@ dependencies = [
  "convert_case 0.6.0",
  "futures",
  "karlsen-consensus-core",
+ "karlsen-rpc-core",
+ "karlsen-utils",
  "karlsen-wrpc-client",
- "kaspa-rpc-core",
- "kaspa-utils",
  "mime",
  "serde",
  "serde_json",
@@ -2787,6 +3211,164 @@ dependencies = [
 ]
 
 [[package]]
+name = "karlsen-rpc-core"
+version = "0.14.1"
+dependencies = [
+ "async-channel 2.2.1",
+ "async-trait",
+ "borsh",
+ "cfg-if 1.0.0",
+ "derive_more",
+ "downcast",
+ "faster-hex 0.6.1",
+ "hex",
+ "js-sys",
+ "karlsen-addresses",
+ "karlsen-consensus-client",
+ "karlsen-consensus-core",
+ "karlsen-consensus-notify",
+ "karlsen-consensus-wasm",
+ "karlsen-core",
+ "karlsen-hashes",
+ "karlsen-index-core",
+ "karlsen-math",
+ "karlsen-mining-errors",
+ "karlsen-notify",
+ "karlsen-rpc-macros",
+ "karlsen-txscript",
+ "karlsen-utils",
+ "log",
+ "paste",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "smallvec",
+ "thiserror",
+ "uuid 1.6.1",
+ "wasm-bindgen",
+ "workflow-core",
+ "workflow-wasm",
+]
+
+[[package]]
+name = "karlsen-rpc-macros"
+version = "0.14.1"
+dependencies = [
+ "convert_case 0.6.0",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "karlsen-rpc-service"
+version = "0.14.1"
+dependencies = [
+ "async-trait",
+ "karlsen-addresses",
+ "karlsen-consensus-core",
+ "karlsen-consensus-notify",
+ "karlsen-consensusmanager",
+ "karlsen-core",
+ "karlsen-hashes",
+ "karlsen-index-core",
+ "karlsen-math",
+ "karlsen-mining",
+ "karlsen-notify",
+ "karlsen-p2p-flows",
+ "karlsen-p2p-lib",
+ "karlsen-perf-monitor",
+ "karlsen-rpc-core",
+ "karlsen-txscript",
+ "karlsen-utils",
+ "karlsen-utils-tower",
+ "karlsen-utxoindex",
+ "log",
+ "tokio",
+ "triggered",
+ "workflow-rpc",
+]
+
+[[package]]
+name = "karlsen-txscript"
+version = "0.14.1"
+dependencies = [
+ "blake2b_simd",
+ "borsh",
+ "criterion",
+ "hex",
+ "indexmap 2.2.6",
+ "itertools 0.11.0",
+ "karlsen-addresses",
+ "karlsen-consensus-core",
+ "karlsen-hashes",
+ "karlsen-txscript-errors",
+ "log",
+ "parking_lot",
+ "rand 0.8.5",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "sha2",
+ "smallvec",
+ "thiserror",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "karlsen-txscript-errors"
+version = "0.14.1"
+dependencies = [
+ "secp256k1",
+ "thiserror",
+]
+
+[[package]]
+name = "karlsen-utils"
+version = "0.14.1"
+dependencies = [
+ "async-channel 2.2.1",
+ "async-trait",
+ "bincode",
+ "borsh",
+ "cfg-if 1.0.0",
+ "criterion",
+ "event-listener 2.5.3",
+ "faster-hex 0.6.1",
+ "futures-util",
+ "ipnet",
+ "itertools 0.11.0",
+ "log",
+ "parking_lot",
+ "rand 0.8.5",
+ "rlimit",
+ "serde",
+ "serde_json",
+ "smallvec",
+ "thiserror",
+ "tokio",
+ "triggered",
+ "uuid 1.6.1",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "karlsen-utils-tower"
+version = "0.14.1"
+dependencies = [
+ "cfg-if 1.0.0",
+ "futures",
+ "hyper 0.14.28",
+ "log",
+ "pin-project-lite",
+ "tokio",
+ "tower",
+ "tower-http 0.4.4",
+]
+
+[[package]]
 name = "karlsen-utxoindex"
 version = "0.14.1"
 dependencies = [
@@ -2795,10 +3377,10 @@ dependencies = [
  "karlsen-consensus-core",
  "karlsen-consensusmanager",
  "karlsen-core",
- "kaspa-database",
- "kaspa-hashes",
- "kaspa-index-core",
- "kaspa-utils",
+ "karlsen-database",
+ "karlsen-hashes",
+ "karlsen-index-core",
+ "karlsen-utils",
  "log",
  "parking_lot",
  "rand 0.8.5",
@@ -2870,18 +3452,18 @@ dependencies = [
  "karlsen-consensus-core",
  "karlsen-consensus-wasm",
  "karlsen-core",
+ "karlsen-hashes",
+ "karlsen-metrics-core",
+ "karlsen-notify",
+ "karlsen-rpc-core",
+ "karlsen-txscript",
+ "karlsen-txscript-errors",
+ "karlsen-utils",
  "karlsen-wallet-keys",
  "karlsen-wallet-macros",
  "karlsen-wasm-core",
  "karlsen-wrpc-client",
  "karlsen-wrpc-wasm",
- "kaspa-hashes",
- "kaspa-metrics-core",
- "kaspa-notify",
- "kaspa-rpc-core",
- "kaspa-txscript",
- "kaspa-txscript-errors",
- "kaspa-utils",
  "md-5",
  "pad",
  "pbkdf2",
@@ -2926,10 +3508,10 @@ dependencies = [
  "karlsen-addresses",
  "karlsen-bip32",
  "karlsen-consensus-core",
+ "karlsen-txscript",
+ "karlsen-txscript-errors",
+ "karlsen-utils",
  "karlsen-wasm-core",
- "kaspa-txscript",
- "kaspa-txscript-errors",
- "kaspa-utils",
  "rand 0.8.5",
  "ripemd",
  "secp256k1",
@@ -2969,15 +3551,15 @@ dependencies = [
  "karlsen-consensus-core",
  "karlsen-consensus-wasm",
  "karlsen-core",
+ "karlsen-math",
+ "karlsen-pow",
+ "karlsen-rpc-core",
+ "karlsen-utils",
  "karlsen-wallet-core",
  "karlsen-wallet-keys",
  "karlsen-wasm-core",
  "karlsen-wrpc-client",
  "karlsen-wrpc-wasm",
- "kaspa-math",
- "kaspa-pow",
- "kaspa-rpc-core",
- "kaspa-utils",
  "num",
  "wasm-bindgen",
  "workflow-core",
@@ -3007,9 +3589,9 @@ dependencies = [
  "karlsen-addresses",
  "karlsen-consensus-core",
  "karlsen-consensus-wasm",
- "kaspa-notify",
- "kaspa-rpc-core",
- "kaspa-rpc-macros",
+ "karlsen-notify",
+ "karlsen-rpc-core",
+ "karlsen-rpc-macros",
  "paste",
  "rand 0.8.5",
  "regex",
@@ -3035,9 +3617,9 @@ dependencies = [
  "ctrlc",
  "futures",
  "karlsen-consensus-core",
+ "karlsen-notify",
+ "karlsen-rpc-core",
  "karlsen-wrpc-client",
- "kaspa-notify",
- "kaspa-rpc-core",
  "tokio",
  "workflow-core",
  "workflow-log",
@@ -3050,10 +3632,10 @@ dependencies = [
  "async-trait",
  "clap 4.5.4",
  "karlsen-consensus-core",
+ "karlsen-grpc-client",
+ "karlsen-rpc-core",
+ "karlsen-rpc-macros",
  "karlsen-wrpc-server",
- "kaspa-grpc-client",
- "kaspa-rpc-core",
- "kaspa-rpc-macros",
  "num_cpus",
  "thiserror",
  "tokio",
@@ -3071,12 +3653,12 @@ dependencies = [
  "futures",
  "karlsen-consensus-core",
  "karlsen-core",
- "kaspa-grpc-client",
- "kaspa-notify",
- "kaspa-rpc-core",
- "kaspa-rpc-macros",
- "kaspa-rpc-service",
- "kaspa-utils",
+ "karlsen-grpc-client",
+ "karlsen-notify",
+ "karlsen-rpc-core",
+ "karlsen-rpc-macros",
+ "karlsen-rpc-service",
+ "karlsen-utils",
  "log",
  "num_cpus",
  "openssl",
@@ -3102,11 +3684,11 @@ dependencies = [
  "karlsen-consensus-client",
  "karlsen-consensus-core",
  "karlsen-consensus-wasm",
+ "karlsen-notify",
+ "karlsen-rpc-core",
+ "karlsen-rpc-macros",
  "karlsen-wasm-core",
  "karlsen-wrpc-client",
- "kaspa-notify",
- "kaspa-rpc-core",
- "kaspa-rpc-macros",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -3135,21 +3717,21 @@ dependencies = [
  "karlsen-consensus-notify",
  "karlsen-consensusmanager",
  "karlsen-core",
+ "karlsen-database",
+ "karlsen-grpc-server",
+ "karlsen-hashes",
+ "karlsen-index-processor",
+ "karlsen-mining",
+ "karlsen-notify",
+ "karlsen-p2p-flows",
+ "karlsen-perf-monitor",
+ "karlsen-rpc-core",
+ "karlsen-rpc-service",
+ "karlsen-txscript",
+ "karlsen-utils",
+ "karlsen-utils-tower",
  "karlsen-utxoindex",
  "karlsen-wrpc-server",
- "kaspa-database",
- "kaspa-grpc-server",
- "kaspa-hashes",
- "kaspa-index-processor",
- "kaspa-mining",
- "kaspa-notify",
- "kaspa-p2p-flows",
- "kaspa-perf-monitor",
- "kaspa-rpc-core",
- "kaspa-rpc-service",
- "kaspa-txscript",
- "kaspa-utils",
- "kaspa-utils-tower",
  "log",
  "num_cpus",
  "rand 0.8.5",
@@ -3161,511 +3743,6 @@ dependencies = [
  "tokio",
  "toml 0.8.12",
  "workflow-log",
-]
-
-[[package]]
-name = "kaspa-daemon"
-version = "0.14.1"
-dependencies = [
- "async-trait",
- "borsh",
- "cfg-if 1.0.0",
- "downcast-rs",
- "futures",
- "karlsen-addresses",
- "karlsen-consensus-core",
- "karlsen-wallet-core",
- "nw-sys",
- "serde",
- "thiserror",
- "workflow-core",
- "workflow-log",
- "workflow-node",
- "workflow-nw",
- "workflow-store",
-]
-
-[[package]]
-name = "kaspa-database"
-version = "0.14.1"
-dependencies = [
- "bincode",
- "enum-primitive-derive",
- "faster-hex 0.6.1",
- "indexmap 2.2.6",
- "itertools 0.11.0",
- "kaspa-hashes",
- "kaspa-utils",
- "num-traits",
- "num_cpus",
- "parking_lot",
- "rand 0.8.5",
- "rocksdb",
- "serde",
- "smallvec",
- "tempfile",
- "thiserror",
-]
-
-[[package]]
-name = "kaspa-grpc-client"
-version = "0.14.1"
-dependencies = [
- "async-channel 2.2.1",
- "async-stream",
- "async-trait",
- "faster-hex 0.6.1",
- "futures",
- "futures-util",
- "h2",
- "itertools 0.11.0",
- "karlsen-core",
- "kaspa-grpc-core",
- "kaspa-notify",
- "kaspa-rpc-core",
- "kaspa-utils",
- "kaspa-utils-tower",
- "log",
- "parking_lot",
- "paste",
- "prost",
- "rand 0.8.5",
- "regex",
- "thiserror",
- "tokio",
- "tokio-stream",
- "tonic",
- "triggered",
-]
-
-[[package]]
-name = "kaspa-grpc-core"
-version = "0.14.1"
-dependencies = [
- "async-channel 2.2.1",
- "async-stream",
- "async-trait",
- "faster-hex 0.6.1",
- "futures",
- "h2",
- "karlsen-consensus-core",
- "karlsen-core",
- "kaspa-notify",
- "kaspa-rpc-core",
- "kaspa-utils",
- "log",
- "paste",
- "prost",
- "rand 0.8.5",
- "regex",
- "thiserror",
- "tokio",
- "tokio-stream",
- "tonic",
- "tonic-build",
- "triggered",
- "workflow-core",
-]
-
-[[package]]
-name = "kaspa-grpc-server"
-version = "0.14.1"
-dependencies = [
- "async-channel 2.2.1",
- "async-stream",
- "async-trait",
- "faster-hex 0.6.1",
- "futures",
- "h2",
- "itertools 0.11.0",
- "karlsen-consensus-core",
- "karlsen-core",
- "kaspa-grpc-client",
- "kaspa-grpc-core",
- "kaspa-notify",
- "kaspa-rpc-core",
- "kaspa-rpc-macros",
- "kaspa-rpc-service",
- "kaspa-utils",
- "kaspa-utils-tower",
- "log",
- "once_cell",
- "parking_lot",
- "paste",
- "prost",
- "rand 0.8.5",
- "thiserror",
- "tokio",
- "tokio-stream",
- "tonic",
- "triggered",
- "uuid 1.6.1",
-]
-
-[[package]]
-name = "kaspa-hashes"
-version = "0.14.1"
-dependencies = [
- "blake2b_simd",
- "blake3",
- "borsh",
- "cc",
- "criterion",
- "faster-hex 0.6.1",
- "js-sys",
- "kaspa-utils",
- "keccak",
- "once_cell",
- "rand 0.8.5",
- "serde",
- "sha2",
- "sha3",
- "wasm-bindgen",
- "workflow-wasm",
-]
-
-[[package]]
-name = "kaspa-index-core"
-version = "0.14.1"
-dependencies = [
- "async-channel 2.2.1",
- "async-trait",
- "derive_more",
- "futures",
- "karlsen-consensus-core",
- "kaspa-hashes",
- "kaspa-notify",
- "kaspa-utils",
- "log",
- "paste",
- "serde",
- "thiserror",
- "triggered",
-]
-
-[[package]]
-name = "kaspa-index-processor"
-version = "0.14.1"
-dependencies = [
- "async-channel 2.2.1",
- "async-trait",
- "derive_more",
- "futures",
- "karlsen-consensus",
- "karlsen-consensus-core",
- "karlsen-consensus-notify",
- "karlsen-consensusmanager",
- "karlsen-core",
- "karlsen-utxoindex",
- "kaspa-database",
- "kaspa-hashes",
- "kaspa-index-core",
- "kaspa-notify",
- "kaspa-utils",
- "log",
- "parking_lot",
- "paste",
- "rand 0.8.5",
- "thiserror",
- "tokio",
- "triggered",
-]
-
-[[package]]
-name = "kaspa-math"
-version = "0.14.1"
-dependencies = [
- "borsh",
- "criterion",
- "faster-hex 0.6.1",
- "js-sys",
- "kaspa-utils",
- "malachite-base",
- "malachite-nz",
- "rand_chacha 0.3.1",
- "serde",
- "serde-wasm-bindgen",
- "thiserror",
- "wasm-bindgen",
- "workflow-core",
- "workflow-log",
- "workflow-wasm",
-]
-
-[[package]]
-name = "kaspa-merkle"
-version = "0.14.1"
-dependencies = [
- "kaspa-hashes",
-]
-
-[[package]]
-name = "kaspa-metrics-core"
-version = "0.14.1"
-dependencies = [
- "async-trait",
- "borsh",
- "futures",
- "karlsen-core",
- "kaspa-rpc-core",
- "separator",
- "serde",
- "thiserror",
- "workflow-core",
- "workflow-log",
-]
-
-[[package]]
-name = "kaspa-mining"
-version = "0.14.1"
-dependencies = [
- "criterion",
- "futures-util",
- "itertools 0.11.0",
- "karlsen-addresses",
- "karlsen-consensus-core",
- "karlsen-consensusmanager",
- "karlsen-core",
- "kaspa-hashes",
- "kaspa-mining-errors",
- "kaspa-muhash",
- "kaspa-txscript",
- "kaspa-utils",
- "log",
- "parking_lot",
- "rand 0.8.5",
- "secp256k1",
- "serde",
- "smallvec",
- "thiserror",
- "tokio",
-]
-
-[[package]]
-name = "kaspa-mining-errors"
-version = "0.14.1"
-dependencies = [
- "karlsen-consensus-core",
- "thiserror",
-]
-
-[[package]]
-name = "kaspa-muhash"
-version = "0.14.1"
-dependencies = [
- "criterion",
- "kaspa-hashes",
- "kaspa-math",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
- "rayon",
- "serde",
-]
-
-[[package]]
-name = "kaspa-notify"
-version = "0.14.1"
-dependencies = [
- "async-channel 2.2.1",
- "async-trait",
- "borsh",
- "criterion",
- "derive_more",
- "futures",
- "futures-util",
- "indexmap 2.2.6",
- "itertools 0.11.0",
- "karlsen-addresses",
- "karlsen-alloc",
- "karlsen-consensus-core",
- "karlsen-core",
- "kaspa-hashes",
- "kaspa-math",
- "kaspa-txscript",
- "kaspa-txscript-errors",
- "kaspa-utils",
- "log",
- "parking_lot",
- "paste",
- "rand 0.8.5",
- "serde",
- "thiserror",
- "tokio",
- "triggered",
- "workflow-core",
- "workflow-log",
- "workflow-perf-monitor",
-]
-
-[[package]]
-name = "kaspa-p2p-flows"
-version = "0.14.1"
-dependencies = [
- "async-trait",
- "chrono",
- "futures",
- "indexmap 2.2.6",
- "itertools 0.11.0",
- "karlsen-addressmanager",
- "karlsen-connectionmanager",
- "karlsen-consensus-core",
- "karlsen-consensus-notify",
- "karlsen-consensusmanager",
- "karlsen-core",
- "kaspa-hashes",
- "kaspa-mining",
- "kaspa-muhash",
- "kaspa-notify",
- "kaspa-p2p-lib",
- "kaspa-utils",
- "kaspa-utils-tower",
- "log",
- "parking_lot",
- "rand 0.8.5",
- "thiserror",
- "tokio",
- "tokio-stream",
- "uuid 1.6.1",
-]
-
-[[package]]
-name = "kaspa-p2p-lib"
-version = "0.14.1"
-dependencies = [
- "borsh",
- "ctrlc",
- "futures",
- "h2",
- "hex",
- "itertools 0.11.0",
- "karlsen-consensus-core",
- "karlsen-core",
- "kaspa-hashes",
- "kaspa-math",
- "kaspa-mining-errors",
- "kaspa-utils",
- "kaspa-utils-tower",
- "log",
- "parking_lot",
- "prost",
- "rand 0.8.5",
- "seqlock",
- "serde",
- "thiserror",
- "tokio",
- "tokio-stream",
- "tonic",
- "tonic-build",
- "uuid 1.6.1",
-]
-
-[[package]]
-name = "kaspa-perf-monitor"
-version = "0.14.1"
-dependencies = [
- "karlsen-core",
- "log",
- "portable-atomic",
- "thiserror",
- "tokio",
- "workflow-perf-monitor",
-]
-
-[[package]]
-name = "kaspa-pow"
-version = "0.14.1"
-dependencies = [
- "criterion",
- "js-sys",
- "karlsen-consensus-client",
- "karlsen-consensus-core",
- "kaspa-hashes",
- "kaspa-math",
- "kaspa-utils",
- "num",
- "wasm-bindgen",
- "workflow-wasm",
-]
-
-[[package]]
-name = "kaspa-rpc-core"
-version = "0.14.1"
-dependencies = [
- "async-channel 2.2.1",
- "async-trait",
- "borsh",
- "cfg-if 1.0.0",
- "derive_more",
- "downcast",
- "faster-hex 0.6.1",
- "hex",
- "js-sys",
- "karlsen-addresses",
- "karlsen-consensus-client",
- "karlsen-consensus-core",
- "karlsen-consensus-notify",
- "karlsen-consensus-wasm",
- "karlsen-core",
- "kaspa-hashes",
- "kaspa-index-core",
- "kaspa-math",
- "kaspa-mining-errors",
- "kaspa-notify",
- "kaspa-rpc-macros",
- "kaspa-txscript",
- "kaspa-utils",
- "log",
- "paste",
- "serde",
- "serde-wasm-bindgen",
- "serde_json",
- "smallvec",
- "thiserror",
- "uuid 1.6.1",
- "wasm-bindgen",
- "workflow-core",
- "workflow-wasm",
-]
-
-[[package]]
-name = "kaspa-rpc-macros"
-version = "0.14.1"
-dependencies = [
- "convert_case 0.6.0",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "regex",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "kaspa-rpc-service"
-version = "0.14.1"
-dependencies = [
- "async-trait",
- "karlsen-addresses",
- "karlsen-consensus-core",
- "karlsen-consensus-notify",
- "karlsen-consensusmanager",
- "karlsen-core",
- "karlsen-utxoindex",
- "kaspa-hashes",
- "kaspa-index-core",
- "kaspa-math",
- "kaspa-mining",
- "kaspa-notify",
- "kaspa-p2p-flows",
- "kaspa-p2p-lib",
- "kaspa-perf-monitor",
- "kaspa-rpc-core",
- "kaspa-txscript",
- "kaspa-utils",
- "kaspa-utils-tower",
- "log",
- "tokio",
- "triggered",
- "workflow-rpc",
 ]
 
 [[package]]
@@ -3693,25 +3770,25 @@ dependencies = [
  "karlsen-consensus-notify",
  "karlsen-consensusmanager",
  "karlsen-core",
+ "karlsen-database",
+ "karlsen-grpc-client",
+ "karlsen-grpc-core",
+ "karlsen-grpc-server",
+ "karlsen-hashes",
+ "karlsen-index-processor",
+ "karlsen-math",
+ "karlsen-merkle",
+ "karlsen-muhash",
+ "karlsen-notify",
+ "karlsen-pow",
+ "karlsen-rpc-core",
+ "karlsen-rpc-service",
+ "karlsen-txscript",
+ "karlsen-txscript-errors",
+ "karlsen-utils",
  "karlsen-utxoindex",
  "karlsen-wrpc-server",
  "karlsend",
- "kaspa-database",
- "kaspa-grpc-client",
- "kaspa-grpc-core",
- "kaspa-grpc-server",
- "kaspa-hashes",
- "kaspa-index-processor",
- "kaspa-math",
- "kaspa-merkle",
- "kaspa-muhash",
- "kaspa-notify",
- "kaspa-pow",
- "kaspa-rpc-core",
- "kaspa-rpc-service",
- "kaspa-txscript",
- "kaspa-txscript-errors",
- "kaspa-utils",
  "log",
  "parking_lot",
  "rand 0.8.5",
@@ -3726,83 +3803,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "workflow-perf-monitor",
-]
-
-[[package]]
-name = "kaspa-txscript"
-version = "0.14.1"
-dependencies = [
- "blake2b_simd",
- "borsh",
- "criterion",
- "hex",
- "indexmap 2.2.6",
- "itertools 0.11.0",
- "karlsen-addresses",
- "karlsen-consensus-core",
- "kaspa-hashes",
- "kaspa-txscript-errors",
- "log",
- "parking_lot",
- "rand 0.8.5",
- "secp256k1",
- "serde",
- "serde_json",
- "sha2",
- "smallvec",
- "thiserror",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "kaspa-txscript-errors"
-version = "0.14.1"
-dependencies = [
- "secp256k1",
- "thiserror",
-]
-
-[[package]]
-name = "kaspa-utils"
-version = "0.14.1"
-dependencies = [
- "async-channel 2.2.1",
- "async-trait",
- "bincode",
- "borsh",
- "cfg-if 1.0.0",
- "criterion",
- "event-listener 2.5.3",
- "faster-hex 0.6.1",
- "futures-util",
- "ipnet",
- "itertools 0.11.0",
- "log",
- "parking_lot",
- "rand 0.8.5",
- "rlimit",
- "serde",
- "serde_json",
- "smallvec",
- "thiserror",
- "tokio",
- "triggered",
- "uuid 1.6.1",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "kaspa-utils-tower"
-version = "0.14.1"
-dependencies = [
- "cfg-if 1.0.0",
- "futures",
- "hyper 0.14.28",
- "log",
- "pin-project-lite",
- "tokio",
- "tower",
- "tower-http 0.4.4",
 ]
 
 [[package]]
@@ -5161,11 +5161,11 @@ dependencies = [
  "karlsen-addresses",
  "karlsen-consensus-core",
  "karlsen-core",
- "kaspa-grpc-client",
- "kaspa-notify",
- "kaspa-rpc-core",
- "kaspa-txscript",
- "kaspa-utils",
+ "karlsen-grpc-client",
+ "karlsen-notify",
+ "karlsen-rpc-core",
+ "karlsen-txscript",
+ "karlsen-utils",
  "log",
  "parking_lot",
  "rayon",
@@ -5610,10 +5610,10 @@ dependencies = [
  "karlsen-consensus-core",
  "karlsen-consensus-notify",
  "karlsen-core",
- "kaspa-database",
- "kaspa-hashes",
- "kaspa-perf-monitor",
- "kaspa-utils",
+ "karlsen-database",
+ "karlsen-hashes",
+ "karlsen-perf-monitor",
+ "karlsen-utils",
  "log",
  "num_cpus",
  "rand 0.8.5",

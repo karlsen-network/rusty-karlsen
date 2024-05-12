@@ -1,6 +1,6 @@
 use crate::{flow_context::FlowContext, flow_trait::Flow};
 use karlsen_core::debug;
-use kaspa_p2p_lib::{
+use karlsen_p2p_lib::{
     common::ProtocolError, dequeue_with_request_id, make_response, pb::kaspad_message::Payload, IncomingRoute, Router,
 };
 use std::sync::Arc;

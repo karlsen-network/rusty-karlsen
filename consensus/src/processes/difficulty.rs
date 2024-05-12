@@ -8,7 +8,7 @@ use karlsen_consensus_core::{
     errors::difficulty::{DifficultyError, DifficultyResult},
     BlockHashSet, BlueWorkType,
 };
-use kaspa_math::{Uint256, Uint320};
+use karlsen_math::{Uint256, Uint320};
 use std::{
     cmp::{max, Ordering},
     iter::once_with,

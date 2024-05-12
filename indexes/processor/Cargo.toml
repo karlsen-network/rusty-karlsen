@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-index-processor"
+name = "karlsen-index-processor"
 description = "Karlsen index processor"
 rust-version.workspace = true
 version.workspace = true
@@ -14,11 +14,11 @@ karlsen-consensus-core.workspace = true
 karlsen-consensus-notify.workspace = true
 karlsen-consensusmanager.workspace = true
 karlsen-core.workspace = true
-kaspa-database.workspace = true
-kaspa-hashes.workspace = true
-kaspa-index-core.workspace = true
-kaspa-notify.workspace = true
-kaspa-utils.workspace = true
+karlsen-database.workspace = true
+karlsen-hashes.workspace = true
+karlsen-index-core.workspace = true
+karlsen-notify.workspace = true
+karlsen-utils.workspace = true
 karlsen-utxoindex.workspace = true
 
 async-channel.workspace = true

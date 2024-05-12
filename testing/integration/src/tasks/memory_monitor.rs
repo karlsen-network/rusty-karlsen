@@ -5,7 +5,7 @@ use karlsen_core::{
     task::tick::{TickReason, TickService},
     warn,
 };
-use kaspa_utils::triggers::SingleTrigger;
+use karlsen_utils::triggers::SingleTrigger;
 use std::{sync::Arc, time::Duration};
 use tokio::task::JoinHandle;
 use workflow_perf_monitor::mem::{get_process_memory_info, ProcessMemoryInfo};

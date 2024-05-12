@@ -1,7 +1,7 @@
 use alloc::borrow::Cow;
 use borsh::{BorshDeserialize, BorshSerialize};
 use core::fmt::Formatter;
-use kaspa_utils::{
+use karlsen_utils::{
     hex::{FromHex, ToHex},
     serde_bytes::FromHexVisitor,
 };

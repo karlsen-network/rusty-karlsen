@@ -1,7 +1,7 @@
 use crate::model::message::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 use derive_more::Display;
-use kaspa_notify::{
+use karlsen_notify::{
     events::EventType,
     notification::{full_featured, Notification as NotificationTrait},
     subscription::{

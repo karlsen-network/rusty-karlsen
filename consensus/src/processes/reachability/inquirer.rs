@@ -2,7 +2,7 @@ use super::interval::Interval;
 use super::{tree::*, *};
 use crate::model::stores::reachability::{ReachabilityStore, ReachabilityStoreReader};
 use karlsen_consensus_core::blockhash;
-use kaspa_hashes::Hash;
+use karlsen_hashes::Hash;
 
 /// Init the reachability store to match the state required by the algorithmic layer.
 /// The function first checks the store for possibly being initialized already.
@@ -267,8 +267,8 @@ mod tests {
     };
     use itertools::Itertools;
     use karlsen_consensus_core::blockhash::ORIGIN;
-    use kaspa_database::prelude::ConnBuilder;
-    use kaspa_database::{create_temp_db, prelude::CachePolicy};
+    use karlsen_database::prelude::ConnBuilder;
+    use karlsen_database::{create_temp_db, prelude::CachePolicy};
     use parking_lot::RwLock;
     use rand::seq::IteratorRandom;
     use rocksdb::WriteBatch;

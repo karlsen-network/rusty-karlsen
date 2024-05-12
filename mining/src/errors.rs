@@ -1,2 +1,2 @@
 /// Re-export errors
-pub use kaspa_mining_errors::manager::*;
+pub use karlsen_mining_errors::manager::*;

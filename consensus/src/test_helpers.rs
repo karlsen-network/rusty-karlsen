@@ -5,7 +5,7 @@ use karlsen_consensus_core::{
     tx::{ScriptPublicKey, ScriptVec, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry},
     utxo::utxo_collection::UtxoCollection,
 };
-use kaspa_hashes::{Hash, HASH_SIZE};
+use karlsen_hashes::{Hash, HASH_SIZE};
 use rand::{rngs::SmallRng, seq::SliceRandom, Rng};
 
 pub fn header_from_precomputed_hash(hash: Hash, parents: Vec<Hash>) -> Header {

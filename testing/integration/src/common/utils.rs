@@ -15,9 +15,9 @@ use karlsen_consensus_core::{
     },
 };
 use karlsen_core::info;
-use kaspa_grpc_client::GrpcClient;
-use kaspa_rpc_core::{api::rpc::RpcApi, BlockAddedNotification, Notification, VirtualDaaScoreChangedNotification};
-use kaspa_txscript::pay_to_address_script;
+use karlsen_grpc_client::GrpcClient;
+use karlsen_rpc_core::{api::rpc::RpcApi, BlockAddedNotification, Notification, VirtualDaaScoreChangedNotification};
+use karlsen_txscript::pay_to_address_script;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use secp256k1::Keypair;
 use std::{

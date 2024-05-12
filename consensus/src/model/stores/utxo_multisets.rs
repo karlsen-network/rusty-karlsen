@@ -1,12 +1,12 @@
 use karlsen_consensus_core::BlockHasher;
-use kaspa_database::prelude::CachePolicy;
-use kaspa_database::prelude::StoreError;
-use kaspa_database::prelude::DB;
-use kaspa_database::prelude::{BatchDbWriter, CachedDbAccess, DirectDbWriter};
-use kaspa_database::registry::DatabaseStorePrefixes;
-use kaspa_hashes::Hash;
-use kaspa_math::Uint3072;
-use kaspa_muhash::MuHash;
+use karlsen_database::prelude::CachePolicy;
+use karlsen_database::prelude::StoreError;
+use karlsen_database::prelude::DB;
+use karlsen_database::prelude::{BatchDbWriter, CachedDbAccess, DirectDbWriter};
+use karlsen_database::registry::DatabaseStorePrefixes;
+use karlsen_hashes::Hash;
+use karlsen_math::Uint3072;
+use karlsen_muhash::MuHash;
 use rocksdb::WriteBatch;
 use std::sync::Arc;
 

@@ -4,10 +4,10 @@ pub enum Error {
     Other(String),
 
     #[error(transparent)]
-    GrpcApi(#[from] kaspa_rpc_core::error::RpcError),
+    GrpcApi(#[from] karlsen_rpc_core::error::RpcError),
 
     #[error(transparent)]
-    GrpcClient(#[from] kaspa_grpc_client::error::Error),
+    GrpcClient(#[from] karlsen_grpc_client::error::Error),
 
     #[error(transparent)]
     Wrpc(#[from] karlsen_wrpc_server::error::Error),

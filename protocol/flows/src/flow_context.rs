@@ -24,19 +24,19 @@ use karlsen_core::{
     task::tick::TickService,
 };
 use karlsen_core::{time::unix_now, warn};
-use kaspa_hashes::Hash;
-use kaspa_mining::manager::MiningManagerProxy;
-use kaspa_mining::mempool::tx::{Orphan, Priority};
-use kaspa_notify::notifier::Notify;
-use kaspa_p2p_lib::{
+use karlsen_hashes::Hash;
+use karlsen_mining::manager::MiningManagerProxy;
+use karlsen_mining::mempool::tx::{Orphan, Priority};
+use karlsen_notify::notifier::Notify;
+use karlsen_p2p_lib::{
     common::ProtocolError,
     convert::model::version::Version,
     make_message,
     pb::{kaspad_message::Payload, InvRelayBlockMessage},
     ConnectionInitializer, Hub, KaspadHandshake, PeerKey, PeerProperties, Router,
 };
-use kaspa_utils::iter::IterExtensions;
-use kaspa_utils::networking::PeerId;
+use karlsen_utils::iter::IterExtensions;
+use karlsen_utils::networking::PeerId;
 use parking_lot::{Mutex, RwLock};
 use std::collections::HashMap;
 use std::time::Instant;

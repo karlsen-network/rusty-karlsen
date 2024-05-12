@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-mining"
+name = "karlsen-mining"
 description = "Karlsen mining"
 rust-version.workspace = true
 version.workspace = true
@@ -14,11 +14,11 @@ karlsen-addresses.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-consensusmanager.workspace = true
 karlsen-core.workspace = true
-kaspa-hashes.workspace = true
-kaspa-mining-errors.workspace = true
-kaspa-muhash.workspace = true
-kaspa-txscript.workspace = true
-kaspa-utils.workspace = true
+karlsen-hashes.workspace = true
+karlsen-mining-errors.workspace = true
+karlsen-muhash.workspace = true
+karlsen-txscript.workspace = true
+karlsen-utils.workspace = true
 
 futures-util.workspace = true
 itertools.workspace = true
@@ -31,7 +31,7 @@ thiserror.workspace = true
 tokio = { workspace = true, features = [ "rt-multi-thread", "macros", "signal" ] }
 
 [dev-dependencies]
-kaspa-txscript.workspace = true
+karlsen-txscript.workspace = true
 criterion.workspace = true
 secp256k1.workspace = true
 

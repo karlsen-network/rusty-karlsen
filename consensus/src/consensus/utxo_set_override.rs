@@ -6,8 +6,8 @@ mod utxo_set_override_inner {
     use karlsen_consensus_core::{
         api::ConsensusApi, config::Config, header::Header, muhash::MuHashExtensions, utxo::utxo_collection::UtxoCollection,
     };
-    use kaspa_hashes::Hash;
-    use kaspa_muhash::MuHash;
+    use karlsen_hashes::Hash;
+    use karlsen_muhash::MuHash;
 
     use crate::consensus::Consensus;
 

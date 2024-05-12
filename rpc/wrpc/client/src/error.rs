@@ -21,13 +21,13 @@ pub enum Error {
     RpcError(#[from] RpcError),
 
     #[error("Kaspa RpcApi -> {0}")]
-    RpcApiError(#[from] kaspa_rpc_core::error::RpcError),
+    RpcApiError(#[from] karlsen_rpc_core::error::RpcError),
 
     #[error("Kaspa RpcApi -> {0}")]
     WebSocketError(#[from] WebSocketError),
 
     #[error("Notification subsystem -> {0}")]
-    NotificationError(#[from] kaspa_notify::error::Error),
+    NotificationError(#[from] karlsen_notify::error::Error),
 
     #[error("Channel -> {0}")]
     ChannelError(String),

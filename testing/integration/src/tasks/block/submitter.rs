@@ -5,9 +5,9 @@ use crate::{
 use async_channel::Sender;
 use async_trait::async_trait;
 use karlsen_core::warn;
-use kaspa_grpc_client::ClientPool;
-use kaspa_rpc_core::{api::rpc::RpcApi, RpcBlock};
-use kaspa_utils::triggers::SingleTrigger;
+use karlsen_grpc_client::ClientPool;
+use karlsen_rpc_core::{api::rpc::RpcApi, RpcBlock};
+use karlsen_utils::triggers::SingleTrigger;
 use std::{sync::Arc, time::Duration};
 use tokio::{task::JoinHandle, time::sleep};
 
@@ -39,7 +39,7 @@ impl Task for BlockSubmitterTask {
             loop {
                 match c.submit_block(block.clone(), false).await {
                     Ok(response) => {
-                        assert_eq!(response.report, kaspa_rpc_core::SubmitBlockReport::Success);
+                        assert_eq!(response.report, karlsen_rpc_core::SubmitBlockReport::Success);
                         break;
                     }
                     Err(_) => {

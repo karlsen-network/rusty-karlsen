@@ -1,5 +1,5 @@
 use karlsen_consensus_core::{subnets::SubnetworkConversionError, tx::TransactionId};
-use kaspa_utils::networking::IpAddress;
+use karlsen_utils::networking::IpAddress;
 use std::{net::AddrParseError, num::TryFromIntError};
 use thiserror::Error;
 use workflow_core::channel::ChannelError;
@@ -90,16 +90,16 @@ pub enum RpcError {
     NetworkIdError(#[from] karlsen_consensus_core::network::NetworkIdError),
 
     #[error(transparent)]
-    NotificationError(#[from] kaspa_notify::error::Error),
+    NotificationError(#[from] karlsen_notify::error::Error),
 
     #[error(transparent)]
-    MiningManagerError(#[from] kaspa_mining_errors::manager::MiningManagerError),
+    MiningManagerError(#[from] karlsen_mining_errors::manager::MiningManagerError),
 
     #[error(transparent)]
     ConsensusError(#[from] karlsen_consensus_core::errors::consensus::ConsensusError),
 
     #[error(transparent)]
-    ScriptClassError(#[from] kaspa_txscript::script_class::Error),
+    ScriptClassError(#[from] karlsen_txscript::script_class::Error),
 
     #[error(transparent)]
     NodeIdError(#[from] uuid::Error),

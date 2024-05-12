@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use kaspa_notify::events::EventType;
+use karlsen_notify::events::EventType;
 use serde::{Deserialize, Serialize};
 use workflow_core::enums::Describe;
 

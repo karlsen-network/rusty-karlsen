@@ -16,10 +16,10 @@ karlsen-consensus-core.workspace = true
 karlsen-consensus-notify.workspace = true
 karlsen-consensus.workspace = true
 karlsen-core.workspace = true
-kaspa-database.workspace = true
-kaspa-hashes.workspace = true
-kaspa-perf-monitor.workspace = true
-kaspa-utils.workspace = true
+karlsen-database.workspace = true
+karlsen-hashes.workspace = true
+karlsen-perf-monitor.workspace = true
+karlsen-utils.workspace = true
 
 async-channel.workspace = true
 clap.workspace = true
