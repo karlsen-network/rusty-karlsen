@@ -119,12 +119,12 @@ kaspa-txscript = { version = "0.14.1", path = "crypto/txscript" }
 kaspa-txscript-errors = { version = "0.14.1", path = "crypto/txscript/errors" }
 kaspa-utils = { version = "0.14.1", path = "utils" }
 kaspa-utils-tower = { version = "0.14.1", path = "utils/tower" }
-kaspa-utxoindex = { version = "0.14.1", path = "indexes/utxoindex" }
-kaspa-wallet = { version = "0.14.1", path = "wallet/native" }
-kaspa-wallet-cli-wasm = { version = "0.14.1", path = "wallet/wasm" }
-kaspa-wallet-keys = { version = "0.14.1", path = "wallet/keys" }
-kaspa-wallet-core = { version = "0.14.1", path = "wallet/core" }
-kaspa-wallet-macros = { version = "0.14.1", path = "wallet/macros" }
+karlsen-utxoindex = { version = "0.14.1", path = "indexes/utxoindex" }
+karlsen-wallet = { version = "0.14.1", path = "wallet/native" }
+karlsen-wallet-cli-wasm = { version = "0.14.1", path = "wallet/wasm" }
+karlsen-wallet-keys = { version = "0.14.1", path = "wallet/keys" }
+karlsen-wallet-core = { version = "0.14.1", path = "wallet/core" }
+karlsen-wallet-macros = { version = "0.14.1", path = "wallet/macros" }
 kaspa-wasm = { version = "0.14.1", path = "wasm" }
 kaspa-wasm-core = { version = "0.14.1", path = "wasm/core" }
 kaspa-wrpc-client = { version = "0.14.1", path = "rpc/wrpc/client" }
@@ -134,7 +134,7 @@ kaspa-wrpc-server = { version = "0.14.1", path = "rpc/wrpc/server" }
 kaspa-wrpc-wasm = { version = "0.14.1", path = "rpc/wrpc/wasm" }
 kaspa-wrpc-example-subscriber = { version = "0.14.1", path = "rpc/wrpc/examples/subscriber" }
 karlsend = { version = "0.14.1", path = "karlsend" }
-kaspa-alloc = { version = "0.14.1", path = "utils/alloc" }
+karlsen-alloc = { version = "0.14.1", path = "utils/alloc" }
 
 # external
 aes = "0.8.3"

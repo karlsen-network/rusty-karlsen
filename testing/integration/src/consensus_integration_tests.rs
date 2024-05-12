@@ -3,7 +3,7 @@
 //!
 
 use async_channel::unbounded;
-use kaspa_alloc::init_allocator_with_default_settings;
+use karlsen_alloc::init_allocator_with_default_settings;
 use kaspa_consensus::config::genesis::GENESIS;
 use kaspa_consensus::config::{Config, ConfigBuilder};
 use kaspa_consensus::consensus::factory::Factory as ConsensusFactory;
@@ -55,8 +55,8 @@ use kaspa_math::Uint256;
 use kaspa_muhash::MuHash;
 use kaspa_notify::subscription::context::SubscriptionContext;
 use kaspa_txscript::caches::TxScriptCacheCounters;
-use kaspa_utxoindex::api::{UtxoIndexApi, UtxoIndexProxy};
-use kaspa_utxoindex::UtxoIndex;
+use karlsen_utxoindex::api::{UtxoIndexApi, UtxoIndexProxy};
+use karlsen_utxoindex::UtxoIndex;
 use serde::{Deserialize, Serialize};
 use std::cmp::{max, Ordering};
 use std::collections::HashSet;

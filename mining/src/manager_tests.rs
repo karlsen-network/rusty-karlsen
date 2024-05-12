@@ -904,8 +904,8 @@ mod tests {
 
     fn generate_new_coinbase(address_prefix: Prefix, op: OpType) -> MinerData {
         match op {
-            OpType::Usual => get_miner_data(address_prefix), // TODO: use lib_kaspa_wallet.CreateKeyPair, util.NewAddressPublicKeyECDSA equivalents
-            OpType::Edcsa => get_miner_data(address_prefix), // TODO: use lib_kaspa_wallet.CreateKeyPair, util.NewAddressPublicKey equivalents
+            OpType::Usual => get_miner_data(address_prefix), // TODO: use lib_karlsen_wallet.CreateKeyPair, util.NewAddressPublicKeyECDSA equivalents
+            OpType::Edcsa => get_miner_data(address_prefix), // TODO: use lib_karlsen_wallet.CreateKeyPair, util.NewAddressPublicKey equivalents
             OpType::True => {
                 let (script, _) = op_true_script();
                 MinerData::new(script, vec![])

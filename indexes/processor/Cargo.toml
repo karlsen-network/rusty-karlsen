@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-index-processor"
-description = "Kaspa index processor"
+description = "Karlsen index processor"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -19,7 +19,7 @@ kaspa-hashes.workspace = true
 kaspa-index-core.workspace = true
 kaspa-notify.workspace = true
 kaspa-utils.workspace = true
-kaspa-utxoindex.workspace = true
+karlsen-utxoindex.workspace = true
 
 async-channel.workspace = true
 async-trait.workspace = true

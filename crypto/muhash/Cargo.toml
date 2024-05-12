@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-muhash"
-description = "Kaspa Muhash library"
+description = "Karlsen Muhash library"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

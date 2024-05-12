@@ -7,7 +7,7 @@ use crate::wasm::{Balance, BalanceStrings};
 use kaspa_addresses::AddressOrStringArrayT;
 use kaspa_consensus_client::UtxoEntryReferenceArrayT;
 use kaspa_hashes::Hash;
-use kaspa_wallet_macros::declare_typescript_wasm_interface as declare;
+use karlsen_wallet_macros::declare_typescript_wasm_interface as declare;
 
 declare! {
     IUtxoContextArgs,

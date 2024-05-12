@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-addressmanager"
-description = "Kaspa address manager"
+description = "Karlsen address manager"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

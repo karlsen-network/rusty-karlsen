@@ -19,5 +19,5 @@ pub use crate::wallet::args::*;
 pub use crate::wallet::Wallet;
 pub use kaspa_addresses::{Address, Prefix as AddressPrefix};
 pub use kaspa_bip32::{Language, Mnemonic, WordCount};
-pub use kaspa_wallet_keys::secret::Secret;
+pub use karlsen_wallet_keys::secret::Secret;
 pub use kaspa_wrpc_client::{KaspaRpcClient, WrpcEncoding};

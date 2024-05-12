@@ -4,7 +4,7 @@ extern crate kaspa_hashes;
 
 use std::sync::Arc;
 
-use kaspa_alloc::init_allocator_with_default_settings;
+use karlsen_alloc::init_allocator_with_default_settings;
 use kaspa_core::{info, signals::Signals};
 use kaspa_utils::fd_budget;
 use karlsend_lib::{

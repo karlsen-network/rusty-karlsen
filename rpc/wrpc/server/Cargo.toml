@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-wrpc-server"
-description = "Kaspa wRPC server"
+description = "Karlsen wRPC server"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

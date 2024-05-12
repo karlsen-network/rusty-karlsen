@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-consensus-notify"
-description = "Kaspa consensus notifier"
+description = "Karlsen consensus notifier"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

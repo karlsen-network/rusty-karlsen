@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-rpc-service"
-description = "Kaspa RPC service"
+description = "Karlsen RPC service"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -27,7 +27,7 @@ kaspa-rpc-core.workspace = true
 kaspa-txscript.workspace = true
 kaspa-utils.workspace = true
 kaspa-utils-tower.workspace = true
-kaspa-utxoindex.workspace = true
+karlsen-utxoindex.workspace = true
 
 async-trait.workspace = true
 log.workspace = true

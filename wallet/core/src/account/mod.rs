@@ -21,7 +21,7 @@ use crate::utxo::balance::{AtomicBalance, BalanceStrings};
 use crate::utxo::UtxoContextBinding;
 use kaspa_bip32::{ChildNumber, ExtendedPrivateKey, PrivateKey};
 use kaspa_consensus_client::UtxoEntryReference;
-use kaspa_wallet_keys::derivation::gen0::WalletDerivationManagerV0;
+use karlsen_wallet_keys::derivation::gen0::WalletDerivationManagerV0;
 use workflow_core::abortable::Abortable;
 
 /// Notification callback type used by [`Account::sweep`] and [`Account::send`].
@@ -670,7 +670,7 @@ mod tests {
     use kaspa_bip32::secp256k1::SecretKey;
     use kaspa_bip32::PrivateKey;
     use kaspa_bip32::SecretKeyExt;
-    use kaspa_wallet_keys::derivation::gen0::PubkeyDerivationManagerV0;
+    use karlsen_wallet_keys::derivation::gen0::PubkeyDerivationManagerV0;
     use std::str::FromStr;
 
     fn gen0_receive_addresses() -> Vec<&'static str> {

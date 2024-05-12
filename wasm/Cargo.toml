@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-wasm"
-description = "KASPA WASM bindings"
+description = "Karlsen WASM bindings"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -26,8 +26,8 @@ kaspa-pow.workspace = true
 kaspa-rpc-core.workspace = true
 kaspa-utils.workspace = true
 kaspa-wasm-core.workspace = true
-kaspa-wallet-core.workspace = true
-kaspa-wallet-keys.workspace = true
+karlsen-wallet-core.workspace = true
+karlsen-wallet-keys.workspace = true
 kaspa-wrpc-client.workspace = true
 kaspa-wrpc-wasm.workspace = true
 num.workspace = true
@@ -38,11 +38,11 @@ workflow-wasm.workspace = true
 
 [features] 
 wasm32-sdk = [
-    "kaspa-wallet-core/wasm32-sdk",
+    "karlsen-wallet-core/wasm32-sdk",
     "kaspa-pow/wasm32-sdk",
 ]
 wasm32-core = [
-    "kaspa-wallet-core/wasm32-core",
+    "karlsen-wallet-core/wasm32-core",
     "kaspa-pow/wasm32-sdk",
 ]
 wasm32-rpc = [

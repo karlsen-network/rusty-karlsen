@@ -25,7 +25,7 @@ pub enum Error {
     Custom(String),
 
     #[error(transparent)]
-    WalletKeys(#[from] kaspa_wallet_keys::error::Error),
+    WalletKeys(#[from] karlsen_wallet_keys::error::Error),
 
     #[error("please select an account")]
     AccountSelection,

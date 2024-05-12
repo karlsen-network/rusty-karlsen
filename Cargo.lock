@@ -2435,6 +2435,186 @@ dependencies = [
 ]
 
 [[package]]
+name = "karlsen-alloc"
+version = "0.14.1"
+dependencies = [
+ "mimalloc",
+]
+
+[[package]]
+name = "karlsen-utxoindex"
+version = "0.14.1"
+dependencies = [
+ "futures",
+ "kaspa-consensus",
+ "kaspa-consensus-core",
+ "kaspa-consensusmanager",
+ "kaspa-core",
+ "kaspa-database",
+ "kaspa-hashes",
+ "kaspa-index-core",
+ "kaspa-utils",
+ "log",
+ "parking_lot",
+ "rand 0.8.5",
+ "rocksdb",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "karlsen-wallet"
+version = "0.14.1"
+dependencies = [
+ "async-std",
+ "async-trait",
+ "kaspa-cli",
+ "tokio",
+ "workflow-log",
+ "workflow-terminal",
+]
+
+[[package]]
+name = "karlsen-wallet-cli-wasm"
+version = "0.14.1"
+dependencies = [
+ "async-trait",
+ "js-sys",
+ "kaspa-cli",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "workflow-log",
+ "workflow-terminal",
+ "workflow-wasm",
+]
+
+[[package]]
+name = "karlsen-wallet-core"
+version = "0.14.1"
+dependencies = [
+ "aes",
+ "ahash 0.8.11",
+ "argon2",
+ "async-channel 2.2.1",
+ "async-std",
+ "async-trait",
+ "base64 0.21.7",
+ "borsh",
+ "cfb-mode",
+ "cfg-if 1.0.0",
+ "chacha20poly1305",
+ "convert_case 0.6.0",
+ "crypto_box",
+ "dashmap",
+ "derivative",
+ "downcast",
+ "evpkdf",
+ "faster-hex 0.6.1",
+ "fixedstr",
+ "futures",
+ "heapless",
+ "hex-literal",
+ "hmac",
+ "home",
+ "indexed_db_futures",
+ "itertools 0.11.0",
+ "js-sys",
+ "karlsen-wallet-keys",
+ "karlsen-wallet-macros",
+ "kaspa-addresses",
+ "kaspa-bip32",
+ "kaspa-consensus-client",
+ "kaspa-consensus-core",
+ "kaspa-consensus-wasm",
+ "kaspa-core",
+ "kaspa-hashes",
+ "kaspa-metrics-core",
+ "kaspa-notify",
+ "kaspa-rpc-core",
+ "kaspa-txscript",
+ "kaspa-txscript-errors",
+ "kaspa-utils",
+ "kaspa-wasm-core",
+ "kaspa-wrpc-client",
+ "kaspa-wrpc-wasm",
+ "md-5",
+ "pad",
+ "pbkdf2",
+ "rand 0.8.5",
+ "regex",
+ "ripemd",
+ "secp256k1",
+ "separator",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "serde_repr",
+ "sha1",
+ "sha2",
+ "slugify-rs",
+ "sorted-insert",
+ "thiserror",
+ "tokio",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "workflow-core",
+ "workflow-log",
+ "workflow-node",
+ "workflow-rpc",
+ "workflow-store",
+ "workflow-wasm",
+ "xxhash-rust",
+ "zeroize",
+]
+
+[[package]]
+name = "karlsen-wallet-keys"
+version = "0.14.1"
+dependencies = [
+ "async-trait",
+ "borsh",
+ "downcast",
+ "faster-hex 0.6.1",
+ "hmac",
+ "js-sys",
+ "kaspa-addresses",
+ "kaspa-bip32",
+ "kaspa-consensus-core",
+ "kaspa-txscript",
+ "kaspa-txscript-errors",
+ "kaspa-utils",
+ "kaspa-wasm-core",
+ "rand 0.8.5",
+ "ripemd",
+ "secp256k1",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "tokio",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "workflow-core",
+ "workflow-wasm",
+ "zeroize",
+]
+
+[[package]]
+name = "karlsen-wallet-macros"
+version = "0.14.1"
+dependencies = [
+ "convert_case 0.5.0",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn 1.0.109",
+ "xxhash-rust",
+]
+
+[[package]]
 name = "karlsend"
 version = "0.14.1"
 dependencies = [
@@ -2443,9 +2623,10 @@ dependencies = [
  "dhat",
  "dirs",
  "futures-util",
+ "karlsen-alloc",
+ "karlsen-utxoindex",
  "kaspa-addresses",
  "kaspa-addressmanager",
- "kaspa-alloc",
  "kaspa-consensus",
  "kaspa-consensus-core",
  "kaspa-consensus-notify",
@@ -2464,7 +2645,6 @@ dependencies = [
  "kaspa-txscript",
  "kaspa-utils",
  "kaspa-utils-tower",
- "kaspa-utxoindex",
  "kaspa-wrpc-server",
  "log",
  "num_cpus",
@@ -2520,13 +2700,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kaspa-alloc"
-version = "0.14.1"
-dependencies = [
- "mimalloc",
-]
-
-[[package]]
 name = "kaspa-bip32"
 version = "0.14.1"
 dependencies = [
@@ -2565,6 +2738,8 @@ dependencies = [
  "faster-hex 0.6.1",
  "futures",
  "js-sys",
+ "karlsen-wallet-core",
+ "karlsen-wallet-keys",
  "kaspa-addresses",
  "kaspa-bip32",
  "kaspa-consensus-core",
@@ -2573,8 +2748,6 @@ dependencies = [
  "kaspa-metrics-core",
  "kaspa-rpc-core",
  "kaspa-utils",
- "kaspa-wallet-core",
- "kaspa-wallet-keys",
  "kaspa-wrpc-client",
  "nw-sys",
  "pad",
@@ -2810,9 +2983,9 @@ dependencies = [
  "cfg-if 1.0.0",
  "downcast-rs",
  "futures",
+ "karlsen-wallet-core",
  "kaspa-addresses",
  "kaspa-consensus-core",
- "kaspa-wallet-core",
  "nw-sys",
  "serde",
  "thiserror",
@@ -2989,6 +3162,7 @@ dependencies = [
  "async-trait",
  "derive_more",
  "futures",
+ "karlsen-utxoindex",
  "kaspa-consensus",
  "kaspa-consensus-core",
  "kaspa-consensus-notify",
@@ -2999,7 +3173,6 @@ dependencies = [
  "kaspa-index-core",
  "kaspa-notify",
  "kaspa-utils",
- "kaspa-utxoindex",
  "log",
  "parking_lot",
  "paste",
@@ -3113,8 +3286,8 @@ dependencies = [
  "futures-util",
  "indexmap 2.2.6",
  "itertools 0.11.0",
+ "karlsen-alloc",
  "kaspa-addresses",
- "kaspa-alloc",
  "kaspa-consensus-core",
  "kaspa-core",
  "kaspa-hashes",
@@ -3312,6 +3485,7 @@ name = "kaspa-rpc-service"
 version = "0.14.1"
 dependencies = [
  "async-trait",
+ "karlsen-utxoindex",
  "kaspa-addresses",
  "kaspa-consensus-core",
  "kaspa-consensus-notify",
@@ -3329,7 +3503,6 @@ dependencies = [
  "kaspa-txscript",
  "kaspa-utils",
  "kaspa-utils-tower",
- "kaspa-utxoindex",
  "log",
  "tokio",
  "triggered",
@@ -3353,9 +3526,10 @@ dependencies = [
  "futures-util",
  "indexmap 2.2.6",
  "itertools 0.11.0",
+ "karlsen-alloc",
+ "karlsen-utxoindex",
  "karlsend",
  "kaspa-addresses",
- "kaspa-alloc",
  "kaspa-bip32",
  "kaspa-consensus",
  "kaspa-consensus-core",
@@ -3378,7 +3552,6 @@ dependencies = [
  "kaspa-txscript",
  "kaspa-txscript-errors",
  "kaspa-utils",
- "kaspa-utxoindex",
  "kaspa-wrpc-server",
  "log",
  "parking_lot",
@@ -3474,184 +3647,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "kaspa-utxoindex"
-version = "0.14.1"
-dependencies = [
- "futures",
- "kaspa-consensus",
- "kaspa-consensus-core",
- "kaspa-consensusmanager",
- "kaspa-core",
- "kaspa-database",
- "kaspa-hashes",
- "kaspa-index-core",
- "kaspa-utils",
- "log",
- "parking_lot",
- "rand 0.8.5",
- "rocksdb",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "kaspa-wallet"
-version = "0.14.1"
-dependencies = [
- "async-std",
- "async-trait",
- "kaspa-cli",
- "tokio",
- "workflow-log",
- "workflow-terminal",
-]
-
-[[package]]
-name = "kaspa-wallet-cli-wasm"
-version = "0.14.1"
-dependencies = [
- "async-trait",
- "js-sys",
- "kaspa-cli",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "workflow-log",
- "workflow-terminal",
- "workflow-wasm",
-]
-
-[[package]]
-name = "kaspa-wallet-core"
-version = "0.14.1"
-dependencies = [
- "aes",
- "ahash 0.8.11",
- "argon2",
- "async-channel 2.2.1",
- "async-std",
- "async-trait",
- "base64 0.21.7",
- "borsh",
- "cfb-mode",
- "cfg-if 1.0.0",
- "chacha20poly1305",
- "convert_case 0.6.0",
- "crypto_box",
- "dashmap",
- "derivative",
- "downcast",
- "evpkdf",
- "faster-hex 0.6.1",
- "fixedstr",
- "futures",
- "heapless",
- "hex-literal",
- "hmac",
- "home",
- "indexed_db_futures",
- "itertools 0.11.0",
- "js-sys",
- "kaspa-addresses",
- "kaspa-bip32",
- "kaspa-consensus-client",
- "kaspa-consensus-core",
- "kaspa-consensus-wasm",
- "kaspa-core",
- "kaspa-hashes",
- "kaspa-metrics-core",
- "kaspa-notify",
- "kaspa-rpc-core",
- "kaspa-txscript",
- "kaspa-txscript-errors",
- "kaspa-utils",
- "kaspa-wallet-keys",
- "kaspa-wallet-macros",
- "kaspa-wasm-core",
- "kaspa-wrpc-client",
- "kaspa-wrpc-wasm",
- "md-5",
- "pad",
- "pbkdf2",
- "rand 0.8.5",
- "regex",
- "ripemd",
- "secp256k1",
- "separator",
- "serde",
- "serde-wasm-bindgen",
- "serde_json",
- "serde_repr",
- "sha1",
- "sha2",
- "slugify-rs",
- "sorted-insert",
- "thiserror",
- "tokio",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "workflow-core",
- "workflow-log",
- "workflow-node",
- "workflow-rpc",
- "workflow-store",
- "workflow-wasm",
- "xxhash-rust",
- "zeroize",
-]
-
-[[package]]
-name = "kaspa-wallet-keys"
-version = "0.14.1"
-dependencies = [
- "async-trait",
- "borsh",
- "downcast",
- "faster-hex 0.6.1",
- "hmac",
- "js-sys",
- "kaspa-addresses",
- "kaspa-bip32",
- "kaspa-consensus-core",
- "kaspa-txscript",
- "kaspa-txscript-errors",
- "kaspa-utils",
- "kaspa-wasm-core",
- "rand 0.8.5",
- "ripemd",
- "secp256k1",
- "serde",
- "serde-wasm-bindgen",
- "serde_json",
- "sha2",
- "thiserror",
- "tokio",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "workflow-core",
- "workflow-wasm",
- "zeroize",
-]
-
-[[package]]
-name = "kaspa-wallet-macros"
-version = "0.14.1"
-dependencies = [
- "convert_case 0.5.0",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "regex",
- "syn 1.0.109",
- "xxhash-rust",
-]
-
-[[package]]
 name = "kaspa-wasm"
 version = "0.14.1"
 dependencies = [
  "cfg-if 1.0.0",
  "js-sys",
+ "karlsen-wallet-core",
+ "karlsen-wallet-keys",
  "kaspa-addresses",
  "kaspa-consensus-core",
  "kaspa-consensus-wasm",
@@ -3660,8 +3662,6 @@ dependencies = [
  "kaspa-pow",
  "kaspa-rpc-core",
  "kaspa-utils",
- "kaspa-wallet-core",
- "kaspa-wallet-keys",
  "kaspa-wasm-core",
  "kaspa-wrpc-client",
  "kaspa-wrpc-wasm",
@@ -5605,7 +5605,7 @@ dependencies = [
  "futures-util",
  "indexmap 2.2.6",
  "itertools 0.11.0",
- "kaspa-alloc",
+ "karlsen-alloc",
  "kaspa-consensus",
  "kaspa-consensus-core",
  "kaspa-consensus-notify",

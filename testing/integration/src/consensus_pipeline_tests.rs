@@ -1,5 +1,5 @@
 use futures_util::future::try_join_all;
-use kaspa_alloc::init_allocator_with_default_settings;
+use karlsen_alloc::init_allocator_with_default_settings;
 use kaspa_consensus::{
     config::ConfigBuilder, consensus::test_consensus::TestConsensus, params::MAINNET_PARAMS,
     processes::reachability::tests::StoreValidationExtensions,

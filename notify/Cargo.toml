@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-notify"
-description = "Kaspa notification subsystem"
+description = "Karlsen notification subsystem"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -37,7 +37,7 @@ workflow-log.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
-kaspa-alloc.workspace = true
+karlsen-alloc.workspace = true
 kaspa-math.workspace = true
 tokio = { workspace = true, features = ["rt", "macros"] }
 workflow-perf-monitor.workspace = true

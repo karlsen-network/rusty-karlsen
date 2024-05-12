@@ -51,7 +51,7 @@
                     let list = $("#wallets");
                     let temp = $("#wallet-tpl");
                     
-                    let wallets = discover_kaspa_wallet();
+                    let wallets = discover_karlsen_wallet();
                     wallets.forEach(w=>{
                         console.log("wallet", w)
                         let wallet = temp.content.cloneNode(true);
@@ -73,7 +73,7 @@
                     let uuid = e.target.closest(".wallet")?.dataset?.uuid;
                     if (!uuid)
                         return
-                    let wallets = discover_kaspa_wallet();
+                    let wallets = discover_karlsen_wallet();
                     let wallet = wallets.find(w=>w.uuid == uuid)
                     console.log("wallet", uuid, wallet)
                     if (!wallet?.api)

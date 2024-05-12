@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-consensus-client"
-description = "Kaspa consensus client data structures"
+description = "Karlsen consensus client data structures"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

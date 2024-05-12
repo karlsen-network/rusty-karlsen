@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-wrpc-proxy"
-description = "Kaspa wRPC to gRPC proxy"
+description = "Karlsen wRPC to gRPC proxy"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

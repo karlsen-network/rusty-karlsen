@@ -15,7 +15,7 @@ use kaspa_notify::{
     subscription::{context::SubscriptionContext, MutationPolicies, UtxosChangedMutationPolicy},
 };
 use kaspa_utils::{channel::Channel, triggers::SingleTrigger};
-use kaspa_utxoindex::api::UtxoIndexProxy;
+use karlsen_utxoindex::api::UtxoIndexProxy;
 use std::sync::Arc;
 
 const INDEX_SERVICE: &str = IDENT;

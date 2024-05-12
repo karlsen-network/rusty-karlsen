@@ -3,7 +3,7 @@ cargo clippy
 
 $crates = @(
   "kaspa-wrpc-wasm",
-  "kaspa-wallet-cli-wasm",
+  "karlsen-wallet-cli-wasm",
   "kaspa-wasm",
   "kaspa-cli",
   "kaspa-os",

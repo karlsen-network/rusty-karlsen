@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-addresses"
-description = "Kaspa address"
+description = "Karlsen address"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

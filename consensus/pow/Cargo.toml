@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-pow"
-description = "Kaspa proof-of-work"
+description = "Karlsen proof-of-work"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

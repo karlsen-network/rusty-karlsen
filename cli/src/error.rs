@@ -1,7 +1,7 @@
 use std::net::AddrParseError;
 
 use downcast::DowncastError;
-use kaspa_wallet_core::error::Error as WalletError;
+use karlsen_wallet_core::error::Error as WalletError;
 use workflow_core::channel::ChannelError;
 use workflow_terminal::error::Error as TerminalError;
 
@@ -121,7 +121,7 @@ pub enum Error {
     MetricsError(kaspa_metrics_core::error::Error),
 
     #[error(transparent)]
-    KaspaWalletKeys(#[from] kaspa_wallet_keys::error::Error),
+    KaspaWalletKeys(#[from] karlsen_wallet_keys::error::Error),
 }
 
 impl Error {

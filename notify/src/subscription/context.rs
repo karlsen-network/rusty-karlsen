@@ -84,7 +84,7 @@ mod tests {
     };
     use itertools::Itertools;
     use kaspa_addresses::{Address, Prefix};
-    use kaspa_alloc::init_allocator_with_default_settings;
+    use karlsen_alloc::init_allocator_with_default_settings;
     use kaspa_core::trace;
     use kaspa_math::Uint256;
     use std::collections::{HashMap, HashSet};

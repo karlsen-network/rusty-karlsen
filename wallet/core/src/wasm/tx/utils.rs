@@ -8,7 +8,7 @@ use kaspa_addresses::{Address, AddressT};
 use kaspa_consensus_client::*;
 use kaspa_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
 //use kaspa_consensus_wasm::*;
-use kaspa_wallet_macros::declare_typescript_wasm_interface as declare;
+use karlsen_wallet_macros::declare_typescript_wasm_interface as declare;
 use workflow_core::runtime::is_web;
 
 /// Create a basic transaction without any mass limit checks.

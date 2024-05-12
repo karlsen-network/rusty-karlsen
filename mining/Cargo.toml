@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-mining"
-description = "Kaspa mining"
+description = "Karlsen mining"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

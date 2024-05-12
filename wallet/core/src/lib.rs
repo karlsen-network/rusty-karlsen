@@ -52,7 +52,7 @@
 //!
 
 extern crate alloc;
-extern crate self as kaspa_wallet_core;
+extern crate self as karlsen_wallet_core;
 
 // use cfg_if::cfg_if;
 

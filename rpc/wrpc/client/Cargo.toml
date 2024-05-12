@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-wrpc-client"
-description = "Kaspa wRPC client"
+description = "Karlsen wRPC client"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

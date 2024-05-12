@@ -4,7 +4,7 @@ use crate::tx::generator as native;
 use crate::wasm::PrivateKeyArrayT;
 use kaspa_consensus_client::{numeric, string};
 use kaspa_consensus_client::{ITransaction, Transaction};
-use kaspa_wallet_keys::privatekey::PrivateKey;
+use karlsen_wallet_keys::privatekey::PrivateKey;
 use kaspa_wrpc_wasm::RpcClient;
 
 /// @category Wallet SDK
@@ -77,7 +77,7 @@ impl PendingTransaction {
             let keys = keys
                 .iter()
                 .map(PrivateKey::try_cast_from)
-                .collect::<std::result::Result<Vec<_>, kaspa_wallet_keys::error::Error>>()?;
+                .collect::<std::result::Result<Vec<_>, karlsen_wallet_keys::error::Error>>()?;
             let mut keys = keys.iter().map(|key| key.as_ref().secret_bytes()).collect::<Vec<_>>();
             self.inner.try_sign_with_keys(&keys)?;
             keys.zeroize();

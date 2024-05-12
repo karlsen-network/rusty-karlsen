@@ -11,7 +11,7 @@ use js_sys::Array;
 use serde_wasm_bindgen::from_value;
 use workflow_wasm::serde::to_value;
 
-use kaspa_wallet_macros::declare_typescript_wasm_interface as declare;
+use karlsen_wallet_macros::declare_typescript_wasm_interface as declare;
 
 macro_rules! try_from {
     ($name:ident : $from_type:ty, $to_type:ty, $body:block) => {

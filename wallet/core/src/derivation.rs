@@ -2,12 +2,12 @@
 //!  Module handling bip32 address derivation (bip32+bip44 and legacy accounts)
 //!
 
-use kaspa_wallet_keys::derivation::gen0::{PubkeyDerivationManagerV0, WalletDerivationManagerV0};
-use kaspa_wallet_keys::derivation::gen1::{PubkeyDerivationManager, WalletDerivationManager};
+use karlsen_wallet_keys::derivation::gen0::{PubkeyDerivationManagerV0, WalletDerivationManagerV0};
+use karlsen_wallet_keys::derivation::gen1::{PubkeyDerivationManager, WalletDerivationManager};
 
-pub use kaspa_wallet_keys::derivation::traits::*;
-use kaspa_wallet_keys::publickey::{PublicKey, PublicKeyArrayT, PublicKeyT};
-pub use kaspa_wallet_keys::types::*;
+pub use karlsen_wallet_keys::derivation::traits::*;
+use karlsen_wallet_keys::publickey::{PublicKey, PublicKeyArrayT, PublicKeyT};
+pub use karlsen_wallet_keys::types::*;
 
 use crate::account::create_private_keys;
 use crate::account::AccountKind;
@@ -93,7 +93,7 @@ impl AddressManager {
         let list = self.pubkey_managers.iter().map(|m| m.current_pubkey());
 
         // let keys = join_all(list).await.into_iter().collect::<Result<Vec<_>>>()?;
-        let keys = list.into_iter().collect::<kaspa_wallet_keys::result::Result<Vec<_>>>()?;
+        let keys = list.into_iter().collect::<karlsen_wallet_keys::result::Result<Vec<_>>>()?;
         let address = self.create_address(keys)?;
 
         self.update_address_to_index_map(self.index(), &[address.clone()])?;
@@ -126,7 +126,7 @@ impl AddressManager {
 
         let list = self.pubkey_managers.iter().map(|m| m.get_range(indexes.clone()));
 
-        let manager_keys = list.into_iter().collect::<kaspa_wallet_keys::result::Result<Vec<_>>>()?;
+        let manager_keys = list.into_iter().collect::<karlsen_wallet_keys::result::Result<Vec<_>>>()?;
 
         let is_multisig = manager_length > 1;
 

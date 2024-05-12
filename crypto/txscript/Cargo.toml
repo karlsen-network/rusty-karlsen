@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-txscript"
-description = "Kaspa txscript engine library"
+description = "Karlsen txscript engine library"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

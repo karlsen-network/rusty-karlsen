@@ -1,5 +1,5 @@
 
-<h1>Kaspa On Rust</h1>
+<h1>Karlsen On Rust</h1>
 
 Welcome to the Rust-based implementation of the Kaspa full-node and its ancillary libraries. This Alpha release serves as a drop-in replacement to the established <a href="https://github.com/kaspanet/kaspad">Golang node</a> (once the rust rewrite is completed), introducing developers to the possibilities of Rust in the Kaspa network's context.
 

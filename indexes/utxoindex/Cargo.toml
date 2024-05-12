@@ -1,6 +1,6 @@
 [package]
-name = "kaspa-utxoindex"
-description = "Kaspa UTXO index"
+name = "karlsen-utxoindex"
+description = "Karlsen UTXO index"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

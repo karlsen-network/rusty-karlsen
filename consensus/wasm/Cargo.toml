@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-consensus-wasm"
-description = "Kaspa consensus core WASM bindings"
+description = "Karlsen consensus core WASM bindings"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

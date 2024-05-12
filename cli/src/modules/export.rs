@@ -1,5 +1,5 @@
 use crate::imports::*;
-use kaspa_wallet_core::account::{multisig::MultiSig, Account, MULTISIG_ACCOUNT_KIND};
+use karlsen_wallet_core::account::{multisig::MultiSig, Account, MULTISIG_ACCOUNT_KIND};
 
 #[derive(Default, Handler)]
 #[help("Export transactions, a wallet or a private key")]

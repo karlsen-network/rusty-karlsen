@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-connectionmanager"
-description = "Kaspa connection manager"
+description = "Karlsen connection manager"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

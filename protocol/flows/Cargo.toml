@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-p2p-flows"
-description = "Kaspa p2p flows"
+description = "Karlsen p2p flows"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

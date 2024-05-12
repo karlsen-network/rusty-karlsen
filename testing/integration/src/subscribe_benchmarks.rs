@@ -18,7 +18,7 @@ use crate::{
 };
 use itertools::Itertools;
 use kaspa_addresses::Address;
-use kaspa_alloc::init_allocator_with_default_settings;
+use karlsen_alloc::init_allocator_with_default_settings;
 use kaspa_consensus::params::Params;
 use kaspa_consensus_core::network::{NetworkId, NetworkType};
 use kaspa_core::{info, task::tick::TickService, trace};

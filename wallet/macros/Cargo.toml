@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-wallet-macros"
+name = "karlsen-wallet-macros"
 rust-version.workspace = true
 authors.workspace = true
 edition.workspace = true

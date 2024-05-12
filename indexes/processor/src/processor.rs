@@ -14,7 +14,7 @@ use kaspa_notify::{
     notifier::DynNotify,
 };
 use kaspa_utils::triggers::SingleTrigger;
-use kaspa_utxoindex::api::UtxoIndexProxy;
+use karlsen_utxoindex::api::UtxoIndexProxy;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
@@ -136,7 +136,7 @@ mod tests {
     use kaspa_database::prelude::ConnBuilder;
     use kaspa_database::utils::DbLifetime;
     use kaspa_notify::notifier::test_helpers::NotifyMock;
-    use kaspa_utxoindex::UtxoIndex;
+    use karlsen_utxoindex::UtxoIndex;
     use rand::{rngs::SmallRng, SeedableRng};
     use std::sync::Arc;
 

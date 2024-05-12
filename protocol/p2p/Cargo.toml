@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-p2p-lib"
-description = "Kaspa p2p library"
+description = "Karlsen p2p library"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

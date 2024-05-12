@@ -1,6 +1,6 @@
 use kaspa_addresses::Version;
 use kaspa_bip32::secp256k1::XOnlyPublicKey;
-use kaspa_wallet_core::{
+use karlsen_wallet_core::{
     account::{BIP32_ACCOUNT_KIND, KEYPAIR_ACCOUNT_KIND},
     message::{sign_message, verify_message, PersonalMessage},
 };

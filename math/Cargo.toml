@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-math"
-description = "Kaspa misc math library"
+description = "Karlsen misc math library"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

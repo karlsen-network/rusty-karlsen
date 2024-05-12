@@ -1,6 +1,6 @@
 [package]
 name = "rothschild"
-description = "Kaspa Transaction Generator"
+description = "Karlsen Transaction Generator"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

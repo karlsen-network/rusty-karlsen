@@ -15,7 +15,7 @@ name = "karlsend_lib"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-kaspa-alloc.workspace = true # This changes the global allocator for all of the next dependencies so should be kept first
+karlsen-alloc.workspace = true # This changes the global allocator for all of the next dependencies so should be kept first
 
 kaspa-addresses.workspace = true
 kaspa-addressmanager.workspace = true
@@ -37,7 +37,7 @@ kaspa-rpc-service.workspace = true
 kaspa-txscript.workspace = true
 kaspa-utils.workspace = true
 kaspa-utils-tower.workspace = true
-kaspa-utxoindex.workspace = true
+karlsen-utxoindex.workspace = true
 kaspa-wrpc-server.workspace = true
 
 async-channel.workspace = true
@@ -58,5 +58,5 @@ toml = "0.8.10"
 serde_with = "3.7.0"
 
 [features]
-heap = ["dhat", "kaspa-alloc/heap"]
+heap = ["dhat", "karlsen-alloc/heap"]
 devnet-prealloc = ["kaspa-consensus/devnet-prealloc"]

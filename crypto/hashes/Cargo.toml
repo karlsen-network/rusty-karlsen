@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-hashes"
-description = "Kaspa hashing functions"
+description = "Karlsen hashing functions"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

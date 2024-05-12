@@ -40,8 +40,8 @@ pub use kaspa_consensus_core::tx::{ScriptPublicKey, TransactionId, TransactionIn
 pub use kaspa_metrics_core::{Metric, Metrics, MetricsSnapshot};
 pub use kaspa_utils::hashmap::*;
 pub use kaspa_utils::hex::{FromHex, ToHex};
-pub use kaspa_wallet_keys::secret::Secret;
-pub use kaspa_wallet_keys::types::*;
+pub use karlsen_wallet_keys::secret::Secret;
+pub use karlsen_wallet_keys::types::*;
 pub use pad::PadStr;
 pub use separator::Separatable;
 pub use serde::{Deserialize, Deserializer, Serialize};

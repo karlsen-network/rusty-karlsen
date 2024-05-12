@@ -5,7 +5,7 @@ use crate::common::{
     utils::{fetch_spendable_utxos, generate_tx, mine_block, wait_for},
 };
 use kaspa_addresses::Address;
-use kaspa_alloc::init_allocator_with_default_settings;
+use karlsen_alloc::init_allocator_with_default_settings;
 use kaspa_consensus::params::SIMNET_PARAMS;
 use kaspa_consensusmanager::ConsensusManager;
 use kaspa_core::{task::runtime::AsyncRuntime, trace};

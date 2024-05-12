@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-consensus-core"
-description = "Kaspa consensus core"
+description = "Karlsen consensus core"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

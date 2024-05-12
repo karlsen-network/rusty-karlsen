@@ -1,6 +1,6 @@
 [package]
-name = "kaspa-wallet-cli-wasm"
-description = "Kaspa CLI wallet for WASM"
+name = "karlsen-wallet-cli-wasm"
+description = "Karlsen CLI wallet for WASM"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

@@ -63,7 +63,7 @@ use kaspa_rpc_core::{
 use kaspa_txscript::{extract_script_pub_key_address, pay_to_address_script};
 use kaspa_utils::{channel::Channel, triggers::SingleTrigger};
 use kaspa_utils_tower::counters::TowerConnectionCounters;
-use kaspa_utxoindex::api::UtxoIndexProxy;
+use karlsen_utxoindex::api::UtxoIndexProxy;
 use std::{
     collections::HashMap,
     iter::once,

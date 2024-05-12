@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-cli"
-description = "Kaspa CLI"
+description = "Karlsen CLI"
 keywords = ["kaspa", "wallet", "cli", "rpc"]
 rust-version.workspace = true
 version.workspace = true
@@ -41,8 +41,8 @@ kaspa-daemon.workspace = true
 kaspa-metrics-core.workspace = true
 kaspa-rpc-core.workspace = true
 kaspa-utils.workspace = true
-kaspa-wallet-core.workspace = true
-kaspa-wallet-keys.workspace = true
+karlsen-wallet-core.workspace = true
+karlsen-wallet-keys.workspace = true
 kaspa-wrpc-client.workspace = true
 nw-sys.workspace = true
 pad.workspace = true

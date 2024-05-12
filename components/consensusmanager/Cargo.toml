@@ -1,6 +1,6 @@
 [package]
 name = "kaspa-consensusmanager"
-description = "Kaspa consensus library"
+description = "Karlsen consensus library"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

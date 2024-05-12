@@ -3,7 +3,7 @@ use crate::imports::*;
 use crate::tx::PaymentOutputs;
 use crate::wasm::utxo::UtxoContext;
 use kaspa_consensus_core::network::NetworkTypeT;
-use kaspa_wallet_keys::keypair::Keypair;
+use karlsen_wallet_keys::keypair::Keypair;
 use workflow_core::abortable::Abortable;
 
 ///

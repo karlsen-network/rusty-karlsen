@@ -1,6 +1,6 @@
 [package]
-name = "kaspa-wallet"
-description = "Kaspa wallet"
+name = "karlsen-wallet"
+description = "Karlsen wallet"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true
