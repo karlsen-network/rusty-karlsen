@@ -10,7 +10,7 @@ include.workspace = true
 repository.workspace = true
 
 [dependencies]
-kaspa-core.workspace = true
+karlsen-core.workspace = true
 log.workspace = true
 portable-atomic.workspace = true
 thiserror.workspace = true

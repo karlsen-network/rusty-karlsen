@@ -1,13 +1,13 @@
 use std::{fs, path::PathBuf, process::exit, sync::Arc, time::Duration};
 
 use async_channel::unbounded;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     config::ConfigBuilder,
     errors::config::{ConfigError, ConfigResult},
 };
-use kaspa_consensus_notify::{root::ConsensusNotificationRoot, service::NotifyService};
-use kaspa_core::{core::Core, info, trace};
-use kaspa_core::{kaspad_env::version, task::tick::TickService};
+use karlsen_consensus_notify::{root::ConsensusNotificationRoot, service::NotifyService};
+use karlsen_core::{core::Core, info, trace};
+use karlsen_core::{kaspad_env::version, task::tick::TickService};
 use kaspa_database::prelude::CachePolicy;
 use kaspa_grpc_server::service::GrpcService;
 use kaspa_notify::{address::tracker::Tracker, subscription::context::SubscriptionContext};
@@ -16,13 +16,13 @@ use kaspa_txscript::caches::TxScriptCacheCounters;
 use kaspa_utils::networking::ContextualNetAddress;
 use kaspa_utils_tower::counters::TowerConnectionCounters;
 
-use kaspa_addressmanager::AddressManager;
-use kaspa_consensus::{consensus::factory::Factory as ConsensusFactory, pipeline::ProcessingCounters};
-use kaspa_consensus::{
+use karlsen_addressmanager::AddressManager;
+use karlsen_consensus::{consensus::factory::Factory as ConsensusFactory, pipeline::ProcessingCounters};
+use karlsen_consensus::{
     consensus::factory::MultiConsensusManagementStore, model::stores::headers::DbHeadersStore, pipeline::monitor::ConsensusMonitor,
 };
-use kaspa_consensusmanager::ConsensusManager;
-use kaspa_core::task::runtime::AsyncRuntime;
+use karlsen_consensusmanager::ConsensusManager;
+use karlsen_core::task::runtime::AsyncRuntime;
 use kaspa_index_processor::service::IndexService;
 use kaspa_mining::{
     manager::{MiningManager, MiningManagerProxy},
@@ -33,7 +33,7 @@ use kaspa_p2p_flows::{flow_context::FlowContext, service::P2pService};
 
 use kaspa_perf_monitor::{builder::Builder as PerfMonitorBuilder, counters::CountersSnapshot};
 use karlsen_utxoindex::{api::UtxoIndexProxy, UtxoIndex};
-use kaspa_wrpc_server::service::{Options as WrpcServerOptions, WebSocketCounters as WrpcServerCounters, WrpcEncoding, WrpcService};
+use karlsen_wrpc_server::service::{Options as WrpcServerOptions, WebSocketCounters as WrpcServerCounters, WrpcEncoding, WrpcService};
 
 /// Desired soft FD limit that needs to be configured
 /// for the kaspad process.
@@ -161,11 +161,11 @@ impl Runtime {
         let log_dir = get_log_dir(args);
 
         // Initialize the logger
-        kaspa_core::log::init_logger(log_dir.as_deref(), &args.log_level);
+        karlsen_core::log::init_logger(log_dir.as_deref(), &args.log_level);
 
         // Configure the panic behavior
         // As we log the panic, we want to set it up after the logger
-        kaspa_core::panic::configure_panic();
+        karlsen_core::panic::configure_panic();
 
         Self { log_dir: log_dir.map(|log_dir| log_dir.to_owned()) }
     }

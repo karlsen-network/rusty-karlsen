@@ -2,7 +2,7 @@ use std::{collections::HashSet, sync::Arc};
 
 use super::BlockBodyProcessor;
 use crate::errors::{BlockProcessResult, RuleError};
-use kaspa_consensus_core::{block::Block, merkle::calc_hash_merkle_root_with_options, tx::TransactionOutpoint};
+use karlsen_consensus_core::{block::Block, merkle::calc_hash_merkle_root_with_options, tx::TransactionOutpoint};
 
 impl BlockBodyProcessor {
     pub fn validate_body_in_isolation(self: &Arc<Self>, block: &Block) -> BlockProcessResult<u64> {
@@ -133,7 +133,7 @@ mod tests {
         errors::RuleError,
         params::MAINNET_PARAMS,
     };
-    use kaspa_consensus_core::{
+    use karlsen_consensus_core::{
         api::{BlockValidationFutures, ConsensusApi},
         block::MutableBlock,
         header::Header,
@@ -141,7 +141,7 @@ mod tests {
         subnets::{SUBNETWORK_ID_COINBASE, SUBNETWORK_ID_NATIVE},
         tx::{scriptvec, ScriptPublicKey, Transaction, TransactionId, TransactionInput, TransactionOutpoint, TransactionOutput},
     };
-    use kaspa_core::assert_match;
+    use karlsen_core::assert_match;
     use kaspa_hashes::Hash;
 
     #[test]

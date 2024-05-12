@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-wasm"
+name = "karlsen-wasm"
 description = "Karlsen WASM bindings"
 rust-version.workspace = true
 version.workspace = true
@@ -17,19 +17,19 @@ crate-type = ["cdylib"]
 [dependencies]
 cfg-if.workspace = true
 js-sys.workspace = true
-kaspa-addresses.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-consensus-wasm.workspace = true
-kaspa-core.workspace = true
+karlsen-addresses.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensus-wasm.workspace = true
+karlsen-core.workspace = true
 kaspa-math.workspace = true
 kaspa-pow.workspace = true
 kaspa-rpc-core.workspace = true
 kaspa-utils.workspace = true
-kaspa-wasm-core.workspace = true
+karlsen-wasm-core.workspace = true
 karlsen-wallet-core.workspace = true
 karlsen-wallet-keys.workspace = true
-kaspa-wrpc-client.workspace = true
-kaspa-wrpc-wasm.workspace = true
+karlsen-wrpc-client.workspace = true
+karlsen-wrpc-wasm.workspace = true
 num.workspace = true
 wasm-bindgen.workspace = true
 workflow-log.workspace = true
@@ -46,10 +46,10 @@ wasm32-core = [
     "kaspa-pow/wasm32-sdk",
 ]
 wasm32-rpc = [
-    "kaspa-consensus-core/wasm32-sdk",
-    "kaspa-consensus-wasm/wasm32-sdk",
-    "kaspa-wrpc-client/wasm32-sdk",
-    "kaspa-wrpc-wasm/wasm32-sdk",
+    "karlsen-consensus-core/wasm32-sdk",
+    "karlsen-consensus-wasm/wasm32-sdk",
+    "karlsen-wrpc-client/wasm32-sdk",
+    "karlsen-wrpc-wasm/wasm32-sdk",
 ]
 wasm32-keygen = []
 default = []

@@ -80,8 +80,8 @@ pub mod test_helpers {
 
     use super::*;
     use derive_more::Display;
-    use kaspa_addresses::Address;
-    use kaspa_core::trace;
+    use karlsen_addresses::Address;
+    use karlsen_core::trace;
     use std::sync::Arc;
 
     #[derive(Clone, Debug, Default, PartialEq, Eq)]

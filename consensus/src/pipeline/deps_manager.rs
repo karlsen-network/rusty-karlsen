@@ -1,5 +1,5 @@
 use crate::errors::BlockProcessResult;
-use kaspa_consensus_core::{block::Block, blockstatus::BlockStatus};
+use karlsen_consensus_core::{block::Block, blockstatus::BlockStatus};
 use kaspa_hashes::Hash;
 use parking_lot::{Condvar, Mutex};
 use std::collections::{

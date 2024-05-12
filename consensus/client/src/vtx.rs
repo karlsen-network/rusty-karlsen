@@ -1,7 +1,7 @@
 use crate::imports::*;
 // use crate::serializable::{numeric,string};
 use crate::result::Result;
-use kaspa_addresses::Address;
+use karlsen_addresses::Address;
 use serde::de::DeserializeOwned;
 // use serde::de::DeserializeOwned;
 

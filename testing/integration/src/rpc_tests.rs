@@ -2,10 +2,10 @@ use std::{str::FromStr, sync::Arc, time::Duration};
 
 use crate::common::{client_notify::ChannelNotify, daemon::Daemon};
 use futures_util::future::try_join_all;
-use kaspa_addresses::{Address, Prefix, Version};
-use kaspa_consensus::params::SIMNET_GENESIS;
-use kaspa_consensus_core::{constants::MAX_SOMPI, subnets::SubnetworkId, tx::Transaction};
-use kaspa_core::info;
+use karlsen_addresses::{Address, Prefix, Version};
+use karlsen_consensus::params::SIMNET_GENESIS;
+use karlsen_consensus_core::{constants::MAX_SOMPI, subnets::SubnetworkId, tx::Transaction};
+use karlsen_core::info;
 use kaspa_grpc_core::ops::KaspadPayloadOps;
 use kaspa_hashes::Hash;
 use kaspa_notify::{
@@ -39,9 +39,9 @@ macro_rules! tst {
 /// `cargo test --release --package kaspa-testing-integration --lib -- rpc_tests::sanity_test`
 #[tokio::test]
 async fn sanity_test() {
-    kaspa_core::log::try_init_logger("info");
+    karlsen_core::log::try_init_logger("info");
     // As we log the panic, we want to set it up after the logger
-    kaspa_core::panic::configure_panic();
+    karlsen_core::panic::configure_panic();
 
     let args = Args {
         simnet: true,
@@ -194,7 +194,7 @@ async fn sanity_test() {
                 let rpc_client = client.clone();
                 tst!(op, {
                     let response = rpc_client.get_info_call(GetInfoRequest {}).await.unwrap();
-                    assert_eq!(response.server_version, kaspa_core::kaspad_env::version().to_string());
+                    assert_eq!(response.server_version, karlsen_core::kaspad_env::version().to_string());
                     assert_eq!(response.mempool_size, 0);
                     assert!(response.is_utxo_indexed);
                     assert!(response.has_message_id);

@@ -19,8 +19,8 @@
 //! The SubmitBlockResponse is a notable exception to this general rule.
 
 use crate::protowire::{self, submit_block_response_message::RejectReason};
-use kaspa_consensus_core::network::NetworkId;
-use kaspa_core::debug;
+use karlsen_consensus_core::network::NetworkId;
+use karlsen_core::debug;
 use kaspa_notify::subscription::Command;
 use kaspa_rpc_core::{
     RpcContextualPeerAddress, RpcError, RpcExtraData, RpcHash, RpcIpAddress, RpcNetworkType, RpcPeerAddress, RpcResult,

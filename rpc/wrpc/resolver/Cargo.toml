@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-resolver"
+name = "karlsen-resolver"
 description = "Karlsen wRPC endpoint resolver and monitor"
 version.workspace = true
 edition.workspace = true
@@ -16,10 +16,10 @@ cfg-if.workspace = true
 clap.workspace = true
 convert_case.workspace = true
 futures.workspace = true
-kaspa-consensus-core.workspace = true
+karlsen-consensus-core.workspace = true
 kaspa-rpc-core.workspace = true
 kaspa-utils.workspace = true
-kaspa-wrpc-client.workspace = true
+karlsen-wrpc-client.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 thiserror.workspace = true

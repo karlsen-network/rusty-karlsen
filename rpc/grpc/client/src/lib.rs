@@ -7,7 +7,7 @@ use async_trait::async_trait;
 pub use client_pool::ClientPool;
 use connection_event::ConnectionEvent;
 use futures::{future::FutureExt, pin_mut, select};
-use kaspa_core::{debug, error, trace};
+use karlsen_core::{debug, error, trace};
 use kaspa_grpc_core::{
     channel::NotificationChannel,
     ops::KaspadPayloadOps,

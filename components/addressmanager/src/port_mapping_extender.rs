@@ -1,5 +1,5 @@
 use igd_next::{aio::tokio::Tokio, AddPortError};
-use kaspa_core::{
+use karlsen_core::{
     debug, error, info,
     task::{
         service::{AsyncService, AsyncServiceFuture},

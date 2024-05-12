@@ -5,7 +5,7 @@ pub use async_std::sync::{Mutex as AsyncMutex, MutexGuard as AsyncMutexGuard};
 pub use cfg_if::cfg_if;
 pub use futures::*;
 pub use js_sys::Function;
-pub use kaspa_consensus_core::network::{NetworkId, NetworkIdError, NetworkIdT};
+pub use karlsen_consensus_core::network::{NetworkId, NetworkIdError, NetworkIdT};
 pub use kaspa_notify::{
     error::{Error as NotifyError, Result as NotifyResult},
     events::EVENT_TYPE_ARRAY,
@@ -21,9 +21,9 @@ pub use kaspa_rpc_core::{
     notify::{connection::ChannelConnection, mode::NotificationMode},
     prelude::*,
 };
-pub use kaspa_wrpc_client::client::*;
-pub use kaspa_wrpc_client::error::Error;
-pub use kaspa_wrpc_client::result::Result;
+pub use karlsen_wrpc_client::client::*;
+pub use karlsen_wrpc_client::error::Error;
+pub use karlsen_wrpc_client::result::Result;
 pub use serde::{Deserialize, Serialize};
 pub use std::str::FromStr;
 pub use std::sync::{

@@ -1,5 +1,5 @@
-use kaspa_consensus_core::tx::{TransactionInput, TransactionOutput};
-use kaspa_consensus_core::{tx::Transaction, BlockHasher};
+use karlsen_consensus_core::tx::{TransactionInput, TransactionOutput};
+use karlsen_consensus_core::{tx::Transaction, BlockHasher};
 use kaspa_database::prelude::CachePolicy;
 use kaspa_database::prelude::StoreError;
 use kaspa_database::prelude::DB;

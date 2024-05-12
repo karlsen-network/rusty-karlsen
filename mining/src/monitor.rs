@@ -1,5 +1,5 @@
 use super::MiningCounters;
-use kaspa_core::{
+use karlsen_core::{
     debug, info,
     task::{
         service::{AsyncService, AsyncServiceFuture},

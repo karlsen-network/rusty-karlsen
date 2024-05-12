@@ -4,7 +4,7 @@ use crate::model::{
     stores::{children::ChildrenStore, relations::RelationsStore},
 };
 use itertools::Itertools;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     blockhash::{BlockHashIteratorExtensions, BlockHashes, ORIGIN},
     BlockHashSet,
 };
@@ -152,7 +152,7 @@ impl<S: RelationsStore + ChildrenStore + ?Sized> RelationsStoreExtensions for S 
 mod tests {
     use super::*;
     use crate::model::stores::relations::{DbRelationsStore, RelationsStoreReader, StagingRelationsStore};
-    use kaspa_core::assert_match;
+    use karlsen_core::assert_match;
     use kaspa_database::prelude::{CachePolicy, ConnBuilder};
     use kaspa_database::{create_temp_db, prelude::MemoryWriter};
     use std::sync::Arc;

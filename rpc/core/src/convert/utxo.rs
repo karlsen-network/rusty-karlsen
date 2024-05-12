@@ -1,6 +1,6 @@
 use crate::RpcUtxosByAddressesEntry;
-use kaspa_addresses::Prefix;
-use kaspa_consensus_core::tx::UtxoEntry;
+use karlsen_addresses::Prefix;
+use karlsen_consensus_core::tx::UtxoEntry;
 use kaspa_index_core::indexed_utxos::UtxoSetByScriptPublicKey;
 use kaspa_txscript::extract_script_pub_key_address;
 

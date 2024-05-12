@@ -3,7 +3,7 @@ use clap::Parser;
 use futures::{future::try_join_all, Future};
 use itertools::Itertools;
 use karlsen_alloc::init_allocator_with_default_settings;
-use kaspa_consensus::{
+use karlsen_consensus::{
     config::ConfigBuilder,
     consensus::Consensus,
     constants::perf::PerfParams,
@@ -15,12 +15,12 @@ use kaspa_consensus::{
     },
     params::{Params, Testnet11Bps, DEVNET_PARAMS, NETWORK_DELAY_BOUND, TESTNET11_PARAMS},
 };
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     api::ConsensusApi, block::Block, blockstatus::BlockStatus, config::bps::calculate_ghostdag_k, errors::block::BlockProcessResult,
     BlockHashSet, BlockLevel, HashMapCustomHasher,
 };
-use kaspa_consensus_notify::root::ConsensusNotificationRoot;
-use kaspa_core::{info, task::service::AsyncService, task::tick::TickService, time::unix_now, trace, warn};
+use karlsen_consensus_notify::root::ConsensusNotificationRoot;
+use karlsen_core::{info, task::service::AsyncService, task::tick::TickService, time::unix_now, trace, warn};
 use kaspa_database::prelude::ConnBuilder;
 use kaspa_database::{create_temp_db, load_existing_db};
 use kaspa_hashes::Hash;
@@ -133,11 +133,11 @@ fn main() {
     let args = Args::parse();
 
     // Initialize the logger
-    kaspa_core::log::init_logger(None, &args.log_level);
+    karlsen_core::log::init_logger(None, &args.log_level);
 
     // Configure the panic behavior
     // As we log the panic, we want to set it up after the logger
-    kaspa_core::panic::configure_panic();
+    karlsen_core::panic::configure_panic();
 
     // Print package name and version
     info!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
@@ -442,9 +442,9 @@ mod tests {
         args.tpb = 1;
         args.test_pruning = true;
 
-        kaspa_core::log::try_init_logger(&args.log_level);
+        karlsen_core::log::try_init_logger(&args.log_level);
         // As we log the panic, we want to set it up after the logger
-        kaspa_core::panic::configure_panic();
+        karlsen_core::panic::configure_panic();
         main_impl(args);
     }
 }

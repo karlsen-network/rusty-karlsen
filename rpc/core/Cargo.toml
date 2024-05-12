@@ -11,17 +11,17 @@ repository.workspace = true
 
 [features]
 wasm32-sdk = [
-    "kaspa-consensus-client/wasm32-sdk",
-    "kaspa-consensus-wasm/wasm32-sdk"
+    "karlsen-consensus-client/wasm32-sdk",
+    "karlsen-consensus-wasm/wasm32-sdk"
 ]
 
 [dependencies]
-kaspa-addresses.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-consensus-client.workspace = true
-kaspa-consensus-notify.workspace = true
-kaspa-consensus-wasm.workspace = true
-kaspa-core.workspace = true
+karlsen-addresses.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensus-client.workspace = true
+karlsen-consensus-notify.workspace = true
+karlsen-consensus-wasm.workspace = true
+karlsen-core.workspace = true
 kaspa-hashes.workspace = true
 kaspa-index-core.workspace = true
 kaspa-math.workspace = true

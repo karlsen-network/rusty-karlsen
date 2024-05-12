@@ -19,8 +19,8 @@ use crate::tx::PaymentOutput;
 use crate::tx::{Fees, Generator, GeneratorSettings, GeneratorSummary, PaymentDestination, PendingTransaction, Signer};
 use crate::utxo::balance::{AtomicBalance, BalanceStrings};
 use crate::utxo::UtxoContextBinding;
-use kaspa_bip32::{ChildNumber, ExtendedPrivateKey, PrivateKey};
-use kaspa_consensus_client::UtxoEntryReference;
+use karlsen_bip32::{ChildNumber, ExtendedPrivateKey, PrivateKey};
+use karlsen_consensus_client::UtxoEntryReference;
 use karlsen_wallet_keys::derivation::gen0::WalletDerivationManagerV0;
 use workflow_core::abortable::Abortable;
 
@@ -665,11 +665,11 @@ mod tests {
     use super::create_private_keys;
     use super::ExtendedPrivateKey;
     use crate::imports::LEGACY_ACCOUNT_KIND;
-    use kaspa_addresses::Address;
-    use kaspa_addresses::Prefix;
-    use kaspa_bip32::secp256k1::SecretKey;
-    use kaspa_bip32::PrivateKey;
-    use kaspa_bip32::SecretKeyExt;
+    use karlsen_addresses::Address;
+    use karlsen_addresses::Prefix;
+    use karlsen_bip32::secp256k1::SecretKey;
+    use karlsen_bip32::PrivateKey;
+    use karlsen_bip32::SecretKeyExt;
     use karlsen_wallet_keys::derivation::gen0::PubkeyDerivationManagerV0;
     use std::str::FromStr;
 

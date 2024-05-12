@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use kaspa_addresses::Address;
-use kaspa_consensus_core::tx::{
+use karlsen_addresses::Address;
+use karlsen_consensus_core::tx::{
     ScriptPublicKey, ScriptVec, TransactionId, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry,
 };
 use serde::{Deserialize, Serialize};

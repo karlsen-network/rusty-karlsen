@@ -1,14 +1,14 @@
 use async_channel::unbounded;
-use kaspa_consensus_notify::root::ConsensusNotificationRoot;
-use kaspa_core::time::unix_now;
+use karlsen_consensus_notify::root::ConsensusNotificationRoot;
+use karlsen_core::time::unix_now;
 use std::sync::Arc;
 use std::thread::JoinHandle;
 
 use super::miner::Miner;
 
-use kaspa_consensus::config::Config;
-use kaspa_consensus::consensus::Consensus;
-use kaspa_consensus_core::block::Block;
+use karlsen_consensus::config::Config;
+use karlsen_consensus::consensus::Consensus;
+use karlsen_consensus_core::block::Block;
 use kaspa_database::prelude::ConnBuilder;
 use kaspa_database::utils::DbLifetime;
 use kaspa_database::{create_permanent_db, create_temp_db};

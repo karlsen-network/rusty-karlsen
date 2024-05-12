@@ -1,5 +1,5 @@
 use crate::imports::*;
-use kaspa_wrpc_client::Resolver;
+use karlsen_wrpc_client::Resolver;
 
 #[derive(Default, Handler)]
 #[help("Connect to a Kaspa network")]

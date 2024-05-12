@@ -4,9 +4,9 @@ use crate::imports::*;
 use crate::Resolver;
 use crate::{RpcEventCallback, RpcEventType, RpcEventTypeOrCallback};
 use js_sys::{Function, Object};
-use kaspa_addresses::{Address, AddressOrStringArrayT};
-use kaspa_consensus_client::UtxoEntryReference;
-use kaspa_consensus_core::network::{NetworkType, NetworkTypeT};
+use karlsen_addresses::{Address, AddressOrStringArrayT};
+use karlsen_consensus_client::UtxoEntryReference;
+use karlsen_consensus_core::network::{NetworkType, NetworkTypeT};
 use kaspa_notify::connection::ChannelType;
 use kaspa_notify::events::EventType;
 use kaspa_notify::listener;
@@ -16,7 +16,7 @@ pub use kaspa_rpc_core::wasm::message::*;
 pub use kaspa_rpc_macros::{
     build_wrpc_wasm_bindgen_interface, build_wrpc_wasm_bindgen_subscriptions, declare_typescript_wasm_interface as declare,
 };
-use kaspa_wasm_core::events::{get_event_targets, Sink};
+use karlsen_wasm_core::events::{get_event_targets, Sink};
 pub use serde_wasm_bindgen::from_value;
 use workflow_rpc::client::Ctl;
 pub use workflow_rpc::client::IConnectOptions;
@@ -666,7 +666,7 @@ impl RpcClient {
                             match ctl {
                                 Ctl::Connect => {
                                     let listener_id = this.inner.client.register_new_listener(ChannelConnection::new(
-                                        "kaspa-wrpc-client-wasm",
+                                        "karlsen-wrpc-client-wasm",
                                         this.inner.notification_channel.sender.clone(),
                                         ChannelType::Persistent,
                                     ));

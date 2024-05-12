@@ -20,17 +20,17 @@ use crate::{
     processes::{coinbase::CoinbaseManager, mass::MassCalculator, transaction_validator::TransactionValidator},
 };
 use crossbeam_channel::{Receiver, Sender};
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     block::Block,
     blockstatus::BlockStatus::{self, StatusHeaderOnly, StatusInvalid},
     config::genesis::GenesisBlock,
     tx::Transaction,
 };
-use kaspa_consensus_notify::{
+use karlsen_consensus_notify::{
     notification::{BlockAddedNotification, Notification},
     root::ConsensusNotificationRoot,
 };
-use kaspa_consensusmanager::SessionLock;
+use karlsen_consensusmanager::SessionLock;
 use kaspa_hashes::Hash;
 use kaspa_notify::notifier::Notify;
 use parking_lot::RwLock;

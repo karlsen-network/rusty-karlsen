@@ -14,7 +14,7 @@ use kaspa_math::int::SignedInteger;
 use parking_lot::{Mutex, RwLock};
 use rocksdb::WriteBatch;
 
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     blockhash::{self, BlockHashExtensions, BlockHashes, ORIGIN},
     errors::{
         consensus::{ConsensusError, ConsensusResult},
@@ -25,7 +25,7 @@ use kaspa_consensus_core::{
     trusted::{TrustedBlock, TrustedGhostdagData, TrustedHeader},
     BlockHashMap, BlockHashSet, BlockLevel, HashMapCustomHasher, KType,
 };
-use kaspa_core::{debug, info, trace};
+use karlsen_core::{debug, info, trace};
 use kaspa_database::prelude::{CachePolicy, ConnBuilder, StoreResultEmptyTuple, StoreResultExtensions};
 use kaspa_hashes::Hash;
 use kaspa_pow::calc_block_level;

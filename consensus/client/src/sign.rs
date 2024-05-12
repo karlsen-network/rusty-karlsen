@@ -1,7 +1,7 @@
 use crate::transaction::Transaction;
 use core::iter::once;
 use itertools::Itertools;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     hashing::{
         sighash::{calc_schnorr_signature_hash, SigHashReusedValues},
         sighash_type::SIG_HASH_ALL,

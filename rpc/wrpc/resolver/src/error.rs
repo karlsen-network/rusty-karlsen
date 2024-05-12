@@ -1,4 +1,4 @@
-use kaspa_wrpc_client::error::Error as RpcError;
+use karlsen_wrpc_client::error::Error as RpcError;
 use thiserror::Error;
 use toml::de::Error as TomlError;
 

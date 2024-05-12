@@ -10,17 +10,17 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-kaspa-core.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-consensus-notify.workspace = true
+karlsen-core.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensus-notify.workspace = true
 kaspa-p2p-lib.workspace = true
 kaspa-utils.workspace = true
 kaspa-utils-tower.workspace = true
 kaspa-hashes.workspace = true
 kaspa-muhash.workspace = true
-kaspa-connectionmanager.workspace = true
-kaspa-addressmanager.workspace = true
-kaspa-consensusmanager.workspace = true
+karlsen-connectionmanager.workspace = true
+karlsen-addressmanager.workspace = true
+karlsen-consensusmanager.workspace = true
 kaspa-mining.workspace = true
 kaspa-notify.workspace = true
 

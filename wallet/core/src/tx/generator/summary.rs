@@ -7,8 +7,8 @@
 
 use crate::utils::*;
 use borsh::{BorshDeserialize, BorshSerialize};
-use kaspa_consensus_core::network::{NetworkId, NetworkType};
-use kaspa_consensus_core::tx::TransactionId;
+use karlsen_consensus_core::network::{NetworkId, NetworkType};
+use karlsen_consensus_core::tx::TransactionId;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 

@@ -8,7 +8,7 @@ use crate::{
     network::{NetworkId, NetworkType},
     BlockLevel, KType,
 };
-use kaspa_addresses::Prefix;
+use karlsen_addresses::Prefix;
 use kaspa_math::Uint256;
 use std::{
     cmp::min,

@@ -13,4 +13,4 @@ repository.workspace = true
 
 [dependencies]
 thiserror.workspace = true
-kaspa-consensus-core.workspace = true
+karlsen-consensus-core.workspace = true

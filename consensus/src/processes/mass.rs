@@ -1,4 +1,4 @@
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     mass::transaction_estimated_serialized_size,
     tx::{Transaction, VerifiableTransaction},
 };
@@ -138,7 +138,7 @@ impl MassCalculator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use kaspa_consensus_core::{
+    use karlsen_consensus_core::{
         constants::{SOMPI_PER_KASPA, STORAGE_MASS_PARAMETER},
         subnets::SubnetworkId,
         tx::*,

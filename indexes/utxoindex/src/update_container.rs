@@ -1,4 +1,4 @@
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     tx::{TransactionOutpoint, UtxoEntry},
     utxo::utxo_diff::UtxoDiff,
     BlockHashSet, HashMapCustomHasher,

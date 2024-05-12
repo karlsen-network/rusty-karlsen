@@ -1,7 +1,7 @@
 use crate::matrix::Matrix;
 use js_sys::BigInt;
-use kaspa_consensus_client::Header;
-use kaspa_consensus_core::hashing;
+use karlsen_consensus_client::Header;
+use karlsen_consensus_core::hashing;
 use kaspa_hashes::Hash;
 use kaspa_hashes::PowHash;
 use kaspa_math::Uint256;

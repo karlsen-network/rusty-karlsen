@@ -1,6 +1,6 @@
-use kaspa_consensus_core::BlockHashSet;
-use kaspa_consensus_core::BlockHasher;
-use kaspa_consensus_core::BlockLevel;
+use karlsen_consensus_core::BlockHashSet;
+use karlsen_consensus_core::BlockHasher;
+use karlsen_consensus_core::BlockLevel;
 use kaspa_database::prelude::BatchDbWriter;
 use kaspa_database::prelude::CachePolicy;
 use kaspa_database::prelude::CachedDbSetAccess;

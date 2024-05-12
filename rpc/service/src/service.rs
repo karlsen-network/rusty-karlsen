@@ -4,9 +4,9 @@ use super::collector::{CollectorFromConsensus, CollectorFromIndex};
 use crate::converter::{consensus::ConsensusConverter, index::IndexConverter, protocol::ProtocolConverter};
 use crate::service::NetworkType::{Mainnet, Testnet};
 use async_trait::async_trait;
-use kaspa_consensus_core::api::counters::ProcessingCounters;
-use kaspa_consensus_core::errors::block::RuleError;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::api::counters::ProcessingCounters;
+use karlsen_consensus_core::errors::block::RuleError;
+use karlsen_consensus_core::{
     block::Block,
     coinbase::MinerData,
     config::Config,
@@ -14,13 +14,13 @@ use kaspa_consensus_core::{
     network::NetworkType,
     tx::{Transaction, COINBASE_TRANSACTION_INDEX},
 };
-use kaspa_consensus_notify::{
+use karlsen_consensus_notify::{
     notifier::ConsensusNotifier,
     {connection::ConsensusChannelConnection, notification::Notification as ConsensusNotification},
 };
-use kaspa_consensusmanager::ConsensusManager;
-use kaspa_core::time::unix_now;
-use kaspa_core::{
+use karlsen_consensusmanager::ConsensusManager;
+use karlsen_core::time::unix_now;
+use karlsen_core::{
     core::Core,
     debug,
     kaspad_env::version,
@@ -342,7 +342,7 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
 
         // Make sure the pay address prefix matches the config network type
         if request.pay_address.prefix != self.config.prefix() {
-            return Err(kaspa_addresses::AddressError::InvalidPrefix(request.pay_address.prefix.to_string()))?;
+            return Err(karlsen_addresses::AddressError::InvalidPrefix(request.pay_address.prefix.to_string()))?;
         }
 
         // Build block template

@@ -1,7 +1,7 @@
 use crate::result::Result;
-use kaspa_consensus_core::hashing::sighash::{calc_schnorr_signature_hash, SigHashReusedValues};
-use kaspa_consensus_core::hashing::sighash_type::SIG_HASH_ALL;
-use kaspa_consensus_core::tx;
+use karlsen_consensus_core::hashing::sighash::{calc_schnorr_signature_hash, SigHashReusedValues};
+use karlsen_consensus_core::hashing::sighash_type::SIG_HASH_ALL;
+use karlsen_consensus_core::tx;
 
 pub fn script_hashes(mut mutable_tx: tx::SignableTransaction) -> Result<Vec<kaspa_hashes::Hash>> {
     let mut list = vec![];

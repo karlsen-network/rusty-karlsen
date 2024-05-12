@@ -1,4 +1,4 @@
-use kaspa_consensus_core::tx::TransactionId;
+use karlsen_consensus_core::tx::TransactionId;
 use std::collections::HashSet;
 
 pub(crate) mod candidate_tx;

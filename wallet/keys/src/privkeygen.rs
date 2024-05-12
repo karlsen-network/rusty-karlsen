@@ -27,13 +27,13 @@ impl PrivateKeyGenerator {
             is_multisig,
             account_index,
             cosigner_index,
-            Some(kaspa_bip32::AddressType::Receive),
+            Some(karlsen_bip32::AddressType::Receive),
         )?)?;
         let change = xprv.clone().derive_path(&WalletDerivationManager::build_derivate_path(
             is_multisig,
             account_index,
             cosigner_index,
-            Some(kaspa_bip32::AddressType::Change),
+            Some(karlsen_bip32::AddressType::Change),
         )?)?;
 
         Ok(Self { receive, change })

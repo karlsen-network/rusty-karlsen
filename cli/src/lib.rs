@@ -1,4 +1,4 @@
-extern crate self as kaspa_cli;
+extern crate self as karlsen_cli;
 
 mod cli;
 pub mod error;
@@ -12,5 +12,5 @@ pub mod result;
 pub mod utils;
 mod wizards;
 
-pub use cli::{kaspa_cli, KaspaCli, Options, TerminalOptions, TerminalTarget};
+pub use cli::{karlsen_cli, KaspaCli, Options, TerminalOptions, TerminalTarget};
 pub use workflow_terminal::Terminal;

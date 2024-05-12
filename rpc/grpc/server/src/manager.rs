@@ -1,5 +1,5 @@
 use crate::connection::{Connection, ConnectionId};
-use kaspa_core::{debug, info, warn};
+use karlsen_core::{debug, info, warn};
 use kaspa_notify::connection::Connection as ConnectionT;
 use parking_lot::RwLock;
 use std::{

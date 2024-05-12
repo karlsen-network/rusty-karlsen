@@ -11,9 +11,9 @@ repository.workspace = true
 
 [dependencies]
 futures.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-consensusmanager.workspace = true
-kaspa-core.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensusmanager.workspace = true
+karlsen-core.workspace = true
 kaspa-database.workspace = true
 kaspa-hashes.workspace = true
 kaspa-index-core.workspace = true
@@ -25,5 +25,5 @@ serde.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-kaspa-consensus.workspace = true
+karlsen-consensus.workspace = true
 rand = { workspace = true, features = ["small_rng"] }

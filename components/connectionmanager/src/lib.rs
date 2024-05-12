@@ -9,8 +9,8 @@ use std::{
 use duration_string::DurationString;
 use futures_util::future::join_all;
 use itertools::Itertools;
-use kaspa_addressmanager::{AddressManager, NetAddress};
-use kaspa_core::{debug, info, warn};
+use karlsen_addressmanager::{AddressManager, NetAddress};
+use karlsen_core::{debug, info, warn};
 use kaspa_p2p_lib::{common::ProtocolError, ConnectionError, Peer};
 use kaspa_utils::triggers::SingleTrigger;
 use parking_lot::Mutex as ParkingLotMutex;
@@ -160,7 +160,7 @@ impl ConnectionManager {
     }
 
     async fn handle_outbound_connections(self: &Arc<Self>, peer_by_address: &HashMap<SocketAddr, Peer>) {
-        let active_outbound: HashSet<kaspa_addressmanager::NetAddress> =
+        let active_outbound: HashSet<karlsen_addressmanager::NetAddress> =
             peer_by_address.values().filter(|peer| peer.is_outbound()).map(|peer| peer.net_address().into()).collect();
         if active_outbound.len() >= self.outbound_target {
             return;

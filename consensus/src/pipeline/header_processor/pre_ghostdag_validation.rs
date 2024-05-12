@@ -3,11 +3,11 @@ use crate::constants;
 use crate::errors::{BlockProcessResult, RuleError};
 use crate::model::services::reachability::ReachabilityService;
 use crate::model::stores::statuses::StatusesStoreReader;
-use kaspa_consensus_core::blockhash::BlockHashExtensions;
-use kaspa_consensus_core::blockstatus::BlockStatus::StatusInvalid;
-use kaspa_consensus_core::header::Header;
-use kaspa_consensus_core::BlockLevel;
-use kaspa_core::time::unix_now;
+use karlsen_consensus_core::blockhash::BlockHashExtensions;
+use karlsen_consensus_core::blockstatus::BlockStatus::StatusInvalid;
+use karlsen_consensus_core::header::Header;
+use karlsen_consensus_core::BlockLevel;
+use karlsen_core::time::unix_now;
 use kaspa_database::prelude::StoreResultExtensions;
 use std::cmp::max;
 

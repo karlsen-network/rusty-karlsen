@@ -4,7 +4,7 @@ use crate::{
     model::stores::{ghostdag::GhostdagStoreReader, statuses::StatusesStoreReader},
     processes::window::WindowManager,
 };
-use kaspa_consensus_core::block::Block;
+use karlsen_consensus_core::block::Block;
 use kaspa_database::prelude::StoreResultExtensions;
 use kaspa_hashes::Hash;
 use kaspa_utils::option::OptionExtensions;
@@ -92,13 +92,13 @@ mod tests {
         params::DEVNET_PARAMS,
         processes::{transaction_validator::errors::TxRuleError, window::WindowManager},
     };
-    use kaspa_consensus_core::{
+    use karlsen_consensus_core::{
         api::ConsensusApi,
         merkle::calc_hash_merkle_root,
         subnets::SUBNETWORK_ID_NATIVE,
         tx::{Transaction, TransactionInput, TransactionOutpoint},
     };
-    use kaspa_core::assert_match;
+    use karlsen_core::assert_match;
     use kaspa_hashes::Hash;
 
     #[tokio::test]

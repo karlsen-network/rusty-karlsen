@@ -17,13 +17,13 @@ crate-type = ["cdylib", "lib"]
 [dependencies]
 karlsen-alloc.workspace = true # This changes the global allocator for all of the next dependencies so should be kept first
 
-kaspa-addresses.workspace = true
-kaspa-addressmanager.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-consensus-notify.workspace = true
-kaspa-consensus.workspace = true
-kaspa-consensusmanager.workspace = true
-kaspa-core.workspace = true
+karlsen-addresses.workspace = true
+karlsen-addressmanager.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensus-notify.workspace = true
+karlsen-consensus.workspace = true
+karlsen-consensusmanager.workspace = true
+karlsen-core.workspace = true
 kaspa-database.workspace = true
 kaspa-grpc-server.workspace = true
 kaspa-hashes.workspace = true
@@ -38,7 +38,7 @@ kaspa-txscript.workspace = true
 kaspa-utils.workspace = true
 kaspa-utils-tower.workspace = true
 karlsen-utxoindex.workspace = true
-kaspa-wrpc-server.workspace = true
+karlsen-wrpc-server.workspace = true
 
 async-channel.workspace = true
 clap.workspace = true
@@ -59,4 +59,4 @@ serde_with = "3.7.0"
 
 [features]
 heap = ["dhat", "karlsen-alloc/heap"]
-devnet-prealloc = ["kaspa-consensus/devnet-prealloc"]
+devnet-prealloc = ["karlsen-consensus/devnet-prealloc"]

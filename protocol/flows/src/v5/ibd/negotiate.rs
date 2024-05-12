@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 use super::IbdFlow;
-use kaspa_consensus_core::blockstatus::BlockStatus;
-use kaspa_consensusmanager::ConsensusProxy;
-use kaspa_core::{debug, warn};
+use karlsen_consensus_core::blockstatus::BlockStatus;
+use karlsen_consensusmanager::ConsensusProxy;
+use karlsen_core::{debug, warn};
 use kaspa_hashes::Hash;
 use kaspa_p2p_lib::{
     common::{ProtocolError, DEFAULT_TIMEOUT},

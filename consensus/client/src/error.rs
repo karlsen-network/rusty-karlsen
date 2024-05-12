@@ -29,16 +29,16 @@ pub enum Error {
     Secp256k1(#[from] secp256k1::Error),
 
     #[error(transparent)]
-    Sign(#[from] kaspa_consensus_core::sign::Error),
+    Sign(#[from] karlsen_consensus_core::sign::Error),
 
     #[error(transparent)]
     SerdeWasmBindgen(JsErrorData),
 
     #[error(transparent)]
-    Address(#[from] kaspa_addresses::AddressError),
+    Address(#[from] karlsen_addresses::AddressError),
 
     #[error(transparent)]
-    NetworkType(#[from] kaspa_consensus_core::network::NetworkTypeError),
+    NetworkType(#[from] karlsen_consensus_core::network::NetworkTypeError),
 
     #[error("Error converting property `{0}`: {1}")]
     Convert(&'static str, String),

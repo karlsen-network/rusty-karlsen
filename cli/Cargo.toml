@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-cli"
+name = "karlsen-cli"
 description = "Karlsen CLI"
 keywords = ["kaspa", "wallet", "cli", "rpc"]
 rust-version.workspace = true
@@ -20,7 +20,7 @@ include = [
 default = []
 
 [lib]
-name = "kaspa_cli_lib"
+name = "karlsen_cli_lib"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
@@ -33,17 +33,17 @@ downcast.workspace = true
 faster-hex.workspace = true
 futures.workspace = true
 js-sys.workspace = true
-kaspa-addresses.workspace = true
-kaspa-bip32.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-core.workspace = true
+karlsen-addresses.workspace = true
+karlsen-bip32.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-core.workspace = true
 kaspa-daemon.workspace = true
 kaspa-metrics-core.workspace = true
 kaspa-rpc-core.workspace = true
 kaspa-utils.workspace = true
 karlsen-wallet-core.workspace = true
 karlsen-wallet-keys.workspace = true
-kaspa-wrpc-client.workspace = true
+karlsen-wrpc-client.workspace = true
 nw-sys.workspace = true
 pad.workspace = true
 regex.workspace = true

@@ -28,7 +28,7 @@ pub enum Error {
     ChannelError(String),
 
     #[error(transparent)]
-    WrpcError(#[from] kaspa_wrpc_client::error::Error),
+    WrpcError(#[from] karlsen_wrpc_client::error::Error),
 
     #[error(transparent)]
     RpcError(#[from] kaspa_rpc_core::RpcError),
@@ -91,7 +91,7 @@ pub enum Error {
     NoKeys,
 
     #[error(transparent)]
-    AddressError(#[from] kaspa_addresses::AddressError),
+    AddressError(#[from] karlsen_addresses::AddressError),
 
     #[error("{0}")]
     DowncastError(String),
@@ -109,10 +109,10 @@ pub enum Error {
     Dom(#[from] workflow_dom::error::Error),
 
     #[error(transparent)]
-    NetworkId(#[from] kaspa_consensus_core::network::NetworkIdError),
+    NetworkId(#[from] karlsen_consensus_core::network::NetworkIdError),
 
     #[error(transparent)]
-    Bip32(#[from] kaspa_bip32::Error),
+    Bip32(#[from] karlsen_bip32::Error),
 
     #[error("private key {0} already exists")]
     PrivateKeyAlreadyExists(String),

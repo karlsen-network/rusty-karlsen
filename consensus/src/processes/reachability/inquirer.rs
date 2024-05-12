@@ -1,7 +1,7 @@
 use super::interval::Interval;
 use super::{tree::*, *};
 use crate::model::stores::reachability::{ReachabilityStore, ReachabilityStoreReader};
-use kaspa_consensus_core::blockhash;
+use karlsen_consensus_core::blockhash;
 use kaspa_hashes::Hash;
 
 /// Init the reachability store to match the state required by the algorithmic layer.
@@ -266,7 +266,7 @@ mod tests {
         processes::reachability::{interval::Interval, tests::gen::generate_complex_dag},
     };
     use itertools::Itertools;
-    use kaspa_consensus_core::blockhash::ORIGIN;
+    use karlsen_consensus_core::blockhash::ORIGIN;
     use kaspa_database::prelude::ConnBuilder;
     use kaspa_database::{create_temp_db, prelude::CachePolicy};
     use parking_lot::RwLock;

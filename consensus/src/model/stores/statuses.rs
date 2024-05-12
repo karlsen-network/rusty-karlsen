@@ -1,4 +1,4 @@
-use kaspa_consensus_core::{blockstatus::BlockStatus, BlockHasher};
+use karlsen_consensus_core::{blockstatus::BlockStatus, BlockHasher};
 use kaspa_database::registry::DatabaseStorePrefixes;
 use parking_lot::{RwLock, RwLockWriteGuard};
 use rocksdb::WriteBatch;

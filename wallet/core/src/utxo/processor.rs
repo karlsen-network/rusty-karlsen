@@ -19,7 +19,7 @@ use kaspa_rpc_core::{
     message::UtxosChangedNotification,
     GetServerInfoResponse,
 };
-use kaspa_wrpc_client::KaspaRpcClient;
+use karlsen_wrpc_client::KaspaRpcClient;
 use workflow_core::channel::{Channel, DuplexChannel};
 use workflow_core::task::spawn;
 

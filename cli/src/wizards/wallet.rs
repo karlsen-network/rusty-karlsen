@@ -1,7 +1,7 @@
 use crate::cli::KaspaCli;
 use crate::imports::*;
 use crate::result::Result;
-use kaspa_bip32::{Language, Mnemonic, WordCount};
+use karlsen_bip32::{Language, Mnemonic, WordCount};
 use karlsen_wallet_core::storage::{make_filename, Hint};
 
 pub(crate) async fn create(ctx: &Arc<KaspaCli>, name: Option<&str>, import_with_mnemonic: bool) -> Result<()> {

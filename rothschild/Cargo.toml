@@ -10,9 +10,9 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-kaspa-addresses.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-core.workspace = true
+karlsen-addresses.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-core.workspace = true
 kaspa-grpc-client.workspace = true
 kaspa-notify.workspace = true
 kaspa-rpc-core.workspace = true

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     blockhash::{self, BlockHashExtensions, BlockHashes},
     BlockHashMap, BlueWorkType, HashMapCustomHasher,
 };

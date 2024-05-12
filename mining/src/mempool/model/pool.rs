@@ -9,7 +9,7 @@ use crate::{
         TransactionIdSet,
     },
 };
-use kaspa_consensus_core::tx::{MutableTransaction, TransactionId};
+use karlsen_consensus_core::tx::{MutableTransaction, TransactionId};
 use std::collections::{hash_set::Iter, HashMap, HashSet, VecDeque};
 
 pub(crate) type TransactionsEdges = HashMap<TransactionId, TransactionIdSet>;

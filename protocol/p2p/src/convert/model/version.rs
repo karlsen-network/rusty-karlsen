@@ -1,5 +1,5 @@
-use kaspa_consensus_core::subnets::SubnetworkId;
-use kaspa_core::{
+use karlsen_consensus_core::subnets::SubnetworkId;
+use karlsen_core::{
     kaspad_env::{name, version},
     time::unix_now,
 };

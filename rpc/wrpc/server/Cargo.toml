@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-wrpc-server"
+name = "karlsen-wrpc-server"
 description = "Karlsen wRPC server"
 rust-version.workspace = true
 version.workspace = true
@@ -16,8 +16,8 @@ crate-type = ["cdylib", "lib"]
 async-trait.workspace = true
 borsh = { workspace = true, features = ["rc"] }
 futures.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-core.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-core.workspace = true
 kaspa-grpc-client.workspace = true
 kaspa-notify.workspace = true
 kaspa-rpc-core.workspace = true

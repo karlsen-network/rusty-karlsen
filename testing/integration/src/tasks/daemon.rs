@@ -4,9 +4,9 @@ use crate::{
 };
 use async_trait::async_trait;
 use clap::Parser;
-use kaspa_addresses::Address;
-use kaspa_consensus_core::network::NetworkType;
-use kaspa_core::{trace, warn};
+use karlsen_addresses::Address;
+use karlsen_consensus_core::network::NetworkType;
+use karlsen_core::{trace, warn};
 use kaspa_utils::{fd_budget, triggers::SingleTrigger};
 use karlsend_lib::args::Args;
 use std::{iter::once, sync::Arc};
@@ -101,7 +101,7 @@ impl DaemonArgs {
         let schnorr_key = secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, &private_key_bytes).unwrap();
         Address::new(
             NetworkType::Simnet.into(),
-            kaspa_addresses::Version::PubKey,
+            karlsen_addresses::Version::PubKey,
             &schnorr_key.public_key().x_only_public_key().0.serialize(),
         )
     }

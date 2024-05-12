@@ -1,5 +1,5 @@
 use crate::processes::reachability::interval::Interval;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     blockhash::{self, BlockHashes},
     BlockHashMap, BlockHashSet, BlockHasher, BlockLevel, HashMapCustomHasher,
 };

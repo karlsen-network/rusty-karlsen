@@ -1,6 +1,6 @@
 use crate::constants::{MAX_SOMPI, SEQUENCE_LOCK_TIME_DISABLED, SEQUENCE_LOCK_TIME_MASK};
-use kaspa_consensus_core::{hashing::sighash::SigHashReusedValues, tx::VerifiableTransaction};
-use kaspa_core::warn;
+use karlsen_consensus_core::{hashing::sighash::SigHashReusedValues, tx::VerifiableTransaction};
+use karlsen_core::warn;
 use kaspa_txscript::{get_sig_op_count, TxScriptEngine};
 
 use super::{
@@ -161,10 +161,10 @@ mod tests {
     use super::super::errors::TxRuleError;
     use core::str::FromStr;
     use itertools::Itertools;
-    use kaspa_consensus_core::sign::sign;
-    use kaspa_consensus_core::subnets::SubnetworkId;
-    use kaspa_consensus_core::tx::{MutableTransaction, PopulatedTransaction, ScriptVec, TransactionId, UtxoEntry};
-    use kaspa_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput};
+    use karlsen_consensus_core::sign::sign;
+    use karlsen_consensus_core::subnets::SubnetworkId;
+    use karlsen_consensus_core::tx::{MutableTransaction, PopulatedTransaction, ScriptVec, TransactionId, UtxoEntry};
+    use karlsen_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput};
     use kaspa_txscript_errors::TxScriptError;
     use secp256k1::Secp256k1;
     use smallvec::SmallVec;

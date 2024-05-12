@@ -80,19 +80,19 @@ include = [
 
 [workspace.dependencies]
 # kaspa-testing-integration = { version = "0.14.1", path = "testing/integration" }
-kaspa-addresses = { version = "0.14.1", path = "crypto/addresses" }
-kaspa-addressmanager = { version = "0.14.1", path = "components/addressmanager" }
-kaspa-bip32 = { version = "0.14.1", path = "wallet/bip32" }
-kaspa-resolver = { version = "0.14.1", path = "rpr/wrpc/resolver" }
-kaspa-cli = { version = "0.14.1", path = "cli" }
-kaspa-connectionmanager = { version = "0.14.1", path = "components/connectionmanager" }
-kaspa-consensus = { version = "0.14.1", path = "consensus" }
-kaspa-consensus-core = { version = "0.14.1", path = "consensus/core" }
-kaspa-consensus-client = { version = "0.14.1", path = "consensus/client" }
-kaspa-consensus-notify = { version = "0.14.1", path = "consensus/notify" }
-kaspa-consensus-wasm = { version = "0.14.1", path = "consensus/wasm" }
-kaspa-consensusmanager = { version = "0.14.1", path = "components/consensusmanager" }
-kaspa-core = { version = "0.14.1", path = "core" }
+karlsen-addresses = { version = "0.14.1", path = "crypto/addresses" }
+karlsen-addressmanager = { version = "0.14.1", path = "components/addressmanager" }
+karlsen-bip32 = { version = "0.14.1", path = "wallet/bip32" }
+karlsen-resolver = { version = "0.14.1", path = "rpr/wrpc/resolver" }
+karlsen-cli = { version = "0.14.1", path = "cli" }
+karlsen-connectionmanager = { version = "0.14.1", path = "components/connectionmanager" }
+karlsen-consensus = { version = "0.14.1", path = "consensus" }
+karlsen-consensus-core = { version = "0.14.1", path = "consensus/core" }
+karlsen-consensus-client = { version = "0.14.1", path = "consensus/client" }
+karlsen-consensus-notify = { version = "0.14.1", path = "consensus/notify" }
+karlsen-consensus-wasm = { version = "0.14.1", path = "consensus/wasm" }
+karlsen-consensusmanager = { version = "0.14.1", path = "components/consensusmanager" }
+karlsen-core = { version = "0.14.1", path = "core" }
 kaspa-daemon = { version = "0.14.1", path = "daemon" }
 kaspa-database = { version = "0.14.1", path = "database" }
 kaspa-grpc-client = { version = "0.14.1", path = "rpc/grpc/client" }
@@ -125,14 +125,14 @@ karlsen-wallet-cli-wasm = { version = "0.14.1", path = "wallet/wasm" }
 karlsen-wallet-keys = { version = "0.14.1", path = "wallet/keys" }
 karlsen-wallet-core = { version = "0.14.1", path = "wallet/core" }
 karlsen-wallet-macros = { version = "0.14.1", path = "wallet/macros" }
-kaspa-wasm = { version = "0.14.1", path = "wasm" }
-kaspa-wasm-core = { version = "0.14.1", path = "wasm/core" }
-kaspa-wrpc-client = { version = "0.14.1", path = "rpc/wrpc/client" }
-kaspa-wrpc-core = { version = "0.14.1", path = "rpc/wrpc/core" }
-kaspa-wrpc-proxy = { version = "0.14.1", path = "rpc/wrpc/proxy" }
-kaspa-wrpc-server = { version = "0.14.1", path = "rpc/wrpc/server" }
-kaspa-wrpc-wasm = { version = "0.14.1", path = "rpc/wrpc/wasm" }
-kaspa-wrpc-example-subscriber = { version = "0.14.1", path = "rpc/wrpc/examples/subscriber" }
+karlsen-wasm = { version = "0.14.1", path = "wasm" }
+karlsen-wasm-core = { version = "0.14.1", path = "wasm/core" }
+karlsen-wrpc-client = { version = "0.14.1", path = "rpc/wrpc/client" }
+karlsen-wrpc-core = { version = "0.14.1", path = "rpc/wrpc/core" }
+karlsen-wrpc-proxy = { version = "0.14.1", path = "rpc/wrpc/proxy" }
+karlsen-wrpc-server = { version = "0.14.1", path = "rpc/wrpc/server" }
+karlsen-wrpc-wasm = { version = "0.14.1", path = "rpc/wrpc/wasm" }
+karlsen-wrpc-example-subscriber = { version = "0.14.1", path = "rpc/wrpc/examples/subscriber" }
 karlsend = { version = "0.14.1", path = "karlsend" }
 karlsen-alloc = { version = "0.14.1", path = "utils/alloc" }
 

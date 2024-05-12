@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use kaspa_consensus_core::config::Config;
+use karlsen_consensus_core::config::Config;
 use kaspa_index_core::indexed_utxos::UtxoSetByScriptPublicKey;
 use kaspa_index_core::notification::{self as index_notify, Notification as IndexNotification};
 use kaspa_notify::converter::Converter;

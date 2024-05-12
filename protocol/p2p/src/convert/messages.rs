@@ -7,7 +7,7 @@ use super::{
     option::TryIntoOptionEx,
 };
 use crate::pb as protowire;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     header::Header,
     pruning::{PruningPointProof, PruningPointsList},
     tx::{TransactionId, TransactionOutpoint, UtxoEntry},

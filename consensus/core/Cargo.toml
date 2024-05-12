@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-consensus-core"
+name = "karlsen-consensus-core"
 description = "Karlsen consensus core"
 rust-version.workspace = true
 version.workspace = true
@@ -23,8 +23,8 @@ futures-util.workspace = true
 getrandom.workspace = true
 itertools.workspace = true
 js-sys.workspace = true
-kaspa-addresses.workspace = true
-kaspa-core.workspace = true
+karlsen-addresses.workspace = true
+karlsen-core.workspace = true
 kaspa-hashes.workspace = true
 kaspa-math.workspace = true
 kaspa-merkle.workspace = true

@@ -7,12 +7,12 @@ use crate::mempool::{
     tx::{Orphan, Priority},
     Mempool,
 };
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     api::ConsensusApi,
     constants::UNACCEPTED_DAA_SCORE,
     tx::{MutableTransaction, Transaction, TransactionId, TransactionOutpoint, UtxoEntry},
 };
-use kaspa_core::{debug, info};
+use karlsen_core::{debug, info};
 use std::sync::Arc;
 
 impl Mempool {
@@ -108,9 +108,9 @@ impl Mempool {
         let num_extra_outs = transaction.tx.outputs.len() as i64 - transaction.tx.inputs.len() as i64;
         if !has_coinbase_input
             && num_extra_outs > 2
-            && transaction.calculated_fee.unwrap() < num_extra_outs as u64 * kaspa_consensus_core::constants::SOMPI_PER_KASPA
+            && transaction.calculated_fee.unwrap() < num_extra_outs as u64 * karlsen_consensus_core::constants::SOMPI_PER_KASPA
         {
-            kaspa_core::trace!("Rejected spam tx {} from mempool ({} outputs)", transaction.id(), transaction.tx.outputs.len());
+            karlsen_core::trace!("Rejected spam tx {} from mempool ({} outputs)", transaction.id(), transaction.tx.outputs.len());
             return Err(RuleError::RejectSpamTransaction(transaction.id()));
         }
 

@@ -1,7 +1,7 @@
 use crate::error::Error;
 use js_sys::{Array, Object};
-use kaspa_consensus_core::hashing;
-use kaspa_consensus_core::header as native;
+use karlsen_consensus_core::hashing;
+use karlsen_consensus_core::header as native;
 use kaspa_hashes::Hash;
 use kaspa_utils::hex::ToHex;
 use serde::{Deserialize, Serialize};

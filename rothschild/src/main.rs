@@ -2,15 +2,15 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use clap::{Arg, ArgAction, Command};
 use itertools::Itertools;
-use kaspa_addresses::{Address, Prefix, Version};
-use kaspa_consensus_core::{
+use karlsen_addresses::{Address, Prefix, Version};
+use karlsen_consensus_core::{
     config::params::{TESTNET11_PARAMS, TESTNET_PARAMS},
     constants::{SOMPI_PER_KASPA, TX_VERSION},
     sign::sign,
     subnets::SUBNETWORK_ID_NATIVE,
     tx::{MutableTransaction, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry},
 };
-use kaspa_core::{info, kaspad_env::version, time::unix_now, warn};
+use karlsen_core::{info, kaspad_env::version, time::unix_now, warn};
 use kaspa_grpc_client::{ClientPool, GrpcClient};
 use kaspa_notify::subscription::context::SubscriptionContext;
 use kaspa_rpc_core::{api::rpc::RpcApi, notify::mode::NotificationMode};
@@ -113,7 +113,7 @@ struct ClientPoolArg {
 
 #[tokio::main]
 async fn main() {
-    kaspa_core::log::init_logger(None, "");
+    karlsen_core::log::init_logger(None, "");
     let args = Args::parse();
     let stats = Arc::new(Mutex::new(Stats { num_txs: 0, since: unix_now(), num_utxos: 0, utxos_amount: 0, num_outs: 0 }));
     let subscription_context = SubscriptionContext::new();

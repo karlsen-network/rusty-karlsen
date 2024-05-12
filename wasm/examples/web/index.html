@@ -58,7 +58,7 @@
                 <p>Try running <code>python3 -m http.server</code> and navigating to <a href="http://localhost:8000/index.html">http://localhost:8000/</a></p>
                 <p>If using Rust, install http server by running: <code>cargo install http-server</code>,<br>
                 then run <code>http-server</code> and navigate to <a href="http://localhost:7878/index.html">http://localhost:7878/</a></p>
-                <p>Make sure to run HTTP server from the root of the <code>kaspa-wasm32-sdk</code> folder.</p>
+                <p>Make sure to run HTTP server from the root of the <code>karlsen-wasm32-sdk</code> folder.</p>
             `;
         } else {
             if (!window.packageSizes) {
@@ -68,7 +68,7 @@
             Object.entries({
                 "kaspa-keygen": ["KeyGen","Key & Address Generation only"],
                 "kaspa-rpc": ["RPC","RPC only"],
-                "kaspa-core": ["Core","RPC + Key & Address Generation + Wallet SDK"],
+                "karlsen-core": ["Core","RPC + Key & Address Generation + Wallet SDK"],
                 "kaspa": ["SDK","Full SDK + Integrated Wallet"],
             }).forEach(([ident,[name,descr]]) => {
                 let size = packageSizes[ident] ? `${packageSizes[ident]}` : "";
@@ -78,9 +78,9 @@
         }
     </script>
     <script type="module">
-        import * as kaspa from '../../web/kaspa-core/kaspa.js';
+        import * as kaspa from '../../web/karlsen-core/kaspa.js';
         (async () => {
-            await kaspa.default('../../web/kaspa-core/kaspa_bg.wasm');
+            await kaspa.default('../../web/karlsen-core/kaspa_bg.wasm');
             console.log("kaspa", kaspa);
             console.log("version", kaspa.version());
             document.getElementById("version").innerText = kaspa.version();

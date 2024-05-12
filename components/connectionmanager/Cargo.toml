@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-connectionmanager"
+name = "karlsen-connectionmanager"
 description = "Karlsen connection manager"
 rust-version.workspace = true
 version.workspace = true
@@ -13,8 +13,8 @@ repository.workspace = true
 duration-string.workspace = true
 futures-util.workspace = true
 itertools.workspace = true
-kaspa-addressmanager.workspace = true
-kaspa-core.workspace = true
+karlsen-addressmanager.workspace = true
+karlsen-core.workspace = true
 kaspa-p2p-lib.workspace = true
 kaspa-utils.workspace = true
 log.workspace = true

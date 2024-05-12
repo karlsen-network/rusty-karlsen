@@ -4,8 +4,8 @@ use crate::utxo as native;
 use crate::utxo::{UtxoContextBinding, UtxoContextId};
 use crate::wasm::utxo::UtxoProcessor;
 use crate::wasm::{Balance, BalanceStrings};
-use kaspa_addresses::AddressOrStringArrayT;
-use kaspa_consensus_client::UtxoEntryReferenceArrayT;
+use karlsen_addresses::AddressOrStringArrayT;
+use karlsen_consensus_client::UtxoEntryReferenceArrayT;
 use kaspa_hashes::Hash;
 use karlsen_wallet_macros::declare_typescript_wasm_interface as declare;
 

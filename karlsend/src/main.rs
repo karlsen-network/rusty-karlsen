@@ -1,11 +1,11 @@
-extern crate kaspa_consensus;
-extern crate kaspa_core;
+extern crate karlsen_consensus;
+extern crate karlsen_core;
 extern crate kaspa_hashes;
 
 use std::sync::Arc;
 
 use karlsen_alloc::init_allocator_with_default_settings;
-use kaspa_core::{info, signals::Signals};
+use karlsen_core::{info, signals::Signals};
 use kaspa_utils::fd_budget;
 use karlsend_lib::{
     args::parse_args,

@@ -1,5 +1,5 @@
-use kaspa_addresses::Version;
-use kaspa_bip32::secp256k1::XOnlyPublicKey;
+use karlsen_addresses::Version;
+use karlsen_bip32::secp256k1::XOnlyPublicKey;
 use karlsen_wallet_core::{
     account::{BIP32_ACCOUNT_KIND, KEYPAIR_ACCOUNT_KIND},
     message::{sign_message, verify_message, PersonalMessage},
@@ -38,22 +38,22 @@ impl Message {
                     return self.display_help(ctx, argv).await;
                 }
 
-                let kaspa_address = argv[1].as_str();
+                let karlsen_address = argv[1].as_str();
                 let asked_message = ctx.term().ask(false, "Message: ").await?;
                 let message = asked_message.as_str();
 
-                self.sign(ctx, kaspa_address, message).await?;
+                self.sign(ctx, karlsen_address, message).await?;
             }
             "verify" => {
                 if argv.len() != 3 {
                     return self.display_help(ctx, argv).await;
                 }
-                let kaspa_address = argv[1].as_str();
+                let karlsen_address = argv[1].as_str();
                 let signature = argv[2].as_str();
                 let asked_message = ctx.term().ask(false, "Message: ").await?;
                 let message = asked_message.as_str();
 
-                self.verify(ctx, kaspa_address, signature, message).await?;
+                self.verify(ctx, karlsen_address, signature, message).await?;
             }
             v => {
                 tprintln!(ctx, "unknown command: '{v}'\r\n");
@@ -67,10 +67,10 @@ impl Message {
     async fn display_help(self: Arc<Self>, ctx: Arc<KaspaCli>, _argv: Vec<String>) -> Result<()> {
         ctx.term().help(
             &[
-                ("sign <kaspa_address>", "Sign a message with the private key that matches the given address. Prompts for message."),
+                ("sign <karlsen_address>", "Sign a message with the private key that matches the given address. Prompts for message."),
                 (
-                    "verify <kaspa_address> <signature>",
-                    "Verify the signature against the message and kaspa_address. Prompts for message.",
+                    "verify <karlsen_address> <signature>",
+                    "Verify the signature against the message and karlsen_address. Prompts for message.",
                 ),
             ],
             None,
@@ -79,14 +79,14 @@ impl Message {
         Ok(())
     }
 
-    async fn sign(self: Arc<Self>, ctx: Arc<KaspaCli>, kaspa_address: &str, message: &str) -> Result<()> {
-        let kaspa_address = Address::try_from(kaspa_address)?;
-        if kaspa_address.version != Version::PubKey {
+    async fn sign(self: Arc<Self>, ctx: Arc<KaspaCli>, karlsen_address: &str, message: &str) -> Result<()> {
+        let karlsen_address = Address::try_from(karlsen_address)?;
+        if karlsen_address.version != Version::PubKey {
             return Err(Error::custom("Address not supported for message signing. Only supports PubKey addresses"));
         }
 
         let pm = PersonalMessage(message);
-        let privkey = self.get_address_private_key(&ctx, kaspa_address).await?;
+        let privkey = self.get_address_private_key(&ctx, karlsen_address).await?;
 
         let sig_result = sign_message(&pm, &privkey);
 
@@ -100,13 +100,13 @@ impl Message {
         }
     }
 
-    async fn verify(self: Arc<Self>, ctx: Arc<KaspaCli>, kaspa_address: &str, signature: &str, message: &str) -> Result<()> {
-        let kaspa_address = Address::try_from(kaspa_address)?;
-        if kaspa_address.version != Version::PubKey {
+    async fn verify(self: Arc<Self>, ctx: Arc<KaspaCli>, karlsen_address: &str, signature: &str, message: &str) -> Result<()> {
+        let karlsen_address = Address::try_from(karlsen_address)?;
+        if karlsen_address.version != Version::PubKey {
             return Err(Error::custom("Address not supported for message signing. Only supports PubKey addresses"));
         }
 
-        let pubkey = XOnlyPublicKey::from_slice(&kaspa_address.payload[0..32]).unwrap();
+        let pubkey = XOnlyPublicKey::from_slice(&karlsen_address.payload[0..32]).unwrap();
 
         let mut signature_hex = [0u8; 64];
         faster_hex::hex_decode(signature.as_bytes(), &mut signature_hex)?;
@@ -126,7 +126,7 @@ impl Message {
         Ok(())
     }
 
-    async fn get_address_private_key(self: Arc<Self>, ctx: &Arc<KaspaCli>, kaspa_address: Address) -> Result<[u8; 32]> {
+    async fn get_address_private_key(self: Arc<Self>, ctx: &Arc<KaspaCli>, karlsen_address: Address) -> Result<[u8; 32]> {
         let account = ctx.wallet().account()?;
 
         match account.account_kind().as_ref() {
@@ -135,10 +135,10 @@ impl Message {
                 let keydata = account.prv_key_data(wallet_secret).await?;
                 let account = account.clone().as_derivation_capable().expect("expecting derivation capable");
 
-                let (receive, change) = account.derivation().addresses_indexes(&[&kaspa_address])?;
+                let (receive, change) = account.derivation().addresses_indexes(&[&karlsen_address])?;
                 let private_keys = account.create_private_keys(&keydata, &payment_secret, &receive, &change)?;
                 for (address, private_key) in private_keys {
-                    if kaspa_address == *address {
+                    if karlsen_address == *address {
                         return Ok(private_key.secret_bytes());
                     }
                 }

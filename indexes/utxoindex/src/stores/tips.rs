@@ -5,7 +5,7 @@ use kaspa_database::{
     registry::DatabaseStorePrefixes,
 };
 
-use kaspa_consensus_core::BlockHashSet;
+use karlsen_consensus_core::BlockHashSet;
 
 /// Reader API for `UtxoIndexTipsStore`.
 pub trait UtxoIndexTipsStoreReader {

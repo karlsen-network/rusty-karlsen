@@ -1,5 +1,5 @@
 use super::{factory::MultiConsensusManagementStore, Consensus};
-use kaspa_consensusmanager::ConsensusCtl;
+use karlsen_consensusmanager::ConsensusCtl;
 use kaspa_database::prelude::DB;
 use parking_lot::RwLock;
 use std::{

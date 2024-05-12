@@ -3,7 +3,7 @@
 //!
 
 use crate::imports::*;
-pub use kaspa_consensus_core::tx::TransactionId;
+pub use karlsen_consensus_core::tx::TransactionId;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_TRANSACTION_KIND: &'static str = r#"

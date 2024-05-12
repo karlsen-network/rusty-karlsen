@@ -1,9 +1,9 @@
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     tx::{ScriptPublicKeys, TransactionOutpoint},
     utxo::utxo_diff::UtxoDiff,
     BlockHashSet,
 };
-use kaspa_consensusmanager::spawn_blocking;
+use karlsen_consensusmanager::spawn_blocking;
 use kaspa_database::prelude::StoreResult;
 use kaspa_hashes::Hash;
 use kaspa_index_core::indexed_utxos::BalanceByScriptPublicKey;

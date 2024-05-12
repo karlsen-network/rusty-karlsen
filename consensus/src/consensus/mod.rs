@@ -38,7 +38,7 @@ use crate::{
     },
     processes::window::{WindowManager, WindowType},
 };
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     acceptance_data::AcceptanceData,
     api::{stats::BlockCount, BlockValidationFutures, ConsensusApi, ConsensusStats},
     block::{Block, BlockTemplate, TemplateBuildMode, TemplateTransactionSelector, VirtualStateApproxId},
@@ -60,13 +60,13 @@ use kaspa_consensus_core::{
     tx::{MutableTransaction, Transaction, TransactionOutpoint, UtxoEntry},
     BlockHashSet, BlueWorkType, ChainPath,
 };
-use kaspa_consensus_notify::root::ConsensusNotificationRoot;
+use karlsen_consensus_notify::root::ConsensusNotificationRoot;
 
 use crossbeam_channel::{
     bounded as bounded_crossbeam, unbounded as unbounded_crossbeam, Receiver as CrossbeamReceiver, Sender as CrossbeamSender,
 };
 use itertools::Itertools;
-use kaspa_consensusmanager::{SessionLock, SessionReadGuard};
+use karlsen_consensusmanager::{SessionLock, SessionReadGuard};
 
 use kaspa_database::prelude::StoreResultExtensions;
 use kaspa_hashes::Hash;

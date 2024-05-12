@@ -1,4 +1,4 @@
-use kaspa_consensus_core::BlockHasher;
+use karlsen_consensus_core::BlockHasher;
 use kaspa_database::prelude::CachePolicy;
 use kaspa_database::prelude::StoreError;
 use kaspa_database::prelude::DB;

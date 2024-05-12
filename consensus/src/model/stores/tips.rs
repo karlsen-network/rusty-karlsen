@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use kaspa_consensus_core::BlockHashSet;
-use kaspa_consensus_core::BlockHasher;
+use karlsen_consensus_core::BlockHashSet;
+use karlsen_consensus_core::BlockHasher;
 use kaspa_database::prelude::CachedDbSetItem;
 use kaspa_database::prelude::DbWriter;
 use kaspa_database::prelude::ReadLock;

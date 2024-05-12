@@ -1,4 +1,4 @@
-use kaspa_core::debug;
+use karlsen_core::debug;
 use kaspa_p2p_lib::echo::EchoFlowInitializer;
 use kaspa_utils::networking::NetAddress;
 use std::{str::FromStr, sync::Arc, time::Duration};
@@ -6,7 +6,7 @@ use std::{str::FromStr, sync::Arc, time::Duration};
 #[tokio::main]
 async fn main() {
     // [-] - init logger
-    kaspa_core::log::init_logger(None, "debug");
+    karlsen_core::log::init_logger(None, "debug");
     // [0] - init p2p-adaptor - server side
     let ip_port = NetAddress::from_str("[::1]:50051").unwrap();
     let initializer = Arc::new(EchoFlowInitializer::new());

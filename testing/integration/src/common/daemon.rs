@@ -1,5 +1,5 @@
-use kaspa_consensus_core::network::NetworkId;
-use kaspa_core::{core::Core, signals::Shutdown, task::runtime::AsyncRuntime};
+use karlsen_consensus_core::network::NetworkId;
+use karlsen_core::{core::Core, signals::Shutdown, task::runtime::AsyncRuntime};
 use kaspa_database::utils::get_kaspa_tempdir;
 use kaspa_grpc_client::GrpcClient;
 use kaspa_grpc_server::service::GrpcService;

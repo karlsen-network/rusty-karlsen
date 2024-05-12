@@ -9,7 +9,7 @@ elif [ "$1" == "--rpc" ]; then
     wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa-rpc --features wasm32-rpc
 elif [ "$1" == "--core" ]; then
     echo "building wasm32-core"
-    wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa-core --features wasm32-core
+    wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/karlsen-core --features wasm32-core
 elif [ "$1" == "--sdk" ]; then
     echo "building wasm32-sdk"
     wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa --features wasm32-sdk
@@ -21,7 +21,7 @@ else
     echo "building wasm32-rpc"
     wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa-rpc --features wasm32-rpc
     echo "building wasm32-core"
-    wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa-core --features wasm32-core
+    wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/karlsen-core --features wasm32-core
     echo "building wasm32-sdk"
     wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa --features wasm32-sdk
 

@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-addressmanager"
+name = "karlsen-addressmanager"
 description = "Karlsen address manager"
 rust-version.workspace = true
 version.workspace = true
@@ -13,8 +13,8 @@ repository.workspace = true
 borsh.workspace = true
 igd-next.workspace = true
 itertools.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-core.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-core.workspace = true
 kaspa-database.workspace = true
 kaspa-utils.workspace = true
 local-ip-address.workspace = true

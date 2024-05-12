@@ -4,50 +4,50 @@
 
 use async_channel::unbounded;
 use karlsen_alloc::init_allocator_with_default_settings;
-use kaspa_consensus::config::genesis::GENESIS;
-use kaspa_consensus::config::{Config, ConfigBuilder};
-use kaspa_consensus::consensus::factory::Factory as ConsensusFactory;
-use kaspa_consensus::consensus::test_consensus::{TestConsensus, TestConsensusFactory};
-use kaspa_consensus::model::stores::block_transactions::{
+use karlsen_consensus::config::genesis::GENESIS;
+use karlsen_consensus::config::{Config, ConfigBuilder};
+use karlsen_consensus::consensus::factory::Factory as ConsensusFactory;
+use karlsen_consensus::consensus::test_consensus::{TestConsensus, TestConsensusFactory};
+use karlsen_consensus::model::stores::block_transactions::{
     BlockTransactionsStore, BlockTransactionsStoreReader, DbBlockTransactionsStore,
 };
-use kaspa_consensus::model::stores::ghostdag::{GhostdagStoreReader, KType as GhostdagKType};
-use kaspa_consensus::model::stores::headers::HeaderStoreReader;
-use kaspa_consensus::model::stores::reachability::DbReachabilityStore;
-use kaspa_consensus::model::stores::relations::DbRelationsStore;
-use kaspa_consensus::model::stores::selected_chain::SelectedChainStoreReader;
-use kaspa_consensus::params::{Params, DEVNET_PARAMS, MAINNET_PARAMS, MAX_DIFFICULTY_TARGET, MAX_DIFFICULTY_TARGET_AS_F64};
-use kaspa_consensus::pipeline::monitor::ConsensusMonitor;
-use kaspa_consensus::pipeline::ProcessingCounters;
-use kaspa_consensus::processes::reachability::tests::{DagBlock, DagBuilder, StoreValidationExtensions};
-use kaspa_consensus::processes::window::{WindowManager, WindowType};
-use kaspa_consensus_core::api::{BlockValidationFutures, ConsensusApi};
-use kaspa_consensus_core::block::Block;
-use kaspa_consensus_core::blockhash::new_unique;
-use kaspa_consensus_core::blockstatus::BlockStatus;
-use kaspa_consensus_core::constants::{BLOCK_VERSION, STORAGE_MASS_PARAMETER};
-use kaspa_consensus_core::errors::block::{BlockProcessResult, RuleError};
-use kaspa_consensus_core::header::Header;
-use kaspa_consensus_core::network::{NetworkId, NetworkType::Mainnet};
-use kaspa_consensus_core::subnets::SubnetworkId;
-use kaspa_consensus_core::trusted::{ExternalGhostdagData, TrustedBlock};
-use kaspa_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry};
-use kaspa_consensus_core::{blockhash, hashing, BlockHashMap, BlueWorkType};
-use kaspa_consensus_notify::root::ConsensusNotificationRoot;
-use kaspa_consensus_notify::service::NotifyService;
-use kaspa_consensusmanager::ConsensusManager;
-use kaspa_core::task::tick::TickService;
-use kaspa_core::time::unix_now;
+use karlsen_consensus::model::stores::ghostdag::{GhostdagStoreReader, KType as GhostdagKType};
+use karlsen_consensus::model::stores::headers::HeaderStoreReader;
+use karlsen_consensus::model::stores::reachability::DbReachabilityStore;
+use karlsen_consensus::model::stores::relations::DbRelationsStore;
+use karlsen_consensus::model::stores::selected_chain::SelectedChainStoreReader;
+use karlsen_consensus::params::{Params, DEVNET_PARAMS, MAINNET_PARAMS, MAX_DIFFICULTY_TARGET, MAX_DIFFICULTY_TARGET_AS_F64};
+use karlsen_consensus::pipeline::monitor::ConsensusMonitor;
+use karlsen_consensus::pipeline::ProcessingCounters;
+use karlsen_consensus::processes::reachability::tests::{DagBlock, DagBuilder, StoreValidationExtensions};
+use karlsen_consensus::processes::window::{WindowManager, WindowType};
+use karlsen_consensus_core::api::{BlockValidationFutures, ConsensusApi};
+use karlsen_consensus_core::block::Block;
+use karlsen_consensus_core::blockhash::new_unique;
+use karlsen_consensus_core::blockstatus::BlockStatus;
+use karlsen_consensus_core::constants::{BLOCK_VERSION, STORAGE_MASS_PARAMETER};
+use karlsen_consensus_core::errors::block::{BlockProcessResult, RuleError};
+use karlsen_consensus_core::header::Header;
+use karlsen_consensus_core::network::{NetworkId, NetworkType::Mainnet};
+use karlsen_consensus_core::subnets::SubnetworkId;
+use karlsen_consensus_core::trusted::{ExternalGhostdagData, TrustedBlock};
+use karlsen_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry};
+use karlsen_consensus_core::{blockhash, hashing, BlockHashMap, BlueWorkType};
+use karlsen_consensus_notify::root::ConsensusNotificationRoot;
+use karlsen_consensus_notify::service::NotifyService;
+use karlsen_consensusmanager::ConsensusManager;
+use karlsen_core::task::tick::TickService;
+use karlsen_core::time::unix_now;
 use kaspa_database::utils::get_kaspa_tempdir;
 use kaspa_hashes::Hash;
 
 use flate2::read::GzDecoder;
 use futures_util::future::try_join_all;
 use itertools::Itertools;
-use kaspa_core::core::Core;
-use kaspa_core::signals::Shutdown;
-use kaspa_core::task::runtime::AsyncRuntime;
-use kaspa_core::{assert_match, info};
+use karlsen_core::core::Core;
+use karlsen_core::signals::Shutdown;
+use karlsen_core::task::runtime::AsyncRuntime;
+use karlsen_core::{assert_match, info};
 use kaspa_database::create_temp_db;
 use kaspa_database::prelude::{CachePolicy, ConnBuilder};
 use kaspa_index_processor::service::IndexService;
@@ -908,7 +908,7 @@ fn gzip_file_lines(path: &Path) -> impl Iterator<Item = String> {
 }
 
 async fn json_test(file_path: &str, concurrency: bool) {
-    kaspa_core::log::try_init_logger("info");
+    karlsen_core::log::try_init_logger("info");
     let main_path = Path::new(file_path);
     let proof_exists = common::file_exists(&main_path.join("proof.json.gz"));
 
@@ -1434,7 +1434,7 @@ async fn difficulty_test() {
         },
     ];
 
-    kaspa_core::log::try_init_logger("info");
+    karlsen_core::log::try_init_logger("info");
     for test in tests.iter().filter(|x| x.enabled) {
         let consensus = TestConsensus::new(&test.config);
         let wait_handles = consensus.init();
@@ -1650,7 +1650,7 @@ async fn difficulty_test() {
 #[tokio::test]
 async fn selected_chain_test() {
     init_allocator_with_default_settings();
-    kaspa_core::log::try_init_logger("info");
+    karlsen_core::log::try_init_logger("info");
 
     let config = ConfigBuilder::new(MAINNET_PARAMS)
         .skip_proof_of_work()

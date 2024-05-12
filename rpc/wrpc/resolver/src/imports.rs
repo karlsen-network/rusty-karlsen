@@ -8,11 +8,11 @@ pub use crate::transport::Transport;
 pub use ahash::AHashMap;
 pub use cfg_if::cfg_if;
 pub use futures::{pin_mut, select, FutureExt, StreamExt};
-pub use kaspa_consensus_core::network::NetworkId;
+pub use karlsen_consensus_core::network::NetworkId;
 pub use kaspa_rpc_core::api::ctl::RpcState;
 pub use kaspa_rpc_core::api::rpc::RpcApi;
 pub use kaspa_utils::hashmap::GroupExtension;
-pub use kaspa_wrpc_client::{
+pub use karlsen_wrpc_client::{
     client::{ConnectOptions, ConnectStrategy},
     KaspaRpcClient, WrpcEncoding,
 };

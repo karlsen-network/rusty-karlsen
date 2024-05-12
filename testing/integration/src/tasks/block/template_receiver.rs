@@ -3,8 +3,8 @@ use crate::{
     tasks::{Stopper, Task},
 };
 use async_trait::async_trait;
-use kaspa_addresses::Address;
-use kaspa_core::warn;
+use karlsen_addresses::Address;
+use karlsen_core::warn;
 use kaspa_grpc_client::GrpcClient;
 use kaspa_notify::{listener::ListenerId, scope::NewBlockTemplateScope};
 use kaspa_rpc_core::{api::rpc::RpcApi, GetBlockTemplateResponse, Notification};

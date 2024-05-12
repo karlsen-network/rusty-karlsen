@@ -10,7 +10,7 @@ pub enum Error {
     GrpcClient(#[from] kaspa_grpc_client::error::Error),
 
     #[error(transparent)]
-    Wrpc(#[from] kaspa_wrpc_server::error::Error),
+    Wrpc(#[from] karlsen_wrpc_server::error::Error),
 
     #[error(transparent)]
     WebSocket(#[from] workflow_rpc::server::WebSocketError),

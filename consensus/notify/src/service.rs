@@ -5,7 +5,7 @@ use crate::{
     root::ConsensusNotificationRoot,
 };
 use async_channel::Receiver;
-use kaspa_core::{
+use karlsen_core::{
     task::service::{AsyncService, AsyncServiceError, AsyncServiceFuture},
     trace, warn,
 };

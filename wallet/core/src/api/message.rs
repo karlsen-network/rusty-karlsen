@@ -7,7 +7,7 @@
 
 use crate::imports::*;
 use crate::tx::{Fees, GeneratorSummary, PaymentDestination};
-use kaspa_addresses::Address;
+use karlsen_addresses::Address;
 
 #[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]

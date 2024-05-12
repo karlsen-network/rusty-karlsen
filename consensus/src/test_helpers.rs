@@ -1,4 +1,4 @@
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     block::Block,
     header::Header,
     subnets::SubnetworkId,

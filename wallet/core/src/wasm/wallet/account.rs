@@ -2,7 +2,7 @@ use crate::account as native;
 use crate::imports::*;
 use crate::tx::PaymentOutputs;
 use crate::wasm::utxo::UtxoContext;
-use kaspa_consensus_core::network::NetworkTypeT;
+use karlsen_consensus_core::network::NetworkTypeT;
 use karlsen_wallet_keys::keypair::Keypair;
 use workflow_core::abortable::Abortable;
 

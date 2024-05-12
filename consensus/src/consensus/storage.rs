@@ -27,7 +27,7 @@ use crate::{
 
 use super::cache_policy_builder::CachePolicyBuilder as PolicyBuilder;
 use itertools::Itertools;
-use kaspa_consensus_core::{blockstatus::BlockStatus, BlockHashSet};
+use karlsen_consensus_core::{blockstatus::BlockStatus, BlockHashSet};
 use kaspa_database::registry::DatabaseStorePrefixes;
 use kaspa_hashes::Hash;
 use parking_lot::RwLock;

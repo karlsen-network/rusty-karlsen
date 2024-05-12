@@ -14,8 +14,8 @@ wasm32-sdk = []
 
 [dependencies]
 js-sys.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-consensus-client.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensus-client.workspace = true
 kaspa-hashes.workspace = true
 kaspa-math.workspace = true
 kaspa-utils.workspace = true

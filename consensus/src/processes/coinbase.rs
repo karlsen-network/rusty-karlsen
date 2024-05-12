@@ -1,4 +1,4 @@
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     coinbase::*,
     errors::coinbase::{CoinbaseError, CoinbaseResult},
     subnets,
@@ -286,7 +286,7 @@ const SUBSIDY_BY_MONTH_TABLE: [u64; 793] = [
 mod tests {
     use super::*;
     use crate::params::MAINNET_PARAMS;
-    use kaspa_consensus_core::{
+    use karlsen_consensus_core::{
         config::params::{Params, TESTNET11_PARAMS},
         constants::SOMPI_PER_KASPA,
         network::NetworkId,

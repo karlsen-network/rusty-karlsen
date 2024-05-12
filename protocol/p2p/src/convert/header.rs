@@ -1,5 +1,5 @@
 use crate::pb as protowire;
-use kaspa_consensus_core::{header::Header, BlueWorkType};
+use karlsen_consensus_core::{header::Header, BlueWorkType};
 use kaspa_hashes::Hash;
 
 use super::error::ConversionError;

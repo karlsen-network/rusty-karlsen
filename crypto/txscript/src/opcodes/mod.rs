@@ -10,8 +10,8 @@ use crate::{
 };
 use blake2b_simd::Params;
 use core::cmp::{max, min};
-use kaspa_consensus_core::hashing::sighash_type::SigHashType;
-use kaspa_consensus_core::tx::VerifiableTransaction;
+use karlsen_consensus_core::hashing::sighash_type::SigHashType;
+use karlsen_consensus_core::tx::VerifiableTransaction;
 use sha2::{Digest, Sha256};
 use std::fmt::{Debug, Formatter};
 
@@ -976,11 +976,11 @@ mod test {
     use crate::data_stack::Stack;
     use crate::opcodes::{OpCodeExecution, OpCodeImplementation};
     use crate::{opcodes, pay_to_address_script, TxScriptEngine, TxScriptError, LOCK_TIME_THRESHOLD};
-    use kaspa_addresses::{Address, Prefix, Version};
-    use kaspa_consensus_core::constants::{SOMPI_PER_KASPA, TX_VERSION};
-    use kaspa_consensus_core::hashing::sighash::SigHashReusedValues;
-    use kaspa_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
-    use kaspa_consensus_core::tx::{
+    use karlsen_addresses::{Address, Prefix, Version};
+    use karlsen_consensus_core::constants::{SOMPI_PER_KASPA, TX_VERSION};
+    use karlsen_consensus_core::hashing::sighash::SigHashReusedValues;
+    use karlsen_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
+    use karlsen_consensus_core::tx::{
         PopulatedTransaction, ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry,
         VerifiableTransaction,
     };

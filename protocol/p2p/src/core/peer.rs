@@ -1,4 +1,4 @@
-use kaspa_consensus_core::subnets::SubnetworkId;
+use karlsen_consensus_core::subnets::SubnetworkId;
 use kaspa_utils::networking::{IpAddress, PeerId};
 use std::{fmt::Display, net::SocketAddr, sync::Arc, time::Instant};
 

@@ -7,7 +7,7 @@ use crate::{
     },
     processes::ghostdag::ordering::SortableBlock,
 };
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     blockhash::BlockHashExtensions,
     config::genesis::GenesisBlock,
     errors::{block::RuleError, difficulty::DifficultyResult},

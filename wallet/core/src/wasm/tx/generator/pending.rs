@@ -2,10 +2,10 @@ use crate::imports::*;
 use crate::result::Result;
 use crate::tx::generator as native;
 use crate::wasm::PrivateKeyArrayT;
-use kaspa_consensus_client::{numeric, string};
-use kaspa_consensus_client::{ITransaction, Transaction};
+use karlsen_consensus_client::{numeric, string};
+use karlsen_consensus_client::{ITransaction, Transaction};
 use karlsen_wallet_keys::privatekey::PrivateKey;
-use kaspa_wrpc_wasm::RpcClient;
+use karlsen_wrpc_wasm::RpcClient;
 
 /// @category Wallet SDK
 #[wasm_bindgen(inspectable)]

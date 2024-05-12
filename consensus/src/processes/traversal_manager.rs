@@ -5,12 +5,12 @@ use crate::model::{
     stores::{ghostdag::GhostdagStoreReader, reachability::ReachabilityStoreReader, relations::RelationsStoreReader},
 };
 use itertools::Itertools;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     blockhash::BlockHashExtensions,
     errors::traversal::{TraversalError, TraversalResult},
     BlockHashSet, ChainPath,
 };
-use kaspa_core::trace;
+use karlsen_core::trace;
 use kaspa_hashes::Hash;
 
 #[derive(Clone)]

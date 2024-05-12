@@ -2,7 +2,7 @@ use crate::mempool::{
     errors::{NonStandardError, NonStandardResult},
     Mempool,
 };
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     constants::{MAX_SCRIPT_PUBLIC_KEY_VERSION, MAX_SOMPI},
     mass,
     tx::{MutableTransaction, PopulatedTransaction, TransactionOutput},
@@ -234,8 +234,8 @@ mod tests {
         mempool::config::{Config, DEFAULT_MINIMUM_RELAY_TRANSACTION_FEE},
         MiningCounters,
     };
-    use kaspa_addresses::{Address, Prefix, Version};
-    use kaspa_consensus_core::{
+    use karlsen_addresses::{Address, Prefix, Version};
+    use karlsen_consensus_core::{
         config::params::Params,
         constants::{MAX_TX_IN_SEQUENCE_NUM, SOMPI_PER_KASPA, TX_VERSION},
         network::NetworkType,

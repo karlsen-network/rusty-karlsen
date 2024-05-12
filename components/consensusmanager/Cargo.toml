@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-consensusmanager"
+name = "karlsen-consensusmanager"
 description = "Karlsen consensus library"
 rust-version.workspace = true
 version.workspace = true
@@ -14,9 +14,9 @@ duration-string.workspace = true
 futures-util.workspace = true
 futures.workspace = true
 itertools.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-consensus-notify.workspace = true
-kaspa-core.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensus-notify.workspace = true
+karlsen-core.workspace = true
 kaspa-utils.workspace = true
 log.workspace = true
 parking_lot.workspace = true

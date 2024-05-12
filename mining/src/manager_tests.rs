@@ -13,8 +13,8 @@ mod tests {
         testutils::consensus_mock::ConsensusMock,
         MiningCounters,
     };
-    use kaspa_addresses::{Address, Prefix, Version};
-    use kaspa_consensus_core::{
+    use karlsen_addresses::{Address, Prefix, Version};
+    use karlsen_consensus_core::{
         api::ConsensusApi,
         block::TemplateBuildMode,
         coinbase::MinerData,

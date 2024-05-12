@@ -8,11 +8,11 @@ use crate::mempool::{
     },
     tx::Priority,
 };
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     tx::MutableTransaction,
     tx::{TransactionId, TransactionOutpoint},
 };
-use kaspa_core::{debug, warn};
+use karlsen_core::{debug, warn};
 use kaspa_utils::iter::IterExtensions;
 use std::sync::Arc;
 

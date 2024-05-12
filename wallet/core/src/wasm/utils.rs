@@ -1,6 +1,6 @@
 use crate::result::Result;
 use js_sys::BigInt;
-use kaspa_consensus_core::network::{NetworkType, NetworkTypeT};
+use karlsen_consensus_core::network::{NetworkType, NetworkTypeT};
 use wasm_bindgen::prelude::*;
 use workflow_wasm::prelude::*;
 

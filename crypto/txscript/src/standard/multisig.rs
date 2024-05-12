@@ -72,7 +72,7 @@ mod tests {
     use super::*;
     use crate::{caches::Cache, opcodes::codes::OpData65, pay_to_script_hash_script, TxScriptEngine};
     use core::str::FromStr;
-    use kaspa_consensus_core::{
+    use karlsen_consensus_core::{
         hashing::{
             sighash::{calc_ecdsa_signature_hash, calc_schnorr_signature_hash, SigHashReusedValues},
             sighash_type::SIG_HASH_ALL,

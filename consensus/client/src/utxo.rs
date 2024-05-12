@@ -1,7 +1,7 @@
 use crate::imports::*;
 use crate::outpoint::{TransactionOutpoint, TransactionOutpointInner};
 use crate::result::Result;
-use kaspa_addresses::Address;
+use karlsen_addresses::Address;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_UTXO_ENTRY: &'static str = r#"
@@ -398,7 +398,7 @@ impl TryCastFromJs for UtxoEntryReference {
 
 impl UtxoEntryReference {
     pub fn simulated(amount: u64) -> Self {
-        use kaspa_addresses::{Prefix, Version};
+        use karlsen_addresses::{Prefix, Version};
         let address = Address::new(Prefix::Testnet, Version::PubKey, &rand::random::<[u8; 32]>());
         Self::simulated_with_address(amount, &address)
     }

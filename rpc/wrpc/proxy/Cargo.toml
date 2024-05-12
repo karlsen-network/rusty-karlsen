@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-wrpc-proxy"
+name = "karlsen-wrpc-proxy"
 description = "Karlsen wRPC to gRPC proxy"
 rust-version.workspace = true
 version.workspace = true
@@ -12,11 +12,11 @@ repository.workspace = true
 [dependencies]
 async-trait.workspace = true
 clap.workspace = true
-kaspa-consensus-core.workspace = true
+karlsen-consensus-core.workspace = true
 kaspa-grpc-client.workspace = true
 kaspa-rpc-core.workspace = true
 kaspa-rpc-macros.workspace = true
-kaspa-wrpc-server.workspace = true
+karlsen-wrpc-server.workspace = true
 num_cpus.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

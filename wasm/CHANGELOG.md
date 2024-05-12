@@ -31,7 +31,7 @@ Latest online documentation available at: https://kaspa.aspectron.org/docs/
 
 ### Release 2024-03-31
 
-- Rename `kaspa-beacon` app to `kaspa-resolver`
+- Rename `kaspa-beacon` app to `karlsen-resolver`
 - Change RpcClient, UtxoProcessor and Wallet event handlers in typescript to receive typed event data
 - UtxoProcessor and Wallet event handlers now deliver TransactionRecord events (Discovery, Pending, etc.)
 as Rust or WASM objects, allowing user to call `hasAddress(<address>)` on the received `event.data.record` object.

@@ -1,6 +1,6 @@
 use indexmap::IndexSet;
 use itertools::Itertools;
-use kaspa_consensus_core::{blockhash::ORIGIN, header::Header, BlockHashMap, BlockHasher, BlockLevel};
+use karlsen_consensus_core::{blockhash::ORIGIN, header::Header, BlockHashMap, BlockHasher, BlockLevel};
 use kaspa_hashes::Hash;
 use smallvec::{smallvec, SmallVec};
 use std::sync::Arc;
@@ -199,7 +199,7 @@ mod tests {
 
     use super::ParentsManager;
     use itertools::Itertools;
-    use kaspa_consensus_core::{
+    use karlsen_consensus_core::{
         blockhash::{BlockHashes, ORIGIN},
         header::Header,
         BlockHashSet, HashMapCustomHasher,
@@ -258,7 +258,7 @@ mod tests {
 
     #[allow(unused_variables)]
     impl RelationsStoreReader for RelationsStoreMock {
-        fn get_parents(&self, hash: Hash) -> Result<kaspa_consensus_core::blockhash::BlockHashes, StoreError> {
+        fn get_parents(&self, hash: Hash) -> Result<karlsen_consensus_core::blockhash::BlockHashes, StoreError> {
             unimplemented!()
         }
 

@@ -1,9 +1,9 @@
 use crate::core::model::{CompactUtxoCollection, CompactUtxoEntry, UtxoSetByScriptPublicKey};
 
-use kaspa_consensus_core::tx::{
+use karlsen_consensus_core::tx::{
     ScriptPublicKey, ScriptPublicKeyVersion, ScriptPublicKeys, ScriptVec, TransactionIndexType, TransactionOutpoint,
 };
-use kaspa_core::debug;
+use karlsen_core::debug;
 use kaspa_database::prelude::{CachePolicy, CachedDbAccess, DirectDbWriter, StoreResult, DB};
 use kaspa_database::registry::DatabaseStorePrefixes;
 use kaspa_hashes::Hash;

@@ -13,7 +13,7 @@ use crate::{
         },
     },
 };
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     acceptance_data::{AcceptedTxEntry, MergesetBlockAcceptanceData},
     coinbase::*,
     hashing,
@@ -26,7 +26,7 @@ use kaspa_consensus_core::{
     },
     BlockHashMap, BlockHashSet, HashMapCustomHasher,
 };
-use kaspa_core::{info, trace};
+use karlsen_core::{info, trace};
 use kaspa_hashes::Hash;
 use kaspa_muhash::MuHash;
 use kaspa_utils::refs::Refs;

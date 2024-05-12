@@ -3,10 +3,10 @@
 //!
 
 use crate::imports::*;
-use kaspa_addresses::Address;
+use karlsen_addresses::Address;
 use serde::{Deserialize, Serialize};
 
-pub use kaspa_consensus_core::tx::TransactionId;
+pub use karlsen_consensus_core::tx::TransactionId;
 
 /// [`UtxoRecord`] represents an incoming transaction UTXO entry
 /// stored within [`TransactionRecord`].

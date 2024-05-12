@@ -1,7 +1,7 @@
 use super::events::EventType;
 use borsh::{BorshDeserialize, BorshSerialize};
 use derive_more::Display;
-use kaspa_addresses::Address;
+use karlsen_addresses::Address;
 use serde::{Deserialize, Serialize};
 
 macro_rules! scope_enum {

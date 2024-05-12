@@ -1,6 +1,6 @@
 use itertools::Itertools;
-use kaspa_consensus_core::BlockHashSet;
-use kaspa_consensus_core::{blockhash::BlockHashes, BlockHashMap, BlockHasher, BlockLevel};
+use karlsen_consensus_core::BlockHashSet;
+use karlsen_consensus_core::{blockhash::BlockHashes, BlockHashMap, BlockHasher, BlockLevel};
 use kaspa_database::prelude::{BatchDbWriter, CachePolicy, DbWriter};
 use kaspa_database::prelude::{CachedDbAccess, DbKey, DirectDbWriter};
 use kaspa_database::prelude::{DirectWriter, MemoryWriter};

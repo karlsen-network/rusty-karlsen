@@ -1,13 +1,13 @@
 use super::{errors::BuilderResult, policy::Policy};
 use crate::{block_template::selector::TransactionsSelector, model::candidate_tx::CandidateTransaction};
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     api::ConsensusApi,
     block::{BlockTemplate, TemplateBuildMode},
     coinbase::MinerData,
     merkle::calc_hash_merkle_root,
     tx::COINBASE_TRANSACTION_INDEX,
 };
-use kaspa_core::{
+use karlsen_core::{
     debug,
     time::{unix_now, Stopwatch},
 };

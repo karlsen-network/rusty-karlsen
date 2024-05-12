@@ -7,9 +7,9 @@ use crate::{
 };
 use async_trait::async_trait;
 use itertools::chain;
-use kaspa_addresses::Address;
-use kaspa_consensus_core::network::NetworkId;
-use kaspa_core::debug;
+use karlsen_addresses::Address;
+use karlsen_consensus_core::network::NetworkId;
+use karlsen_core::debug;
 use kaspa_utils::triggers::SingleTrigger;
 use rand::thread_rng;
 use std::sync::Arc;
@@ -40,7 +40,7 @@ impl MinerGroupTask {
         // Mining key and address
         let (sk, pk) = &secp256k1::generate_keypair(&mut thread_rng());
         let pay_address =
-            Address::new(network.network_type().into(), kaspa_addresses::Version::PubKey, &pk.x_only_public_key().0.serialize());
+            Address::new(network.network_type().into(), karlsen_addresses::Version::PubKey, &pk.x_only_public_key().0.serialize());
         debug!("Generated private key {} and address {}", sk.display_secret(), pay_address);
 
         // Block template receiver

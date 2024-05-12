@@ -1,21 +1,21 @@
 use clap::{arg, Arg, ArgAction, Command};
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     config::Config,
     network::{NetworkId, NetworkType},
 };
-use kaspa_core::kaspad_env::version;
+use karlsen_core::kaspad_env::version;
 use kaspa_notify::address::tracker::Tracker;
 use kaspa_utils::networking::ContextualNetAddress;
-use kaspa_wrpc_server::address::WrpcNetAddress;
+use karlsen_wrpc_server::address::WrpcNetAddress;
 use serde::Deserialize;
 use serde_with::{serde_as, DisplayFromStr};
 use std::{ffi::OsString, fs};
 use toml::from_str;
 
 #[cfg(feature = "devnet-prealloc")]
-use kaspa_addresses::Address;
+use karlsen_addresses::Address;
 #[cfg(feature = "devnet-prealloc")]
-use kaspa_consensus_core::tx::{TransactionOutpoint, UtxoEntry};
+use karlsen_consensus_core::tx::{TransactionOutpoint, UtxoEntry};
 #[cfg(feature = "devnet-prealloc")]
 use kaspa_txscript::pay_to_address_script;
 #[cfg(feature = "devnet-prealloc")]
@@ -167,7 +167,7 @@ impl Args {
     }
 
     #[cfg(feature = "devnet-prealloc")]
-    pub fn generate_prealloc_utxos(&self, num_prealloc_utxos: u64) -> kaspa_consensus_core::utxo::utxo_collection::UtxoCollection {
+    pub fn generate_prealloc_utxos(&self, num_prealloc_utxos: u64) -> karlsen_consensus_core::utxo::utxo_collection::UtxoCollection {
         let addr = Address::try_from(&self.prealloc_address.as_ref().unwrap()[..]).unwrap();
         let spk = pay_to_address_script(&addr);
         (1..=num_prealloc_utxos)

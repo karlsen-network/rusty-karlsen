@@ -2,10 +2,10 @@ cargo fmt --all
 cargo clippy
 
 $crates = @(
-  "kaspa-wrpc-wasm",
+  "karlsen-wrpc-wasm",
   "karlsen-wallet-cli-wasm",
-  "kaspa-wasm",
-  "kaspa-cli",
+  "karlsen-wasm",
+  "karlsen-cli",
   "kaspa-os",
   "kaspa-daemon"
 )

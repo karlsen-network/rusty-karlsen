@@ -10,7 +10,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-kaspa-core.workspace = true
+karlsen-core.workspace = true
 kaspa-grpc-core.workspace = true
 kaspa-notify.workspace = true
 kaspa-rpc-core.workspace = true

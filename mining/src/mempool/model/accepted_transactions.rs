@@ -1,6 +1,6 @@
 use crate::mempool::config::Config;
-use kaspa_consensus_core::tx::TransactionId;
-use kaspa_core::{debug, time::unix_now};
+use karlsen_consensus_core::tx::TransactionId;
+use karlsen_core::{debug, time::unix_now};
 use std::{collections::HashMap, sync::Arc};
 
 pub(crate) struct AcceptedTransactions {

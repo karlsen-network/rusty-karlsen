@@ -20,15 +20,15 @@ use crate::{
     MempoolCountersSnapshot, MiningCounters, P2pTxCountSample,
 };
 use itertools::Itertools;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     api::ConsensusApi,
     block::{BlockTemplate, TemplateBuildMode},
     coinbase::MinerData,
     errors::{block::RuleError as BlockRuleError, tx::TxRuleError},
     tx::{MutableTransaction, Transaction, TransactionId, TransactionOutput},
 };
-use kaspa_consensusmanager::{spawn_blocking, ConsensusProxy};
-use kaspa_core::{debug, error, info, time::Stopwatch, warn};
+use karlsen_consensusmanager::{spawn_blocking, ConsensusProxy};
+use karlsen_core::{debug, error, info, time::Stopwatch, warn};
 use kaspa_mining_errors::{manager::MiningManagerError, mempool::RuleError};
 use parking_lot::RwLock;
 use std::sync::Arc;

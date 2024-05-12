@@ -1,5 +1,5 @@
 use crate::imports::*;
-use kaspa_consensus_core::tx::{TransactionInput, TransactionOutpoint};
+use karlsen_consensus_core::tx::{TransactionInput, TransactionOutpoint};
 use karlsen_wallet_core::storage::Binding;
 use karlsen_wallet_core::storage::{TransactionData, TransactionKind, TransactionRecord};
 use workflow_log::style;

@@ -42,10 +42,10 @@ pub enum Error {
     ToValue(String),
 
     #[error("invalid network type: {0}")]
-    NetworkType(#[from] kaspa_consensus_core::network::NetworkTypeError),
+    NetworkType(#[from] karlsen_consensus_core::network::NetworkTypeError),
 
     #[error(transparent)]
-    ConsensusWasm(#[from] kaspa_consensus_wasm::error::Error),
+    ConsensusWasm(#[from] karlsen_consensus_wasm::error::Error),
 
     #[error(transparent)]
     HttpError(#[from] HttpError),
@@ -54,13 +54,13 @@ pub enum Error {
     WasmError(#[from] WasmError),
 
     #[error(transparent)]
-    AddressError(#[from] kaspa_addresses::AddressError),
+    AddressError(#[from] karlsen_addresses::AddressError),
 
     #[error(transparent)]
     TomlError(#[from] toml::de::Error),
 
     #[error(transparent)]
-    NetworkId(#[from] kaspa_consensus_core::network::NetworkIdError),
+    NetworkId(#[from] karlsen_consensus_core::network::NetworkIdError),
 }
 
 impl Error {

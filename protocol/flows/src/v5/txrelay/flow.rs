@@ -3,9 +3,9 @@ use crate::{
     flow_trait::Flow,
     flowcontext::transactions::MAX_INV_PER_TX_INV_MSG,
 };
-use kaspa_consensus_core::tx::{Transaction, TransactionId};
-use kaspa_consensusmanager::ConsensusProxy;
-use kaspa_core::{time::unix_now, warn};
+use karlsen_consensus_core::tx::{Transaction, TransactionId};
+use karlsen_consensusmanager::ConsensusProxy;
+use karlsen_core::{time::unix_now, warn};
 use kaspa_mining::{
     errors::MiningManagerError,
     mempool::{
@@ -233,7 +233,7 @@ impl RelayTransactionsFlow {
                 | Err(MiningManagerError::MempoolError(RuleError::RejectNonStandard(..))) => {
                     self.spam_counter += 1;
                     if self.spam_counter % 100 == 0 {
-                        kaspa_core::warn!("Peer {} has shared {} spam/non-standard txs ({:?})", self.router, self.spam_counter, res);
+                        karlsen_core::warn!("Peer {} has shared {} spam/non-standard txs ({:?})", self.router, self.spam_counter, res);
                     }
                 }
                 Err(_) => {}

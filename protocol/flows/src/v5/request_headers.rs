@@ -1,6 +1,6 @@
 use std::{cmp::max, sync::Arc};
 
-use kaspa_consensus_core::api::ConsensusApi;
+use karlsen_consensus_core::api::ConsensusApi;
 use kaspa_hashes::Hash;
 use kaspa_p2p_lib::{
     common::ProtocolError,

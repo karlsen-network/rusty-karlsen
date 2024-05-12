@@ -1,6 +1,6 @@
 use crate::model::{CirculatingSupply, CirculatingSupplyDiff};
-use kaspa_consensus::test_helpers::*;
-use kaspa_consensus_core::{
+use karlsen_consensus::test_helpers::*;
+use karlsen_consensus_core::{
     tx::ScriptPublicKey,
     utxo::{utxo_collection::UtxoCollection, utxo_diff::UtxoDiff},
     BlockHashSet, HashMapCustomHasher,

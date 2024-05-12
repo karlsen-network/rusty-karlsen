@@ -2,7 +2,7 @@ use crate::{RpcTransactionOutpoint, RpcUtxoEntry};
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 
-pub type RpcAddress = kaspa_addresses::Address;
+pub type RpcAddress = karlsen_addresses::Address;
 
 /// Represents a UTXO entry of an address returned by the `GetUtxosByAddresses` RPC.
 #[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]

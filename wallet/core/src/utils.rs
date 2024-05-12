@@ -3,9 +3,9 @@
 //!
 
 use crate::result::Result;
-use kaspa_addresses::Address;
-use kaspa_consensus_core::constants::*;
-use kaspa_consensus_core::network::NetworkType;
+use karlsen_addresses::Address;
+use karlsen_consensus_core::constants::*;
+use karlsen_consensus_core::network::NetworkType;
 use separator::{separated_float, separated_int, separated_uint_with_output, Separatable};
 use workflow_log::style;
 

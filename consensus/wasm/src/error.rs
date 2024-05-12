@@ -29,19 +29,19 @@ pub enum Error {
     Secp256k1(#[from] secp256k1::Error),
 
     #[error(transparent)]
-    Sign(#[from] kaspa_consensus_core::sign::Error),
+    Sign(#[from] karlsen_consensus_core::sign::Error),
 
     #[error(transparent)]
     SerdeWasmBindgen(JsErrorData),
 
     #[error(transparent)]
-    AddressError(#[from] kaspa_addresses::AddressError),
+    AddressError(#[from] karlsen_addresses::AddressError),
 
     #[error(transparent)]
-    NetworkTypeError(#[from] kaspa_consensus_core::network::NetworkTypeError),
+    NetworkTypeError(#[from] karlsen_consensus_core::network::NetworkTypeError),
 
     #[error(transparent)]
-    ConsensusClient(#[from] kaspa_consensus_client::error::Error),
+    ConsensusClient(#[from] karlsen_consensus_client::error::Error),
 }
 
 // unsafe impl Send for Error {}

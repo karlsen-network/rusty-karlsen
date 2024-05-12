@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use kaspa_addresses::Address;
-use kaspa_consensus_core::{
+use karlsen_addresses::Address;
+use karlsen_consensus_core::{
     block::Block,
     config::Config,
     hashing::tx::hash,
@@ -8,8 +8,8 @@ use kaspa_consensus_core::{
     tx::{MutableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutput},
     ChainPath,
 };
-use kaspa_consensus_notify::notification::{self as consensus_notify, Notification as ConsensusNotification};
-use kaspa_consensusmanager::{ConsensusManager, ConsensusProxy};
+use karlsen_consensus_notify::notification::{self as consensus_notify, Notification as ConsensusNotification};
+use karlsen_consensusmanager::{ConsensusManager, ConsensusProxy};
 use kaspa_math::Uint256;
 use kaspa_mining::model::{owner_txs::OwnerTransactions, TransactionIdSet};
 use kaspa_notify::converter::Converter;

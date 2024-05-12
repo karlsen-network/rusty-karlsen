@@ -1,5 +1,5 @@
 use crate::model::stores::{block_window_cache::BlockWindowHeap, headers::HeaderStoreReader};
-use kaspa_consensus_core::errors::block::RuleError;
+use karlsen_consensus_core::errors::block::RuleError;
 use std::sync::Arc;
 
 /// A past median manager conforming to the legacy golang implementation

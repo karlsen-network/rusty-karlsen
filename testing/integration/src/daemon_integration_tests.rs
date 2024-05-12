@@ -4,11 +4,11 @@ use crate::common::{
     daemon::Daemon,
     utils::{fetch_spendable_utxos, generate_tx, mine_block, wait_for},
 };
-use kaspa_addresses::Address;
+use karlsen_addresses::Address;
 use karlsen_alloc::init_allocator_with_default_settings;
-use kaspa_consensus::params::SIMNET_PARAMS;
-use kaspa_consensusmanager::ConsensusManager;
-use kaspa_core::{task::runtime::AsyncRuntime, trace};
+use karlsen_consensus::params::SIMNET_PARAMS;
+use karlsen_consensusmanager::ConsensusManager;
+use karlsen_core::{task::runtime::AsyncRuntime, trace};
 use kaspa_grpc_client::GrpcClient;
 use kaspa_notify::scope::{BlockAddedScope, UtxosChangedScope, VirtualDaaScoreChangedScope};
 use kaspa_rpc_core::{api::rpc::RpcApi, Notification, RpcTransactionId};
@@ -20,7 +20,7 @@ use std::{sync::Arc, time::Duration};
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn daemon_sanity_test() {
     init_allocator_with_default_settings();
-    kaspa_core::log::try_init_logger("INFO");
+    karlsen_core::log::try_init_logger("INFO");
 
     // let total_fd_limit =  kaspa_utils::fd_budget::get_limit() / 2 - 128;
     let total_fd_limit = 10;
@@ -45,7 +45,7 @@ async fn daemon_sanity_test() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn daemon_mining_test() {
     init_allocator_with_default_settings();
-    kaspa_core::log::try_init_logger("INFO");
+    karlsen_core::log::try_init_logger("INFO");
 
     let args = Args {
         simnet: true,
@@ -74,7 +74,7 @@ async fn daemon_mining_test() {
     let mut last_block_hash = None;
     for i in 0..10 {
         let template = rpc_client1
-            .get_block_template(Address::new(kaspad1.network.into(), kaspa_addresses::Version::PubKey, &[0; 32]), vec![])
+            .get_block_template(Address::new(kaspad1.network.into(), karlsen_addresses::Version::PubKey, &[0; 32]), vec![])
             .await
             .unwrap();
         last_block_hash = Some(template.block.header.hash);
@@ -104,7 +104,7 @@ async fn daemon_mining_test() {
     assert_eq!(dag_info.sink, last_block_hash.unwrap());
 
     // Check that acceptance data contains the expected coinbase tx ids
-    let vc = rpc_client2.get_virtual_chain_from_block(kaspa_consensus::params::SIMNET_GENESIS.hash, true).await.unwrap();
+    let vc = rpc_client2.get_virtual_chain_from_block(karlsen_consensus::params::SIMNET_GENESIS.hash, true).await.unwrap();
     assert_eq!(vc.removed_chain_block_hashes.len(), 0);
     assert_eq!(vc.added_chain_block_hashes.len(), 10);
     assert_eq!(vc.accepted_transaction_ids.len(), 10);
@@ -119,7 +119,7 @@ async fn daemon_utxos_propagation_test() {
     #[cfg(feature = "heap")]
     let _profiler = dhat::Profiler::builder().file_name("kaspa-testing-integration-heap.json").build();
 
-    kaspa_core::log::try_init_logger(
+    karlsen_core::log::try_init_logger(
         "INFO,kaspa_testing_integration=trace,kaspa_notify=debug,kaspa_rpc_core=debug,kaspa_grpc_client=debug",
     );
 
@@ -163,17 +163,17 @@ async fn daemon_utxos_propagation_test() {
     // Mining key and address
     let (miner_sk, miner_pk) = secp256k1::generate_keypair(&mut thread_rng());
     let miner_address =
-        Address::new(kaspad1.network.into(), kaspa_addresses::Version::PubKey, &miner_pk.x_only_public_key().0.serialize());
+        Address::new(kaspad1.network.into(), karlsen_addresses::Version::PubKey, &miner_pk.x_only_public_key().0.serialize());
     let miner_schnorr_key = secp256k1::Keypair::from_secret_key(secp256k1::SECP256K1, &miner_sk);
     let miner_spk = pay_to_address_script(&miner_address);
 
     // User key and address
     let (_user_sk, user_pk) = secp256k1::generate_keypair(&mut thread_rng());
     let user_address =
-        Address::new(kaspad1.network.into(), kaspa_addresses::Version::PubKey, &user_pk.x_only_public_key().0.serialize());
+        Address::new(kaspad1.network.into(), karlsen_addresses::Version::PubKey, &user_pk.x_only_public_key().0.serialize());
 
     // Some dummy non-monitored address
-    let blank_address = Address::new(kaspad1.network.into(), kaspa_addresses::Version::PubKey, &[0; 32]);
+    let blank_address = Address::new(kaspad1.network.into(), karlsen_addresses::Version::PubKey, &[0; 32]);
 
     // Mine 1000 blocks to daemon #1
     let initial_blocks = coinbase_maturity;
@@ -222,7 +222,7 @@ async fn daemon_utxos_propagation_test() {
     assert_eq!(dag_info.sink, last_block_hash.unwrap());
 
     // Check that acceptance data contains the expected coinbase tx ids
-    let vc = rpc_client2.get_virtual_chain_from_block(kaspa_consensus::params::SIMNET_GENESIS.hash, true).await.unwrap();
+    let vc = rpc_client2.get_virtual_chain_from_block(karlsen_consensus::params::SIMNET_GENESIS.hash, true).await.unwrap();
     assert_eq!(vc.removed_chain_block_hashes.len(), 0);
     assert_eq!(vc.added_chain_block_hashes.len() as u64, initial_blocks);
     assert_eq!(vc.accepted_transaction_ids.len() as u64, initial_blocks);
@@ -326,7 +326,7 @@ async fn daemon_utxos_propagation_test() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn daemon_cleaning_test() {
     init_allocator_with_default_settings();
-    kaspa_core::log::try_init_logger("info,kaspa_grpc_core=trace,kaspa_grpc_server=trace,kaspa_grpc_client=trace,kaspa_core=trace");
+    karlsen_core::log::try_init_logger("info,kaspa_grpc_core=trace,kaspa_grpc_server=trace,kaspa_grpc_client=trace,karlsen_core=trace");
     let args = Args { devnet: true, ..Default::default() };
     let consensus_manager;
     let async_runtime;

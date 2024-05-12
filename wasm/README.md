@@ -2,9 +2,9 @@
 ## WASM32 bindings for Rusty Kaspa SDK
 
 [<img alt="github" src="https://img.shields.io/badge/github-kaspanet/rusty--kaspa-8da0cb?style=for-the-badge&labelColor=555555&color=8da0cb&logo=github" height="20">](https://github.com/kaspanet/rusty-kaspa/tree/master/wasm)
-[<img alt="crates.io" src="https://img.shields.io/crates/v/kaspa-wasm.svg?maxAge=2592000&style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/kaspa-wasm)
-[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-kaspa--wasm-56c2a5?maxAge=2592000&style=for-the-badge&logo=docs.rs" height="20">](https://docs.rs/kaspa-wasm)
-<img alt="license" src="https://img.shields.io/crates/l/kaspa-wasm.svg?maxAge=2592000&color=6ac&style=for-the-badge&logoColor=fff" height="20">
+[<img alt="crates.io" src="https://img.shields.io/crates/v/karlsen-wasm.svg?maxAge=2592000&style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/karlsen-wasm)
+[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-kaspa--wasm-56c2a5?maxAge=2592000&style=for-the-badge&logo=docs.rs" height="20">](https://docs.rs/karlsen-wasm)
+<img alt="license" src="https://img.shields.io/crates/l/karlsen-wasm.svg?maxAge=2592000&color=6ac&style=for-the-badge&logoColor=fff" height="20">
 
 Rusty-Kaspa WASM32 bindings offer direct integration of Rust code and Rusty-Kaspa
 codebase within JavaScript and TypeScript environments such as Node.js and Web Browsers.
@@ -12,7 +12,7 @@ codebase within JavaScript and TypeScript environments such as Node.js and Web B
 ## Documentation
 
 - [**integrating with Kaspa** guide](https://kaspa.aspectron.org/)
-- [**Rust** documentation](https://docs.rs/kaspa-wasm/latest/kaspa_wasm/index.html)
+- [**Rust** documentation](https://docs.rs/karlsen-wasm/latest/karlsen_wasm/index.html)
 - [**TypeScript** documentation](https://kaspa.aspectron.org/docs/)
 
 Please note that while WASM directly binds JavaScript and Rust resources, their names on JavaScript side
@@ -79,7 +79,7 @@ Please note that to build from source, you need to have TypeDoc installed global
 ## Running Web examples
 
 **IMPORTANT:** To view web examples, you need to serve them from a local web server and
-serve them from the root of the SDK folder (`kaspa-wasm32-sdk` if using a redistributable or
+serve them from the root of the SDK folder (`karlsen-wasm32-sdk` if using a redistributable or
 `rusty-kaspa/wasm` if building from source). This is because examples use relative paths.
 WASM32 currently can not be loaded using the `file://` protocol.
 
@@ -123,7 +123,7 @@ There are multiple ways to use RPC:
 - Use `RpcClient` class that handles the connectivity automatically and provides RPC interfaces in a form of async function calls.
 
 **NODEJS:** To use WASM RPC client in the Node.js environment, you need to introduce a W3C WebSocket object 
-before loading the WASM32 library. The compatible WebSocket library is [WebSocket](https://www.npmjs.com/package/websocket) and is included in the `kaspa` NPM package. `kaspa` package is a wrapper around `kaspa-wasm` that imports and installs this WebSocket shim in the `globalThis` object and then re-exports `kaspa-wasm` exports.
+before loading the WASM32 library. The compatible WebSocket library is [WebSocket](https://www.npmjs.com/package/websocket) and is included in the `kaspa` NPM package. `kaspa` package is a wrapper around `karlsen-wasm` that imports and installs this WebSocket shim in the `globalThis` object and then re-exports `karlsen-wasm` exports.
 
 
 ## Loading in a Web App
@@ -132,9 +132,9 @@ before loading the WASM32 library. The compatible WebSocket library is [WebSocke
 <html>
     <head>
         <script type="module">
-            import * as kaspa from './kaspa/kaspa-wasm.js';
+            import * as kaspa from './kaspa/karlsen-wasm.js';
             (async () => {
-                await kaspa.default('./kaspa/kaspa-wasm_bg.wasm');
+                await kaspa.default('./kaspa/karlsen-wasm_bg.wasm');
                 console.log(kaspa.version());
                 // ...
             })();

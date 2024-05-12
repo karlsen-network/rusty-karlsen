@@ -2,8 +2,8 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use arc_swap::ArcSwap;
-use kaspa_consensus_core::api::stats::VirtualStateStats;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::api::stats::VirtualStateStats;
+use karlsen_consensus_core::{
     block::VirtualStateApproxId, coinbase::BlockRewardData, config::genesis::GenesisBlock, tx::TransactionId,
     utxo::utxo_diff::UtxoDiff, BlockHashMap, BlockHashSet, HashMapCustomHasher,
 };

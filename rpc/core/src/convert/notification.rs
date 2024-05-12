@@ -3,7 +3,7 @@ use crate::{
     NewBlockTemplateNotification, Notification, PruningPointUtxoSetOverrideNotification, RpcAcceptedTransactionIds,
     SinkBlueScoreChangedNotification, UtxosChangedNotification, VirtualChainChangedNotification, VirtualDaaScoreChangedNotification,
 };
-use kaspa_consensus_notify::notification as consensus_notify;
+use karlsen_consensus_notify::notification as consensus_notify;
 use kaspa_index_core::notification as index_notify;
 use std::sync::Arc;
 

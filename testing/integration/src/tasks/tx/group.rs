@@ -7,7 +7,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use itertools::chain;
-use kaspa_consensus_core::tx::Transaction;
+use karlsen_consensus_core::tx::Transaction;
 use kaspa_utils::triggers::SingleTrigger;
 use std::sync::Arc;
 use tokio::task::JoinHandle;

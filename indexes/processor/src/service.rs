@@ -1,8 +1,8 @@
 use crate::{processor::Processor, IDENT};
-use kaspa_consensus_notify::{
+use karlsen_consensus_notify::{
     connection::ConsensusChannelConnection, notification::Notification as ConsensusNotification, notifier::ConsensusNotifier,
 };
-use kaspa_core::{
+use karlsen_core::{
     task::service::{AsyncService, AsyncServiceError, AsyncServiceFuture},
     trace, warn,
 };

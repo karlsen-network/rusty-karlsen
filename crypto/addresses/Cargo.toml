@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-addresses"
+name = "karlsen-addresses"
 description = "Karlsen address"
 rust-version.workspace = true
 version.workspace = true

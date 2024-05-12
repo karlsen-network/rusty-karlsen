@@ -1,4 +1,4 @@
-extern crate self as kaspa_core;
+extern crate self as karlsen_core;
 
 pub mod assert;
 pub mod console;

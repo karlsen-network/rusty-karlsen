@@ -1,13 +1,13 @@
 use async_channel::Sender;
-use kaspa_consensus_core::coinbase::MinerData;
-use kaspa_consensus_core::tx::ScriptPublicKey;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::coinbase::MinerData;
+use karlsen_consensus_core::tx::ScriptPublicKey;
+use karlsen_consensus_core::{
     api::ConsensusApi, block::MutableBlock, blockstatus::BlockStatus, header::Header, merkle::calc_hash_merkle_root,
     subnets::SUBNETWORK_ID_COINBASE, tx::Transaction,
 };
-use kaspa_consensus_notify::{notification::Notification, root::ConsensusNotificationRoot};
-use kaspa_consensusmanager::{ConsensusFactory, ConsensusInstance, DynConsensusCtl};
-use kaspa_core::{core::Core, service::Service};
+use karlsen_consensus_notify::{notification::Notification, root::ConsensusNotificationRoot};
+use karlsen_consensusmanager::{ConsensusFactory, ConsensusInstance, DynConsensusCtl};
+use karlsen_core::{core::Core, service::Service};
 use kaspa_database::utils::DbLifetime;
 use kaspa_hashes::Hash;
 use kaspa_notify::subscription::context::SubscriptionContext;

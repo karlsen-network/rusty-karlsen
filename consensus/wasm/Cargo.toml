@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-consensus-wasm"
+name = "karlsen-consensus-wasm"
 description = "Karlsen consensus core WASM bindings"
 rust-version.workspace = true
 version.workspace = true
@@ -14,9 +14,9 @@ wasm32-sdk = []
 wasm32-types = []
 
 [dependencies]
-kaspa-consensus-core.workspace = true
-kaspa-consensus-client.workspace = true
-kaspa-addresses.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensus-client.workspace = true
+karlsen-addresses.workspace = true
 kaspa-txscript.workspace = true
 kaspa-hashes.workspace = true
 kaspa-utils.workspace = true

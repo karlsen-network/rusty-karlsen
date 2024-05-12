@@ -3,10 +3,10 @@ use super::utxo_set_override::{set_genesis_utxo_commitment_from_config, set_init
 use super::{ctl::Ctl, Consensus};
 use crate::{model::stores::U64Key, pipeline::ProcessingCounters};
 use itertools::Itertools;
-use kaspa_consensus_core::config::Config;
-use kaspa_consensus_notify::root::ConsensusNotificationRoot;
-use kaspa_consensusmanager::{ConsensusFactory, ConsensusInstance, DynConsensusCtl, SessionLock};
-use kaspa_core::{debug, time::unix_now, warn};
+use karlsen_consensus_core::config::Config;
+use karlsen_consensus_notify::root::ConsensusNotificationRoot;
+use karlsen_consensusmanager::{ConsensusFactory, ConsensusInstance, DynConsensusCtl, SessionLock};
+use karlsen_core::{debug, time::unix_now, warn};
 use kaspa_database::{
     prelude::{
         BatchDbWriter, CachePolicy, CachedDbAccess, CachedDbItem, DirectDbWriter, StoreError, StoreResult, StoreResultExtensions, DB,

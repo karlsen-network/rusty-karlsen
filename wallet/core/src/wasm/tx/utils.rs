@@ -4,10 +4,10 @@ use crate::tx::{IPaymentOutputArray, PaymentOutputs};
 use crate::wasm::tx::consensus::get_consensus_params_by_address;
 use crate::wasm::tx::generator::*;
 use crate::wasm::tx::mass::MassCalculator;
-use kaspa_addresses::{Address, AddressT};
-use kaspa_consensus_client::*;
-use kaspa_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
-//use kaspa_consensus_wasm::*;
+use karlsen_addresses::{Address, AddressT};
+use karlsen_consensus_client::*;
+use karlsen_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
+//use karlsen_consensus_wasm::*;
 use karlsen_wallet_macros::declare_typescript_wasm_interface as declare;
 use workflow_core::runtime::is_web;
 

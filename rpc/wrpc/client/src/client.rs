@@ -1,7 +1,7 @@
 use crate::imports::*;
 use crate::parse::parse_host;
 use crate::{error::Error, node::NodeDescriptor};
-use kaspa_consensus_core::network::NetworkType;
+use karlsen_consensus_core::network::NetworkType;
 use kaspa_notify::{
     listener::ListenerLifespan,
     subscription::{context::SubscriptionContext, MutationPolicies, UtxosChangedMutationPolicy},

@@ -1,6 +1,6 @@
 use crate::tasks::Task;
 use async_trait::async_trait;
-use kaspa_core::{
+use karlsen_core::{
     info,
     task::tick::{TickReason, TickService},
     warn,

@@ -2,9 +2,9 @@ mod error;
 mod result;
 
 use clap::Parser;
-use kaspa_consensus_core::network::NetworkType;
+use karlsen_consensus_core::network::NetworkType;
 use kaspa_rpc_core::api::ops::RpcApiOps;
-use kaspa_wrpc_server::{
+use karlsen_wrpc_server::{
     connection::Connection,
     router::Router,
     server::Server,

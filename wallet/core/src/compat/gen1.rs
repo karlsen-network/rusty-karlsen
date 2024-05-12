@@ -23,7 +23,7 @@ pub fn decrypt_mnemonic<T: AsRef<[u8]>>(
 mod test {
     use super::*;
     use hex_literal::hex;
-    use kaspa_addresses::Address;
+    use karlsen_addresses::Address;
 
     #[test]
     fn decrypt_go_encrypted_mnemonics_test() {

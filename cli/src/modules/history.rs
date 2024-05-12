@@ -1,5 +1,5 @@
 use crate::imports::*;
-use kaspa_consensus_core::tx::TransactionId;
+use karlsen_consensus_core::tx::TransactionId;
 use karlsen_wallet_core::error::Error as WalletError;
 use karlsen_wallet_core::storage::Binding;
 #[derive(Default, Handler)]

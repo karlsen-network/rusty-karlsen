@@ -1,6 +1,6 @@
 globalThis.WebSocket = require('websocket').w3cwebsocket; // W3C WebSocket module shim
 
-const kaspa = require('../kaspa/kaspa_wasm');
+const kaspa = require('../karlsen/karlsen_wasm');
 const { parseArgs, guardRpcIsSynced } = require("../utils");
 const {
     RpcClient, UtxoSet, Address, Encoding, UtxoOrdering,

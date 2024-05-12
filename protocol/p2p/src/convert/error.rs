@@ -1,4 +1,4 @@
-use kaspa_consensus_core::subnets::SubnetworkConversionError;
+use karlsen_consensus_core::subnets::SubnetworkConversionError;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Error)]

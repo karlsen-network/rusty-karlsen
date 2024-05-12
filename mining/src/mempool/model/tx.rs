@@ -1,5 +1,5 @@
 use crate::mempool::tx::Priority;
-use kaspa_consensus_core::{tx::MutableTransaction, tx::TransactionId};
+use karlsen_consensus_core::{tx::MutableTransaction, tx::TransactionId};
 use std::{
     cmp::Ordering,
     fmt::{Display, Formatter},

@@ -10,10 +10,10 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-kaspa-consensus-core.workspace = true
-kaspa-consensus-notify.workspace = true
-kaspa-consensusmanager.workspace = true
-kaspa-core.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensus-notify.workspace = true
+karlsen-consensusmanager.workspace = true
+karlsen-core.workspace = true
 kaspa-database.workspace = true
 kaspa-hashes.workspace = true
 kaspa-index-core.workspace = true
@@ -32,7 +32,7 @@ tokio = { workspace = true, features = [ "rt-multi-thread", "macros", "signal" ]
 triggered.workspace = true
 
 [dev-dependencies]
-kaspa-consensus.workspace = true
+karlsen-consensus.workspace = true
 parking_lot.workspace = true
 tokio = { workspace = true, features = ["rt", "macros"] }
 rand = {workspace = true,  features = [ "small_rng" ]}

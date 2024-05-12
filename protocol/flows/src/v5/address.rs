@@ -1,6 +1,6 @@
 use crate::{flow_context::FlowContext, flow_trait::Flow};
 use itertools::Itertools;
-use kaspa_addressmanager::NetAddress;
+use karlsen_addressmanager::NetAddress;
 use kaspa_p2p_lib::{
     common::ProtocolError,
     dequeue, dequeue_with_timeout, make_message,

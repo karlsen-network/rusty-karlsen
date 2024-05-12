@@ -1,10 +1,10 @@
 use std::{collections::HashSet, sync::Arc};
 
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     tx::{ScriptPublicKeys, TransactionOutpoint},
     BlockHashSet,
 };
-use kaspa_core::trace;
+use karlsen_core::trace;
 use kaspa_database::prelude::{CachePolicy, StoreResult, DB};
 use kaspa_index_core::indexed_utxos::BalanceByScriptPublicKey;
 

@@ -3,7 +3,7 @@ use crate::model::stores::{
     ghostdag::{GhostdagData, GhostdagStoreReader},
     headers::HeaderStoreReader,
 };
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     config::params::MIN_DIFFICULTY_WINDOW_LEN,
     errors::difficulty::{DifficultyError, DifficultyResult},
     BlockHashSet, BlueWorkType,

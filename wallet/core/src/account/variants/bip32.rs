@@ -6,7 +6,7 @@ use crate::account::Inner;
 use crate::derivation::{AddressDerivationManager, AddressDerivationManagerTrait};
 use crate::imports::*;
 
-pub const BIP32_ACCOUNT_KIND: &str = "kaspa-bip32-standard";
+pub const BIP32_ACCOUNT_KIND: &str = "karlsen-bip32-standard";
 
 pub struct Ctor {}
 

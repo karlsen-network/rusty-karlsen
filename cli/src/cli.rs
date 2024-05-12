@@ -8,7 +8,7 @@ use crate::result::Result;
 use kaspa_daemon::{DaemonEvent, DaemonKind, Daemons};
 use karlsen_wallet_core::rpc::DynRpcApi;
 use karlsen_wallet_core::storage::{IdT, PrvKeyDataInfo};
-use kaspa_wrpc_client::KaspaRpcClient;
+use karlsen_wrpc_client::KaspaRpcClient;
 use workflow_core::channel::*;
 use workflow_core::time::Instant;
 use workflow_log::*;
@@ -92,9 +92,9 @@ impl KaspaCli {
                     std::println!("halt");
                     1
                 });
-                kaspa_core::log::init_logger(None, "info");
+                karlsen_core::log::init_logger(None, "info");
             } else {
-                kaspa_core::log::set_log_level(LevelFilter::Info);
+                karlsen_core::log::set_log_level(LevelFilter::Info);
             }
         }
 
@@ -104,7 +104,7 @@ impl KaspaCli {
     pub async fn try_new_arc(options: Options) -> Result<Arc<Self>> {
         let wallet = Arc::new(Wallet::try_new(Wallet::local_store()?, None, None)?);
 
-        let kaspa_cli = Arc::new(KaspaCli {
+        let karlsen_cli = Arc::new(KaspaCli {
             term: Arc::new(Mutex::new(None)),
             wallet,
             notifications_task_ctl: DuplexChannel::oneshot(),
@@ -120,16 +120,16 @@ impl KaspaCli {
             sync_state: Mutex::new(None),
         });
 
-        let term = Arc::new(Terminal::try_new_with_options(kaspa_cli.clone(), options.terminal)?);
+        let term = Arc::new(Terminal::try_new_with_options(karlsen_cli.clone(), options.terminal)?);
         term.init().await?;
 
         cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
-                kaspa_cli.init_panic_hook();
+                karlsen_cli.init_panic_hook();
             }
         }
 
-        Ok(kaspa_cli)
+        Ok(karlsen_cli)
     }
 
     pub fn term(&self) -> Arc<Terminal> {
@@ -915,7 +915,7 @@ where
 //     Ok(selection.unwrap())
 // }
 
-pub async fn kaspa_cli(terminal_options: TerminalOptions, banner: Option<String>) -> Result<()> {
+pub async fn karlsen_cli(terminal_options: TerminalOptions, banner: Option<String>) -> Result<()> {
     KaspaCli::init();
 
     let options = Options::new(terminal_options, None);

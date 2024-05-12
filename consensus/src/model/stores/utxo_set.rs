@@ -1,4 +1,4 @@
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     tx::{TransactionIndexType, TransactionOutpoint, UtxoEntry},
     utxo::{
         utxo_diff::{ImmutableUtxoDiff, UtxoDiff},

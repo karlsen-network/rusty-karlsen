@@ -15,7 +15,7 @@ use crate::{
     },
 };
 use itertools::Itertools;
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     blockhash::{BlockHashExtensions, BlockHashes, ORIGIN},
     BlockHashMap, BlockHashSet,
 };

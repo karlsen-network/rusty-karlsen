@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-consensus"
+name = "karlsen-consensus"
 description = "Karlsen consensus library"
 rust-version.workspace = true
 version.workspace = true
@@ -18,10 +18,10 @@ faster-hex.workspace = true
 futures-util.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
-kaspa-consensus-core.workspace = true
-kaspa-consensus-notify.workspace = true
-kaspa-consensusmanager.workspace = true
-kaspa-core.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensus-notify.workspace = true
+karlsen-consensusmanager.workspace = true
+karlsen-core.workspace = true
 kaspa-database.workspace = true
 kaspa-hashes.workspace = true
 kaspa-math.workspace = true
@@ -60,4 +60,4 @@ harness = false
 
 [features]
 html_reports = []
-devnet-prealloc = ["kaspa-consensus-core/devnet-prealloc"]
+devnet-prealloc = ["karlsen-consensus-core/devnet-prealloc"]

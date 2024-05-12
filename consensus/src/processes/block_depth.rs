@@ -1,4 +1,4 @@
-use kaspa_consensus_core::blockhash::ORIGIN;
+use karlsen_consensus_core::blockhash::ORIGIN;
 use kaspa_hashes::Hash;
 use std::sync::Arc;
 

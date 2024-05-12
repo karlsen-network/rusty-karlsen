@@ -182,7 +182,7 @@ To build WASM on MacOS you need to install `llvm` from homebrew (at the time of 
 <summary>
 Kaspa CLI + Wallet
 </summary>
-`kaspa-cli` crate provides cli-driven RPC interface to the node and a
+`karlsen-cli` crate provides cli-driven RPC interface to the node and a
 terminal interface to the Rusty Kaspa Wallet runtime. These wallets are
 compatible with WASM SDK Wallet API and Kaspa NG projects.
 
@@ -420,7 +420,7 @@ Logging in `karlsend` and `simpa` can be [filtered](https://docs.rs/env_logger/0
 2. Adding the --loglevel argument like in the following example:
 
     ```
-    (cargo run --bin karlsend -- --loglevel info,kaspa_rpc_core=trace,kaspa_grpc_core=trace,consensus=trace,kaspa_core=trace) 2>&1 | tee ~/rusty-kaspa.log
+    (cargo run --bin karlsend -- --loglevel info,kaspa_rpc_core=trace,kaspa_grpc_core=trace,consensus=trace,karlsen_core=trace) 2>&1 | tee ~/rusty-kaspa.log
     ```
     In this command we set the `loglevel` to `INFO`.
 

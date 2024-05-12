@@ -1,10 +1,10 @@
 use futures_util::future::try_join_all;
 use karlsen_alloc::init_allocator_with_default_settings;
-use kaspa_consensus::{
+use karlsen_consensus::{
     config::ConfigBuilder, consensus::test_consensus::TestConsensus, params::MAINNET_PARAMS,
     processes::reachability::tests::StoreValidationExtensions,
 };
-use kaspa_consensus_core::{api::ConsensusApi, blockhash};
+use karlsen_consensus_core::{api::ConsensusApi, blockhash};
 use kaspa_database::prelude::CachePolicy;
 use kaspa_hashes::Hash;
 use rand_distr::{Distribution, Poisson};
@@ -34,7 +34,7 @@ async fn test_concurrent_pipeline() {
 
     for (hash, parents) in blocks {
         // Submit to consensus twice to make sure duplicates are handled
-        let b: kaspa_consensus_core::block::Block = consensus.build_block_with_parents(hash, parents).to_immutable();
+        let b: karlsen_consensus_core::block::Block = consensus.build_block_with_parents(hash, parents).to_immutable();
         let results = join!(
             consensus.validate_and_insert_block(b.clone()).virtual_state_task,
             consensus.validate_and_insert_block(b).virtual_state_task

@@ -1,7 +1,7 @@
 use crate::cli::KaspaCli;
 use crate::imports::*;
 use crate::result::Result;
-use kaspa_bip32::{Language, Mnemonic, WordCount};
+use karlsen_bip32::{Language, Mnemonic, WordCount};
 use karlsen_wallet_core::account::MULTISIG_ACCOUNT_KIND;
 // use karlsen_wallet_core::runtime::wallet::AccountCreateArgsBip32;
 // use karlsen_wallet_core::runtime::{PrvKeyDataArgs, PrvKeyDataCreateArgs};

@@ -5,10 +5,10 @@
 use crate::imports::{AccountId, AccountKind, AssocPrvKeyDataIds, PrvKeyDataId};
 use base64::DecodeError;
 use downcast::DowncastError;
-use kaspa_bip32::Error as BIP32Error;
-use kaspa_consensus_core::sign::Error as CoreSignError;
+use karlsen_bip32::Error as BIP32Error;
+use karlsen_consensus_core::sign::Error as CoreSignError;
 use kaspa_rpc_core::RpcError as KaspaRpcError;
-use kaspa_wrpc_client::error::Error as KaspaWorkflowRpcError;
+use karlsen_wrpc_client::error::Error as KaspaWorkflowRpcError;
 use std::sync::PoisonError;
 use thiserror::Error;
 use wasm_bindgen::JsValue;
@@ -100,10 +100,10 @@ pub enum Error {
     NetworkTypeConnected,
 
     #[error("{0}")]
-    NetworkType(#[from] kaspa_consensus_core::network::NetworkTypeError),
+    NetworkType(#[from] karlsen_consensus_core::network::NetworkTypeError),
 
     #[error("{0}")]
-    NetworkId(#[from] kaspa_consensus_core::network::NetworkIdError),
+    NetworkId(#[from] karlsen_consensus_core::network::NetworkIdError),
 
     #[error("The server UTXO index is not enabled")]
     MissingUtxoIndex,
@@ -127,7 +127,7 @@ pub enum Error {
     WorkflowStore(#[from] workflow_store::error::Error),
 
     #[error(transparent)]
-    Address(#[from] kaspa_addresses::AddressError),
+    Address(#[from] karlsen_addresses::AddressError),
 
     #[error("Serde WASM bindgen -> {0}")]
     SerdeWasmBindgen(Sendable<Printable>),
@@ -241,10 +241,10 @@ pub enum Error {
     DowncastError(String),
 
     #[error(transparent)]
-    ConsensusClient(#[from] kaspa_consensus_client::error::Error),
+    ConsensusClient(#[from] karlsen_consensus_client::error::Error),
 
     #[error(transparent)]
-    ConsensusWasm(#[from] kaspa_consensus_wasm::error::Error),
+    ConsensusWasm(#[from] karlsen_consensus_wasm::error::Error),
 
     #[error("Fees::SenderPays or Fees::ReceiverPays are not allowed in sweep transactions")]
     GeneratorFeesInSweepTransaction,

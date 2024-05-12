@@ -1,7 +1,7 @@
 use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 
-use kaspa_wasm_core::types::{BinaryT, HexString};
+use karlsen_wasm_core::types::{BinaryT, HexString};
 
 use crate::imports::*;
 use crate::result::Result;

@@ -2,9 +2,9 @@
 # `rusty-kaspa WASM32 bindings`
 
 [<img alt="github" src="https://img.shields.io/badge/github-kaspanet/rusty--kaspa-8da0cb?style=for-the-badge&labelColor=555555&color=8da0cb&logo=github" height="20">](https://github.com/kaspanet/rusty-kaspa/tree/master/wasm)
-[<img alt="crates.io" src="https://img.shields.io/crates/v/kaspa-wasm.svg?maxAge=2592000&style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/kaspa-wasm)
-[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-kaspa--wasm-56c2a5?maxAge=2592000&style=for-the-badge&logo=docs.rs" height="20">](https://docs.rs/kaspa-wasm)
-<img alt="license" src="https://img.shields.io/crates/l/kaspa-wasm.svg?maxAge=2592000&color=6ac&style=for-the-badge&logoColor=fff" height="20">
+[<img alt="crates.io" src="https://img.shields.io/crates/v/karlsen-wasm.svg?maxAge=2592000&style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/karlsen-wasm)
+[<img alt="docs.rs" src="https://img.shields.io/badge/docs.rs-kaspa--wasm-56c2a5?maxAge=2592000&style=for-the-badge&logo=docs.rs" height="20">](https://docs.rs/karlsen-wasm)
+<img alt="license" src="https://img.shields.io/crates/l/karlsen-wasm.svg?maxAge=2592000&color=6ac&style=for-the-badge&logoColor=fff" height="20">
 
 <br>
 
@@ -14,7 +14,7 @@ codebase within JavaScript environments such as Node.js and Web Browsers.
 ## Documentation
 
 - [**integrating with Kaspa** guide](https://kaspa.aspectron.org/)
-- [**Rustdoc** documentation](https://docs.rs/kaspa-wasm/latest/kaspa-wasm)
+- [**Rustdoc** documentation](https://docs.rs/karlsen-wasm/latest/karlsen-wasm)
 - [**JSDoc** documentation](https://kaspa.aspectron.org/jsdoc/)
 
 Please note that while WASM directly binds JavaScript and Rust resources, their names on JavaScript side
@@ -35,9 +35,9 @@ For JavaScript / TypeScript environments, there are two
 available NPM modules:
 
 - <https://www.npmjs.com/package/kaspa>
-- <https://www.npmjs.com/package/kaspa-wasm>
+- <https://www.npmjs.com/package/karlsen-wasm>
 
-The `kaspa-wasm` module is a pure WASM32 module that includes
+The `karlsen-wasm` module is a pure WASM32 module that includes
 the entire wallet framework, but does not support RPC due to an absence
 of a native WebSocket in NodeJs environment, while
 the `kaspa` module includes `websocket` package dependency simulating
@@ -76,9 +76,9 @@ globalThis.WebSocket = require('websocket').w3cwebsocket;
 <html>
     <head>
         <script type="module">
-            import * as kaspa_wasm from './kaspa/kaspa-wasm.js';
+            import * as karlsen_wasm from './kaspa/karlsen-wasm.js';
             (async () => {
-                const kaspa = await kaspa_wasm.default('./kaspa/kaspa-wasm_bg.wasm');
+                const kaspa = await karlsen_wasm.default('./kaspa/karlsen-wasm_bg.wasm');
                 // ...
             })();
         </script>
@@ -133,7 +133,7 @@ For more details, please follow the [**integrating with Kaspa**](https://kaspa.a
     any(feature = "wasm32-sdk", feature = "wasm32-rpc", feature = "wasm32-core", feature = "wasm32-keygen"),
     not(target_arch = "wasm32")
 ))]
-compile_error!("`kaspa-wasm` crate for WASM32 target must be built with `--features wasm32-sdk|wasm32-rpc|wasm32-core|wasm32-keygen`");
+compile_error!("`karlsen-wasm` crate for WASM32 target must be built with `--features wasm32-sdk|wasm32-rpc|wasm32-core|wasm32-keygen`");
 
 mod version;
 pub use version::*;
@@ -142,8 +142,8 @@ cfg_if::cfg_if! {
 
     if #[cfg(feature = "wasm32-sdk")] {
 
-        pub use kaspa_addresses::{Address, Version as AddressVersion};
-        pub use kaspa_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput};
+        pub use karlsen_addresses::{Address, Version as AddressVersion};
+        pub use karlsen_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput};
         pub use kaspa_pow::wasm::*;
 
         pub mod rpc {
@@ -157,19 +157,19 @@ cfg_if::cfg_if! {
             pub use kaspa_rpc_core::api::rpc::RpcApi;
             pub use kaspa_rpc_core::wasm::message::*;
 
-            pub use kaspa_wrpc_wasm::client::*;
-            pub use kaspa_wrpc_wasm::resolver::*;
-            pub use kaspa_wrpc_wasm::notify::*;
+            pub use karlsen_wrpc_wasm::client::*;
+            pub use karlsen_wrpc_wasm::resolver::*;
+            pub use karlsen_wrpc_wasm::notify::*;
         }
 
-        pub use kaspa_consensus_wasm::*;
+        pub use karlsen_consensus_wasm::*;
         pub use karlsen_wallet_keys::prelude::*;
         pub use karlsen_wallet_core::wasm::*;
 
     } else if #[cfg(feature = "wasm32-core")] {
 
-        pub use kaspa_addresses::{Address, Version as AddressVersion};
-        pub use kaspa_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput};
+        pub use karlsen_addresses::{Address, Version as AddressVersion};
+        pub use karlsen_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput};
         pub use kaspa_pow::wasm::*;
 
         pub mod rpc {
@@ -183,12 +183,12 @@ cfg_if::cfg_if! {
             pub use kaspa_rpc_core::api::rpc::RpcApi;
             pub use kaspa_rpc_core::wasm::message::*;
 
-            pub use kaspa_wrpc_wasm::client::*;
-            pub use kaspa_wrpc_wasm::resolver::*;
-            pub use kaspa_wrpc_wasm::notify::*;
+            pub use karlsen_wrpc_wasm::client::*;
+            pub use karlsen_wrpc_wasm::resolver::*;
+            pub use karlsen_wrpc_wasm::notify::*;
         }
 
-        pub use kaspa_consensus_wasm::*;
+        pub use karlsen_consensus_wasm::*;
         pub use karlsen_wallet_keys::prelude::*;
         pub use karlsen_wallet_core::wasm::*;
 
@@ -197,16 +197,16 @@ cfg_if::cfg_if! {
         pub use kaspa_rpc_core::api::rpc::RpcApi;
         pub use kaspa_rpc_core::wasm::message::*;
         pub use kaspa_rpc_core::wasm::message::IPingRequest;
-        pub use kaspa_wrpc_wasm::client::*;
-        pub use kaspa_wrpc_wasm::resolver::*;
-        pub use kaspa_wrpc_wasm::notify::*;
-        pub use kaspa_wasm_core::types::*;
+        pub use karlsen_wrpc_wasm::client::*;
+        pub use karlsen_wrpc_wasm::resolver::*;
+        pub use karlsen_wrpc_wasm::notify::*;
+        pub use karlsen_wasm_core::types::*;
 
     } else if #[cfg(feature = "wasm32-keygen")] {
 
-        pub use kaspa_addresses::{Address, Version as AddressVersion};
+        pub use karlsen_addresses::{Address, Version as AddressVersion};
         pub use karlsen_wallet_keys::prelude::*;
-        pub use kaspa_wasm_core::types::*;
+        pub use karlsen_wasm_core::types::*;
 
     }
 }

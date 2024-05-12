@@ -5,7 +5,7 @@ use crate::{
     request_handler::{factory::Factory, interface::Interface},
 };
 use futures::{FutureExt, Stream};
-use kaspa_core::{debug, info, warn};
+use karlsen_core::{debug, info, warn};
 use kaspa_grpc_core::{
     protowire::{
         rpc_server::{Rpc, RpcServer},

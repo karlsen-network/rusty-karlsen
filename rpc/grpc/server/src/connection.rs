@@ -10,7 +10,7 @@ use crate::{
 };
 use async_channel::{bounded, Receiver as MpmcReceiver, Sender as MpmcSender, TrySendError as MpmcTrySendError};
 use itertools::Itertools;
-use kaspa_core::{debug, info, trace, warn};
+use karlsen_core::{debug, info, trace, warn};
 use kaspa_grpc_core::{
     ops::KaspadPayloadOps,
     protowire::{KaspadRequest, KaspadResponse},

@@ -1,6 +1,6 @@
 # Kaspa WASM SDK
 
-An integration wrapper around [`kaspa-wasm`](https://www.npmjs.com/package/kaspa-wasm) module that uses [`websocket`](https://www.npmjs.com/package/websocket) W3C adaptor for WebSocket communication.
+An integration wrapper around [`karlsen-wasm`](https://www.npmjs.com/package/karlsen-wasm) module that uses [`websocket`](https://www.npmjs.com/package/websocket) W3C adaptor for WebSocket communication.
 
 This is a Node.js module that provides bindings to the Kaspa WASM SDK strictly for use in the Node.js environment. The web browser version of the SDK is available as part of official SDK releases at [https://github.com/kaspanet/rusty-kaspa/releases](https://github.com/kaspanet/rusty-kaspa/releases)
 
@@ -25,5 +25,5 @@ SDK examples as well as information on building the project from source can be f
 
 Official releases as well as releases for Web Browsers are available at [https://github.com/kaspanet/rusty-kaspa/releases](https://github.com/kaspanet/rusty-kaspa/releases).
 
-Nightly / developer builds are available at: [https://aspectron.org/en/projects/kaspa-wasm.html](https://aspectron.org/en/projects/kaspa-wasm.html)
+Nightly / developer builds are available at: [https://aspectron.org/en/projects/karlsen-wasm.html](https://aspectron.org/en/projects/karlsen-wasm.html)
 

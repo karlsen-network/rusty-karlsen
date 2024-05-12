@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use kaspa_consensus_core::BlueWorkType;
+use karlsen_consensus_core::BlueWorkType;
 use kaspa_hashes::Hash;
 use serde::{Deserialize, Serialize};
 

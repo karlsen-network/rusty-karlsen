@@ -6,15 +6,15 @@ use crate::{
     },
 };
 use futures::future::{join_all, select, try_join_all, Either};
-use kaspa_consensus_core::{
+use karlsen_consensus_core::{
     api::BlockValidationFuture,
     block::Block,
     header::Header,
     pruning::{PruningPointProof, PruningPointsList},
     BlockHashSet,
 };
-use kaspa_consensusmanager::{spawn_blocking, ConsensusProxy, StagingConsensus};
-use kaspa_core::{debug, info, time::unix_now, warn};
+use karlsen_consensusmanager::{spawn_blocking, ConsensusProxy, StagingConsensus};
+use karlsen_core::{debug, info, time::unix_now, warn};
 use kaspa_hashes::Hash;
 use kaspa_muhash::MuHash;
 use kaspa_p2p_lib::{

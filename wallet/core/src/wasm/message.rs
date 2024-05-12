@@ -2,7 +2,7 @@ use crate::imports::*;
 use crate::message::*;
 use karlsen_wallet_keys::privatekey::PrivateKey;
 use karlsen_wallet_keys::publickey::PublicKey;
-use kaspa_wasm_core::types::HexString;
+use karlsen_wasm_core::types::HexString;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_MESSAGE_TYPES: &'static str = r#"

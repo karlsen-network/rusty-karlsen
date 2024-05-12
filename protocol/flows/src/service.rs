@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use kaspa_addressmanager::NetAddress;
-use kaspa_connectionmanager::ConnectionManager;
-use kaspa_core::{
+use karlsen_addressmanager::NetAddress;
+use karlsen_connectionmanager::ConnectionManager;
+use karlsen_core::{
     task::service::{AsyncService, AsyncServiceFuture},
     trace,
 };

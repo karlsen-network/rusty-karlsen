@@ -1,6 +1,6 @@
 use crate::{adaptor::Adaptor, manager::Manager};
-use kaspa_consensus_core::config::Config;
-use kaspa_core::{
+use karlsen_consensus_core::config::Config;
+use karlsen_core::{
     debug,
     task::service::{AsyncService, AsyncServiceFuture},
     trace, warn,

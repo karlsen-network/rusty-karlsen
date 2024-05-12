@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-core"
+name = "karlsen-core"
 description = "Karlsen core"
 rust-version.workspace = true
 version.workspace = true
