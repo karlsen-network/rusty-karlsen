@@ -1,11 +1,11 @@
 
 <h1>Karlsen On Rust</h1>
 
-Welcome to the Rust-based implementation of the Kaspa full-node and its ancillary libraries. This Alpha release serves as a drop-in replacement to the established <a href="https://github.com/kaspanet/kaspad">Golang node</a> (once the rust rewrite is completed), introducing developers to the possibilities of Rust in the Kaspa network's context.
+Welcome to the Rust-based implementation of the Karlsen full-node and its ancillary libraries. This Alpha release serves as a drop-in replacement to the established <a href="https://github.com/karlsen-network/karlsend">Golang node</a> (once the rust rewrite is completed), introducing developers to the possibilities of Rust in the Karlsen network's context.
 
 We invite developers and blockchain enthusiasts to collaborate, test, and optimize our Rust implementation. Each line of code here is an opportunity to contribute to the open-source blockchain movement, shaping a platform designed for scalability and speed without compromising on decentralization.
 
-Your feedback, contributions, and issue reports will be integral to evolving this codebase from its Alpha phase into a mature and reliable node in the Kaspa network.
+Your feedback, contributions, and issue reports will be integral to evolving this codebase from its Alpha phase into a mature and reliable node in the Karlsen network.
 
 ## Installation
   <details>
@@ -46,8 +46,8 @@ Your feedback, contributions, and issue reports will be integral to evolving thi
       ```      
   5. Clone the repo
       ```bash
-      git clone https://github.com/kaspanet/rusty-kaspa
-      cd rusty-kaspa
+      git clone https://github.com/karlsen-network/rusty-karlsen
+      cd rusty-karlsen
       ```
   </details>
 
@@ -83,8 +83,8 @@ Your feedback, contributions, and issue reports will be integral to evolving thi
       ```      
   7. Clone the repo
       ```bash
-      git clone https://github.com/kaspanet/rusty-kaspa
-      cd rusty-kaspa
+      git clone https://github.com/karlsen-network/rusty-karlsen
+      cd rusty-karlsen
       ```
  </details>      
 
@@ -143,8 +143,8 @@ To build WASM on MacOS you need to install `llvm` from homebrew (at the time of 
       ```      
   5. Clone the repo
       ```bash
-      git clone https://github.com/kaspanet/rusty-kaspa
-      cd rusty-kaspa
+      git clone https://github.com/karlsen-network/rusty-karlsen
+      cd rusty-karlsen
       ```
 
  </details>   
@@ -172,7 +172,7 @@ To build WASM on MacOS you need to install `llvm` from homebrew (at the time of 
 
 ### Builds & documentation
 
-  - Release builds: https://github.com/kaspanet/rusty-kaspa/releases
+  - Release builds: https://github.com/karlsen-network/rusty-karlsen/releases
   - Developer builds: https://kaspa.aspectron.org/nightly/downloads/
   - Developer TypeScript documentation: https://kaspa.aspectron.org/docs/
 
@@ -180,11 +180,11 @@ To build WASM on MacOS you need to install `llvm` from homebrew (at the time of 
 <details>
 
 <summary>
-Kaspa CLI + Wallet
+Karlsen CLI + Wallet
 </summary>
 `karlsen-cli` crate provides cli-driven RPC interface to the node and a
-terminal interface to the Rusty Kaspa Wallet runtime. These wallets are
-compatible with WASM SDK Wallet API and Kaspa NG projects.
+terminal interface to the Rusty Karlsen Wallet runtime. These wallets are
+compatible with WASM SDK Wallet API and Karlsen NG projects.
 
 
 ```bash
@@ -284,7 +284,7 @@ wRPC
 
   **Sidenote:**
 
-  Rusty Kaspa integrates an optional wRPC
+  Rusty Karlsen integrates an optional wRPC
   subsystem. wRPC is a high-performance, platform-neutral, Rust-centric, WebSocket-framed RPC 
   implementation that can use [Borsh](https://borsh.io/) and JSON protocol encoding.
 
@@ -296,10 +296,10 @@ wRPC
   both client and server should be built from the same codebase.  
 
   JSON protocol is based on 
-  Kaspa data structures and is data-structure-version agnostic. You can connect to the
+  Karlsen data structures and is data-structure-version agnostic. You can connect to the
   JSON endpoint using any WebSocket library. Built-in RPC clients for JavaScript and
   TypeScript capable of running in web browsers and Node.js are available as a part of
-  the Kaspa WASM framework.
+  the Karlsen WASM framework.
 
   **wRPC to gRPC Proxy is deprecated and no longer supported.**
 
@@ -315,9 +315,9 @@ Mining
 
 Mining is currently supported only on testnet, so once you've setup a test node, follow these instructions.
 
-1. Download and unzip the latest binaries bundle of [kaspanet/kaspad](https://github.com/kaspanet/kaspad/releases).
+1. Download and unzip the latest binaries bundle of [karlsen-network/karlsend](https://github.com/karlsen-network/karlsend/releases).
 
-2. In a separate terminal run the kaspanet/kaspad miner:
+2. In a separate terminal run the karlsen-network/karlsend miner:
 
     ```
     kaspaminer --testnet --miningaddr kaspatest:qrcqat6l9zcjsu7swnaztqzrv0s7hu04skpaezxk43y4etj8ncwfk308jlcew
@@ -325,7 +325,7 @@ Mining is currently supported only on testnet, so once you've setup a test node,
 
     This will create and feed a DAG with the miner getting block templates from the node and submitting them back when mined. The node processes and stores the blocks while applying all currently implemented logic. Execution can be stopped and resumed, the data is persisted in a database.
 
-    You can replace the above mining address with your own address by creating one as described [here](https://github.com/kaspanet/docs/blob/main/Getting%20Started/Full%20Node%20Installation.md#creating-a-wallet-optional). 
+    You can replace the above mining address with your own address by creating one as described [here](https://github.com/karlsen-network/docs/blob/main/Getting%20Started/Full%20Node%20Installation.md#creating-a-wallet-optional). 
 
 </details>
 
@@ -380,7 +380,7 @@ It will produce `{bin-name}-heap.json` file in the root of the workdir, that can
 **Run unit and most integration tests**
 
 ```bash
-cd rusty-kaspa
+cd rusty-karlsen
 cargo test --release
 // or install nextest and run
 ```
@@ -390,7 +390,7 @@ cargo test --release
 **Using nextest**
 
 ```bash
-cd rusty-kaspa
+cd rusty-karlsen
 cargo nextest run --release
 ```
 
@@ -404,7 +404,7 @@ cargo nextest run --release
 <summary>Benchmarks</summary>
 
 ```bash
-cd rusty-kaspa
+cd rusty-karlsen
 cargo bench
 ```
 
@@ -420,7 +420,7 @@ Logging in `karlsend` and `simpa` can be [filtered](https://docs.rs/env_logger/0
 2. Adding the --loglevel argument like in the following example:
 
     ```
-    (cargo run --bin karlsend -- --loglevel info,karlsen_rpc_core=trace,karlsen_grpc_core=trace,consensus=trace,karlsen_core=trace) 2>&1 | tee ~/rusty-kaspa.log
+    (cargo run --bin karlsend -- --loglevel info,karlsen_rpc_core=trace,karlsen_grpc_core=trace,consensus=trace,karlsen_core=trace) 2>&1 | tee ~/rusty-karlsen.log
     ```
     In this command we set the `loglevel` to `INFO`.
 

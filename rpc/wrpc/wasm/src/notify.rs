@@ -106,7 +106,7 @@ declare! {
     r#"
     /**
      * Block added notification event is produced when a new
-     * block is added to the Kaspa BlockDAG.
+     * block is added to the Karlsen BlockDAG.
      * 
      * @category Node RPC
      */
@@ -121,7 +121,7 @@ declare! {
     r#"
     /**
      * Virtual chain changed notification event is produced when the virtual
-     * chain changes in the Kaspa BlockDAG.
+     * chain changes in the Karlsen BlockDAG.
      * 
      * @category Node RPC
      */
@@ -136,7 +136,7 @@ declare! {
     r#"
     /**
      * Finality conflict notification event is produced when a finality
-     * conflict occurs in the Kaspa BlockDAG.
+     * conflict occurs in the Karlsen BlockDAG.
      * 
      * @category Node RPC
      */
@@ -151,7 +151,7 @@ declare! {
     r#"
     /**
      * Finality conflict resolved notification event is produced when a finality
-     * conflict in the Kaspa BlockDAG is resolved.
+     * conflict in the Karlsen BlockDAG is resolved.
      * 
      * @category Node RPC
      */
@@ -167,7 +167,7 @@ declare! {
     /**
      * UTXOs changed notification event is produced when the set
      * of unspent transaction outputs (UTXOs) changes in the
-     * Kaspa BlockDAG. The event notification is scoped to the
+     * Karlsen BlockDAG. The event notification is scoped to the
      * monitored list of addresses specified during the subscription.
      * 
      * @category Node RPC
@@ -183,7 +183,7 @@ declare! {
     r#"
     /**
      * Sink blue score changed notification event is produced when the blue
-     * score of the sink block changes in the Kaspa BlockDAG.
+     * score of the sink block changes in the Karlsen BlockDAG.
      * 
      * @category Node RPC
      */
@@ -198,7 +198,7 @@ declare! {
     r#"
     /**
      * Virtual DAA score changed notification event is produced when the virtual
-     * Difficulty Adjustment Algorithm (DAA) score changes in the Kaspa BlockDAG.
+     * Difficulty Adjustment Algorithm (DAA) score changes in the Karlsen BlockDAG.
      * 
      * @category Node RPC
      */
@@ -213,7 +213,7 @@ declare! {
     r#"
     /**
      * Pruning point UTXO set override notification event is produced when the
-     * UTXO set override for the pruning point changes in the Kaspa BlockDAG.
+     * UTXO set override for the pruning point changes in the Karlsen BlockDAG.
      * 
      * @category Node RPC
      */
@@ -228,7 +228,7 @@ declare! {
     r#"
     /**
      * New block template notification event is produced when a new block
-     * template is generated for mining in the Kaspa BlockDAG.
+     * template is generated for mining in the Karlsen BlockDAG.
      * 
      * @category Node RPC
      */

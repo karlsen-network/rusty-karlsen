@@ -43,7 +43,7 @@ impl Mempool {
         // The transaction must be a currently supported version.
         //
         // This check is currently mirrored in consensus.
-        // However, in a later version of Kaspa the consensus-valid transaction version range might diverge from the
+        // However, in a later version of Karlsen the consensus-valid transaction version range might diverge from the
         // standard transaction version range, and thus the validation should happen in both levels.
         if transaction.tx.version > self.config.maximum_standard_transaction_version
             || transaction.tx.version < self.config.minimum_standard_transaction_version

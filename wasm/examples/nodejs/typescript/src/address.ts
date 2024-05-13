@@ -37,7 +37,7 @@ initConsolePanicHook();
 
 })();
 
-// Getting Kaspa Address from Private Key
+// Getting Karlsen Address from Private Key
 function demoGenerateAddressFromPrivateKeyHexString() {
     // From Hex string
     const privateKey = new PrivateKey('b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef'); // From BIP0340

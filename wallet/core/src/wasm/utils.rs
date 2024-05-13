@@ -8,10 +8,10 @@ use workflow_wasm::prelude::*;
 extern "C" {
     #[wasm_bindgen(typescript_type = "bigint | number | HexString")]
     #[derive(Clone, Debug)]
-    pub type ISompiToKaspa;
+    pub type ISompiToKarlsen;
 }
 
-/// Convert a Kaspa string to Sompi represented by bigint.
+/// Convert a Karlsen string to Sompi represented by bigint.
 /// This function provides correct precision handling and
 /// can be used to parse user input.
 /// @category Wallet SDK
@@ -21,26 +21,26 @@ pub fn kaspa_to_sompi(kaspa: String) -> Option<BigInt> {
 }
 
 ///
-/// Convert Sompi to a string representation of the amount in Kaspa.
+/// Convert Sompi to a string representation of the amount in Karlsen.
 ///
 /// @category Wallet SDK
 ///
-#[wasm_bindgen(js_name = "sompiToKaspaString")]
-pub fn sompi_to_kaspa_string(sompi: ISompiToKaspa) -> Result<String> {
+#[wasm_bindgen(js_name = "sompiToKarlsenString")]
+pub fn sompi_to_karlsen_string(sompi: ISompiToKarlsen) -> Result<String> {
     let sompi = sompi.try_as_u64()?;
-    Ok(crate::utils::sompi_to_kaspa_string(sompi))
+    Ok(crate::utils::sompi_to_karlsen_string(sompi))
 }
 
 ///
-/// Format a Sompi amount to a string representation of the amount in Kaspa with a suffix
+/// Format a Sompi amount to a string representation of the amount in Karlsen with a suffix
 /// based on the network type (e.g. `KAS` for mainnet, `TKAS` for testnet,
 /// `SKAS` for simnet, `DKAS` for devnet).
 ///
 /// @category Wallet SDK
 ///
-#[wasm_bindgen(js_name = "sompiToKaspaStringWithSuffix")]
-pub fn sompi_to_kaspa_string_with_suffix(sompi: ISompiToKaspa, network: &NetworkTypeT) -> Result<String> {
+#[wasm_bindgen(js_name = "sompiToKarlsenStringWithSuffix")]
+pub fn sompi_to_karlsen_string_with_suffix(sompi: ISompiToKarlsen, network: &NetworkTypeT) -> Result<String> {
     let sompi = sompi.try_as_u64()?;
     let network_type = NetworkType::try_from(network)?;
-    Ok(crate::utils::sompi_to_kaspa_string_with_suffix(sompi, &network_type))
+    Ok(crate::utils::sompi_to_karlsen_string_with_suffix(sompi, &network_type))
 }

@@ -17,7 +17,7 @@ use karlsen_utils::sim::Simulation;
 
 type ConsensusWrapper = (Arc<Consensus>, Vec<JoinHandle<()>>, DbLifetime);
 
-pub struct KaspaNetworkSimulator {
+pub struct KarlsenNetworkSimulator {
     // Internal simulation env
     pub(super) simulation: Simulation<Block>,
 
@@ -30,7 +30,7 @@ pub struct KaspaNetworkSimulator {
     output_dir: Option<String>, // Possible permanent output directory
 }
 
-impl KaspaNetworkSimulator {
+impl KarlsenNetworkSimulator {
     pub fn new(delay: f64, bps: f64, target_blocks: Option<u64>, config: Arc<Config>, output_dir: Option<String>) -> Self {
         Self {
             simulation: Simulation::with_start_time((delay * 1000.0) as u64, config.genesis.timestamp),

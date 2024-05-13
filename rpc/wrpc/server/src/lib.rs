@@ -1,4 +1,4 @@
-//! Kaspa wRPC Server (AsyncService) module
+//! Karlsen wRPC Server (AsyncService) module
 pub mod address;
 pub mod collector;
 pub mod connection;

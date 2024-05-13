@@ -1,5 +1,5 @@
 
-# Rusty Kaspa Core Wallet
+# Rusty Karlsen Core Wallet
 
 ## Prerequisites
 
@@ -32,7 +32,7 @@ Type `help` for additional help or `exit` to quit the application.
 
 (this section will be updated later, it is intended for development)
 
-After starting the wallet shell (native of WASM) and starting a local rusty-kaspa Karlsend node (with `--testnet` and `--utxoindex`), you should perform the following actions:
+After starting the wallet shell (native of WASM) and starting a local rusty-karlsen Karlsend node (with `--testnet` and `--utxoindex`), you should perform the following actions:
 ```
 network testnet
 server localhost

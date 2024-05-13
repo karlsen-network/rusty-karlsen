@@ -1,7 +1,7 @@
 //!
 //! Events emitted by the wallet framework. This includes various wallet,
 //! account and transaction events as well as state and sync events
-//! produced by the client RPC and the Kaspa node monitoring subsystems.
+//! produced by the client RPC and the Karlsen node monitoring subsystems.
 //!
 
 use crate::imports::*;

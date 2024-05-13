@@ -6,7 +6,7 @@ use crate::imports::*;
 /// This class allows accepts a master seed and provides
 /// functions for derivation of dependent child private keys.
 ///
-/// Please note that Kaspa extended private keys use `kprv` prefix.
+/// Please note that Karlsen extended private keys use `kprv` prefix.
 ///
 /// @see {@link PrivateKeyGenerator}, {@link PublicKeyGenerator}, {@link XPub}, {@link Mnemonic}
 /// @category Wallet SDK

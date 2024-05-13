@@ -23,23 +23,23 @@ const DISPLAY_EXPECTED: bool = true;
 pub(crate) struct Sompi(u64);
 
 #[derive(Clone, Copy)]
-struct Kaspa(f64);
+struct Karlsen(f64);
 
-impl Debug for Kaspa {
+impl Debug for Karlsen {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let sompi: Sompi = self.into();
         write!(f, "{}", sompi.0)
     }
 }
 
-impl From<Kaspa> for Sompi {
-    fn from(kaspa: Kaspa) -> Self {
+impl From<Karlsen> for Sompi {
+    fn from(kaspa: Karlsen) -> Self {
         Sompi(kaspa_to_sompi(kaspa.0))
     }
 }
 
-impl From<&Kaspa> for Sompi {
-    fn from(kaspa: &Kaspa) -> Self {
+impl From<&Karlsen> for Sompi {
+    fn from(kaspa: &Karlsen) -> Self {
         Sompi(kaspa_to_sompi(kaspa.0))
     }
 }
@@ -456,7 +456,7 @@ fn test_generator_sweep_two_utxos() -> Result<()> {
         .fetch(&Expected {
             is_final: true,
             input_count: 2,
-            aggregate_input_value: Kaspa(20.0),
+            aggregate_input_value: Karlsen(20.0),
             output_count: 1,
             priority_fees: FeesExpected::None,
         })
@@ -467,7 +467,7 @@ fn test_generator_sweep_two_utxos() -> Result<()> {
 #[test]
 fn test_generator_sweep_two_utxos_with_priority_fees_rejection() -> Result<()> {
     let generator =
-        make_generator(test_network_id(), &[10.0, 10.0], &[], Fees::sender(Kaspa(5.0)), change_address, PaymentDestination::Change);
+        make_generator(test_network_id(), &[10.0, 10.0], &[], Fees::sender(Karlsen(5.0)), change_address, PaymentDestination::Change);
     match generator {
         Err(Error::GeneratorFeesInSweepTransaction) => {}
         _ => panic!("merge 2 UTXOs with fees must fail generator creation"),
@@ -477,7 +477,7 @@ fn test_generator_sweep_two_utxos_with_priority_fees_rejection() -> Result<()> {
 
 #[test]
 fn test_generator_compound_200k_10kas_transactions() -> Result<()> {
-    generator(test_network_id(), &[10.0; 200_000], &[], Fees::sender(Kaspa(5.0)), [(output_address, Kaspa(190_000.0))].as_slice())
+    generator(test_network_id(), &[10.0; 200_000], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(190_000.0))].as_slice())
         .unwrap()
         .harness()
         .validate()
@@ -491,8 +491,8 @@ fn test_generator_compound_100k_random_transactions() -> Result<()> {
     let mut rng = StdRng::seed_from_u64(0);
     let inputs: Vec<f64> = (0..100_000).map(|_| rng.gen_range(0.001..10.0)).collect();
     let total = inputs.iter().sum::<f64>();
-    let outputs = [(output_address, Kaspa(total - 10.0))];
-    generator(test_network_id(), &inputs, &[], Fees::sender(Kaspa(5.0)), outputs.as_slice()).unwrap().harness().validate().finalize();
+    let outputs = [(output_address, Karlsen(total - 10.0))];
+    generator(test_network_id(), &inputs, &[], Fees::sender(Karlsen(5.0)), outputs.as_slice()).unwrap().harness().validate().finalize();
 
     Ok(())
 }
@@ -502,9 +502,9 @@ fn test_generator_random_outputs() -> Result<()> {
     let mut rng = StdRng::seed_from_u64(0);
     let outputs: Vec<f64> = (0..30).map(|_| rng.gen_range(1.0..10.0)).collect();
     let total = outputs.iter().sum::<f64>();
-    let outputs: Vec<_> = outputs.into_iter().map(|v| (output_address, Kaspa(v))).collect();
+    let outputs: Vec<_> = outputs.into_iter().map(|v| (output_address, Karlsen(v))).collect();
 
-    generator(test_network_id(), &[total + 100.0], &[], Fees::sender(Kaspa(5.0)), outputs.as_slice())
+    generator(test_network_id(), &[total + 100.0], &[], Fees::sender(Karlsen(5.0)), outputs.as_slice())
         .unwrap()
         .harness()
         .validate()
@@ -519,17 +519,17 @@ fn test_generator_dust_1_1() -> Result<()> {
         test_network_id(),
         &[10.0; 20],
         &[],
-        Fees::sender(Kaspa(5.0)),
-        [(output_address, Kaspa(1.0)), (output_address, Kaspa(1.0))].as_slice(),
+        Fees::sender(Karlsen(5.0)),
+        [(output_address, Karlsen(1.0)), (output_address, Karlsen(1.0))].as_slice(),
     )
     .unwrap()
     .harness()
     .fetch(&Expected {
         is_final: true,
         input_count: 4,
-        aggregate_input_value: Kaspa(40.0),
+        aggregate_input_value: Karlsen(40.0),
         output_count: 3,
-        priority_fees: FeesExpected::sender(Kaspa(5.0)),
+        priority_fees: FeesExpected::sender(Karlsen(5.0)),
     })
     .finalize();
 
@@ -542,17 +542,17 @@ fn test_generator_inputs_2_outputs_2_fees_exclude() -> Result<()> {
         test_network_id(),
         &[10.0; 2],
         &[],
-        Fees::sender(Kaspa(5.0)),
-        [(output_address, Kaspa(10.0)), (output_address, Kaspa(1.0))].as_slice(),
+        Fees::sender(Karlsen(5.0)),
+        [(output_address, Karlsen(10.0)), (output_address, Karlsen(1.0))].as_slice(),
     )
     .unwrap()
     .harness()
     .fetch(&Expected {
         is_final: true,
         input_count: 2,
-        aggregate_input_value: Kaspa(20.0),
+        aggregate_input_value: Karlsen(20.0),
         output_count: 3,
-        priority_fees: FeesExpected::sender(Kaspa(5.0)),
+        priority_fees: FeesExpected::sender(Karlsen(5.0)),
     })
     .finalize();
 
@@ -561,21 +561,21 @@ fn test_generator_inputs_2_outputs_2_fees_exclude() -> Result<()> {
 
 #[test]
 fn test_generator_inputs_100_outputs_1_fees_exclude_success() -> Result<()> {
-    // generator(test_network_id(), &[10.0; 100], &[], Fees::sender(Kaspa(5.0)), [(output_address, Kaspa(990.0))].as_slice())
-    generator(test_network_id(), &[10.0; 100], &[], Fees::sender(Kaspa(0.0)), [(output_address, Kaspa(990.0))].as_slice())
+    // generator(test_network_id(), &[10.0; 100], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(990.0))].as_slice())
+    generator(test_network_id(), &[10.0; 100], &[], Fees::sender(Karlsen(0.0)), [(output_address, Karlsen(990.0))].as_slice())
         .unwrap()
         .harness()
         .fetch(&Expected {
             is_final: false,
             input_count: 88,
-            aggregate_input_value: Kaspa(880.0),
+            aggregate_input_value: Karlsen(880.0),
             output_count: 1,
             priority_fees: FeesExpected::None,
         })
         .fetch(&Expected {
             is_final: false,
             input_count: 12,
-            aggregate_input_value: Kaspa(120.0),
+            aggregate_input_value: Karlsen(120.0),
             output_count: 1,
             priority_fees: FeesExpected::None,
         })
@@ -584,8 +584,8 @@ fn test_generator_inputs_100_outputs_1_fees_exclude_success() -> Result<()> {
             input_count: 2,
             aggregate_input_value: Sompi(999_99886576),
             output_count: 2,
-            // priority_fees: FeesExpected::sender(Kaspa(5.0)),
-            priority_fees: FeesExpected::sender(Kaspa(0.0)),
+            // priority_fees: FeesExpected::sender(Karlsen(5.0)),
+            priority_fees: FeesExpected::sender(Karlsen(0.0)),
         })
         .finalize();
 
@@ -598,23 +598,23 @@ fn test_generator_inputs_100_outputs_1_fees_include_success() -> Result<()> {
         test_network_id(),
         &[1.0; 100],
         &[],
-        Fees::receiver(Kaspa(5.0)),
-        // [(output_address, Kaspa(100.0))].as_slice(),
-        [(output_address, Kaspa(100.0))].as_slice(),
+        Fees::receiver(Karlsen(5.0)),
+        // [(output_address, Karlsen(100.0))].as_slice(),
+        [(output_address, Karlsen(100.0))].as_slice(),
     )
     .unwrap()
     .harness()
     .fetch(&Expected {
         is_final: false,
         input_count: 88,
-        aggregate_input_value: Kaspa(88.0),
+        aggregate_input_value: Karlsen(88.0),
         output_count: 1,
         priority_fees: FeesExpected::None,
     })
     .fetch(&Expected {
         is_final: false,
         input_count: 12,
-        aggregate_input_value: Kaspa(12.0),
+        aggregate_input_value: Karlsen(12.0),
         output_count: 1,
         priority_fees: FeesExpected::None,
     })
@@ -623,7 +623,7 @@ fn test_generator_inputs_100_outputs_1_fees_include_success() -> Result<()> {
         input_count: 2,
         aggregate_input_value: Sompi(99_99886576),
         output_count: 1,
-        priority_fees: FeesExpected::receiver(Kaspa(5.0)),
+        priority_fees: FeesExpected::receiver(Karlsen(5.0)),
     })
     .finalize();
 
@@ -632,13 +632,13 @@ fn test_generator_inputs_100_outputs_1_fees_include_success() -> Result<()> {
 
 #[test]
 fn test_generator_inputs_100_outputs_1_fees_exclude_insufficient_funds() -> Result<()> {
-    generator(test_network_id(), &[10.0; 100], &[], Fees::sender(Kaspa(5.0)), [(output_address, Kaspa(1000.0))].as_slice())
+    generator(test_network_id(), &[10.0; 100], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(1000.0))].as_slice())
         .unwrap()
         .harness()
         .fetch(&Expected {
             is_final: false,
             input_count: 88,
-            aggregate_input_value: Kaspa(880.0),
+            aggregate_input_value: Karlsen(880.0),
             output_count: 1,
             priority_fees: FeesExpected::None,
         })
@@ -649,7 +649,7 @@ fn test_generator_inputs_100_outputs_1_fees_exclude_insufficient_funds() -> Resu
 
 #[test]
 fn test_generator_inputs_903_outputs_2_fees_exclude() -> Result<()> {
-    generator(test_network_id(), &[10.0; 1_000], &[], Fees::sender(Kaspa(5.0)), [(output_address, Kaspa(9_000.0))].as_slice())
+    generator(test_network_id(), &[10.0; 1_000], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(9_000.0))].as_slice())
         .unwrap()
         .harness()
         .drain(
@@ -657,7 +657,7 @@ fn test_generator_inputs_903_outputs_2_fees_exclude() -> Result<()> {
             &Expected {
                 is_final: false,
                 input_count: 88,
-                aggregate_input_value: Kaspa(880.0),
+                aggregate_input_value: Karlsen(880.0),
                 output_count: 1,
                 priority_fees: FeesExpected::None,
             },
@@ -665,7 +665,7 @@ fn test_generator_inputs_903_outputs_2_fees_exclude() -> Result<()> {
         .fetch(&Expected {
             is_final: false,
             input_count: 21,
-            aggregate_input_value: Kaspa(210.0),
+            aggregate_input_value: Karlsen(210.0),
             output_count: 1,
             priority_fees: FeesExpected::None,
         })
@@ -674,7 +674,7 @@ fn test_generator_inputs_903_outputs_2_fees_exclude() -> Result<()> {
             input_count: 11,
             aggregate_input_value: Sompi(9009_98981896),
             output_count: 2,
-            priority_fees: FeesExpected::receiver(Kaspa(5.0)),
+            priority_fees: FeesExpected::receiver(Karlsen(5.0)),
         })
         .finalize();
 

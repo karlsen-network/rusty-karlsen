@@ -16,8 +16,8 @@ impl Estimate {
             return Ok(());
         }
 
-        let amount_sompi = try_parse_required_nonzero_kaspa_as_sompi_u64(argv.first())?;
-        let priority_fee_sompi = try_parse_optional_kaspa_as_sompi_i64(argv.get(1))?.unwrap_or(0);
+        let amount_sompi = try_parse_required_nonzero_karlsen_as_sompi_u64(argv.first())?;
+        let priority_fee_sompi = try_parse_optional_karlsen_as_sompi_i64(argv.get(1))?.unwrap_or(0);
         let abortable = Abortable::default();
 
         // just use any address for an estimate (change address)

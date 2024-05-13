@@ -128,7 +128,7 @@ pub mod karlsend_request_convert {
                 fn try_from(item: &KarlsendRequest) -> RpcResult<Self> {
                     item.payload
                         .as_ref()
-                        .ok_or(RpcError::MissingRpcFieldError("KaspaRequest".to_string(), "Payload".to_string()))?
+                        .ok_or(RpcError::MissingRpcFieldError("KarlsenRequest".to_string(), "Payload".to_string()))?
                         .try_into()
                 }
             }
@@ -301,7 +301,7 @@ pub mod karlsend_response_convert {
                 fn try_from(item: &KarlsendResponse) -> RpcResult<Self> {
                     item.payload
                         .as_ref()
-                        .ok_or(RpcError::MissingRpcFieldError("KaspaResponse".to_string(), "Payload".to_string()))?
+                        .ok_or(RpcError::MissingRpcFieldError("KarlsenResponse".to_string(), "Payload".to_string()))?
                         .try_into()
                 }
             }

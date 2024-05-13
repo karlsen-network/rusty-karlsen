@@ -1,7 +1,7 @@
 [package]
 name = "karlsen-cli"
 description = "Karlsen CLI"
-keywords = ["kaspa", "wallet", "cli", "rpc"]
+keywords = ["karlsen", "wallet", "cli", "rpc"]
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

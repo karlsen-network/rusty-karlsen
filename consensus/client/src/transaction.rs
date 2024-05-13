@@ -71,7 +71,7 @@ pub struct TransactionInner {
     pub id: TransactionId,
 }
 
-/// Represents a Kaspa transaction.
+/// Represents a Karlsen transaction.
 /// This is an artificial construct that includes additional
 /// transaction-related data such as additional data from UTXOs
 /// used by transaction inputs.

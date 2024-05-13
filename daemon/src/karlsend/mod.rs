@@ -215,7 +215,7 @@ impl Karlsend {
         let process = self.process();
         if let Some(process) = process {
             if process.is_running() {
-                return Err(Error::Custom("Kaspa node is already running.".to_string()));
+                return Err(Error::Custom("Karlsen node is already running.".to_string()));
             }
         }
 

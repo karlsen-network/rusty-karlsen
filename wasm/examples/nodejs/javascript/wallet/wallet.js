@@ -9,7 +9,7 @@ const {
     Wallet, setDefaultStorageFolder,
     AccountKind, Mnemonic, Resolver,
     kaspaToSompi,
-    sompiToKaspaString,
+    sompiToKarlsenString,
     Address
 } = kaspa;
 
@@ -79,7 +79,7 @@ setDefaultStorageFolder(storageFolder);
             list.push({
                 Id: tx.id,
                 Type: tx.data.type,
-                Value: sompiToKaspaString(value(tx)||0)
+                Value: sompiToKarlsenString(value(tx)||0)
             });
             //console.log("tx.data", tx.id, tx.data)
         });
@@ -132,9 +132,9 @@ setDefaultStorageFolder(storageFolder);
                     Object.keys(balance).map(id=>{
                         list.push({
                             Account: id.substring(0, 5)+"...",
-                            Mature: sompiToKaspaString(data.balance.mature),
-                            Pending: sompiToKaspaString(data.balance.pending),
-                            Outgoing: sompiToKaspaString(data.balance.outgoing),
+                            Mature: sompiToKarlsenString(data.balance.mature),
+                            Pending: sompiToKarlsenString(data.balance.pending),
+                            Outgoing: sompiToKarlsenString(data.balance.outgoing),
                             MatureUtxo: data.balance.matureUtxoCount,
                             PendingUtxo: data.balance.pendingUtxoCount,
                             StasisUtxo: data.balance.stasisUtxoCount

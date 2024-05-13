@@ -2,7 +2,7 @@ use crate::imports::*;
 use karlsen_wrpc_client::Resolver;
 
 #[derive(Default, Handler)]
-#[help("Connect to a Kaspa network")]
+#[help("Connect to a Karlsen network")]
 pub struct Connect;
 
 impl Connect {

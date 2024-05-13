@@ -52,7 +52,7 @@ impl MemSizeEstimator for UtxoEntry {}
 
 pub type TransactionIndexType = u32;
 
-/// Represents a Kaspa transaction outpoint
+/// Represents a Karlsen transaction outpoint
 #[derive(Eq, Hash, PartialEq, Debug, Copy, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionOutpoint {
@@ -73,7 +73,7 @@ impl Display for TransactionOutpoint {
     }
 }
 
-/// Represents a Kaspa transaction input
+/// Represents a Karlsen transaction input
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionInput {
@@ -149,7 +149,7 @@ impl BorshSerialize for TransactionMass {
     }
 }
 
-/// Represents a Kaspa transaction
+/// Represents a Karlsen transaction
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
@@ -514,7 +514,7 @@ mod tests {
         let tx = test_transaction();
         let bts = bincode::serialize(&tx).unwrap();
 
-        // standard, based on https://github.com/kaspanet/rusty-kaspa/commit/7e947a06d2434daf4bc7064d4cd87dc1984b56fe
+        // standard, based on https://github.com/karlsen-network/rusty-karlsen/commit/7e947a06d2434daf4bc7064d4cd87dc1984b56fe
         let expected_bts = vec![
             1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 22, 94, 56, 232, 179, 145, 69, 149, 217, 198, 65, 243, 184, 238, 194, 243, 70, 17, 137, 107,
             130, 26, 104, 59, 122, 78, 222, 254, 44, 0, 0, 0, 250, 255, 255, 255, 32, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8,

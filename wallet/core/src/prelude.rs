@@ -20,4 +20,4 @@ pub use crate::wallet::Wallet;
 pub use karlsen_addresses::{Address, Prefix as AddressPrefix};
 pub use karlsen_bip32::{Language, Mnemonic, WordCount};
 pub use karlsen_wallet_keys::secret::Secret;
-pub use karlsen_wrpc_client::{KaspaRpcClient, WrpcEncoding};
+pub use karlsen_wrpc_client::{KarlsenRpcClient, WrpcEncoding};

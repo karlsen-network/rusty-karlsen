@@ -1,5 +1,5 @@
 //!
-//! API trait for interfacing with the Kaspa wallet subsystem.
+//! API trait for interfacing with the Karlsen wallet subsystem.
 //!
 //! The wallet API is a high-level API that allows applications to perform
 //! wallet operations such as creating a wallet, opening a wallet, creating
@@ -14,7 +14,7 @@ use crate::tx::GeneratorSummary;
 use workflow_core::channel::Receiver;
 
 ///
-///  API trait for interfacing with the Kaspa wallet subsystem.
+///  API trait for interfacing with the Karlsen wallet subsystem.
 ///
 #[async_trait]
 pub trait WalletApi: Send + Sync + AnySync {
@@ -147,7 +147,7 @@ pub trait WalletApi: Send + Sync + AnySync {
     ///
     /// If `legacy_accounts` is true, the wallet will enable legacy account compatibility mode
     /// allowing the wallet to operate on legacy accounts. Legacy accounts were created by
-    /// applications such as KDX and kaspanet.io web wallet using a deprecated derivation path
+    /// applications such as KDX and karlsen-network.io web wallet using a deprecated derivation path
     /// and are considered deprecated. Legacy accounts should not be used in 3rd-party applications.
     ///
     /// See [`wallet_open`](Self::wallet_open) for a convenience wrapper around this call.

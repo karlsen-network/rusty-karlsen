@@ -9,7 +9,7 @@ use karlsen_consensus_core::network::NetworkType;
 /// Helper class to generate public keys from an extended public key (XPub)
 /// that has been derived up to the co-signer index.
 ///
-/// Please note that in Kaspa master public keys use `kpub` prefix.
+/// Please note that in Karlsen master public keys use `kpub` prefix.
 ///
 /// @see {@link PrivateKeyGenerator}, {@link XPub}, {@link XPrv}, {@link Mnemonic}
 /// @category Wallet SDK

@@ -42,7 +42,7 @@ pub mod consensus {
     // ~~~~~~~~~~~~~~~~~~~~~~~~~ Max difficulty target ~~~~~~~~~~~~~~~~~~~~~~~~~
     //
 
-    /// Highest proof of work difficulty target a Kaspa block can have for all networks.
+    /// Highest proof of work difficulty target a Karlsen block can have for all networks.
     /// This value is: 2^255 - 1.
     ///
     /// Computed value: `Uint256::from_u64(1).wrapping_shl(255) - 1.into()`

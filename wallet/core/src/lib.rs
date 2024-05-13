@@ -1,9 +1,9 @@
 //!
-//! Kaspa Wallet Core - Multi-platform Rust framework for Kaspa Wallet.
+//! Karlsen Wallet Core - Multi-platform Rust framework for Karlsen Wallet.
 //!
 //! This framework provides a series of APIs and primitives
 //! to simplify building applications that interface with
-//! the Kaspa p2p network.
+//! the Karlsen p2p network.
 //!
 //! Included are low-level primitives
 //! such as [`UtxoProcessor`](crate::utxo::UtxoProcessor)
@@ -44,11 +44,11 @@
 //! the W3C WebSocket and thus supports RPC.
 //!
 //! JavaScript examples for using this framework can be found at:
-//! <https://github.com/kaspanet/rusty-kaspa/tree/master/wasm/nodejs>
+//! <https://github.com/karlsen-network/rusty-karlsen/tree/master/wasm/nodejs>
 //!
 //! For pre-built browser-compatible WASM32 redistributables of this
-//! framework please see the releases section of the Rusty Kaspa
-//! repository at <https://github.com/kaspanet/rusty-kaspa/releases>.
+//! framework please see the releases section of the Rusty Karlsen
+//! repository at <https://github.com/karlsen-network/rusty-karlsen/releases>.
 //!
 
 extern crate alloc;

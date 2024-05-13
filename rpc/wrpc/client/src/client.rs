@@ -43,7 +43,7 @@ struct Inner {
 
 impl Inner {
     pub fn new(encoding: Encoding, url: Option<&str>, resolver: Option<Resolver>, network_id: Option<NetworkId>) -> Result<Inner> {
-        // log_trace!("Kaspa wRPC::{encoding} connecting to: {url}");
+        // log_trace!("Karlsen wRPC::{encoding} connecting to: {url}");
         let rpc_ctl = RpcCtl::with_descriptor(url);
         let wrpc_ctl_multiplexer = Multiplexer::<WrpcCtl>::new();
 
@@ -82,7 +82,7 @@ impl Inner {
                             // log_info!("notification: posting to channel: {notification:?}");
                             notification_sender.send(notification).await?;
                         } else {
-                            log_warn!("WARNING: Kaspa RPC notification is not consumed by user: {:?}", notification);
+                            log_warn!("WARNING: Karlsen RPC notification is not consumed by user: {:?}", notification);
                         }
                         Ok(())
                     })
@@ -187,7 +187,7 @@ impl Inner {
 
 impl Debug for Inner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("KaspaRpcClient")
+        f.debug_struct("KarlsenRpcClient")
             .field("rpc", &"rpc")
             // .field("notification_channel", &self.notification_channel)
             .field("encoding", &self.encoding)
@@ -233,7 +233,7 @@ impl RpcResolver for Inner {
 
 const WRPC_CLIENT: &str = "wrpc-client";
 
-/// [`KaspaRpcClient`] allows connection to the Kaspa wRPC Server via
+/// [`KarlsenRpcClient`] allows connection to the Karlsen wRPC Server via
 /// binary Borsh or JSON protocols.
 ///
 /// RpcClient has two ways to interface with the underlying RPC subsystem:
@@ -243,28 +243,28 @@ const WRPC_CLIENT: &str = "wrpc-client";
 /// method invocation server-side.
 ///
 #[derive(Clone)]
-pub struct KaspaRpcClient {
+pub struct KarlsenRpcClient {
     inner: Arc<Inner>,
 }
 
-impl Debug for KaspaRpcClient {
+impl Debug for KarlsenRpcClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("KaspaRpcClient").field("url", &self.url()).field("connected", &self.is_connected()).finish()
+        f.debug_struct("KarlsenRpcClient").field("url", &self.url()).field("connected", &self.is_connected()).finish()
     }
 }
 
-impl KaspaRpcClient {
-    /// Create a new `KaspaRpcClient` with the given Encoding and URL
+impl KarlsenRpcClient {
+    /// Create a new `KarlsenRpcClient` with the given Encoding and URL
     pub fn new(
         encoding: Encoding,
         url: Option<&str>,
         resolver: Option<Resolver>,
         network_id: Option<NetworkId>,
         subscription_context: Option<SubscriptionContext>,
-    ) -> Result<KaspaRpcClient> {
+    ) -> Result<KarlsenRpcClient> {
         Self::new_with_args(encoding, url, resolver, network_id, subscription_context)
         // FIXME
-        // pub fn new(encoding: Encoding, url: &str, ) -> Result<KaspaRpcClient> {
+        // pub fn new(encoding: Encoding, url: &str, ) -> Result<KarlsenRpcClient> {
         //     Self::new_with_args(encoding, NotificationMode::Direct, url, subscription_context)
     }
 
@@ -275,14 +275,14 @@ impl KaspaRpcClient {
         resolver: Option<Resolver>,
         network_id: Option<NetworkId>,
         subscription_context: Option<SubscriptionContext>,
-    ) -> Result<KaspaRpcClient> {
+    ) -> Result<KarlsenRpcClient> {
         let inner = Arc::new(Inner::new(encoding, url, resolver, network_id)?);
         inner.build_notifier(subscription_context)?;
-        let client = KaspaRpcClient { inner };
+        let client = KarlsenRpcClient { inner };
         //     notification_mode: NotificationMode,
         //     url: &str,
         //     subscription_context: Option<SubscriptionContext>,
-        // ) -> Result<KaspaRpcClient> {
+        // ) -> Result<KarlsenRpcClient> {
         //     let inner = Arc::new(Inner::new(encoding, url)?);
         //     let notifier = if matches!(notification_mode, NotificationMode::MultiListeners) {
         //         let enabled_events = EVENT_TYPE_ARRAY[..].into();
@@ -303,7 +303,7 @@ impl KaspaRpcClient {
         //         None
         //     };
 
-        // let client = KaspaRpcClient { inner, notifier, notification_mode };
+        // let client = KarlsenRpcClient { inner, notifier, notification_mode };
 
         Ok(client)
     }
@@ -527,7 +527,7 @@ impl KaspaRpcClient {
                     },
                     msg = notification_relay_channel.receiver.recv().fuse() => {
                         if let Ok(msg) = msg {
-                            // inner.rpc_ctl.notify(msg).await.expect("(KaspaRpcClient) rpc_ctl.notify() error");
+                            // inner.rpc_ctl.notify(msg).await.expect("(KarlsenRpcClient) rpc_ctl.notify() error");
                             if let Err(err) = inner.notification_intake_channel.lock().unwrap().sender.try_send(msg) {
                                 log_error!("notification_intake_channel.sender.try_send() error: {err}");
                             }
@@ -539,10 +539,10 @@ impl KaspaRpcClient {
                         if let Ok(msg) = msg {
                             match msg {
                                 WrpcCtl::Connect => {
-                                    inner.rpc_ctl.signal_open().await.expect("(KaspaRpcClient) rpc_ctl.signal_open() error");
+                                    inner.rpc_ctl.signal_open().await.expect("(KarlsenRpcClient) rpc_ctl.signal_open() error");
                                 }
                                 WrpcCtl::Disconnect => {
-                                    inner.rpc_ctl.signal_close().await.expect("(KaspaRpcClient) rpc_ctl.signal_close() error");
+                                    inner.rpc_ctl.signal_close().await.expect("(KarlsenRpcClient) rpc_ctl.signal_close() error");
                                 }
                             }
                         } else {
@@ -571,7 +571,7 @@ impl KaspaRpcClient {
 }
 
 #[async_trait]
-impl RpcApi for KaspaRpcClient {
+impl RpcApi for KarlsenRpcClient {
     //
     // The following proc-macro iterates over the array of enum variants
     // generating a function for each variant as follows:

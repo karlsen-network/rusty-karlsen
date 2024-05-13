@@ -1,4 +1,4 @@
-// Basic example of a Kaspa wRPC client that connects to a node
+// Basic example of a Karlsen wRPC client that connects to a node
 // and subscribes to notifications. This example demonstrates
 // how to handle RPC connection events, perform subscriptions,
 // handle subscription notifications etc.
@@ -13,7 +13,7 @@ use workflow_core::channel::{oneshot, Channel, DuplexChannel};
 use workflow_core::task::spawn;
 use workflow_log::prelude::*;
 
-// Kaspa RPC primitives
+// Karlsen RPC primitives
 use karlsen_wrpc_client::prelude::*;
 // reuse wRPC Result type for convenience
 use karlsen_wrpc_client::result::Result;
@@ -23,8 +23,8 @@ struct Inner {
     // is used to signal an async task termination request and receiver
     // is used to signal task termination completion.
     task_ctl: DuplexChannel<()>,
-    // Kaspa wRPC client instance
-    client: Arc<KaspaRpcClient>,
+    // Karlsen wRPC client instance
+    client: Arc<KarlsenRpcClient>,
     // our own view on the connection state
     is_connected: AtomicBool,
     // channel supplied to the notification subsystem
@@ -50,8 +50,8 @@ impl Listener {
         // obtain the public node rpc endpoint
         let (resolver, url) = if let Some(url) = url { (None, Some(url)) } else { (Some(Resolver::default()), None) };
 
-        // Create a basic Kaspa RPC client instance using Borsh encoding.
-        let client = Arc::new(KaspaRpcClient::new_with_args(WrpcEncoding::Borsh, url.as_deref(), resolver, Some(network_id), None)?);
+        // Create a basic Karlsen RPC client instance using Borsh encoding.
+        let client = Arc::new(KarlsenRpcClient::new_with_args(WrpcEncoding::Borsh, url.as_deref(), resolver, Some(network_id), None)?);
 
         let inner = Inner {
             task_ctl: DuplexChannel::oneshot(),
@@ -103,7 +103,7 @@ impl Listener {
         Ok(())
     }
 
-    pub fn client(&self) -> &Arc<KaspaRpcClient> {
+    pub fn client(&self) -> &Arc<KarlsenRpcClient> {
         &self.inner.client
     }
 

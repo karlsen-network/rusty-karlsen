@@ -106,7 +106,7 @@ impl Wallet {
                 (
                     "import [<name>]",
                     "Create a wallet from an existing mnemonic (bip32 only). \r\n\r\n\
-                To import legacy wallets (KDX or kaspanet) please create \
+                To import legacy wallets (KDX or karlsen-network) please create \
                 a new bip32 wallet and use the 'account import' command. \
                 Legacy wallets can only be imported as accounts. \
                 \r\n",

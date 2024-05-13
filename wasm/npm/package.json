@@ -1,14 +1,14 @@
 {
   "name": "kaspa",
   "version": "0.13.5",
-  "description": "Kaspa SDK",
+  "description": "Karlsen SDK",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kaspanet/rusty-kaspa.git"
+    "url": "git+https://github.com/karlsen-networknetworknetworknetwork/rusty-karlsen.git"
   },
   "keywords": [
     "kaspa",
@@ -18,9 +18,9 @@
   "author": "Kaspa developers",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/kaspanet/rusty-kaspa/issues"
+    "url": "https://github.com/karlsen-network/rusty-karlsen/issues"
   },
-  "homepage": "https://github.com/kaspanet/rusty-kaspa#readme",
+  "homepage": "https://github.com/karlsen-network/rusty-karlsen#readme",
   "dependencies": {
     "websocket": "1.0.34",
     "karlsen-wasm": "0.13.5"

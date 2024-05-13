@@ -19,7 +19,7 @@ pub trait ConnectionInitializer: Sync + Send {
     async fn initialize_connection(&self, new_router: Arc<Router>) -> Result<(), ProtocolError>;
 }
 
-/// The main object to create for managing a fully-fledged Kaspa P2P peer
+/// The main object to create for managing a fully-fledged Karlsen P2P peer
 pub struct Adaptor {
     //
     // Internal design & resource management: management of active peers was extracted to the `Hub` object
@@ -45,7 +45,7 @@ impl Adaptor {
         Self { _server_termination: server_termination, connection_handler, hub }
     }
 
-    /// Creates a P2P adaptor with only client-side support. Typical Kaspa nodes should use `Adaptor::bidirectional`
+    /// Creates a P2P adaptor with only client-side support. Typical Karlsen nodes should use `Adaptor::bidirectional`
     pub fn client_only(hub: Hub, initializer: Arc<dyn ConnectionInitializer>, counters: Arc<TowerConnectionCounters>) -> Arc<Self> {
         let (hub_sender, hub_receiver) = mpsc_channel(Self::hub_channel_size());
         let connection_handler = ConnectionHandler::new(hub_sender, initializer.clone(), counters);

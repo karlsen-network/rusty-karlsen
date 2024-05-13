@@ -1,5 +1,5 @@
 //!
-//! Kaspa wallet runtime implementation.
+//! Karlsen wallet runtime implementation.
 //!
 pub mod api;
 pub mod args;
@@ -21,7 +21,7 @@ use karlsen_notify::{
     listener::ListenerId,
     scope::{Scope, VirtualDaaScoreChangedScope},
 };
-use karlsen_wrpc_client::{KaspaRpcClient, Resolver, WrpcEncoding};
+use karlsen_wrpc_client::{KarlsenRpcClient, Resolver, WrpcEncoding};
 use workflow_core::task::spawn;
 
 #[derive(Debug)]
@@ -119,10 +119,10 @@ impl Wallet {
 
     pub fn try_with_wrpc(store: Arc<dyn Interface>, resolver: Option<Resolver>, network_id: Option<NetworkId>) -> Result<Wallet> {
         let rpc_client =
-            Arc::new(KaspaRpcClient::new_with_args(WrpcEncoding::Borsh, Some("wrpc://127.0.0.1:17110"), resolver, network_id, None)?);
+            Arc::new(KarlsenRpcClient::new_with_args(WrpcEncoding::Borsh, Some("wrpc://127.0.0.1:17110"), resolver, network_id, None)?);
 
         // pub fn try_with_wrpc(store: Arc<dyn Interface>, network_id: Option<NetworkId>) -> Result<Wallet> {
-        //     let rpc_client = Arc::new(KaspaRpcClient::new_with_args(
+        //     let rpc_client = Arc::new(KarlsenRpcClient::new_with_args(
         //         WrpcEncoding::Borsh,
         //         NotificationMode::MultiListeners,
         //         "wrpc://127.0.0.1:17110",
@@ -458,8 +458,8 @@ impl Wallet {
         Ok(self.get_prv_key_info(account).await?.map(|info| info.is_encrypted()))
     }
 
-    pub fn try_wrpc_client(&self) -> Option<Arc<KaspaRpcClient>> {
-        self.try_rpc_api().and_then(|api| api.clone().downcast_arc::<KaspaRpcClient>().ok())
+    pub fn try_wrpc_client(&self) -> Option<Arc<KarlsenRpcClient>> {
+        self.try_rpc_api().and_then(|api| api.clone().downcast_arc::<KarlsenRpcClient>().ok())
     }
 
     pub fn rpc_api(&self) -> Arc<DynRpcApi> {

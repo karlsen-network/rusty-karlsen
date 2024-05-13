@@ -39,7 +39,7 @@ use karlsen_wrpc_server::service::{Options as WrpcServerOptions, WebSocketCounte
 /// for the karlsend process.
 pub const DESIRED_DAEMON_SOFT_FD_LIMIT: u64 = 8 * 1024;
 /// Minimum acceptable soft FD limit for the karlsend
-/// process. (Rusty Kaspa will operate with the minimal
+/// process. (Rusty Karlsen will operate with the minimal
 /// acceptable limit of `4096`, but a setting below
 /// this value may impact the database performance).
 pub const MINIMUM_DAEMON_SOFT_FD_LIMIT: u64 = 4 * 1024;

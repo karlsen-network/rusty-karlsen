@@ -38,7 +38,7 @@ declare! {
 
 ///
 /// UtxoContext is a class that provides a way to track addresses activity
-/// on the Kaspa network.  When an address is registered with UtxoContext
+/// on the Karlsen network.  When an address is registered with UtxoContext
 /// it aggregates all UTXO entries for that address and emits events when
 /// any activity against these addresses occurs.
 ///

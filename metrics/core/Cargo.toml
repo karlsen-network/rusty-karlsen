@@ -1,6 +1,6 @@
 [package]
 name = "karlsen-metrics-core"
-description = "Tools for collecting and reporting Kaspa p2p node metrics"
+description = "Tools for collecting and reporting Karlsen p2p node metrics"
 rust-version.workspace = true
 version.workspace = true
 authors.workspace = true

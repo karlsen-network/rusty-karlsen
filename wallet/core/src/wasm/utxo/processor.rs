@@ -79,7 +79,7 @@ cfg_if! {
 ///
 /// UtxoProcessor class is the main coordinator that manages UTXO processing
 /// between multiple UtxoContext instances. It acts as a bridge between the
-/// Kaspa node RPC connection, address subscriptions and UtxoContext instances.
+/// Karlsen node RPC connection, address subscriptions and UtxoContext instances.
 ///
 /// @see {@link IUtxoProcessorArgs},
 /// {@link UtxoContext},

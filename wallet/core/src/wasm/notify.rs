@@ -499,8 +499,8 @@ declare! {
     r#"
     /**
      * Emitted by {@link UtxoProcessor} after successfully opening an RPC
-     * connection to the Kaspa node. This event contains general information
-     * about the Kaspa node.
+     * connection to the Karlsen node. This event contains general information
+     * about the Karlsen node.
      * 
      * @category Wallet Events
      */

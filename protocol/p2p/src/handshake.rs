@@ -5,7 +5,7 @@ use crate::{common::ProtocolError, dequeue_with_timeout, make_message};
 use crate::{IncomingRoute, KarlsendMessagePayloadType, Router};
 use karlsen_core::debug;
 
-/// Implements the Kaspa peer-to-peer handshake protocol
+/// Implements the Karlsen peer-to-peer handshake protocol
 pub struct KarlsendHandshake<'a> {
     router: &'a Router,
     version_receiver: IncomingRoute,

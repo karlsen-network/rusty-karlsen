@@ -67,7 +67,7 @@ impl TryFrom<&JsValue> for TransactionOutpointInner {
     }
 }
 
-/// Represents a Kaspa transaction outpoint.
+/// Represents a Karlsen transaction outpoint.
 /// NOTE: This struct is immutable - to create a custom outpoint
 /// use the `TransactionOutpoint::new` constructor. (in JavaScript
 /// use `new TransactionOutpoint(transactionId, index)`).

@@ -7,8 +7,8 @@ use base64::DecodeError;
 use downcast::DowncastError;
 use karlsen_bip32::Error as BIP32Error;
 use karlsen_consensus_core::sign::Error as CoreSignError;
-use karlsen_rpc_core::RpcError as KaspaRpcError;
-use karlsen_wrpc_client::error::Error as KaspaWorkflowRpcError;
+use karlsen_rpc_core::RpcError as KarlsenRpcError;
+use karlsen_wrpc_client::error::Error as KarlsenWorkflowRpcError;
 use std::sync::PoisonError;
 use thiserror::Error;
 use wasm_bindgen::JsValue;
@@ -31,13 +31,13 @@ pub enum Error {
     AccountSelection,
 
     #[error("{0}")]
-    KaspaRpcClientResult(#[from] KaspaRpcError),
+    KarlsenRpcClientResult(#[from] KarlsenRpcError),
 
     #[error("wRPC -> {0}")]
     RpcError(#[from] RpcError),
 
     #[error("Wallet wRPC -> {0}")]
-    KaspaWorkflowRpcError(#[from] KaspaWorkflowRpcError),
+    KarlsenWorkflowRpcError(#[from] KarlsenWorkflowRpcError),
 
     #[error("The wallet RPC client is not wRPC")]
     NotWrpcClient,

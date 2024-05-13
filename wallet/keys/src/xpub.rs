@@ -6,7 +6,7 @@ use crate::imports::*;
 /// This class allows accepts another XPub and and provides
 /// functions for derivation of dependent child public keys.
 ///
-/// Please note that Kaspa extended public keys use `kpub` prefix.
+/// Please note that Karlsen extended public keys use `kpub` prefix.
 ///
 /// @see {@link PrivateKeyGenerator}, {@link PublicKeyGenerator}, {@link XPrv}, {@link Mnemonic}
 /// @category Wallet SDK

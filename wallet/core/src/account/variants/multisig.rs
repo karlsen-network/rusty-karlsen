@@ -17,7 +17,7 @@ impl Factory for Ctor {
     }
 
     fn description(&self) -> String {
-        "Kaspa Core Multi-Signature Account".to_string()
+        "Karlsen Core Multi-Signature Account".to_string()
     }
 
     async fn try_load(

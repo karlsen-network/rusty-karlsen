@@ -3,7 +3,7 @@ use convert_case::{Case, Casing};
 use karlsen_rpc_core::{api::ops::RpcApiOps, *};
 
 #[derive(Default, Handler)]
-#[help("Execute RPC commands against the connected Kaspa node")]
+#[help("Execute RPC commands against the connected Karlsen node")]
 pub struct Rpc;
 
 impl Rpc {
@@ -153,7 +153,7 @@ impl Rpc {
                 let addresses = argv.iter().map(|s| Address::try_from(s.as_str())).collect::<std::result::Result<Vec<_>, _>>()?;
                 for address in addresses {
                     let result = rpc.get_balance_by_address_call(GetBalanceByAddressRequest { address }).await?;
-                    self.println(&ctx, sompi_to_kaspa(result.balance));
+                    self.println(&ctx, sompi_to_karlsen(result.balance));
                 }
             }
             RpcApiOps::GetBalancesByAddresses => {

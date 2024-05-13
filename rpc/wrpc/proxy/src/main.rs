@@ -8,7 +8,7 @@ use karlsen_wrpc_server::{
     connection::Connection,
     router::Router,
     server::Server,
-    service::{KaspaRpcHandler, Options},
+    service::{KarlsenRpcHandler, Options},
 };
 use result::Result;
 use std::sync::Arc;
@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
 
     let counters = Arc::new(WebSocketCounters::default());
     let tasks = threads.unwrap_or_else(num_cpus::get);
-    let rpc_handler = Arc::new(KaspaRpcHandler::new(tasks, encoding, None, options.clone()));
+    let rpc_handler = Arc::new(KarlsenRpcHandler::new(tasks, encoding, None, options.clone()));
 
     let router = Arc::new(Router::new(rpc_handler.server.clone()));
     let server = RpcServer::new_with_encoding::<Server, Connection, RpcApiOps, Id64>(
@@ -92,7 +92,7 @@ async fn main() -> Result<()> {
         Some(counters),
     );
 
-    log_info!("Kaspa wRPC server is listening on {}", options.listen_address);
+    log_info!("Karlsen wRPC server is listening on {}", options.listen_address);
     log_info!("Using `{encoding}` protocol encoding");
 
     let config = WebSocketConfig { max_message_size: Some(1024 * 1024 * 1024), ..Default::default() };

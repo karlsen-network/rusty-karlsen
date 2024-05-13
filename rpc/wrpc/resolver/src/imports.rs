@@ -14,7 +14,7 @@ pub use karlsen_rpc_core::api::rpc::RpcApi;
 pub use karlsen_utils::hashmap::GroupExtension;
 pub use karlsen_wrpc_client::{
     client::{ConnectOptions, ConnectStrategy},
-    KaspaRpcClient, WrpcEncoding,
+    KarlsenRpcClient, WrpcEncoding,
 };
 pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
 pub use std::collections::HashMap;

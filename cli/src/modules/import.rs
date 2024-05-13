@@ -38,9 +38,9 @@ impl Import {
                     let wallet_secret = Secret::new(ctx.term().ask(true, "Enter wallet password: ").await?.trim().as_bytes().to_vec());
                     wallet.import_gen0_keydata(import_secret, wallet_secret, None).await?;
                 } else if application_runtime::is_web() {
-                    return Err("'kaspanet' web wallet storage not found at this domain name".into());
+                    return Err("'karlsen-network' web wallet storage not found at this domain name".into());
                 } else {
-                    return Err("KDX/kaspanet keydata file not found".into());
+                    return Err("KDX/karlsen-network keydata file not found".into());
                 }
             }
             // todo "read-only" => {}

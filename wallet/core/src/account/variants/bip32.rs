@@ -17,7 +17,7 @@ impl Factory for Ctor {
     }
 
     fn description(&self) -> String {
-        "Kaspa Core HD Wallet Account".to_string()
+        "Karlsen Core HD Wallet Account".to_string()
     }
 
     async fn try_load(

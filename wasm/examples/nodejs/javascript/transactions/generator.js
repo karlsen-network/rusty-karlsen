@@ -66,7 +66,7 @@ const { encoding, networkId, address : destinationAddress } = require("../utils"
         // is reached. The remaining amount will be sent 
         // to the change address.
         //
-        // If the requested amount is greater than the Kaspa
+        // If the requested amount is greater than the Karlsen
         // transactoin mass, the Generator will create multiple
         // transactions where each transaction will forward
         // UTXOs to the change address, until the requested

@@ -15,7 +15,7 @@ Before you start, you must configure the default network setting.  There are cur
 is in alpha stage, you should not use it on the mainnet.  If you wish to experiment,
 you should select `testnet-10` by entering `network testnet-10`
 
-The `server` command configures the target server.  You can connect to any Rusty Kaspa
+The `server` command configures the target server.  You can connect to any Rusty Karlsen
 node that has User RPC enabled with `--rpclisten-borsh=public`. If you are running the node
 from within KOS, it is locked to listen to a local IP address.
 

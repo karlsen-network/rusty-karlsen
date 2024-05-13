@@ -1,6 +1,6 @@
 [package]
 name = "karlsen-bip32"
-description = "BIP32 for Kaspa"
+description = "BIP32 for Karlsen"
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

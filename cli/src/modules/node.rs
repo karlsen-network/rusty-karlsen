@@ -57,7 +57,7 @@ impl Handler for Node {
     }
 
     fn help(&self, _ctx: &Arc<dyn Context>) -> &'static str {
-        "Manage the local Kaspa node instance"
+        "Manage the local Karlsen node instance"
     }
 
     async fn start(self: Arc<Self>, _ctx: &Arc<dyn Context>) -> cli::Result<()> {
@@ -187,11 +187,11 @@ impl Node {
             &[
                 ("select", "Select Karlsend executable (binary) location"),
                 ("version", "Display Karlsend executable version"),
-                ("start", "Start the local Kaspa node instance"),
-                ("stop", "Stop the local Kaspa node instance"),
-                ("restart", "Restart the local Kaspa node instance"),
-                ("kill", "Kill the local Kaspa node instance"),
-                ("status", "Get the status of the local Kaspa node instance"),
+                ("start", "Start the local Karlsen node instance"),
+                ("stop", "Stop the local Karlsen node instance"),
+                ("restart", "Restart the local Karlsen node instance"),
+                ("kill", "Kill the local Karlsen node instance"),
+                ("status", "Get the status of the local Karlsen node instance"),
                 ("mute", "Toggle log output"),
             ],
             None,

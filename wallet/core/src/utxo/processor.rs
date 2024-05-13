@@ -19,7 +19,7 @@ use karlsen_rpc_core::{
     message::UtxosChangedNotification,
     GetServerInfoResponse,
 };
-use karlsen_wrpc_client::KaspaRpcClient;
+use karlsen_wrpc_client::KarlsenRpcClient;
 use workflow_core::channel::{Channel, DuplexChannel};
 use workflow_core::task::spawn;
 
@@ -131,8 +131,8 @@ impl UtxoProcessor {
         self.rpc_ctl().descriptor()
     }
 
-    pub fn rpc_client(&self) -> Option<Arc<KaspaRpcClient>> {
-        self.rpc_api().clone().downcast_arc::<KaspaRpcClient>().ok()
+    pub fn rpc_client(&self) -> Option<Arc<KarlsenRpcClient>> {
+        self.rpc_api().clone().downcast_arc::<KarlsenRpcClient>().ok()
     }
 
     pub async fn bind_rpc(&self, rpc: Option<Rpc>) -> Result<()> {

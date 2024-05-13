@@ -121,7 +121,7 @@ pub enum Error {
     MetricsError(karlsen_metrics_core::error::Error),
 
     #[error(transparent)]
-    KaspaWalletKeys(#[from] karlsen_wallet_keys::error::Error),
+    KarlsenWalletKeys(#[from] karlsen_wallet_keys::error::Error),
 }
 
 impl Error {

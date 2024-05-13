@@ -1,5 +1,5 @@
 //!
-//! Kaspa value formatting and parsing utilities.
+//! Karlsen value formatting and parsing utilities.
 //!
 
 use crate::result::Result;
@@ -31,7 +31,7 @@ pub fn try_kaspa_str_to_sompi_i64<S: Into<String>>(s: S) -> Result<Option<i64>> 
 }
 
 #[inline]
-pub fn sompi_to_kaspa(sompi: u64) -> f64 {
+pub fn sompi_to_karlsen(sompi: u64) -> f64 {
     sompi as f64 / SOMPI_PER_KASPA as f64
 }
 
@@ -41,13 +41,13 @@ pub fn kaspa_to_sompi(kaspa: f64) -> u64 {
 }
 
 #[inline]
-pub fn sompi_to_kaspa_string(sompi: u64) -> String {
-    sompi_to_kaspa(sompi).separated_string()
+pub fn sompi_to_karlsen_string(sompi: u64) -> String {
+    sompi_to_karlsen(sompi).separated_string()
 }
 
 #[inline]
-pub fn sompi_to_kaspa_string_with_trailing_zeroes(sompi: u64) -> String {
-    separated_float!(format!("{:.8}", sompi_to_kaspa(sompi)))
+pub fn sompi_to_karlsen_string_with_trailing_zeroes(sompi: u64) -> String {
+    separated_float!(format!("{:.8}", sompi_to_karlsen(sompi)))
 }
 
 pub fn kaspa_suffix(network_type: &NetworkType) -> &'static str {
@@ -60,15 +60,15 @@ pub fn kaspa_suffix(network_type: &NetworkType) -> &'static str {
 }
 
 #[inline]
-pub fn sompi_to_kaspa_string_with_suffix(sompi: u64, network_type: &NetworkType) -> String {
-    let kas = sompi_to_kaspa_string(sompi);
+pub fn sompi_to_karlsen_string_with_suffix(sompi: u64, network_type: &NetworkType) -> String {
+    let kas = sompi_to_karlsen_string(sompi);
     let suffix = kaspa_suffix(network_type);
     format!("{kas} {suffix}")
 }
 
 #[inline]
-pub fn sompi_to_kaspa_string_with_trailing_zeroes_and_suffix(sompi: u64, network_type: &NetworkType) -> String {
-    let kas = sompi_to_kaspa_string_with_trailing_zeroes(sompi);
+pub fn sompi_to_karlsen_string_with_trailing_zeroes_and_suffix(sompi: u64, network_type: &NetworkType) -> String {
+    let kas = sompi_to_karlsen_string_with_trailing_zeroes(sompi);
     let suffix = kaspa_suffix(network_type);
     format!("{kas} {suffix}")
 }

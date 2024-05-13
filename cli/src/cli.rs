@@ -8,7 +8,7 @@ use crate::result::Result;
 use karlsen_daemon::{DaemonEvent, DaemonKind, Daemons};
 use karlsen_wallet_core::rpc::DynRpcApi;
 use karlsen_wallet_core::storage::{IdT, PrvKeyDataInfo};
-use karlsen_wrpc_client::KaspaRpcClient;
+use karlsen_wrpc_client::KarlsenRpcClient;
 use workflow_core::channel::*;
 use workflow_core::time::Instant;
 use workflow_log::*;
@@ -164,7 +164,7 @@ impl KarlsenCli {
         self.wallet.try_rpc_api().clone()
     }
 
-    pub fn try_rpc_client(&self) -> Option<Arc<KaspaRpcClient>> {
+    pub fn try_rpc_client(&self) -> Option<Arc<KarlsenRpcClient>> {
         self.wallet.try_wrpc_client().clone()
     }
 
@@ -285,10 +285,10 @@ impl KarlsenCli {
                         if let Ok(msg) = msg {
                             match *msg {
                                 Events::WalletPing => {
-                                    // log_info!("Kaspa NG - received wallet ping");
+                                    // log_info!("Karlsen NG - received wallet ping");
                                 },
                                 Events::Metrics { network_id : _, metrics : _ } => {
-                                    // log_info!("Kaspa NG - received metrics event {metrics:?}")
+                                    // log_info!("Karlsen NG - received metrics event {metrics:?}")
                                 }
                                 Events::Error { message } => { terrorln!(this,"{message}"); },
                                 Events::UtxoProcStart => {},
@@ -306,7 +306,7 @@ impl KarlsenCli {
                                     this.term().refresh_prompt();
                                 },
                                 Events::UtxoIndexNotEnabled { .. } => {
-                                    tprintln!(this, "Error: Kaspa node UTXO index is not enabled...")
+                                    tprintln!(this, "Error: Karlsen node UTXO index is not enabled...")
                                 },
                                 Events::SyncState { sync_state } => {
 
@@ -326,16 +326,16 @@ impl KarlsenCli {
                                     ..
                                 } => {
 
-                                    tprintln!(this, "Connected to Kaspa node version {server_version} at {}", url.unwrap_or("N/A".to_string()));
+                                    tprintln!(this, "Connected to Karlsen node version {server_version} at {}", url.unwrap_or("N/A".to_string()));
 
                                     let is_open = this.wallet.is_open();
 
                                     if !is_synced {
                                         if is_open {
-                                            terrorln!(this, "Unable to update the wallet state - Kaspa node is currently syncing with the network...");
+                                            terrorln!(this, "Unable to update the wallet state - Karlsen node is currently syncing with the network...");
 
                                         } else {
-                                            terrorln!(this, "Kaspa node is currently syncing with the network, please wait for the sync to complete...");
+                                            terrorln!(this, "Karlsen node is currently syncing with the network, please wait for the sync to complete...");
                                         }
                                     }
 
@@ -797,7 +797,7 @@ impl Cli for KarlsenCli {
 
         if let Some(descriptor) = self.wallet.descriptor() {
             let title = descriptor.title.unwrap_or(descriptor.filename);
-            if title.to_lowercase().as_str() != "kaspa" {
+            if title.to_lowercase().as_str() != "karlsen" {
                 prompt.push(title);
             }
 
@@ -922,7 +922,7 @@ pub async fn karlsen_cli(terminal_options: TerminalOptions, banner: Option<Strin
     let cli = KarlsenCli::try_new_arc(options).await?;
 
     let banner =
-        banner.unwrap_or_else(|| format!("Kaspa Cli Wallet v{} (type 'help' for list of commands)", env!("CARGO_PKG_VERSION")));
+        banner.unwrap_or_else(|| format!("Karlsen Cli Wallet v{} (type 'help' for list of commands)", env!("CARGO_PKG_VERSION")));
     cli.term().writeln(banner);
 
     // redirect the global log output to terminal

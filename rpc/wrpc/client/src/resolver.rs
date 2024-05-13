@@ -39,7 +39,7 @@ impl Inner {
 }
 
 ///
-/// Resolver is a client for obtaining public Kaspa wRPC endpoints.
+/// Resolver is a client for obtaining public Karlsen wRPC endpoints.
 ///
 #[derive(Debug, Clone)]
 pub struct Resolver {

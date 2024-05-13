@@ -26,12 +26,12 @@ use karlsen_database::{create_temp_db, load_existing_db};
 use karlsen_hashes::Hash;
 use karlsen_perf_monitor::{builder::Builder, counters::CountersSnapshot};
 use karlsen_utils::fd_budget;
-use simulator::network::KaspaNetworkSimulator;
+use simulator::network::KarlsenNetworkSimulator;
 use std::{collections::VecDeque, sync::Arc, time::Duration};
 
 pub mod simulator;
 
-/// Kaspa Network Simulator
+/// Karlsen Network Simulator
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -225,7 +225,7 @@ fn main_impl(mut args: Args) {
         (consensus, lifetime)
     } else {
         let until = if args.target_blocks.is_none() { config.genesis.timestamp + args.sim_time * 1000 } else { u64::MAX }; // milliseconds
-        let mut sim = KaspaNetworkSimulator::new(args.delay, args.bps, args.target_blocks, config.clone(), args.output_dir);
+        let mut sim = KarlsenNetworkSimulator::new(args.delay, args.bps, args.target_blocks, config.clone(), args.output_dir);
         let (consensus, handles, lifetime) = sim
             .init(
                 args.miners,
