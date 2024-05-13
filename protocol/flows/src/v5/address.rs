@@ -4,7 +4,7 @@ use karlsen_addressmanager::NetAddress;
 use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, dequeue_with_timeout, make_message,
-    pb::{kaspad_message::Payload, AddressesMessage, RequestAddressesMessage},
+    pb::{karlsend_message::Payload, AddressesMessage, RequestAddressesMessage},
     IncomingRoute, Router,
 };
 use karlsen_utils::networking::IpAddress;

@@ -6,7 +6,7 @@ pub struct Import;
 
 impl Import {
     async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, _cmd: &str) -> Result<()> {
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         let wallet = ctx.wallet();
 
         if argv.is_empty() {
@@ -54,7 +54,7 @@ impl Import {
         Ok(())
     }
 
-    async fn display_help(self: Arc<Self>, ctx: Arc<KaspaCli>) -> Result<()> {
+    async fn display_help(self: Arc<Self>, ctx: Arc<KarlsenCli>) -> Result<()> {
         ctx.term().help(
             &[
                 (

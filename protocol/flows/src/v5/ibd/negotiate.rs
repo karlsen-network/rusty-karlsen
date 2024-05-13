@@ -8,7 +8,7 @@ use karlsen_hashes::Hash;
 use karlsen_p2p_lib::{
     common::{ProtocolError, DEFAULT_TIMEOUT},
     dequeue_with_timeout, make_message,
-    pb::{kaspad_message::Payload, RequestIbdChainBlockLocatorMessage},
+    pb::{karlsend_message::Payload, RequestIbdChainBlockLocatorMessage},
 };
 
 pub struct ChainNegotiationOutput {

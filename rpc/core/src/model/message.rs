@@ -93,9 +93,9 @@ impl GetBlockTemplateRequest {
 pub struct GetBlockTemplateResponse {
     pub block: RpcBlock,
 
-    /// Whether kaspad thinks that it's synced.
-    /// Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced.
-    /// That is because when kaspad isn't in sync with the rest of the network there's a high
+    /// Whether karlsend thinks that it's synced.
+    /// Callers are discouraged (but not forbidden) from solving blocks when karlsend is not synced.
+    /// That is because when karlsend isn't in sync with the rest of the network there's a high
     /// chance the block will never be accepted, thus the solving effort would have been wasted.
     pub is_synced: bool,
 }
@@ -955,7 +955,7 @@ pub struct FinalityConflictResolvedNotification {
 //
 // If `addresses` is empty, the notifications will start or stop for all addresses.
 //
-// This call is only available when this kaspad was started with `--utxoindex`
+// This call is only available when this karlsend was started with `--utxoindex`
 //
 // See: UtxosChangedNotification
 #[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]

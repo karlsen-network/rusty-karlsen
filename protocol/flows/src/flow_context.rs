@@ -20,7 +20,7 @@ use karlsen_consensus_notify::{
 use karlsen_consensusmanager::{BlockProcessingBatch, ConsensusInstance, ConsensusManager, ConsensusProxy};
 use karlsen_core::{
     debug, info,
-    kaspad_env::{name, version},
+    karlsend_env::{name, version},
     task::tick::TickService,
 };
 use karlsen_core::{time::unix_now, warn};
@@ -32,8 +32,8 @@ use karlsen_p2p_lib::{
     common::ProtocolError,
     convert::model::version::Version,
     make_message,
-    pb::{kaspad_message::Payload, InvRelayBlockMessage},
-    ConnectionInitializer, Hub, KaspadHandshake, PeerKey, PeerProperties, Router,
+    pb::{karlsend_message::Payload, InvRelayBlockMessage},
+    ConnectionInitializer, Hub, KarlsendHandshake, PeerKey, PeerProperties, Router,
 };
 use karlsen_utils::iter::IterExtensions;
 use karlsen_utils::networking::PeerId;
@@ -660,7 +660,7 @@ impl FlowContext {
 impl ConnectionInitializer for FlowContext {
     async fn initialize_connection(&self, router: Arc<Router>) -> Result<(), ProtocolError> {
         // Build the handshake object and subscribe to handshake messages
-        let mut handshake = KaspadHandshake::new(&router);
+        let mut handshake = KarlsendHandshake::new(&router);
 
         // We start the router receive loop only after we registered to handshake routes
         router.start();

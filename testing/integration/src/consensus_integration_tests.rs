@@ -772,7 +772,7 @@ struct RPCUTXOEntry {
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Debug)]
-struct KaspadGoParams {
+struct KarlsendGoParams {
     K: GhostdagKType,
     TimestampDeviationTolerance: u64,
     TargetTimePerBlock: u64,
@@ -794,7 +794,7 @@ struct KaspadGoParams {
     PruningProofM: u64,
 }
 
-impl KaspadGoParams {
+impl KarlsendGoParams {
     fn into_params(self) -> Params {
         let finality_depth = self.FinalityDuration / self.TargetTimePerBlock;
         Params {
@@ -914,7 +914,7 @@ async fn json_test(file_path: &str, concurrency: bool) {
 
     let mut lines = gzip_file_lines(&main_path.join("blocks.json.gz"));
     let first_line = lines.next().unwrap();
-    let go_params_res: Result<KaspadGoParams, _> = serde_json::from_str(&first_line);
+    let go_params_res: Result<KarlsendGoParams, _> = serde_json::from_str(&first_line);
     let params = if let Ok(go_params) = go_params_res {
         let mut params = go_params.into_params();
         if !proof_exists {

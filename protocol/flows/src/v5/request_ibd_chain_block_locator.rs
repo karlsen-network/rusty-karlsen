@@ -4,7 +4,7 @@ use karlsen_consensus_core::errors::{consensus::ConsensusError, sync::SyncManage
 use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue_with_request_id, make_response,
-    pb::{kaspad_message::Payload, IbdChainBlockLocatorMessage},
+    pb::{karlsend_message::Payload, IbdChainBlockLocatorMessage},
     IncomingRoute, Router,
 };
 

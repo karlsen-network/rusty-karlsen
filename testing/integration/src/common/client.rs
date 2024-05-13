@@ -14,8 +14,8 @@ pub struct ListeningClient {
 }
 
 impl ListeningClient {
-    pub async fn connect(kaspad: &Daemon) -> Self {
-        let client = kaspad.new_multi_listener_client().await;
+    pub async fn connect(karlsend: &Daemon) -> Self {
+        let client = karlsend.new_multi_listener_client().await;
         client.start(None).await;
         let listeners = Default::default();
         ListeningClient { client, listeners }

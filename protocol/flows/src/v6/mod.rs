@@ -14,7 +14,7 @@ use crate::v5::{
 };
 use crate::{flow_context::FlowContext, flow_trait::Flow};
 
-use karlsen_p2p_lib::{KaspadMessagePayloadType, Router, SharedIncomingRoute};
+use karlsen_p2p_lib::{KarlsendMessagePayloadType, Router, SharedIncomingRoute};
 use karlsen_utils::channel;
 use std::sync::Arc;
 
@@ -32,100 +32,100 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
             ctx.clone(),
             router.clone(),
             router.subscribe(vec![
-                KaspadMessagePayloadType::BlockHeaders,
-                KaspadMessagePayloadType::DoneHeaders,
-                KaspadMessagePayloadType::IbdBlockLocatorHighestHash,
-                KaspadMessagePayloadType::IbdBlockLocatorHighestHashNotFound,
-                KaspadMessagePayloadType::BlockWithTrustedDataV4,
-                KaspadMessagePayloadType::DoneBlocksWithTrustedData,
-                KaspadMessagePayloadType::IbdChainBlockLocator,
-                KaspadMessagePayloadType::IbdBlock,
-                KaspadMessagePayloadType::TrustedData,
-                KaspadMessagePayloadType::PruningPoints,
-                KaspadMessagePayloadType::PruningPointProof,
-                KaspadMessagePayloadType::UnexpectedPruningPoint,
-                KaspadMessagePayloadType::PruningPointUtxoSetChunk,
-                KaspadMessagePayloadType::DonePruningPointUtxoSetChunks,
+                KarlsendMessagePayloadType::BlockHeaders,
+                KarlsendMessagePayloadType::DoneHeaders,
+                KarlsendMessagePayloadType::IbdBlockLocatorHighestHash,
+                KarlsendMessagePayloadType::IbdBlockLocatorHighestHashNotFound,
+                KarlsendMessagePayloadType::BlockWithTrustedDataV4,
+                KarlsendMessagePayloadType::DoneBlocksWithTrustedData,
+                KarlsendMessagePayloadType::IbdChainBlockLocator,
+                KarlsendMessagePayloadType::IbdBlock,
+                KarlsendMessagePayloadType::TrustedData,
+                KarlsendMessagePayloadType::PruningPoints,
+                KarlsendMessagePayloadType::PruningPointProof,
+                KarlsendMessagePayloadType::UnexpectedPruningPoint,
+                KarlsendMessagePayloadType::PruningPointUtxoSetChunk,
+                KarlsendMessagePayloadType::DonePruningPointUtxoSetChunks,
             ]),
             relay_receiver,
         )),
         Box::new(HandleRelayBlockRequests::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KaspadMessagePayloadType::RequestRelayBlocks]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestRelayBlocks]),
         )),
-        Box::new(ReceivePingsFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KaspadMessagePayloadType::Ping]))),
-        Box::new(SendPingsFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KaspadMessagePayloadType::Pong]))),
+        Box::new(ReceivePingsFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KarlsendMessagePayloadType::Ping]))),
+        Box::new(SendPingsFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KarlsendMessagePayloadType::Pong]))),
         Box::new(RequestHeadersFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KaspadMessagePayloadType::RequestHeaders, KaspadMessagePayloadType::RequestNextHeaders]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestHeaders, KarlsendMessagePayloadType::RequestNextHeaders]),
         )),
         Box::new(RequestPruningPointProofFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KaspadMessagePayloadType::RequestPruningPointProof]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestPruningPointProof]),
         )),
         Box::new(RequestIbdChainBlockLocatorFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KaspadMessagePayloadType::RequestIbdChainBlockLocator]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestIbdChainBlockLocator]),
         )),
         Box::new(PruningPointAndItsAnticoneRequestsFlow::new(
             ctx.clone(),
             router.clone(),
             router.subscribe(vec![
-                KaspadMessagePayloadType::RequestPruningPointAndItsAnticone,
-                KaspadMessagePayloadType::RequestNextPruningPointAndItsAnticoneBlocks,
+                KarlsendMessagePayloadType::RequestPruningPointAndItsAnticone,
+                KarlsendMessagePayloadType::RequestNextPruningPointAndItsAnticoneBlocks,
             ]),
         )),
         Box::new(RequestPruningPointUtxoSetFlow::new(
             ctx.clone(),
             router.clone(),
             router.subscribe(vec![
-                KaspadMessagePayloadType::RequestPruningPointUtxoSet,
-                KaspadMessagePayloadType::RequestNextPruningPointUtxoSetChunk,
+                KarlsendMessagePayloadType::RequestPruningPointUtxoSet,
+                KarlsendMessagePayloadType::RequestNextPruningPointUtxoSetChunk,
             ]),
         )),
         Box::new(HandleIbdBlockRequests::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KaspadMessagePayloadType::RequestIbdBlocks]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestIbdBlocks]),
         )),
         Box::new(HandleAntipastRequests::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KaspadMessagePayloadType::RequestAntipast]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestAntipast]),
         )),
         Box::new(RelayTransactionsFlow::new(
             ctx.clone(),
             router.clone(),
             router
-                .subscribe_with_capacity(vec![KaspadMessagePayloadType::InvTransactions], RelayTransactionsFlow::invs_channel_size()),
+                .subscribe_with_capacity(vec![KarlsendMessagePayloadType::InvTransactions], RelayTransactionsFlow::invs_channel_size()),
             router.subscribe_with_capacity(
-                vec![KaspadMessagePayloadType::Transaction, KaspadMessagePayloadType::TransactionNotFound],
+                vec![KarlsendMessagePayloadType::Transaction, KarlsendMessagePayloadType::TransactionNotFound],
                 RelayTransactionsFlow::txs_channel_size(),
             ),
         )),
         Box::new(RequestTransactionsFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KaspadMessagePayloadType::RequestTransactions]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestTransactions]),
         )),
-        Box::new(ReceiveAddressesFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KaspadMessagePayloadType::Addresses]))),
+        Box::new(ReceiveAddressesFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KarlsendMessagePayloadType::Addresses]))),
         Box::new(SendAddressesFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KaspadMessagePayloadType::RequestAddresses]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestAddresses]),
         )),
         Box::new(RequestBlockLocatorFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KaspadMessagePayloadType::RequestBlockLocator]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestBlockLocator]),
         )),
     ];
 
-    let invs_route = router.subscribe_with_capacity(vec![KaspadMessagePayloadType::InvRelayBlock], ctx.block_invs_channel_size());
+    let invs_route = router.subscribe_with_capacity(vec![KarlsendMessagePayloadType::InvRelayBlock], ctx.block_invs_channel_size());
     let shared_invs_route = SharedIncomingRoute::new(invs_route);
 
     let num_relay_flows = (ctx.config.bps() as usize / 2).max(1);
@@ -140,11 +140,11 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
     }));
 
     // The reject message is handled as a special case by the router
-    // KaspadMessagePayloadType::Reject,
+    // KarlsendMessagePayloadType::Reject,
 
     // We do not register the below two messages since they are deprecated also in go-kaspa
-    // KaspadMessagePayloadType::BlockWithTrustedData,
-    // KaspadMessagePayloadType::IbdBlockLocator,
+    // KarlsendMessagePayloadType::BlockWithTrustedData,
+    // KarlsendMessagePayloadType::IbdBlockLocator,
 
     flows
 }

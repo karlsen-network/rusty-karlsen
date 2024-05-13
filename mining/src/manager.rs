@@ -173,7 +173,7 @@ impl MiningManager {
                             // Original golang comment:
                             // mempool.remove_transactions might return errors in situations that are perfectly fine in this context.
                             // TODO: Once the mempool invariants are clear, this might return an error:
-                            // https://github.com/kaspanet/kaspad/issues/1553
+                            // https://github.com/kaspanet/karlsend/issues/1553
                             // NOTE: unlike golang, here we continue removing also if an error was found
                             error!("Error from mempool.remove_transactions: {:?}", err);
                         }

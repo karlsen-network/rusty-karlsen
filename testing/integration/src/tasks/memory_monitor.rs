@@ -28,7 +28,7 @@ impl MemoryMonitorTask {
 
     async fn worker(&self) {
         #[cfg(feature = "heap")]
-        let _profiler = dhat::Profiler::builder().file_name("kaspad-heap.json").build();
+        let _profiler = dhat::Profiler::builder().file_name("karlsend-heap.json").build();
 
         warn!(
             "Starting Memory monitor {} with fetch interval of {} and maximum memory of {}",
@@ -76,7 +76,7 @@ impl Task for MemoryMonitorTask {
         let max_memory = self.max_memory;
         let task = tokio::spawn(async move {
             #[cfg(feature = "heap")]
-            let _profiler = dhat::Profiler::builder().file_name("kaspad-heap.json").build();
+            let _profiler = dhat::Profiler::builder().file_name("karlsend-heap.json").build();
 
             warn!(
                 "Starting Memory monitor task {} with fetch interval of {} and maximum memory of {}",

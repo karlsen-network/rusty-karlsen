@@ -1,4 +1,4 @@
-use crate::cli::KaspaCli;
+use crate::cli::KarlsenCli;
 use crate::imports::*;
 use crate::result::Result;
 use karlsen_bip32::{Language, Mnemonic, WordCount};
@@ -8,7 +8,7 @@ use karlsen_wallet_core::account::MULTISIG_ACCOUNT_KIND;
 // use karlsen_wallet_core::storage::AccountKind;
 
 pub(crate) async fn create(
-    ctx: &Arc<KaspaCli>,
+    ctx: &Arc<KarlsenCli>,
     prv_key_data_info: Arc<PrvKeyDataInfo>,
     account_kind: AccountKind,
     name: Option<&str>,
@@ -54,7 +54,7 @@ pub(crate) async fn create(
     Ok(())
 }
 
-async fn create_multisig(ctx: &Arc<KaspaCli>, account_name: Option<String>, mnemonic_phrase_word_count: WordCount) -> Result<()> {
+async fn create_multisig(ctx: &Arc<KarlsenCli>, account_name: Option<String>, mnemonic_phrase_word_count: WordCount) -> Result<()> {
     let term = ctx.term();
     let wallet = ctx.wallet();
     let (wallet_secret, _) = ctx.ask_wallet_secret(None).await?;

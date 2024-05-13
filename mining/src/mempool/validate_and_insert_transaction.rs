@@ -103,7 +103,7 @@ impl Mempool {
     }
 
     fn validate_transaction_in_context(&self, transaction: &MutableTransaction) -> RuleResult<()> {
-        // TEMP: apply parts of go-kaspad mempool dust prevention patch
+        // TEMP: apply parts of go-karlsend mempool dust prevention patch
         let has_coinbase_input = transaction.entries.iter().any(|e| e.as_ref().unwrap().is_coinbase);
         let num_extra_outs = transaction.tx.outputs.len() as i64 - transaction.tx.inputs.len() as i64;
         if !has_coinbase_input

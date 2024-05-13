@@ -7,7 +7,7 @@ pub struct Server;
 
 impl Server {
     async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, _cmd: &str) -> Result<()> {
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 
         if let Some(url) = argv.first() {
             let Ok(_) = parse_host(url) else {

@@ -3,7 +3,7 @@ use karlsen_core::{debug, task::tick::TickReason};
 use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, dequeue_with_timeout, make_message,
-    pb::{kaspad_message::Payload, PingMessage, PongMessage},
+    pb::{karlsend_message::Payload, PingMessage, PongMessage},
     IncomingRoute, Router,
 };
 use rand::Rng;

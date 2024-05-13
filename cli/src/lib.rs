@@ -12,5 +12,5 @@ pub mod result;
 pub mod utils;
 mod wizards;
 
-pub use cli::{karlsen_cli, KaspaCli, Options, TerminalOptions, TerminalTarget};
+pub use cli::{karlsen_cli, KarlsenCli, Options, TerminalOptions, TerminalTarget};
 pub use workflow_terminal::Terminal;

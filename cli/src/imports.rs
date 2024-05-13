@@ -1,4 +1,4 @@
-pub use crate::cli::KaspaCli;
+pub use crate::cli::KarlsenCli;
 pub use crate::error::Error;
 pub use crate::extensions::*;
 pub(crate) use crate::helpers;

@@ -11,7 +11,7 @@ pub struct Account;
 
 impl Account {
     async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, mut argv: Vec<String>, _cmd: &str) -> Result<()> {
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         let wallet = ctx.wallet();
 
         if !wallet.is_open() {
@@ -209,7 +209,7 @@ impl Account {
         Ok(())
     }
 
-    async fn display_help(self: Arc<Self>, ctx: Arc<KaspaCli>, _argv: Vec<String>) -> Result<()> {
+    async fn display_help(self: Arc<Self>, ctx: Arc<KarlsenCli>, _argv: Vec<String>) -> Result<()> {
         ctx.term().help(
             &[
                 ("create [<type>] [<name>]", "Create a new account (types: 'bip32' (default), 'legacy', 'multisig')"),
@@ -234,7 +234,7 @@ impl Account {
 
     async fn derivation_scan(
         self: &Arc<Self>,
-        ctx: &Arc<KaspaCli>,
+        ctx: &Arc<KarlsenCli>,
         start: usize,
         count: usize,
         window: usize,

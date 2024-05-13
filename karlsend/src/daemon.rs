@@ -7,7 +7,7 @@ use karlsen_consensus_core::{
 };
 use karlsen_consensus_notify::{root::ConsensusNotificationRoot, service::NotifyService};
 use karlsen_core::{core::Core, info, trace};
-use karlsen_core::{kaspad_env::version, task::tick::TickService};
+use karlsen_core::{karlsend_env::version, task::tick::TickService};
 use karlsen_database::prelude::CachePolicy;
 use karlsen_grpc_server::service::GrpcService;
 use karlsen_notify::{address::tracker::Tracker, subscription::context::SubscriptionContext};
@@ -36,9 +36,9 @@ use karlsen_utxoindex::{api::UtxoIndexProxy, UtxoIndex};
 use karlsen_wrpc_server::service::{Options as WrpcServerOptions, WebSocketCounters as WrpcServerCounters, WrpcEncoding, WrpcService};
 
 /// Desired soft FD limit that needs to be configured
-/// for the kaspad process.
+/// for the karlsend process.
 pub const DESIRED_DAEMON_SOFT_FD_LIMIT: u64 = 8 * 1024;
-/// Minimum acceptable soft FD limit for the kaspad
+/// Minimum acceptable soft FD limit for the karlsend
 /// process. (Rusty Kaspa will operate with the minimal
 /// acceptable limit of `4096`, but a setting below
 /// this value may impact the database performance).
@@ -130,7 +130,7 @@ pub struct Runtime {
 
 /// Get the application directory from the supplied [`Args`].
 /// This function can be used to identify the location of
-/// the application folder that contains kaspad logs and the database.
+/// the application folder that contains karlsend logs and the database.
 pub fn get_app_dir_from_args(args: &Args) -> PathBuf {
     let app_dir = args
         .appdir
@@ -250,7 +250,7 @@ pub fn create_core_with_runtime(runtime: &Runtime, args: &Args, fd_total_budget:
     // Reset Condition: User explicitly requested a reset
     if is_db_reset_needed && db_dir.exists() {
         let msg = "Reset DB was requested -- this means the current databases will be fully deleted,
-do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm all interactive questions)";
+do you confirm? (answer y/n or pass --yes to the Karlsend command line to confirm all interactive questions)";
         get_user_approval_or_exit(msg, args.yes);
         info!("Deleting databases");
         fs::remove_dir_all(&db_dir).unwrap();
@@ -302,17 +302,17 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
         }
     }
 
-    // Reset Condition: Need to reset if we're upgrading from kaspad DB version
+    // Reset Condition: Need to reset if we're upgrading from karlsend DB version
     // TEMP: upgrade from Alpha version or any version before this one
     if !is_db_reset_needed
         && (meta_db.get_pinned(b"multi-consensus-metadata-key").is_ok_and(|r| r.is_some())
             || MultiConsensusManagementStore::new(meta_db.clone()).should_upgrade().unwrap())
     {
         let msg =
-            "Node database is from a different Kaspad *DB* version and needs to be fully deleted, do you confirm the delete? (y/n)";
+            "Node database is from a different Karlsend *DB* version and needs to be fully deleted, do you confirm the delete? (y/n)";
         get_user_approval_or_exit(msg, args.yes);
 
-        info!("Deleting databases from previous Kaspad version");
+        info!("Deleting databases from previous Karlsend version");
 
         is_db_reset_needed = true;
     }

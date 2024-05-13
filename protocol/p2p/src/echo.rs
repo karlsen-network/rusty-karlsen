@@ -1,9 +1,9 @@
 use crate::{
     common::ProtocolError,
     core::adaptor::ConnectionInitializer,
-    handshake::KaspadHandshake,
+    handshake::KarlsendHandshake,
     pb::{self, VersionMessage},
-    IncomingRoute, KaspadMessagePayloadType, Router,
+    IncomingRoute, KarlsendMessagePayloadType, Router,
 };
 use karlsen_core::{debug, time::unix_now, trace, warn};
 use std::sync::Arc;
@@ -21,49 +21,49 @@ impl EchoFlow {
         // Subscribe to messages
         trace!("EchoFlow, subscribe to all p2p messages");
         let receiver = router.subscribe(vec![
-            KaspadMessagePayloadType::Addresses,
-            KaspadMessagePayloadType::Block,
-            KaspadMessagePayloadType::Transaction,
-            KaspadMessagePayloadType::BlockLocator,
-            KaspadMessagePayloadType::RequestAddresses,
-            KaspadMessagePayloadType::RequestRelayBlocks,
-            KaspadMessagePayloadType::RequestTransactions,
-            KaspadMessagePayloadType::IbdBlock,
-            KaspadMessagePayloadType::InvRelayBlock,
-            KaspadMessagePayloadType::InvTransactions,
-            KaspadMessagePayloadType::Ping,
-            KaspadMessagePayloadType::Pong,
-            // KaspadMessagePayloadType::Verack,
-            // KaspadMessagePayloadType::Version,
-            // KaspadMessagePayloadType::Ready,
-            KaspadMessagePayloadType::TransactionNotFound,
-            KaspadMessagePayloadType::Reject,
-            KaspadMessagePayloadType::PruningPointUtxoSetChunk,
-            KaspadMessagePayloadType::RequestIbdBlocks,
-            KaspadMessagePayloadType::UnexpectedPruningPoint,
-            KaspadMessagePayloadType::IbdBlockLocator,
-            KaspadMessagePayloadType::IbdBlockLocatorHighestHash,
-            KaspadMessagePayloadType::RequestNextPruningPointUtxoSetChunk,
-            KaspadMessagePayloadType::DonePruningPointUtxoSetChunks,
-            KaspadMessagePayloadType::IbdBlockLocatorHighestHashNotFound,
-            KaspadMessagePayloadType::BlockWithTrustedData,
-            KaspadMessagePayloadType::DoneBlocksWithTrustedData,
-            KaspadMessagePayloadType::RequestPruningPointAndItsAnticone,
-            KaspadMessagePayloadType::BlockHeaders,
-            KaspadMessagePayloadType::RequestNextHeaders,
-            KaspadMessagePayloadType::DoneHeaders,
-            KaspadMessagePayloadType::RequestPruningPointUtxoSet,
-            KaspadMessagePayloadType::RequestHeaders,
-            KaspadMessagePayloadType::RequestBlockLocator,
-            KaspadMessagePayloadType::PruningPoints,
-            KaspadMessagePayloadType::RequestPruningPointProof,
-            KaspadMessagePayloadType::PruningPointProof,
-            KaspadMessagePayloadType::BlockWithTrustedDataV4,
-            KaspadMessagePayloadType::TrustedData,
-            KaspadMessagePayloadType::RequestIbdChainBlockLocator,
-            KaspadMessagePayloadType::IbdChainBlockLocator,
-            KaspadMessagePayloadType::RequestAntipast,
-            KaspadMessagePayloadType::RequestNextPruningPointAndItsAnticoneBlocks,
+            KarlsendMessagePayloadType::Addresses,
+            KarlsendMessagePayloadType::Block,
+            KarlsendMessagePayloadType::Transaction,
+            KarlsendMessagePayloadType::BlockLocator,
+            KarlsendMessagePayloadType::RequestAddresses,
+            KarlsendMessagePayloadType::RequestRelayBlocks,
+            KarlsendMessagePayloadType::RequestTransactions,
+            KarlsendMessagePayloadType::IbdBlock,
+            KarlsendMessagePayloadType::InvRelayBlock,
+            KarlsendMessagePayloadType::InvTransactions,
+            KarlsendMessagePayloadType::Ping,
+            KarlsendMessagePayloadType::Pong,
+            // KarlsendMessagePayloadType::Verack,
+            // KarlsendMessagePayloadType::Version,
+            // KarlsendMessagePayloadType::Ready,
+            KarlsendMessagePayloadType::TransactionNotFound,
+            KarlsendMessagePayloadType::Reject,
+            KarlsendMessagePayloadType::PruningPointUtxoSetChunk,
+            KarlsendMessagePayloadType::RequestIbdBlocks,
+            KarlsendMessagePayloadType::UnexpectedPruningPoint,
+            KarlsendMessagePayloadType::IbdBlockLocator,
+            KarlsendMessagePayloadType::IbdBlockLocatorHighestHash,
+            KarlsendMessagePayloadType::RequestNextPruningPointUtxoSetChunk,
+            KarlsendMessagePayloadType::DonePruningPointUtxoSetChunks,
+            KarlsendMessagePayloadType::IbdBlockLocatorHighestHashNotFound,
+            KarlsendMessagePayloadType::BlockWithTrustedData,
+            KarlsendMessagePayloadType::DoneBlocksWithTrustedData,
+            KarlsendMessagePayloadType::RequestPruningPointAndItsAnticone,
+            KarlsendMessagePayloadType::BlockHeaders,
+            KarlsendMessagePayloadType::RequestNextHeaders,
+            KarlsendMessagePayloadType::DoneHeaders,
+            KarlsendMessagePayloadType::RequestPruningPointUtxoSet,
+            KarlsendMessagePayloadType::RequestHeaders,
+            KarlsendMessagePayloadType::RequestBlockLocator,
+            KarlsendMessagePayloadType::PruningPoints,
+            KarlsendMessagePayloadType::RequestPruningPointProof,
+            KarlsendMessagePayloadType::PruningPointProof,
+            KarlsendMessagePayloadType::BlockWithTrustedDataV4,
+            KarlsendMessagePayloadType::TrustedData,
+            KarlsendMessagePayloadType::RequestIbdChainBlockLocator,
+            KarlsendMessagePayloadType::IbdChainBlockLocator,
+            KarlsendMessagePayloadType::RequestAntipast,
+            KarlsendMessagePayloadType::RequestNextPruningPointAndItsAnticoneBlocks,
         ]);
         let mut echo_flow = EchoFlow { router, receiver };
         debug!("EchoFlow, start app-layer receiving loop");
@@ -79,7 +79,7 @@ impl EchoFlow {
         });
     }
 
-    async fn call(&self, msg: pb::KaspadMessage) -> bool {
+    async fn call(&self, msg: pb::KarlsendMessage) -> bool {
         // echo
         trace!("EchoFlow, got message:{:?}", msg);
         self.router.enqueue(msg).await.is_ok()
@@ -118,7 +118,7 @@ impl ConnectionInitializer for EchoFlowInitializer {
         //
 
         // Build the handshake object and subscribe to handshake messages
-        let mut handshake = KaspadHandshake::new(&router);
+        let mut handshake = KarlsendHandshake::new(&router);
 
         // We start the router receive loop only after we registered to handshake routes
         router.start();

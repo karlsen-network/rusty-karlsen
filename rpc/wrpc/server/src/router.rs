@@ -8,7 +8,7 @@ use workflow_rpc::server::prelude::*;
 /// A wrapper that creates an [`Interface`] instance and initializes
 /// RPC methods and notifications against this interface. The interface
 /// is later given to the RpcServer.  This wrapper exists to allow
-/// a single initialization location for both the Kaspad Server and
+/// a single initialization location for both the Karlsend Server and
 /// the GRPC Proxy.
 pub struct Router {
     pub interface: Arc<Interface<Server, Connection, RpcApiOps>>,

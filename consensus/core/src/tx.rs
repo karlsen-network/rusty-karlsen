@@ -105,7 +105,7 @@ impl std::fmt::Debug for TransactionInput {
     }
 }
 
-/// Represents a Kaspad transaction output
+/// Represents a Karlsend transaction output
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionOutput {

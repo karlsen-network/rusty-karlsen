@@ -24,22 +24,22 @@ async fn daemon_sanity_test() {
 
     // let total_fd_limit =  karlsen_utils::fd_budget::get_limit() / 2 - 128;
     let total_fd_limit = 10;
-    let mut kaspad1 = Daemon::new_random(total_fd_limit);
-    let rpc_client1 = kaspad1.start().await;
+    let mut karlsend1 = Daemon::new_random(total_fd_limit);
+    let rpc_client1 = karlsend1.start().await;
     assert!(rpc_client1.handle_message_id() && rpc_client1.handle_stop_notify(), "the client failed to collect server features");
 
-    let mut kaspad2 = Daemon::new_random(total_fd_limit);
-    let rpc_client2 = kaspad2.start().await;
+    let mut karlsend2 = Daemon::new_random(total_fd_limit);
+    let rpc_client2 = karlsend2.start().await;
     assert!(rpc_client2.handle_message_id() && rpc_client2.handle_stop_notify(), "the client failed to collect server features");
 
     tokio::time::sleep(Duration::from_secs(1)).await;
     rpc_client1.disconnect().await.unwrap();
     drop(rpc_client1);
-    kaspad1.shutdown();
+    karlsend1.shutdown();
 
     rpc_client2.disconnect().await.unwrap();
     drop(rpc_client2);
-    kaspad2.shutdown();
+    karlsend2.shutdown();
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
@@ -57,12 +57,12 @@ async fn daemon_mining_test() {
     // let total_fd_limit = karlsen_utils::fd_budget::get_limit() / 2 - 128;
     let total_fd_limit = 10;
 
-    let mut kaspad1 = Daemon::new_random_with_args(args.clone(), total_fd_limit);
-    let mut kaspad2 = Daemon::new_random_with_args(args, total_fd_limit);
-    let rpc_client1 = kaspad1.start().await;
-    let rpc_client2 = kaspad2.start().await;
+    let mut karlsend1 = Daemon::new_random_with_args(args.clone(), total_fd_limit);
+    let mut karlsend2 = Daemon::new_random_with_args(args, total_fd_limit);
+    let rpc_client1 = karlsend1.start().await;
+    let rpc_client2 = karlsend2.start().await;
 
-    rpc_client2.add_peer(format!("127.0.0.1:{}", kaspad1.p2p_port).try_into().unwrap(), true).await.unwrap();
+    rpc_client2.add_peer(format!("127.0.0.1:{}", karlsend1.p2p_port).try_into().unwrap(), true).await.unwrap();
     tokio::time::sleep(Duration::from_secs(1)).await; // Let it connect
     assert_eq!(rpc_client2.get_connected_peer_info().await.unwrap().peer_info.len(), 1);
 
@@ -74,7 +74,7 @@ async fn daemon_mining_test() {
     let mut last_block_hash = None;
     for i in 0..10 {
         let template = rpc_client1
-            .get_block_template(Address::new(kaspad1.network.into(), karlsen_addresses::Version::PubKey, &[0; 32]), vec![])
+            .get_block_template(Address::new(karlsend1.network.into(), karlsen_addresses::Version::PubKey, &[0; 32]), vec![])
             .await
             .unwrap();
         last_block_hash = Some(template.block.header.hash);
@@ -134,18 +134,18 @@ async fn daemon_utxos_propagation_test() {
     let total_fd_limit = 10;
 
     let coinbase_maturity = SIMNET_PARAMS.coinbase_maturity;
-    let mut kaspad1 = Daemon::new_random_with_args(args.clone(), total_fd_limit);
-    let mut kaspad2 = Daemon::new_random_with_args(args, total_fd_limit);
-    let rpc_client1 = kaspad1.start().await;
-    let rpc_client2 = kaspad2.start().await;
+    let mut karlsend1 = Daemon::new_random_with_args(args.clone(), total_fd_limit);
+    let mut karlsend2 = Daemon::new_random_with_args(args, total_fd_limit);
+    let rpc_client1 = karlsend1.start().await;
+    let rpc_client2 = karlsend2.start().await;
 
     // Let rpc_client1 receive virtual DAA score changed notifications
     let (sender1, event_receiver1) = async_channel::unbounded();
     rpc_client1.start(Some(Arc::new(ChannelNotify::new(sender1)))).await;
     rpc_client1.start_notify(Default::default(), VirtualDaaScoreChangedScope {}.into()).await.unwrap();
 
-    // Connect kaspad2 to kaspad1
-    rpc_client2.add_peer(format!("127.0.0.1:{}", kaspad1.p2p_port).try_into().unwrap(), true).await.unwrap();
+    // Connect karlsend2 to karlsend1
+    rpc_client2.add_peer(format!("127.0.0.1:{}", karlsend1.p2p_port).try_into().unwrap(), true).await.unwrap();
     let check_client = rpc_client2.clone();
     wait_for(
         50,
@@ -163,17 +163,17 @@ async fn daemon_utxos_propagation_test() {
     // Mining key and address
     let (miner_sk, miner_pk) = secp256k1::generate_keypair(&mut thread_rng());
     let miner_address =
-        Address::new(kaspad1.network.into(), karlsen_addresses::Version::PubKey, &miner_pk.x_only_public_key().0.serialize());
+        Address::new(karlsend1.network.into(), karlsen_addresses::Version::PubKey, &miner_pk.x_only_public_key().0.serialize());
     let miner_schnorr_key = secp256k1::Keypair::from_secret_key(secp256k1::SECP256K1, &miner_sk);
     let miner_spk = pay_to_address_script(&miner_address);
 
     // User key and address
     let (_user_sk, user_pk) = secp256k1::generate_keypair(&mut thread_rng());
     let user_address =
-        Address::new(kaspad1.network.into(), karlsen_addresses::Version::PubKey, &user_pk.x_only_public_key().0.serialize());
+        Address::new(karlsend1.network.into(), karlsen_addresses::Version::PubKey, &user_pk.x_only_public_key().0.serialize());
 
     // Some dummy non-monitored address
-    let blank_address = Address::new(kaspad1.network.into(), karlsen_addresses::Version::PubKey, &[0; 32]);
+    let blank_address = Address::new(karlsend1.network.into(), karlsen_addresses::Version::PubKey, &[0; 32]);
 
     // Mine 1000 blocks to daemon #1
     let initial_blocks = coinbase_maturity;
@@ -231,7 +231,7 @@ async fn daemon_utxos_propagation_test() {
     }
 
     // Create a multi-listener RPC client on each node...
-    let mut clients = vec![ListeningClient::connect(&kaspad2).await, ListeningClient::connect(&kaspad1).await];
+    let mut clients = vec![ListeningClient::connect(&karlsend2).await, ListeningClient::connect(&karlsend1).await];
 
     // ...and subscribe each to some notifications
     for x in clients.iter_mut() {
@@ -333,17 +333,17 @@ async fn daemon_cleaning_test() {
     let core;
     {
         let total_fd_limit = 10;
-        let mut kaspad1 = Daemon::new_random_with_args(args, total_fd_limit);
-        let dyn_consensus_manager = kaspad1.core.find(ConsensusManager::IDENT).unwrap();
-        let dyn_async_runtime = kaspad1.core.find(AsyncRuntime::IDENT).unwrap();
+        let mut karlsend1 = Daemon::new_random_with_args(args, total_fd_limit);
+        let dyn_consensus_manager = karlsend1.core.find(ConsensusManager::IDENT).unwrap();
+        let dyn_async_runtime = karlsend1.core.find(AsyncRuntime::IDENT).unwrap();
         consensus_manager = Arc::downgrade(&Arc::downcast::<ConsensusManager>(dyn_consensus_manager.arc_any()).unwrap());
         async_runtime = Arc::downgrade(&Arc::downcast::<AsyncRuntime>(dyn_async_runtime.arc_any()).unwrap());
-        core = Arc::downgrade(&kaspad1.core);
+        core = Arc::downgrade(&karlsend1.core);
 
-        let rpc_client1 = kaspad1.start().await;
+        let rpc_client1 = karlsend1.start().await;
         rpc_client1.disconnect().await.unwrap();
         drop(rpc_client1);
-        kaspad1.shutdown();
+        karlsend1.shutdown();
     }
     tokio::time::sleep(Duration::from_millis(200)).await;
 

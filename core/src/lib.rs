@@ -2,7 +2,7 @@ extern crate self as karlsen_core;
 
 pub mod assert;
 pub mod console;
-pub mod kaspad_env;
+pub mod karlsend_env;
 pub mod log;
 pub mod panic;
 pub mod time;

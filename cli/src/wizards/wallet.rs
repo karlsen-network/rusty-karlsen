@@ -1,10 +1,10 @@
-use crate::cli::KaspaCli;
+use crate::cli::KarlsenCli;
 use crate::imports::*;
 use crate::result::Result;
 use karlsen_bip32::{Language, Mnemonic, WordCount};
 use karlsen_wallet_core::storage::{make_filename, Hint};
 
-pub(crate) async fn create(ctx: &Arc<KaspaCli>, name: Option<&str>, import_with_mnemonic: bool) -> Result<()> {
+pub(crate) async fn create(ctx: &Arc<KarlsenCli>, name: Option<&str>, import_with_mnemonic: bool) -> Result<()> {
     let term = ctx.term();
     let wallet = ctx.wallet();
 

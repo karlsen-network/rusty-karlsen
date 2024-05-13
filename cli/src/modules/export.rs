@@ -7,7 +7,7 @@ pub struct Export;
 
 impl Export {
     async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, _cmd: &str) -> Result<()> {
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 
         if argv.is_empty() || argv.first() == Some(&"help".to_string()) {
             tprintln!(ctx, "usage: export [mnemonic]");
@@ -30,7 +30,7 @@ impl Export {
     }
 }
 
-async fn export_multisig_account(ctx: Arc<KaspaCli>, account: Arc<MultiSig>) -> Result<()> {
+async fn export_multisig_account(ctx: Arc<KarlsenCli>, account: Arc<MultiSig>) -> Result<()> {
     match &account.prv_key_data_ids() {
         None => Err(Error::KeyDataNotFound),
         Some(v) if v.is_empty() => Err(Error::KeyDataNotFound),
@@ -70,7 +70,7 @@ async fn export_multisig_account(ctx: Arc<KaspaCli>, account: Arc<MultiSig>) -> 
     }
 }
 
-async fn export_single_key_account(ctx: Arc<KaspaCli>, account: Arc<dyn Account>) -> Result<()> {
+async fn export_single_key_account(ctx: Arc<KarlsenCli>, account: Arc<dyn Account>) -> Result<()> {
     let prv_key_data_id = account.prv_key_data_id()?;
 
     let wallet_secret = Secret::new(ctx.term().ask(true, "Enter wallet password: ").await?.trim().as_bytes().to_vec());

@@ -7,7 +7,7 @@ use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, make_message,
     pb::{
-        kaspad_message::Payload, DonePruningPointUtxoSetChunksMessage, PruningPointUtxoSetChunkMessage, UnexpectedPruningPointMessage,
+        karlsend_message::Payload, DonePruningPointUtxoSetChunksMessage, PruningPointUtxoSetChunkMessage, UnexpectedPruningPointMessage,
     },
     IncomingRoute, Router,
 };

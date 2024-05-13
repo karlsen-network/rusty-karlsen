@@ -19,7 +19,7 @@ use std::{
     sync::{Arc, Weak},
 };
 
-const RESYNC_CHUNK_SIZE: usize = 2048; //Increased from 1k (used in go-kaspad), for quicker resets, while still having a low memory footprint.
+const RESYNC_CHUNK_SIZE: usize = 2048; //Increased from 1k (used in go-karlsend), for quicker resets, while still having a low memory footprint.
 
 /// UtxoIndex indexes [`CompactUtxoEntryCollections`] by [`ScriptPublicKey`], commits them to its owns store, and emits changes.
 /// Note: The UtxoIndex struct by itself is not thread save, only correct usage of the supplied RwLock via `new` makes it so.

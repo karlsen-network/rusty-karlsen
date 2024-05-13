@@ -3,7 +3,7 @@ use karlsen_consensus_core::{
     config::Config,
     network::{NetworkId, NetworkType},
 };
-use karlsen_core::kaspad_env::version;
+use karlsen_core::karlsend_env::version;
 use karlsen_notify::address::tracker::Tracker;
 use karlsen_utils::networking::ContextualNetAddress;
 use karlsen_wrpc_server::address::WrpcNetAddress;
@@ -195,7 +195,7 @@ pub fn cli() -> Command {
     let defaults: Args = Default::default();
 
     #[allow(clippy::let_and_return)]
-    let cmd = Command::new("kaspad")
+    let cmd = Command::new("karlsend")
         .about(format!("{} (rusty-kaspa) v{}", env!("CARGO_PKG_DESCRIPTION"), version()))
         .version(env!("CARGO_PKG_VERSION"))
         .arg(arg!(-C --configfile <CONFIG_FILE> "Path of config file."))
@@ -482,9 +482,9 @@ fn arg_match_many_unwrap_or<T: Clone + Send + Sync + 'static>(m: &clap::ArgMatch
 
   -V, --version                             Display version information and exit
   -C, --configfile=                         Path to configuration file (default: /Users/aspect/Library/Application
-                                            Support/Kaspad/kaspad.conf)
+                                            Support/Karlsend/karlsend.conf)
   -b, --appdir=                             Directory to store data (default: /Users/aspect/Library/Application
-                                            Support/Kaspad)
+                                            Support/Karlsend)
       --logdir=                             Directory to log output.
   -a, --addpeer=                            Add a peer to connect with at startup
       --connect=                            Connect only to the specified peers at startup
@@ -505,9 +505,9 @@ fn arg_match_many_unwrap_or<T: Clone + Send + Sync + 'static>(m: &clap::ArgMatch
       --rpclisten=                          Add an interface/port to listen for RPC connections (default port: 42110,
                                             testnet: 42210)
       --rpccert=                            File containing the certificate file (default:
-                                            /Users/aspect/Library/Application Support/Kaspad/rpc.cert)
+                                            /Users/aspect/Library/Application Support/Karlsend/rpc.cert)
       --rpckey=                             File containing the certificate key (default:
-                                            /Users/aspect/Library/Application Support/Kaspad/rpc.key)
+                                            /Users/aspect/Library/Application Support/Karlsend/rpc.key)
       --rpcmaxclients=                      Max number of RPC clients for standard connections (default: 128)
       --rpcmaxwebsockets=                   Max number of RPC websocket connections (default: 25)
       --rpcmaxconcurrentreqs=               Max number of concurrent RPC requests that may be processed concurrently

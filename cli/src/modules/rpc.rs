@@ -7,7 +7,7 @@ use karlsen_rpc_core::{api::ops::RpcApiOps, *};
 pub struct Rpc;
 
 impl Rpc {
-    fn println<T>(&self, ctx: &Arc<KaspaCli>, v: T)
+    fn println<T>(&self, ctx: &Arc<KarlsenCli>, v: T)
     where
         T: core::fmt::Debug,
     {
@@ -15,7 +15,7 @@ impl Rpc {
     }
 
     async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, mut argv: Vec<String>, cmd: &str) -> Result<()> {
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         let rpc = ctx.wallet().rpc_api().clone();
         // tprintln!(ctx, "{response}");
 
@@ -241,7 +241,7 @@ impl Rpc {
         Ok(())
     }
 
-    async fn display_help(self: Arc<Self>, ctx: Arc<KaspaCli>, _argv: Vec<String>) -> Result<()> {
+    async fn display_help(self: Arc<Self>, ctx: Arc<KarlsenCli>, _argv: Vec<String>) -> Result<()> {
         // RpcApiOps that do not contain docs are not displayed
         let help = RpcApiOps::list()
             .iter()

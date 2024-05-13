@@ -26,13 +26,13 @@ pub enum RpcApiOps {
     GetServerInfo,
     /// Get the current sync status of the node
     GetSyncStatus,
-    /// Returns the network this Kaspad is connected to (Mainnet, Testnet)
+    /// Returns the network this Karlsend is connected to (Mainnet, Testnet)
     GetCurrentNetwork,
     /// Extracts a block out of the request message and attempts to add it to the DAG Returns an empty response or an error message
     SubmitBlock,
     /// Returns a "template" by which a miner can mine a new block
     GetBlockTemplate,
-    /// Returns a list of all the addresses (IP, port) this Kaspad knows and a list of all addresses that are currently banned by this Kaspad
+    /// Returns a list of all the addresses (IP, port) this Karlsend knows and a list of all addresses that are currently banned by this Karlsend
     GetPeerAddresses,
     /// Returns the hash of the current selected tip block of the DAG
     GetSink,
@@ -40,9 +40,9 @@ pub enum RpcApiOps {
     GetMempoolEntry,
     /// Get a snapshot of the node's mempool
     GetMempoolEntries,
-    /// Returns a list of the peers currently connected to this Kaspad, along with some statistics on them
+    /// Returns a list of the peers currently connected to this Karlsend, along with some statistics on them
     GetConnectedPeerInfo,
-    /// Instructs Kaspad to connect to a given IP address.
+    /// Instructs Karlsend to connect to a given IP address.
     AddPeer,
     /// Extracts a transaction out of the request message and attempts to add it to the mempool Returns an empty response or an error message
     SubmitTransaction,

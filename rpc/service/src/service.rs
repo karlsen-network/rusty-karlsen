@@ -23,7 +23,7 @@ use karlsen_core::time::unix_now;
 use karlsen_core::{
     core::Core,
     debug,
-    kaspad_env::version,
+    karlsend_env::version,
     signals::Shutdown,
     task::service::{AsyncService, AsyncServiceError, AsyncServiceFuture},
     task::tick::TickService,

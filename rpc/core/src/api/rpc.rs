@@ -76,7 +76,7 @@ pub trait RpcApi: Sync + Send + AnySync {
     }
     async fn get_block_template_call(&self, request: GetBlockTemplateRequest) -> RpcResult<GetBlockTemplateResponse>;
 
-    /// Requests the list of known kaspad addresses in the current network (mainnet, testnet, etc.)
+    /// Requests the list of known karlsend addresses in the current network (mainnet, testnet, etc.)
     async fn get_peer_addresses(&self) -> RpcResult<GetPeerAddressesResponse> {
         self.get_peer_addresses_call(GetPeerAddressesRequest {}).await
     }

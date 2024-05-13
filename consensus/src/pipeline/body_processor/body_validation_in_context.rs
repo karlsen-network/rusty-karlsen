@@ -19,7 +19,7 @@ impl BlockBodyProcessor {
     }
 
     fn check_block_is_not_pruned(self: &Arc<Self>, _block: &Block) -> BlockProcessResult<()> {
-        // TODO: In kaspad code it checks that the block is not in the past of the current tips.
+        // TODO: In karlsend code it checks that the block is not in the past of the current tips.
         // We should decide what's the best indication that a block was pruned.
         Ok(())
     }

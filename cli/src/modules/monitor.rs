@@ -32,13 +32,13 @@ impl Handler for Monitor {
     }
 
     async fn handle(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, cmd: &str) -> cli::Result<()> {
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         self.main(&ctx, argv, cmd).await.map_err(|e| e.into())
     }
 }
 
 impl Monitor {
-    async fn main(self: Arc<Self>, ctx: &Arc<KaspaCli>, _argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(self: Arc<Self>, ctx: &Arc<KarlsenCli>, _argv: Vec<String>, _cmd: &str) -> Result<()> {
         let max_events = 16;
         let events = Arc::new(Mutex::new(VecDeque::new()));
         let events_rx = ctx.wallet().multiplexer().channel();
@@ -90,7 +90,7 @@ impl Monitor {
         Ok(())
     }
 
-    async fn redraw(self: &Arc<Self>, ctx: &Arc<KaspaCli>, events: &Arc<Mutex<VecDeque<Box<Events>>>>) -> Result<()> {
+    async fn redraw(self: &Arc<Self>, ctx: &Arc<KarlsenCli>, events: &Arc<Mutex<VecDeque<Box<Events>>>>) -> Result<()> {
         tprint!(ctx, "{}", ClearScreen);
         tprint!(ctx, "{}", Goto(1, 1));
 

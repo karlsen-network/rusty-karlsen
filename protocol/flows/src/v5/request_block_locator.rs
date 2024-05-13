@@ -3,7 +3,7 @@ use std::sync::Arc;
 use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue_with_request_id, make_response,
-    pb::{kaspad_message::Payload, BlockLocatorMessage},
+    pb::{karlsend_message::Payload, BlockLocatorMessage},
     IncomingRoute, Router,
 };
 

@@ -47,16 +47,16 @@ impl From<workflow_wasm::error::Error> for AddressError {
     }
 }
 
-/// Address prefix identifying the network type this address belongs to (such as `kaspa`, `kaspatest`, `kaspasim`, `kaspadev`).
+/// Address prefix identifying the network type this address belongs to (such as `karlsen`, `karlsentest`, `karlsensim`, `karlsendev`).
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub enum Prefix {
-    #[serde(rename = "kaspa")]
+    #[serde(rename = "karlsen")]
     Mainnet,
-    #[serde(rename = "kaspatest")]
+    #[serde(rename = "karlsentest")]
     Testnet,
-    #[serde(rename = "kaspasim")]
+    #[serde(rename = "karlsensim")]
     Simnet,
-    #[serde(rename = "kaspadev")]
+    #[serde(rename = "karlsendev")]
     Devnet,
     #[cfg(test)]
     A,
@@ -67,10 +67,10 @@ pub enum Prefix {
 impl Prefix {
     fn as_str(&self) -> &'static str {
         match self {
-            Prefix::Mainnet => "kaspa",
-            Prefix::Testnet => "kaspatest",
-            Prefix::Simnet => "kaspasim",
-            Prefix::Devnet => "kaspadev",
+            Prefix::Mainnet => "karlsen",
+            Prefix::Testnet => "karlsentest",
+            Prefix::Simnet => "karlsensim",
+            Prefix::Devnet => "karlsendev",
             #[cfg(test)]
             Prefix::A => "a",
             #[cfg(test)]
@@ -98,10 +98,10 @@ impl TryFrom<&str> for Prefix {
 
     fn try_from(prefix: &str) -> Result<Self, Self::Error> {
         match prefix {
-            "kaspa" => Ok(Prefix::Mainnet),
-            "kaspatest" => Ok(Prefix::Testnet),
-            "kaspasim" => Ok(Prefix::Simnet),
-            "kaspadev" => Ok(Prefix::Devnet),
+            "karlsen" => Ok(Prefix::Mainnet),
+            "karlsentest" => Ok(Prefix::Testnet),
+            "karlsensim" => Ok(Prefix::Simnet),
+            "karlsendev" => Ok(Prefix::Devnet),
             #[cfg(test)]
             "a" => Ok(Prefix::A),
             #[cfg(test)]

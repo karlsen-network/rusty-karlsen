@@ -1,5 +1,5 @@
 use crate::imports::*;
-use karlsen_daemon::KaspadConfig;
+use karlsen_daemon::KarlsendConfig;
 use workflow_core::task::sleep;
 use workflow_node::process;
 pub use workflow_node::process::Event;
@@ -7,7 +7,7 @@ use workflow_store::fs;
 
 #[derive(Describe, Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 #[serde(rename_all = "lowercase")]
-pub enum KaspadSettings {
+pub enum KarlsendSettings {
     #[describe("Binary location")]
     Location,
     #[describe("Mute logs")]
@@ -15,12 +15,12 @@ pub enum KaspadSettings {
 }
 
 #[async_trait]
-impl DefaultSettings for KaspadSettings {
+impl DefaultSettings for KarlsendSettings {
     async fn defaults() -> Vec<(Self, Value)> {
         let mut settings = vec![(Self::Mute, to_value(true).unwrap())];
 
         let root = nw_sys::app::folder();
-        if let Ok(binaries) = karlsen_daemon::locate_binaries(&root, "kaspad").await {
+        if let Ok(binaries) = karlsen_daemon::locate_binaries(&root, "karlsend").await {
             if let Some(path) = binaries.first() {
                 settings.push((Self::Location, to_value(path.to_string_lossy().to_string()).unwrap()));
             }
@@ -31,7 +31,7 @@ impl DefaultSettings for KaspadSettings {
 }
 
 pub struct Node {
-    settings: SettingsStore<KaspadSettings>,
+    settings: SettingsStore<KarlsendSettings>,
     mute: Arc<AtomicBool>,
     is_running: Arc<AtomicBool>,
 }
@@ -39,7 +39,7 @@ pub struct Node {
 impl Default for Node {
     fn default() -> Self {
         Node {
-            settings: SettingsStore::try_new("kaspad").expect("Failed to create node settings store"),
+            settings: SettingsStore::try_new("karlsend").expect("Failed to create node settings store"),
             mute: Arc::new(AtomicBool::new(true)),
             is_running: Arc::new(AtomicBool::new(false)),
         }
@@ -49,8 +49,8 @@ impl Default for Node {
 #[async_trait]
 impl Handler for Node {
     fn verb(&self, ctx: &Arc<dyn Context>) -> Option<&'static str> {
-        if let Ok(ctx) = ctx.clone().downcast_arc::<KaspaCli>() {
-            ctx.daemons().clone().kaspad.as_ref().map(|_| "node")
+        if let Ok(ctx) = ctx.clone().downcast_arc::<KarlsenCli>() {
+            ctx.daemons().clone().karlsend.as_ref().map(|_| "node")
         } else {
             None
         }
@@ -62,14 +62,14 @@ impl Handler for Node {
 
     async fn start(self: Arc<Self>, _ctx: &Arc<dyn Context>) -> cli::Result<()> {
         self.settings.try_load().await.ok();
-        if let Some(mute) = self.settings.get(KaspadSettings::Mute) {
+        if let Some(mute) = self.settings.get(KarlsendSettings::Mute) {
             self.mute.store(mute, Ordering::Relaxed);
         }
         Ok(())
     }
 
     async fn handle(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, cmd: &str) -> cli::Result<()> {
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         self.main(ctx, argv, cmd).await.map_err(|e| e.into())
     }
 }
@@ -79,24 +79,24 @@ impl Node {
         self.is_running.load(Ordering::SeqCst)
     }
 
-    async fn create_config(&self, ctx: &Arc<KaspaCli>) -> Result<KaspadConfig> {
+    async fn create_config(&self, ctx: &Arc<KarlsenCli>) -> Result<KarlsendConfig> {
         let location: String = self
             .settings
-            .get(KaspadSettings::Location)
+            .get(KarlsendSettings::Location)
             .ok_or_else(|| Error::Custom("No miner binary specified, please use `miner select` to select a binary.".into()))?;
         let network_id = ctx.wallet().network_id()?;
         // disabled for prompt update (until progress events are implemented)
         // let mute = self.mute.load(Ordering::SeqCst);
         let mute = false;
-        let config = KaspadConfig::new(location.as_str(), network_id, mute);
+        let config = KarlsendConfig::new(location.as_str(), network_id, mute);
         Ok(config)
     }
 
-    async fn main(self: Arc<Self>, ctx: Arc<KaspaCli>, mut argv: Vec<String>, cmd: &str) -> Result<()> {
+    async fn main(self: Arc<Self>, ctx: Arc<KarlsenCli>, mut argv: Vec<String>, cmd: &str) -> Result<()> {
         if argv.is_empty() {
             return self.display_help(ctx, argv).await;
         }
-        let kaspad = ctx.daemons().kaspad();
+        let karlsend = ctx.daemons().karlsend();
         match argv.remove(0).as_str() {
             "start" => {
                 let mute = self.mute.load(Ordering::SeqCst);
@@ -108,8 +108,8 @@ impl Node {
 
                 let wrpc_client = ctx.wallet().try_wrpc_client().ok_or(Error::custom("Unable to start node with non-wRPC client"))?;
 
-                kaspad.configure(self.create_config(&ctx).await?).await?;
-                kaspad.start().await?;
+                karlsend.configure(self.create_config(&ctx).await?).await?;
+                karlsend.start().await?;
 
                 // temporary setup for auto-connect
                 let url = ctx.wallet().settings().get(WalletSettings::Server);
@@ -138,14 +138,14 @@ impl Node {
                 }
             }
             "stop" => {
-                kaspad.stop().await?;
+                karlsend.stop().await?;
             }
             "restart" => {
-                kaspad.configure(self.create_config(&ctx).await?).await?;
-                kaspad.restart().await?;
+                karlsend.configure(self.create_config(&ctx).await?).await?;
+                karlsend.restart().await?;
             }
             "kill" => {
-                kaspad.kill().await?;
+                karlsend.kill().await?;
             }
             "mute" | "logs" => {
                 let mute = !self.mute.load(Ordering::SeqCst);
@@ -155,11 +155,11 @@ impl Node {
                 } else {
                     tprintln!(ctx, "{}", style("node is unmuted").dim());
                 }
-                // kaspad.mute(mute).await?;
-                self.settings.set(KaspadSettings::Mute, mute).await?;
+                // karlsend.mute(mute).await?;
+                self.settings.set(KarlsendSettings::Mute, mute).await?;
             }
             "status" => {
-                let status = kaspad.status().await?;
+                let status = karlsend.status().await?;
                 tprintln!(ctx, "{}", status);
             }
             "select" => {
@@ -168,8 +168,8 @@ impl Node {
                 self.select(ctx, path.is_not_empty().then_some(path)).await?;
             }
             "version" => {
-                kaspad.configure(self.create_config(&ctx).await?).await?;
-                let version = kaspad.version().await?;
+                karlsend.configure(self.create_config(&ctx).await?).await?;
+                let version = karlsend.version().await?;
                 tprintln!(ctx, "{}", version);
             }
             v => {
@@ -182,11 +182,11 @@ impl Node {
         Ok(())
     }
 
-    async fn display_help(self: Arc<Self>, ctx: Arc<KaspaCli>, _argv: Vec<String>) -> Result<()> {
+    async fn display_help(self: Arc<Self>, ctx: Arc<KarlsenCli>, _argv: Vec<String>) -> Result<()> {
         ctx.term().help(
             &[
-                ("select", "Select Kaspad executable (binary) location"),
-                ("version", "Display Kaspad executable version"),
+                ("select", "Select Karlsend executable (binary) location"),
+                ("version", "Display Karlsend executable version"),
                 ("start", "Start the local Kaspa node instance"),
                 ("stop", "Stop the local Kaspa node instance"),
                 ("restart", "Restart the local Kaspa node instance"),
@@ -200,20 +200,20 @@ impl Node {
         Ok(())
     }
 
-    async fn select(self: Arc<Self>, ctx: Arc<KaspaCli>, path: Option<String>) -> Result<()> {
+    async fn select(self: Arc<Self>, ctx: Arc<KarlsenCli>, path: Option<String>) -> Result<()> {
         let root = nw_sys::app::folder();
 
         match path {
             None => {
-                let binaries = karlsen_daemon::locate_binaries(root.as_str(), "kaspad").await?;
+                let binaries = karlsen_daemon::locate_binaries(root.as_str(), "karlsend").await?;
 
                 if binaries.is_empty() {
-                    tprintln!(ctx, "No kaspad binaries found");
+                    tprintln!(ctx, "No karlsend binaries found");
                 } else {
                     let binaries = binaries.iter().map(|p| p.display().to_string()).collect::<Vec<_>>();
-                    if let Some(selection) = ctx.term().select("Please select a kaspad binary", &binaries).await? {
+                    if let Some(selection) = ctx.term().select("Please select a karlsend binary", &binaries).await? {
                         tprintln!(ctx, "selecting: {}", selection);
-                        self.settings.set(KaspadSettings::Location, selection.as_str()).await?;
+                        self.settings.set(KarlsendSettings::Location, selection.as_str()).await?;
                     } else {
                         tprintln!(ctx, "no selection is made");
                     }
@@ -224,10 +224,10 @@ impl Node {
                     let version = process::version(&path).await?;
                     tprintln!(ctx, "detected binary version: {}", version);
                     tprintln!(ctx, "selecting: {path}");
-                    self.settings.set(KaspadSettings::Location, path.as_str()).await?;
+                    self.settings.set(KarlsendSettings::Location, path.as_str()).await?;
                 } else {
                     twarnln!(ctx, "destination binary not found, please specify full path including the binary name");
-                    twarnln!(ctx, "example: 'node select /home/user/testnet/kaspad'");
+                    twarnln!(ctx, "example: 'node select /home/user/testnet/karlsend'");
                     tprintln!(ctx, "no selection is made");
                 }
             }
@@ -236,7 +236,7 @@ impl Node {
         Ok(())
     }
 
-    pub async fn handle_event(&self, ctx: &Arc<KaspaCli>, event: Event) -> Result<()> {
+    pub async fn handle_event(&self, ctx: &Arc<KarlsenCli>, event: Event) -> Result<()> {
         let term = ctx.term();
 
         match event {
@@ -245,12 +245,12 @@ impl Node {
                 term.refresh_prompt();
             }
             Event::Exit(_code) => {
-                tprintln!(ctx, "Kaspad has exited");
+                tprintln!(ctx, "Karlsend has exited");
                 self.is_running.store(false, Ordering::SeqCst);
                 term.refresh_prompt();
             }
             Event::Error(error) => {
-                tprintln!(ctx, "{}", style(format!("Kaspad error: {error}")).red());
+                tprintln!(ctx, "{}", style(format!("Karlsend error: {error}")).red());
                 self.is_running.store(false, Ordering::SeqCst);
                 term.refresh_prompt();
             }

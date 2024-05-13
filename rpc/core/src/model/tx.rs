@@ -52,7 +52,7 @@ impl RpcTransactionInput {
 #[serde(rename_all = "camelCase")]
 pub struct RpcTransactionInputVerboseData {}
 
-/// Represents a Kaspad transaction output
+/// Represents a Karlsend transaction output
 #[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcTransactionOutput {

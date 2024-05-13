@@ -7,7 +7,7 @@ pub struct Estimate;
 
 impl Estimate {
     async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, _cmd: &str) -> Result<()> {
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 
         let account = ctx.wallet().account()?;
 

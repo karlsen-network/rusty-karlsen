@@ -1,8 +1,8 @@
-use crate::pb::kaspad_message::Payload as KaspadMessagePayload;
+use crate::pb::karlsend_message::Payload as KarlsendMessagePayload;
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
-pub enum KaspadMessagePayloadType {
+pub enum KarlsendMessagePayloadType {
     Addresses = 0,
     Block,
     Transaction,
@@ -48,57 +48,57 @@ pub enum KaspadMessagePayloadType {
     RequestNextPruningPointAndItsAnticoneBlocks,
 }
 
-impl From<&KaspadMessagePayload> for KaspadMessagePayloadType {
-    fn from(payload: &KaspadMessagePayload) -> Self {
+impl From<&KarlsendMessagePayload> for KarlsendMessagePayloadType {
+    fn from(payload: &KarlsendMessagePayload) -> Self {
         match payload {
-            KaspadMessagePayload::Addresses(_) => KaspadMessagePayloadType::Addresses,
-            KaspadMessagePayload::Block(_) => KaspadMessagePayloadType::Block,
-            KaspadMessagePayload::Transaction(_) => KaspadMessagePayloadType::Transaction,
-            KaspadMessagePayload::BlockLocator(_) => KaspadMessagePayloadType::BlockLocator,
-            KaspadMessagePayload::RequestAddresses(_) => KaspadMessagePayloadType::RequestAddresses,
-            KaspadMessagePayload::RequestRelayBlocks(_) => KaspadMessagePayloadType::RequestRelayBlocks,
-            KaspadMessagePayload::RequestTransactions(_) => KaspadMessagePayloadType::RequestTransactions,
-            KaspadMessagePayload::IbdBlock(_) => KaspadMessagePayloadType::IbdBlock,
-            KaspadMessagePayload::InvRelayBlock(_) => KaspadMessagePayloadType::InvRelayBlock,
-            KaspadMessagePayload::InvTransactions(_) => KaspadMessagePayloadType::InvTransactions,
-            KaspadMessagePayload::Ping(_) => KaspadMessagePayloadType::Ping,
-            KaspadMessagePayload::Pong(_) => KaspadMessagePayloadType::Pong,
-            KaspadMessagePayload::Verack(_) => KaspadMessagePayloadType::Verack,
-            KaspadMessagePayload::Version(_) => KaspadMessagePayloadType::Version,
-            KaspadMessagePayload::TransactionNotFound(_) => KaspadMessagePayloadType::TransactionNotFound,
-            KaspadMessagePayload::Reject(_) => KaspadMessagePayloadType::Reject,
-            KaspadMessagePayload::PruningPointUtxoSetChunk(_) => KaspadMessagePayloadType::PruningPointUtxoSetChunk,
-            KaspadMessagePayload::RequestIbdBlocks(_) => KaspadMessagePayloadType::RequestIbdBlocks,
-            KaspadMessagePayload::UnexpectedPruningPoint(_) => KaspadMessagePayloadType::UnexpectedPruningPoint,
-            KaspadMessagePayload::IbdBlockLocator(_) => KaspadMessagePayloadType::IbdBlockLocator,
-            KaspadMessagePayload::IbdBlockLocatorHighestHash(_) => KaspadMessagePayloadType::IbdBlockLocatorHighestHash,
-            KaspadMessagePayload::RequestNextPruningPointUtxoSetChunk(_) => {
-                KaspadMessagePayloadType::RequestNextPruningPointUtxoSetChunk
+            KarlsendMessagePayload::Addresses(_) => KarlsendMessagePayloadType::Addresses,
+            KarlsendMessagePayload::Block(_) => KarlsendMessagePayloadType::Block,
+            KarlsendMessagePayload::Transaction(_) => KarlsendMessagePayloadType::Transaction,
+            KarlsendMessagePayload::BlockLocator(_) => KarlsendMessagePayloadType::BlockLocator,
+            KarlsendMessagePayload::RequestAddresses(_) => KarlsendMessagePayloadType::RequestAddresses,
+            KarlsendMessagePayload::RequestRelayBlocks(_) => KarlsendMessagePayloadType::RequestRelayBlocks,
+            KarlsendMessagePayload::RequestTransactions(_) => KarlsendMessagePayloadType::RequestTransactions,
+            KarlsendMessagePayload::IbdBlock(_) => KarlsendMessagePayloadType::IbdBlock,
+            KarlsendMessagePayload::InvRelayBlock(_) => KarlsendMessagePayloadType::InvRelayBlock,
+            KarlsendMessagePayload::InvTransactions(_) => KarlsendMessagePayloadType::InvTransactions,
+            KarlsendMessagePayload::Ping(_) => KarlsendMessagePayloadType::Ping,
+            KarlsendMessagePayload::Pong(_) => KarlsendMessagePayloadType::Pong,
+            KarlsendMessagePayload::Verack(_) => KarlsendMessagePayloadType::Verack,
+            KarlsendMessagePayload::Version(_) => KarlsendMessagePayloadType::Version,
+            KarlsendMessagePayload::TransactionNotFound(_) => KarlsendMessagePayloadType::TransactionNotFound,
+            KarlsendMessagePayload::Reject(_) => KarlsendMessagePayloadType::Reject,
+            KarlsendMessagePayload::PruningPointUtxoSetChunk(_) => KarlsendMessagePayloadType::PruningPointUtxoSetChunk,
+            KarlsendMessagePayload::RequestIbdBlocks(_) => KarlsendMessagePayloadType::RequestIbdBlocks,
+            KarlsendMessagePayload::UnexpectedPruningPoint(_) => KarlsendMessagePayloadType::UnexpectedPruningPoint,
+            KarlsendMessagePayload::IbdBlockLocator(_) => KarlsendMessagePayloadType::IbdBlockLocator,
+            KarlsendMessagePayload::IbdBlockLocatorHighestHash(_) => KarlsendMessagePayloadType::IbdBlockLocatorHighestHash,
+            KarlsendMessagePayload::RequestNextPruningPointUtxoSetChunk(_) => {
+                KarlsendMessagePayloadType::RequestNextPruningPointUtxoSetChunk
             }
-            KaspadMessagePayload::DonePruningPointUtxoSetChunks(_) => KaspadMessagePayloadType::DonePruningPointUtxoSetChunks,
-            KaspadMessagePayload::IbdBlockLocatorHighestHashNotFound(_) => {
-                KaspadMessagePayloadType::IbdBlockLocatorHighestHashNotFound
+            KarlsendMessagePayload::DonePruningPointUtxoSetChunks(_) => KarlsendMessagePayloadType::DonePruningPointUtxoSetChunks,
+            KarlsendMessagePayload::IbdBlockLocatorHighestHashNotFound(_) => {
+                KarlsendMessagePayloadType::IbdBlockLocatorHighestHashNotFound
             }
-            KaspadMessagePayload::BlockWithTrustedData(_) => KaspadMessagePayloadType::BlockWithTrustedData,
-            KaspadMessagePayload::DoneBlocksWithTrustedData(_) => KaspadMessagePayloadType::DoneBlocksWithTrustedData,
-            KaspadMessagePayload::RequestPruningPointAndItsAnticone(_) => KaspadMessagePayloadType::RequestPruningPointAndItsAnticone,
-            KaspadMessagePayload::BlockHeaders(_) => KaspadMessagePayloadType::BlockHeaders,
-            KaspadMessagePayload::RequestNextHeaders(_) => KaspadMessagePayloadType::RequestNextHeaders,
-            KaspadMessagePayload::DoneHeaders(_) => KaspadMessagePayloadType::DoneHeaders,
-            KaspadMessagePayload::RequestPruningPointUtxoSet(_) => KaspadMessagePayloadType::RequestPruningPointUtxoSet,
-            KaspadMessagePayload::RequestHeaders(_) => KaspadMessagePayloadType::RequestHeaders,
-            KaspadMessagePayload::RequestBlockLocator(_) => KaspadMessagePayloadType::RequestBlockLocator,
-            KaspadMessagePayload::PruningPoints(_) => KaspadMessagePayloadType::PruningPoints,
-            KaspadMessagePayload::RequestPruningPointProof(_) => KaspadMessagePayloadType::RequestPruningPointProof,
-            KaspadMessagePayload::PruningPointProof(_) => KaspadMessagePayloadType::PruningPointProof,
-            KaspadMessagePayload::Ready(_) => KaspadMessagePayloadType::Ready,
-            KaspadMessagePayload::BlockWithTrustedDataV4(_) => KaspadMessagePayloadType::BlockWithTrustedDataV4,
-            KaspadMessagePayload::TrustedData(_) => KaspadMessagePayloadType::TrustedData,
-            KaspadMessagePayload::RequestIbdChainBlockLocator(_) => KaspadMessagePayloadType::RequestIbdChainBlockLocator,
-            KaspadMessagePayload::IbdChainBlockLocator(_) => KaspadMessagePayloadType::IbdChainBlockLocator,
-            KaspadMessagePayload::RequestAntipast(_) => KaspadMessagePayloadType::RequestAntipast,
-            KaspadMessagePayload::RequestNextPruningPointAndItsAnticoneBlocks(_) => {
-                KaspadMessagePayloadType::RequestNextPruningPointAndItsAnticoneBlocks
+            KarlsendMessagePayload::BlockWithTrustedData(_) => KarlsendMessagePayloadType::BlockWithTrustedData,
+            KarlsendMessagePayload::DoneBlocksWithTrustedData(_) => KarlsendMessagePayloadType::DoneBlocksWithTrustedData,
+            KarlsendMessagePayload::RequestPruningPointAndItsAnticone(_) => KarlsendMessagePayloadType::RequestPruningPointAndItsAnticone,
+            KarlsendMessagePayload::BlockHeaders(_) => KarlsendMessagePayloadType::BlockHeaders,
+            KarlsendMessagePayload::RequestNextHeaders(_) => KarlsendMessagePayloadType::RequestNextHeaders,
+            KarlsendMessagePayload::DoneHeaders(_) => KarlsendMessagePayloadType::DoneHeaders,
+            KarlsendMessagePayload::RequestPruningPointUtxoSet(_) => KarlsendMessagePayloadType::RequestPruningPointUtxoSet,
+            KarlsendMessagePayload::RequestHeaders(_) => KarlsendMessagePayloadType::RequestHeaders,
+            KarlsendMessagePayload::RequestBlockLocator(_) => KarlsendMessagePayloadType::RequestBlockLocator,
+            KarlsendMessagePayload::PruningPoints(_) => KarlsendMessagePayloadType::PruningPoints,
+            KarlsendMessagePayload::RequestPruningPointProof(_) => KarlsendMessagePayloadType::RequestPruningPointProof,
+            KarlsendMessagePayload::PruningPointProof(_) => KarlsendMessagePayloadType::PruningPointProof,
+            KarlsendMessagePayload::Ready(_) => KarlsendMessagePayloadType::Ready,
+            KarlsendMessagePayload::BlockWithTrustedDataV4(_) => KarlsendMessagePayloadType::BlockWithTrustedDataV4,
+            KarlsendMessagePayload::TrustedData(_) => KarlsendMessagePayloadType::TrustedData,
+            KarlsendMessagePayload::RequestIbdChainBlockLocator(_) => KarlsendMessagePayloadType::RequestIbdChainBlockLocator,
+            KarlsendMessagePayload::IbdChainBlockLocator(_) => KarlsendMessagePayloadType::IbdChainBlockLocator,
+            KarlsendMessagePayload::RequestAntipast(_) => KarlsendMessagePayloadType::RequestAntipast,
+            KarlsendMessagePayload::RequestNextPruningPointAndItsAnticoneBlocks(_) => {
+                KarlsendMessagePayloadType::RequestNextPruningPointAndItsAnticoneBlocks
             }
         }
     }

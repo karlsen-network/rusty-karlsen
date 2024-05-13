@@ -1,11 +1,11 @@
 use crate::{
     error::{Error, Result},
-    resolver::{KaspadResponseReceiver, KaspadResponseSender, Resolver},
+    resolver::{KarlsendResponseReceiver, KarlsendResponseSender, Resolver},
 };
 use karlsen_core::trace;
 use karlsen_grpc_core::{
-    ops::KaspadPayloadOps,
-    protowire::{KaspadRequest, KaspadResponse},
+    ops::KarlsendPayloadOps,
+    protowire::{KarlsendRequest, KarlsendResponse},
 };
 use std::{
     collections::HashMap,
@@ -17,11 +17,11 @@ use tokio::sync::oneshot;
 #[derive(Debug)]
 struct Pending {
     timestamp: Instant,
-    sender: KaspadResponseSender,
+    sender: KarlsendResponseSender,
 }
 
 impl Pending {
-    fn new(sender: KaspadResponseSender) -> Self {
+    fn new(sender: KarlsendResponseSender) -> Self {
         Self { timestamp: Instant::now(), sender }
     }
 }
@@ -38,8 +38,8 @@ impl IdResolver {
 }
 
 impl Resolver for IdResolver {
-    fn register_request(&self, _: KaspadPayloadOps, request: &KaspadRequest) -> KaspadResponseReceiver {
-        let (sender, receiver) = oneshot::channel::<Result<KaspadResponse>>();
+    fn register_request(&self, _: KarlsendPayloadOps, request: &KarlsendRequest) -> KarlsendResponseReceiver {
+        let (sender, receiver) = oneshot::channel::<Result<KarlsendResponse>>();
         {
             let mut pending_calls = self.pending_calls.lock().unwrap();
             pending_calls.insert(request.id, Pending::new(sender));
@@ -48,7 +48,7 @@ impl Resolver for IdResolver {
         receiver
     }
 
-    fn handle_response(&self, response: KaspadResponse) {
+    fn handle_response(&self, response: KarlsendResponse) {
         match self.pending_calls.lock().unwrap().remove(&response.id) {
             Some(pending) => {
                 trace!("[Resolver] handle_response has matching request with id {}", response.id);

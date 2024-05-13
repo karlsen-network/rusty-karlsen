@@ -9,7 +9,7 @@ impl Reload {
         // #[cfg(target_arch = "wasm32")]
         // workflow_dom::utils::window().location().reload().ok();
 
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         tprintln!(ctx, "{}", style("reloading wallet ...").magenta());
         ctx.wallet().reload(true).await?;
 

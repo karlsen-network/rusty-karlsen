@@ -5,7 +5,7 @@ use karlsen_hashes::Hash;
 use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, dequeue_with_request_id, make_response,
-    pb::{self, kaspad_message::Payload, BlockHeadersMessage, DoneHeadersMessage},
+    pb::{self, karlsend_message::Payload, BlockHeadersMessage, DoneHeadersMessage},
     IncomingRoute, Router,
 };
 use log::debug;

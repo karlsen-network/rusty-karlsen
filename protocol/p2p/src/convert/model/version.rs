@@ -1,6 +1,6 @@
 use karlsen_consensus_core::subnets::SubnetworkId;
 use karlsen_core::{
-    kaspad_env::{name, version},
+    karlsend_env::{name, version},
     time::unix_now,
 };
 use karlsen_utils::networking::{NetAddress, PeerId};

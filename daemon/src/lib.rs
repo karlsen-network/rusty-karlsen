@@ -1,7 +1,7 @@
 pub mod cpu_miner;
 pub mod error;
 pub mod imports;
-pub mod kaspad;
+pub mod karlsend;
 pub mod result;
 
 use std::fmt::Display;
@@ -9,7 +9,7 @@ use std::fmt::Display;
 use crate::imports::*;
 pub use crate::result::Result;
 pub use cpu_miner::{CpuMiner, CpuMinerConfig, CpuMinerCtl};
-pub use kaspad::{Kaspad, KaspadConfig, KaspadCtl};
+pub use karlsend::{Karlsend, KarlsendConfig, KarlsendCtl};
 use workflow_core::runtime;
 use workflow_node::process::Event as ProcessEvent;
 use workflow_store::fs::*;
@@ -54,24 +54,24 @@ pub async fn locate_binaries(root: &str, name: &str) -> Result<Vec<PathBuf>> {
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 pub enum DaemonKind {
-    Kaspad,
+    Karlsend,
     CpuMiner,
 }
 
 #[derive(Default)]
 pub struct Daemons {
-    pub kaspad: Option<Arc<dyn KaspadCtl + Send + Sync + 'static>>,
-    // pub kaspad_automute : Arc<
+    pub karlsend: Option<Arc<dyn KarlsendCtl + Send + Sync + 'static>>,
+    // pub karlsend_automute : Arc<
     pub cpu_miner: Option<Arc<dyn CpuMinerCtl + Send + Sync + 'static>>,
 }
 
 impl Daemons {
     pub fn new() -> Self {
-        Self { kaspad: None, cpu_miner: None }
+        Self { karlsend: None, cpu_miner: None }
     }
 
-    pub fn with_kaspad(mut self, kaspad: Arc<dyn KaspadCtl + Send + Sync + 'static>) -> Self {
-        self.kaspad = Some(kaspad);
+    pub fn with_karlsend(mut self, karlsend: Arc<dyn KarlsendCtl + Send + Sync + 'static>) -> Self {
+        self.karlsend = Some(karlsend);
         self
     }
 
@@ -80,12 +80,12 @@ impl Daemons {
         self
     }
 
-    pub fn kaspad(&self) -> Arc<dyn KaspadCtl + Send + Sync + 'static> {
-        self.kaspad.as_ref().expect("accessing Daemons::kaspad while kaspad option is None").clone()
+    pub fn karlsend(&self) -> Arc<dyn KarlsendCtl + Send + Sync + 'static> {
+        self.karlsend.as_ref().expect("accessing Daemons::karlsend while karlsend option is None").clone()
     }
 
-    pub fn try_kaspad(&self) -> Option<Arc<dyn KaspadCtl + Send + Sync + 'static>> {
-        self.kaspad.clone()
+    pub fn try_karlsend(&self) -> Option<Arc<dyn KarlsendCtl + Send + Sync + 'static>> {
+        self.karlsend.clone()
     }
 
     pub fn cpu_miner(&self) -> Arc<dyn CpuMinerCtl + Send + Sync + 'static> {

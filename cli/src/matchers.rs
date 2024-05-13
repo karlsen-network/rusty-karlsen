@@ -8,7 +8,7 @@ use workflow_core::task::dispatch;
 use workflow_dom::{clipboard, link};
 use workflow_wasm::jserror::*;
 
-pub fn register_link_matchers(cli: &Arc<KaspaCli>) -> Result<()> {
+pub fn register_link_matchers(cli: &Arc<KarlsenCli>) -> Result<()> {
     if !is_wasm() {
         return Ok(());
     }
@@ -93,7 +93,7 @@ pub fn register_link_matchers(cli: &Arc<KaspaCli>) -> Result<()> {
     Ok(())
 }
 
-fn write_to_clipboard(cli: &Arc<KaspaCli>, text: &str) {
+fn write_to_clipboard(cli: &Arc<KarlsenCli>, text: &str) {
     if is_nw() {
         let clipboard = nw_sys::clipboard::get();
         clipboard.set(text);

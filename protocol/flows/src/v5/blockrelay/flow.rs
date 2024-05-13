@@ -10,7 +10,7 @@ use karlsen_hashes::Hash;
 use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, dequeue_with_timeout, make_message, make_request,
-    pb::{kaspad_message::Payload, InvRelayBlockMessage, RequestBlockLocatorMessage, RequestRelayBlocksMessage},
+    pb::{karlsend_message::Payload, InvRelayBlockMessage, RequestBlockLocatorMessage, RequestRelayBlocksMessage},
     IncomingRoute, Router, SharedIncomingRoute,
 };
 use karlsen_utils::channel::{JobSender, JobTrySendError as TrySendError};

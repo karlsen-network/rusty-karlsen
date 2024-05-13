@@ -122,7 +122,7 @@ impl TransactionValidator {
                 // lock-time. We subtract one from the relative lock in
                 // order to maintain the original lockTime semantics.
                 //
-                // Note: in the kaspad codebase there's a use in i64 in order to use the -1 value
+                // Note: in the karlsend codebase there's a use in i64 in order to use the -1 value
                 // as None. Here it's not needed, but we still use it to avoid breaking consensus.
                 let lock_daa_score = entry.block_daa_score as i64 + relative_lock - 1;
 

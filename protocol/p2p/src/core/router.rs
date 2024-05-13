@@ -1,7 +1,7 @@
 use crate::core::hub::HubEvent;
 use crate::pb::RejectMessage;
-use crate::pb::{kaspad_message::Payload as KaspadMessagePayload, KaspadMessage};
-use crate::{common::ProtocolError, KaspadMessagePayloadType};
+use crate::pb::{karlsend_message::Payload as KarlsendMessagePayload, KarlsendMessage};
+use crate::{common::ProtocolError, KarlsendMessagePayloadType};
 use crate::{make_message, Peer};
 use karlsen_core::{debug, error, info, trace, warn};
 use karlsen_utils::networking::PeerId;
@@ -22,7 +22,7 @@ use tonic::Streaming;
 use super::peer::{PeerKey, PeerProperties};
 
 pub struct IncomingRoute {
-    rx: MpscReceiver<KaspadMessage>,
+    rx: MpscReceiver<KarlsendMessage>,
     id: u32,
 }
 
@@ -33,7 +33,7 @@ pub const BLANK_ROUTE_ID: u32 = 0;
 static ROUTE_ID: AtomicU32 = AtomicU32::new(BLANK_ROUTE_ID + 1);
 
 impl IncomingRoute {
-    pub fn new(rx: MpscReceiver<KaspadMessage>) -> Self {
+    pub fn new(rx: MpscReceiver<KarlsendMessage>) -> Self {
         let id = ROUTE_ID.fetch_add(1, Ordering::SeqCst);
         Self { rx, id }
     }
@@ -44,7 +44,7 @@ impl IncomingRoute {
 }
 
 impl Deref for IncomingRoute {
-    type Target = MpscReceiver<KaspadMessage>;
+    type Target = MpscReceiver<KarlsendMessage>;
 
     fn deref(&self) -> &Self::Target {
         &self.rx
@@ -65,7 +65,7 @@ impl SharedIncomingRoute {
         Self(Arc::new(tokio::sync::Mutex::new(incoming_route)))
     }
 
-    pub async fn recv(&mut self) -> Option<KaspadMessage> {
+    pub async fn recv(&mut self) -> Option<KarlsendMessage> {
         self.0.lock().await.recv().await
     }
 }
@@ -79,11 +79,11 @@ pub enum IncomingRouteOverflowPolicy {
     Disconnect,
 }
 
-impl From<KaspadMessagePayloadType> for IncomingRouteOverflowPolicy {
-    fn from(msg_type: KaspadMessagePayloadType) -> Self {
+impl From<KarlsendMessagePayloadType> for IncomingRouteOverflowPolicy {
+    fn from(msg_type: KarlsendMessagePayloadType) -> Self {
         match msg_type {
             // Inv messages are unique in the sense that no harm is done if some of them are dropped
-            KaspadMessagePayloadType::InvTransactions | KaspadMessagePayloadType::InvRelayBlock => IncomingRouteOverflowPolicy::Drop,
+            KarlsendMessagePayloadType::InvTransactions | KarlsendMessagePayloadType::InvRelayBlock => IncomingRouteOverflowPolicy::Drop,
             _ => IncomingRouteOverflowPolicy::Disconnect,
         }
     }
@@ -127,12 +127,12 @@ pub struct Router {
     connection_started: Instant,
 
     /// Routing map for mapping messages to subscribed flows
-    routing_map_by_type: RwLock<HashMap<KaspadMessagePayloadType, MpscSender<KaspadMessage>>>,
+    routing_map_by_type: RwLock<HashMap<KarlsendMessagePayloadType, MpscSender<KarlsendMessage>>>,
 
-    routing_map_by_id: RwLock<HashMap<u32, MpscSender<KaspadMessage>>>,
+    routing_map_by_id: RwLock<HashMap<u32, MpscSender<KarlsendMessage>>>,
 
     /// The outgoing route for sending messages to this peer
-    outgoing_route: MpscSender<KaspadMessage>,
+    outgoing_route: MpscSender<KarlsendMessage>,
 
     /// A channel sender for internal event management. Used to send information from each router to a central hub object
     hub_sender: MpscSender<HubEvent>,
@@ -166,10 +166,10 @@ impl From<&Router> for Peer {
     }
 }
 
-fn message_summary(msg: &KaspadMessage) -> impl Debug {
+fn message_summary(msg: &KarlsendMessage) -> impl Debug {
     // TODO (low priority): display a concise summary of the message. Printing full messages
     // overflows the logs and is hardly useful, hence we currently only return the type
-    msg.payload.as_ref().map(std::convert::Into::<KaspadMessagePayloadType>::into)
+    msg.payload.as_ref().map(std::convert::Into::<KarlsendMessagePayloadType>::into)
 }
 
 impl Router {
@@ -177,8 +177,8 @@ impl Router {
         net_address: SocketAddr,
         is_outbound: bool,
         hub_sender: MpscSender<HubEvent>,
-        mut incoming_stream: Streaming<KaspadMessage>,
-        outgoing_route: MpscSender<KaspadMessage>,
+        mut incoming_stream: Streaming<KarlsendMessage>,
+        outgoing_route: MpscSender<KarlsendMessage>,
     ) -> Arc<Self> {
         let (start_sender, start_receiver) = oneshot_channel();
         let (shutdown_sender, mut shutdown_receiver) = oneshot_channel();
@@ -312,14 +312,14 @@ impl Router {
     /// Subscribe to specific message types.
     ///
     /// This should be used by `ConnectionInitializer` instances to register application-specific flows
-    pub fn subscribe(&self, msg_types: Vec<KaspadMessagePayloadType>) -> IncomingRoute {
+    pub fn subscribe(&self, msg_types: Vec<KarlsendMessagePayloadType>) -> IncomingRoute {
         self.subscribe_with_capacity(msg_types, Self::incoming_flow_baseline_channel_size())
     }
 
     /// Subscribe to specific message types with a specific channel capacity.
     ///
     /// This should be used by `ConnectionInitializer` instances to register application-specific flows.
-    pub fn subscribe_with_capacity(&self, msg_types: Vec<KaspadMessagePayloadType>, capacity: usize) -> IncomingRoute {
+    pub fn subscribe_with_capacity(&self, msg_types: Vec<KarlsendMessagePayloadType>, capacity: usize) -> IncomingRoute {
         let (sender, receiver) = mpsc_channel(capacity);
         let incoming_route = IncomingRoute::new(receiver);
         let mut map_by_type = self.routing_map_by_type.write();
@@ -362,15 +362,15 @@ impl Router {
     }
 
     /// Routes a message coming from the network to the corresponding registered flow
-    pub fn route_to_flow(&self, msg: KaspadMessage) -> Result<(), ProtocolError> {
+    pub fn route_to_flow(&self, msg: KarlsendMessage) -> Result<(), ProtocolError> {
         if msg.payload.is_none() {
             debug!("P2P, Route to flow got empty payload, peer: {}", self);
-            return Err(ProtocolError::Other("received kaspad p2p message with empty payload"));
+            return Err(ProtocolError::Other("received karlsend p2p message with empty payload"));
         }
-        let msg_type: KaspadMessagePayloadType = msg.payload.as_ref().expect("payload was just verified").into();
+        let msg_type: KarlsendMessagePayloadType = msg.payload.as_ref().expect("payload was just verified").into();
         // Handle the special case of a reject message ending the connection
-        if msg_type == KaspadMessagePayloadType::Reject {
-            let Some(KaspadMessagePayload::Reject(reject)) = msg.payload else { unreachable!() };
+        if msg_type == KarlsendMessagePayloadType::Reject {
+            let Some(KarlsendMessagePayload::Reject(reject)) = msg.payload else { unreachable!() };
             return Err(ProtocolError::from_reject_message(reject.reason));
         }
 
@@ -400,8 +400,8 @@ impl Router {
     }
 
     /// Enqueues a locally-originated message to be sent to the network peer
-    pub async fn enqueue(&self, msg: KaspadMessage) -> Result<(), ProtocolError> {
-        assert!(msg.payload.is_some(), "Kaspad P2P message should always have a value");
+    pub async fn enqueue(&self, msg: KarlsendMessage) -> Result<(), ProtocolError> {
+        assert!(msg.payload.is_some(), "Karlsend P2P message should always have a value");
         match self.outgoing_route.try_send(msg) {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => Err(ProtocolError::ConnectionClosed),
@@ -414,7 +414,7 @@ impl Router {
         if err.can_send_outgoing_message() {
             // Send an explicit reject message for easier tracing of logical bugs causing protocol errors.
             // No need to handle errors since we are closing anyway
-            let _ = self.enqueue(make_message!(KaspadMessagePayload::Reject, RejectMessage { reason: err.to_reject_message() })).await;
+            let _ = self.enqueue(make_message!(KarlsendMessagePayload::Reject, RejectMessage { reason: err.to_reject_message() })).await;
         }
     }
 

@@ -29,7 +29,7 @@ impl Options {
     }
 }
 
-pub struct KaspaCli {
+pub struct KarlsenCli {
     term: Arc<Mutex<Option<Arc<Terminal>>>>,
     wallet: Arc<Wallet>,
     notifications_task_ctl: DuplexChannel,
@@ -45,19 +45,19 @@ pub struct KaspaCli {
     sync_state: Mutex<Option<SyncState>>,
 }
 
-impl From<&KaspaCli> for Arc<Terminal> {
-    fn from(ctx: &KaspaCli) -> Arc<Terminal> {
+impl From<&KarlsenCli> for Arc<Terminal> {
+    fn from(ctx: &KarlsenCli) -> Arc<Terminal> {
         ctx.term()
     }
 }
 
-impl AsRef<KaspaCli> for KaspaCli {
+impl AsRef<KarlsenCli> for KarlsenCli {
     fn as_ref(&self) -> &Self {
         self
     }
 }
 
-impl workflow_log::Sink for KaspaCli {
+impl workflow_log::Sink for KarlsenCli {
     fn write(&self, _target: Option<&str>, _level: Level, args: &std::fmt::Arguments<'_>) -> bool {
         if let Some(term) = self.try_term() {
             cfg_if! {
@@ -84,7 +84,7 @@ impl workflow_log::Sink for KaspaCli {
     }
 }
 
-impl KaspaCli {
+impl KarlsenCli {
     pub fn init() {
         cfg_if! {
             if #[cfg(not(target_arch = "wasm32"))] {
@@ -104,7 +104,7 @@ impl KaspaCli {
     pub async fn try_new_arc(options: Options) -> Result<Arc<Self>> {
         let wallet = Arc::new(Wallet::try_new(Wallet::local_store()?, None, None)?);
 
-        let karlsen_cli = Arc::new(KaspaCli {
+        let karlsen_cli = Arc::new(KarlsenCli {
             term: Arc::new(Mutex::new(None)),
             wallet,
             notifications_task_ctl: DuplexChannel::oneshot(),
@@ -218,7 +218,7 @@ impl KaspaCli {
 
     pub async fn handle_daemon_event(self: &Arc<Self>, event: DaemonEvent) -> Result<()> {
         match event.kind() {
-            DaemonKind::Kaspad => {
+            DaemonKind::Karlsend => {
                 let node = self.node.lock().unwrap().clone();
                 if let Some(node) = node {
                     node.handle_event(self, event.into()).await?;
@@ -667,24 +667,24 @@ impl KaspaCli {
             tprintln!(self, "{}", style("shutting down...").magenta());
 
             let miner = self.daemons().try_cpu_miner();
-            let kaspad = self.daemons().try_kaspad();
+            let karlsend = self.daemons().try_karlsend();
 
             if let Some(miner) = miner.as_ref() {
                 miner.mute(false).await?;
                 miner.stop().await?;
             }
 
-            if let Some(kaspad) = kaspad.as_ref() {
-                kaspad.mute(false).await?;
-                kaspad.stop().await?;
+            if let Some(karlsend) = karlsend.as_ref() {
+                karlsend.mute(false).await?;
+                karlsend.stop().await?;
             }
 
             if let Some(miner) = miner.as_ref() {
                 miner.join().await?;
             }
 
-            if let Some(kaspad) = kaspad.as_ref() {
-                kaspad.join().await?;
+            if let Some(karlsend) = karlsend.as_ref() {
+                karlsend.join().await?;
             }
 
             self.term().exit().await;
@@ -741,7 +741,7 @@ impl KaspaCli {
 }
 
 #[async_trait]
-impl Cli for KaspaCli {
+impl Cli for KarlsenCli {
     fn init(self: Arc<Self>, term: &Arc<Terminal>) -> TerminalResult<()> {
         *self.term.lock().unwrap() = Some(term.clone());
 
@@ -820,13 +820,13 @@ impl Cli for KaspaCli {
     }
 }
 
-impl cli::Context for KaspaCli {
+impl cli::Context for KarlsenCli {
     fn term(&self) -> Arc<Terminal> {
         self.term.lock().unwrap().as_ref().unwrap().clone()
     }
 }
 
-impl KaspaCli {}
+impl KarlsenCli {}
 
 #[allow(dead_code)]
 async fn select_item<T>(
@@ -916,10 +916,10 @@ where
 // }
 
 pub async fn karlsen_cli(terminal_options: TerminalOptions, banner: Option<String>) -> Result<()> {
-    KaspaCli::init();
+    KarlsenCli::init();
 
     let options = Options::new(terminal_options, None);
-    let cli = KaspaCli::try_new_arc(options).await?;
+    let cli = KarlsenCli::try_new_arc(options).await?;
 
     let banner =
         banner.unwrap_or_else(|| format!("Kaspa Cli Wallet v{} (type 'help' for list of commands)", env!("CARGO_PKG_VERSION")));
@@ -995,7 +995,7 @@ mod panic_handler {
     }
 }
 
-impl KaspaCli {
+impl KarlsenCli {
     pub fn init_panic_hook(self: &Arc<Self>) {
         let this = self.clone();
         let handler = move |info: &std::panic::PanicInfo| {

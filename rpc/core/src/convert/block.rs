@@ -12,7 +12,7 @@ impl From<&Block> for RpcBlock {
         Self {
             header: (*item.header).clone(),
             transactions: item.transactions.iter().map(RpcTransaction::from).collect(),
-            // TODO: Implement a populating process inspired from kaspad\app\rpc\rpccontext\verbosedata.go
+            // TODO: Implement a populating process inspired from karlsend\app\rpc\rpccontext\verbosedata.go
             verbose_data: None,
         }
     }

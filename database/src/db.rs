@@ -7,7 +7,7 @@ use karlsen_utils::fd_budget::FDGuard;
 
 mod conn_builder;
 
-/// The DB type used for Kaspad stores
+/// The DB type used for Karlsend stores
 pub struct DB {
     inner: DBWithThreadMode<MultiThreaded>,
     _fd_guard: FDGuard,

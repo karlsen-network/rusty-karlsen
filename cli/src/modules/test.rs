@@ -46,7 +46,7 @@ impl Test {
         // tprintln!(ctx, "start path: {}", sp);
         // tprintln!(ctx, "data path: {}", dp);
 
-        // let list = locate_binaries(sp.as_str(), "kaspad").await?;
+        // let list = locate_binaries(sp.as_str(), "karlsend").await?;
         // for item in list {
         //     tprintln!(ctx, "location: {}", item.as_os_str().to_str().unwrap());
         // }

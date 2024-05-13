@@ -8,7 +8,7 @@ pub struct History;
 
 impl History {
     async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, mut argv: Vec<String>, _cmd: &str) -> Result<()> {
-        let ctx = ctx.clone().downcast_arc::<KaspaCli>()?;
+        let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 
         if argv.is_empty() {
             self.display_help(ctx, argv).await?;
@@ -135,7 +135,7 @@ impl History {
         Ok(())
     }
 
-    async fn display_help(self: Arc<Self>, ctx: Arc<KaspaCli>, _argv: Vec<String>) -> Result<()> {
+    async fn display_help(self: Arc<Self>, ctx: Arc<KarlsenCli>, _argv: Vec<String>) -> Result<()> {
         ctx.term().help(
             &[
                 ("list [<last N transactions>]", "List transactions"),

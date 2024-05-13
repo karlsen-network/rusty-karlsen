@@ -1,6 +1,6 @@
 use super::{
     handler_trait::Handler,
-    interface::{DynKaspadMethod, Interface},
+    interface::{DynKarlsendMethod, Interface},
 };
 use crate::{
     connection::{Connection, IncomingRoute},
@@ -9,21 +9,21 @@ use crate::{
 };
 use karlsen_core::debug;
 use karlsen_grpc_core::{
-    ops::KaspadPayloadOps,
-    protowire::{KaspadRequest, KaspadResponse},
+    ops::KarlsendPayloadOps,
+    protowire::{KarlsendRequest, KarlsendResponse},
 };
 
 pub struct RequestHandler {
-    rpc_op: KaspadPayloadOps,
+    rpc_op: KarlsendPayloadOps,
     incoming_route: IncomingRoute,
     server_ctx: ServerContext,
-    method: DynKaspadMethod,
+    method: DynKarlsendMethod,
     connection: Connection,
 }
 
 impl RequestHandler {
     pub fn new(
-        rpc_op: KaspadPayloadOps,
+        rpc_op: KarlsendPayloadOps,
         incoming_route: IncomingRoute,
         server_context: ServerContext,
         interface: &Interface,
@@ -33,7 +33,7 @@ impl RequestHandler {
         Self { rpc_op, incoming_route, server_ctx: server_context, method, connection }
     }
 
-    pub async fn handle_request(&self, request: KaspadRequest) -> GrpcServerResult<KaspadResponse> {
+    pub async fn handle_request(&self, request: KarlsendRequest) -> GrpcServerResult<KarlsendResponse> {
         let id = request.id;
         let mut response = self.method.call(self.server_ctx.clone(), self.connection.clone(), request).await?;
         response.id = id;

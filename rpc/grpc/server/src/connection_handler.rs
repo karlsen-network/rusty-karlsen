@@ -9,7 +9,7 @@ use karlsen_core::{debug, info, warn};
 use karlsen_grpc_core::{
     protowire::{
         rpc_server::{Rpc, RpcServer},
-        KaspadRequest, KaspadResponse,
+        KarlsendRequest, KarlsendResponse,
     },
     RPC_MAX_MESSAGE_SIZE,
 };
@@ -235,12 +235,12 @@ impl Drop for ConnectionHandler {
 
 #[tonic::async_trait]
 impl Rpc for ConnectionHandler {
-    type MessageStreamStream = Pin<Box<dyn Stream<Item = Result<KaspadResponse, tonic::Status>> + Send + Sync + 'static>>;
+    type MessageStreamStream = Pin<Box<dyn Stream<Item = Result<KarlsendResponse, tonic::Status>> + Send + Sync + 'static>>;
 
     /// Handle the new arriving client connection
     async fn message_stream(
         &self,
-        request: Request<tonic::Streaming<KaspadRequest>>,
+        request: Request<tonic::Streaming<KarlsendRequest>>,
     ) -> Result<Response<Self::MessageStreamStream>, tonic::Status> {
         const SERVICE_IS_DOWN: &str = "The gRPC service is down";
 

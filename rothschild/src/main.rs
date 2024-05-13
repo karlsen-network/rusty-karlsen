@@ -10,7 +10,7 @@ use karlsen_consensus_core::{
     subnets::SUBNETWORK_ID_NATIVE,
     tx::{MutableTransaction, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry},
 };
-use karlsen_core::{info, kaspad_env::version, time::unix_now, warn};
+use karlsen_core::{info, karlsend_env::version, time::unix_now, warn};
 use karlsen_grpc_client::{ClientPool, GrpcClient};
 use karlsen_notify::subscription::context::SubscriptionContext;
 use karlsen_rpc_core::{api::rpc::RpcApi, notify::mode::NotificationMode};

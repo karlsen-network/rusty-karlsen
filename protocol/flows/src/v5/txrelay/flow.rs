@@ -18,7 +18,7 @@ use karlsen_mining::{
 use karlsen_p2p_lib::{
     common::{ProtocolError, DEFAULT_TIMEOUT},
     dequeue, make_message,
-    pb::{kaspad_message::Payload, RequestTransactionsMessage, TransactionNotFoundMessage},
+    pb::{karlsend_message::Payload, RequestTransactionsMessage, TransactionNotFoundMessage},
     IncomingRoute, Router,
 };
 use std::sync::Arc;
@@ -79,7 +79,7 @@ impl RelayTransactionsFlow {
 
     pub fn invs_channel_size() -> usize {
         // TODO: reevaluate when the node is fully functional and later when the network tx rate increases
-        // Note: in go-kaspad we have 10,000 for this channel combined with tx channel.
+        // Note: in go-karlsend we have 10,000 for this channel combined with tx channel.
         4096
     }
 
