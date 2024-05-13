@@ -369,7 +369,7 @@ declare! {
      * 
      * If filename is not supplied, the filename will be derived from the wallet title.
      * If both wallet title and filename are not supplied, the wallet will be create
-     * with the default filename `kaspa`.
+     * with the default filename `karlsen`.
      * 
      * @category Wallet API
      */

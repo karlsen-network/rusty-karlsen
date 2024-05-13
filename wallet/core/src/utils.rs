@@ -9,7 +9,7 @@ use karlsen_consensus_core::network::NetworkType;
 use separator::{separated_float, separated_int, separated_uint_with_output, Separatable};
 use workflow_log::style;
 
-pub fn try_kaspa_str_to_sompi<S: Into<String>>(s: S) -> Result<Option<u64>> {
+pub fn try_karlsen_str_to_sompi<S: Into<String>>(s: S) -> Result<Option<u64>> {
     let s: String = s.into();
     let amount = s.trim();
     if amount.is_empty() {
@@ -19,25 +19,25 @@ pub fn try_kaspa_str_to_sompi<S: Into<String>>(s: S) -> Result<Option<u64>> {
     Ok(Some(str_to_sompi(amount)?))
 }
 
-pub fn try_kaspa_str_to_sompi_i64<S: Into<String>>(s: S) -> Result<Option<i64>> {
+pub fn try_karlsen_str_to_sompi_i64<S: Into<String>>(s: S) -> Result<Option<i64>> {
     let s: String = s.into();
     let amount = s.trim();
     if amount.is_empty() {
         return Ok(None);
     }
 
-    let amount = amount.parse::<f64>()? * SOMPI_PER_KASPA as f64;
+    let amount = amount.parse::<f64>()? * SOMPI_PER_KARLSEN as f64;
     Ok(Some(amount as i64))
 }
 
 #[inline]
 pub fn sompi_to_karlsen(sompi: u64) -> f64 {
-    sompi as f64 / SOMPI_PER_KASPA as f64
+    sompi as f64 / SOMPI_PER_KARLSEN as f64
 }
 
 #[inline]
-pub fn kaspa_to_sompi(kaspa: f64) -> u64 {
-    (kaspa * SOMPI_PER_KASPA as f64) as u64
+pub fn karlsen_to_sompi(karlsen: f64) -> u64 {
+    (karlsen * SOMPI_PER_KARLSEN as f64) as u64
 }
 
 #[inline]
@@ -50,26 +50,26 @@ pub fn sompi_to_karlsen_string_with_trailing_zeroes(sompi: u64) -> String {
     separated_float!(format!("{:.8}", sompi_to_karlsen(sompi)))
 }
 
-pub fn kaspa_suffix(network_type: &NetworkType) -> &'static str {
+pub fn karlsen_suffix(network_type: &NetworkType) -> &'static str {
     match network_type {
-        NetworkType::Mainnet => "KAS",
-        NetworkType::Testnet => "TKAS",
-        NetworkType::Simnet => "SKAS",
-        NetworkType::Devnet => "DKAS",
+        NetworkType::Mainnet => "KLS",
+        NetworkType::Testnet => "TKLS",
+        NetworkType::Simnet => "SKLS",
+        NetworkType::Devnet => "DKLS",
     }
 }
 
 #[inline]
 pub fn sompi_to_karlsen_string_with_suffix(sompi: u64, network_type: &NetworkType) -> String {
     let kas = sompi_to_karlsen_string(sompi);
-    let suffix = kaspa_suffix(network_type);
+    let suffix = karlsen_suffix(network_type);
     format!("{kas} {suffix}")
 }
 
 #[inline]
 pub fn sompi_to_karlsen_string_with_trailing_zeroes_and_suffix(sompi: u64, network_type: &NetworkType) -> String {
     let kas = sompi_to_karlsen_string_with_trailing_zeroes(sompi);
-    let suffix = kaspa_suffix(network_type);
+    let suffix = karlsen_suffix(network_type);
     format!("{kas} {suffix}")
 }
 
@@ -92,9 +92,9 @@ pub fn format_address_colors(address: &Address, range: Option<usize>) -> String 
 
 fn str_to_sompi(amount: &str) -> Result<u64> {
     let Some(dot_idx) = amount.find('.') else {
-        return Ok(amount.parse::<u64>()? * SOMPI_PER_KASPA);
+        return Ok(amount.parse::<u64>()? * SOMPI_PER_KARLSEN);
     };
-    let integer = amount[..dot_idx].parse::<u64>()? * SOMPI_PER_KASPA;
+    let integer = amount[..dot_idx].parse::<u64>()? * SOMPI_PER_KARLSEN;
     let decimal = &amount[dot_idx + 1..];
     let decimal_len = decimal.len();
     let decimal = if decimal_len == 0 {

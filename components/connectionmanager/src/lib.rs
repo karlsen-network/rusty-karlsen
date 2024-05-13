@@ -281,7 +281,7 @@ impl ConnectionManager {
 
     /// Bans the given IP and disconnects from all the peers with that IP.
     ///
-    /// _GO-KASPAD: BanByIP_
+    /// _GO-KARLSEND: BanByIP_
     pub async fn ban(&self, ip: IpAddr) {
         if self.ip_has_permanent_connection(ip).await {
             return;

@@ -1,5 +1,5 @@
 {
-  "name": "kaspa",
+  "name": "karlsen",
   "version": "0.13.5",
   "description": "Karlsen SDK",
   "main": "index.js",
@@ -11,7 +11,7 @@
     "url": "git+https://github.com/karlsen-networknetworknetworknetwork/rusty-karlsen.git"
   },
   "keywords": [
-    "kaspa",
+    "karlsen",
     "wasm",
     "sdk"
   ],

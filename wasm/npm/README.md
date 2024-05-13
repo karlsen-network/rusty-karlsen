@@ -8,13 +8,13 @@ This is a Node.js module that provides bindings to the Karlsen WASM SDK strictly
 
 Karlsen NPM module exports include all WASM32 bindings.
 ```javascript
-const kaspa = require('kaspa');
-console.log(kaspa.version());
+const karlsen = require('karlsen');
+console.log(karlsen.version());
 ```
 
 ## Documentation
 
-Documentation is available at [https://kaspa.aspectron.org/docs/](https://kaspa.aspectron.org/docs/)
+Documentation is available at [https://karlsen.aspectron.org/docs/](https://karlsen.aspectron.org/docs/)
 
 
 ## Building from source & Examples

@@ -7,7 +7,7 @@ use crate::imports::*;
 use karlsen_addresses::Version;
 use secp256k1::PublicKey;
 
-pub const KEYPAIR_ACCOUNT_KIND: &str = "kaspa-keypair-standard";
+pub const KEYPAIR_ACCOUNT_KIND: &str = "karlsen-keypair-standard";
 
 pub struct Ctor {}
 

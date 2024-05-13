@@ -76,7 +76,7 @@ impl TransactionsSpread {
     /// every [`BROADCAST_INTERVAL`] milliseconds or when the queue length is larger than the Inv message
     /// capacity.
     ///
-    /// _GO-KASPAD: EnqueueTransactionIDsForPropagation_
+    /// _GO-KARLSEND: EnqueueTransactionIDsForPropagation_
     pub async fn broadcast_transactions<I: IntoIterator<Item = TransactionId>>(&mut self, transaction_ids: I, should_throttle: bool) {
         self.transaction_ids.enqueue_chunk(transaction_ids);
 

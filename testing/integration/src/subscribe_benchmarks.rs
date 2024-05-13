@@ -70,13 +70,13 @@ fn create_client_addresses(index: usize, network_id: &NetworkId) -> Vec<Address>
         .collect_vec()
 }
 
-/// `cargo test --package kaspa-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::utxos_changed_subscriptions_sanity_check --exact --nocapture --ignored`
+/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::utxos_changed_subscriptions_sanity_check --exact --nocapture --ignored`
 #[tokio::test]
 #[ignore = "bmk"]
 async fn utxos_changed_subscriptions_sanity_check() {
     init_allocator_with_default_settings();
     karlsen_core::log::try_init_logger(
-        "INFO, karlsen_core::time=debug, karlsen_rpc_core=debug, karlsen_grpc_client=debug, karlsen_notify=info, karlsen_notify::address::tracker=debug, karlsen_notify::listener=debug, karlsen_notify::subscription::single=debug, karlsen_mining::monitor=debug, kaspa_testing_integration::subscribe_benchmarks=trace",
+        "INFO, karlsen_core::time=debug, karlsen_rpc_core=debug, karlsen_grpc_client=debug, karlsen_notify=info, karlsen_notify::address::tracker=debug, karlsen_notify::listener=debug, karlsen_notify::subscription::single=debug, karlsen_mining::monitor=debug, karlsen_testing_integration::subscribe_benchmarks=trace",
     );
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();
@@ -124,7 +124,7 @@ async fn utxos_changed_subscriptions_sanity_check() {
     daemon_process.wait().await.expect("failed to wait for the daemon process");
 }
 
-/// `cargo test --package kaspa-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon --exact --nocapture --ignored -- --rpc=16610 --p2p=16611 --private-key=a2760251adb5b6e8d4514d23397f1631893e168c33f92ff8a7a24f397d355d62 --max-tracked-addresses=1000000 --utxoindex`
+/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon --exact --nocapture --ignored -- --rpc=16610 --p2p=16611 --private-key=a2760251adb5b6e8d4514d23397f1631893e168c33f92ff8a7a24f397d355d62 --max-tracked-addresses=1000000 --utxoindex`
 ///
 /// This test is designed to be run as a child process, with the parent process eventually shutting it down.
 /// Do not run it directly.
@@ -133,7 +133,7 @@ async fn utxos_changed_subscriptions_sanity_check() {
 async fn bench_utxos_changed_subscriptions_daemon() {
     init_allocator_with_default_settings();
     karlsen_core::log::try_init_logger(
-        "INFO, karlsen_core::core=trace, karlsen_core::time=debug, karlsen_rpc_core=debug, karlsen_grpc_client=debug, karlsen_notify=info, karlsen_notify::address::tracker=debug, karlsen_notify::listener=debug, karlsen_notify::subscription::single=debug, karlsen_mining::monitor=debug, kaspa_testing_integration::subscribe_benchmarks=trace",
+        "INFO, karlsen_core::core=trace, karlsen_core::time=debug, karlsen_rpc_core=debug, karlsen_grpc_client=debug, karlsen_notify=info, karlsen_notify::address::tracker=debug, karlsen_notify::listener=debug, karlsen_notify::subscription::single=debug, karlsen_mining::monitor=debug, karlsen_testing_integration::subscribe_benchmarks=trace",
     );
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();
@@ -160,7 +160,7 @@ async fn bench_utxos_changed_subscriptions_daemon() {
 async fn utxos_changed_subscriptions_client(address_cycle_seconds: u64, address_max_cycles: usize) {
     init_allocator_with_default_settings();
     karlsen_core::log::try_init_logger(
-        "INFO, karlsen_core::time=debug, karlsen_rpc_core=debug, karlsen_grpc_client=debug, karlsen_notify=info, karlsen_notify::address::tracker=debug, karlsen_notify::listener=debug, karlsen_notify::subscription::single=debug, karlsen_mining::monitor=debug, kaspa_testing_integration::subscribe_benchmarks=trace",
+        "INFO, karlsen_core::time=debug, karlsen_rpc_core=debug, karlsen_grpc_client=debug, karlsen_notify=info, karlsen_notify::address::tracker=debug, karlsen_notify::listener=debug, karlsen_notify::subscription::single=debug, karlsen_mining::monitor=debug, karlsen_testing_integration::subscribe_benchmarks=trace",
     );
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();
@@ -276,7 +276,7 @@ async fn utxos_changed_subscriptions_client(address_cycle_seconds: u64, address_
     daemon_process.wait().await.expect("failed to wait for the daemon process");
 }
 
-/// `cargo test --package kaspa-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_a --exact --nocapture --ignored`
+/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_a --exact --nocapture --ignored`
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_utxos_changed_subscriptions_footprint_a() {
@@ -284,7 +284,7 @@ async fn bench_utxos_changed_subscriptions_footprint_a() {
     utxos_changed_subscriptions_client(1200, 0).await;
 }
 
-/// `cargo test --package kaspa-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_b --exact --nocapture --ignored`
+/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_b --exact --nocapture --ignored`
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_utxos_changed_subscriptions_footprint_b() {
@@ -292,7 +292,7 @@ async fn bench_utxos_changed_subscriptions_footprint_b() {
     utxos_changed_subscriptions_client(60, 1).await;
 }
 
-/// `cargo test --package kaspa-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_c --exact --nocapture --ignored`
+/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_c --exact --nocapture --ignored`
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_utxos_changed_subscriptions_footprint_c() {
@@ -300,7 +300,7 @@ async fn bench_utxos_changed_subscriptions_footprint_c() {
     utxos_changed_subscriptions_client(7200, usize::MAX).await;
 }
 
-/// `cargo test --package kaspa-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_d --exact --nocapture --ignored`
+/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_d --exact --nocapture --ignored`
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_utxos_changed_subscriptions_footprint_d() {
@@ -308,7 +308,7 @@ async fn bench_utxos_changed_subscriptions_footprint_d() {
     utxos_changed_subscriptions_client(1800, usize::MAX).await;
 }
 
-/// `cargo test --package kaspa-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_e --exact --nocapture --ignored`
+/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_e --exact --nocapture --ignored`
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_utxos_changed_subscriptions_footprint_e() {

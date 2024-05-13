@@ -20,14 +20,14 @@ pub enum WalletSettings {
     Network,
     #[describe("Server address (default: 127.0.0.1)")]
     Server,
-    #[describe("Wallet storage or file name (default 'kaspa')")]
+    #[describe("Wallet storage or file name (default 'karlsen')")]
     Wallet,
 }
 
 #[async_trait]
 impl DefaultSettings for WalletSettings {
     async fn defaults() -> Vec<(Self, Value)> {
-        vec![(Self::Server, to_value("public").unwrap()), (Self::Wallet, to_value("kaspa").unwrap())]
+        vec![(Self::Server, to_value("public").unwrap()), (Self::Wallet, to_value("karlsen").unwrap())]
     }
 }
 

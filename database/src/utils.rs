@@ -41,20 +41,20 @@ impl Drop for DbLifetime {
     }
 }
 
-pub fn get_kaspa_tempdir() -> TempDir {
+pub fn get_karlsen_tempdir() -> TempDir {
     let global_tempdir = std::env::temp_dir();
-    let kaspa_tempdir = global_tempdir.join("rusty-karlsen");
-    std::fs::create_dir_all(kaspa_tempdir.as_path()).unwrap();
-    let db_tempdir = tempfile::tempdir_in(kaspa_tempdir.as_path()).unwrap();
+    let karlsen_tempdir = global_tempdir.join("rusty-karlsen");
+    std::fs::create_dir_all(karlsen_tempdir.as_path()).unwrap();
+    let db_tempdir = tempfile::tempdir_in(karlsen_tempdir.as_path()).unwrap();
     db_tempdir
 }
 
-/// Creates a DB within a temp directory under `<OS SPECIFIC TEMP DIR>/kaspa-rust`
+/// Creates a DB within a temp directory under `<OS SPECIFIC TEMP DIR>/karlsen-rust`
 /// Callers must keep the `TempDbLifetime` guard for as long as they wish the DB to exist.
 #[macro_export]
 macro_rules! create_temp_db {
     ($conn_builder: expr) => {{
-        let db_tempdir = $crate::utils::get_kaspa_tempdir();
+        let db_tempdir = $crate::utils::get_karlsen_tempdir();
         let db_path = db_tempdir.path().to_owned();
         let db = $conn_builder.with_db_path(db_path).build().unwrap();
         ($crate::utils::DbLifetime::new(db_tempdir, std::sync::Arc::downgrade(&db)), db)

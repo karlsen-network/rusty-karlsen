@@ -74,7 +74,7 @@ impl Account {
                             ("account import legacy-data", "Import KDX keydata file or karlsen-network web wallet data on the same domain"),
                             (
                                 "account import mnemonic bip32",
-                                "Import Bip32 (12 or 24 word mnemonics used by kaspawallet, kaspium, onekey, tangem etc.)",
+                                "Import Bip32 (12 or 24 word mnemonics used by karlsenwallet, kaspium, onekey, tangem etc.)",
                             ),
                             (
                                 "account import mnemonic legacy",

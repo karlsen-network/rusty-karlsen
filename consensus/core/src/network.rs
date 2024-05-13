@@ -143,7 +143,7 @@ impl TryFrom<&NetworkTypeT> for Prefix {
 
 #[derive(thiserror::Error, Debug, Clone)]
 pub enum NetworkIdError {
-    #[error("Invalid network name prefix: {0}. The expected prefix is 'kaspa'.")]
+    #[error("Invalid network name prefix: {0}. The expected prefix is 'karlsen'.")]
     InvalidPrefix(String),
 
     #[error(transparent)]
@@ -175,7 +175,7 @@ impl From<NetworkIdError> for JsValue {
 }
 
 ///
-/// NetworkId is a unique identifier for a kaspa network instance.
+/// NetworkId is a unique identifier for a karlsen network instance.
 /// It is composed of a network type and an optional suffix.
 ///
 /// @category Consensus
@@ -250,7 +250,7 @@ impl NetworkId {
         NETWORK_IDS.iter().copied()
     }
 
-    /// Returns a textual description of the network prefixed with `kaspa-`
+    /// Returns a textual description of the network prefixed with `karlsen-`
     pub fn to_prefixed(&self) -> String {
         format!("karlsen-{}", self)
     }

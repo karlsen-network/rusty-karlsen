@@ -27,7 +27,7 @@ used when running a local node or connecting to a remote node.
 You can use `node start` to start the node.  Type `node` to see an overview of commands.
 `node mute` toggles node log output (you can also use `node logs`).  `node select` allows 
 you to choose between locally installed flavors (if running in the development environment).
-You can also specify an absolute path by typing `node select <path to rusty kaspa binary>`.
+You can also specify an absolute path by typing `node select <path to rusty karlsen binary>`.
 
 For developers: `node select` scans 'target' folder for the debug and release builds
 so you can switch between builds at runtime using the `node select` command.
@@ -38,7 +38,7 @@ When starting the node and the `server` setting is configured to your local host
 the `connect` action will occure automatically.
 
 `wallet create [<name>]` Use theis command to create a local wallet. The <name> argument 
-is optional (the default wallet name is "kaspa") and allows you to create multiple 
+is optional (the default wallet name is "karlsen") and allows you to create multiple 
 named wallets.  Only one wallet can be opened at a time. Keep in mind that a wallet can have multiple
 accounts, as such you only need one wallet, unless, for example, you want to separate wallets for 
 personal and business needs (but you can also create isolated accounts within a wallet).

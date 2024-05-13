@@ -75,7 +75,7 @@ impl RpcHandler for KarlsenRpcHandler {
         //     std::time::Duration::from_millis(3000),
         //     sender,
         //     receiver,
-        //     Box::pin(|msg| if msg != "kaspa" { Err(WebSocketError::NegotiationFailure) } else { Ok(()) }),
+        //     Box::pin(|msg| if msg != "karlsen" { Err(WebSocketError::NegotiationFailure) } else { Ok(()) }),
         // )
         // .await
 

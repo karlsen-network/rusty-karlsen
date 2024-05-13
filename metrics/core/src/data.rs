@@ -305,7 +305,7 @@ impl Metric {
             | Metric::NetworkDifficulty
             | Metric::NetworkPastMedianTime
             | Metric::NetworkVirtualParentHashesCount
-            | Metric::NetworkVirtualDaaScore => "kaspa",
+            | Metric::NetworkVirtualDaaScore => "karlsen",
         }
     }
 

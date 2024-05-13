@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::result::Result;
-use karlsen_consensus_core::constants::SOMPI_PER_KASPA;
+use karlsen_consensus_core::constants::SOMPI_PER_KARLSEN;
 use std::fmt::Display;
 
 pub fn try_parse_required_nonzero_karlsen_as_sompi_u64<S: ToString + Display>(karlsen_amount: Option<S>) -> Result<u64> {
@@ -9,7 +9,7 @@ pub fn try_parse_required_nonzero_karlsen_as_sompi_u64<S: ToString + Display>(ka
             .to_string()
             .parse::<f64>()
             .map_err(|_| Error::custom(format!("Supplied Kasapa amount is not valid: '{karlsen_amount}'")))?
-            * SOMPI_PER_KASPA as f64;
+            * SOMPI_PER_KARLSEN as f64;
         if sompi_amount < 0.0 {
             Err(Error::custom("Supplied Karlsen amount is not valid: '{karlsen_amount}'"))
         } else {
@@ -31,7 +31,7 @@ pub fn try_parse_required_karlsen_as_sompi_u64<S: ToString + Display>(karlsen_am
             .to_string()
             .parse::<f64>()
             .map_err(|_| Error::custom(format!("Supplied Kasapa amount is not valid: '{karlsen_amount}'")))?
-            * SOMPI_PER_KASPA as f64;
+            * SOMPI_PER_KARLSEN as f64;
         if sompi_amount < 0.0 {
             Err(Error::custom("Supplied Karlsen amount is not valid: '{karlsen_amount}'"))
         } else {
@@ -48,7 +48,7 @@ pub fn try_parse_optional_karlsen_as_sompi_i64<S: ToString + Display>(karlsen_am
             .to_string()
             .parse::<f64>()
             .map_err(|_e| Error::custom(format!("Supplied Kasapa amount is not valid: '{karlsen_amount}'")))?
-            * SOMPI_PER_KASPA as f64;
+            * SOMPI_PER_KARLSEN as f64;
         if sompi_amount < 0.0 {
             Err(Error::custom("Supplied Karlsen amount is not valid: '{karlsen_amount}'"))
         } else {

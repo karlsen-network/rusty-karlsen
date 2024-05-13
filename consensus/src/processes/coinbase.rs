@@ -288,7 +288,7 @@ mod tests {
     use crate::params::MAINNET_PARAMS;
     use karlsen_consensus_core::{
         config::params::{Params, TESTNET11_PARAMS},
-        constants::SOMPI_PER_KASPA,
+        constants::SOMPI_PER_KARLSEN,
         network::NetworkId,
         tx::scriptvec,
     };
@@ -314,9 +314,9 @@ mod tests {
 
         let delta = total_high_bps_rewards as i64 - total_rewards as i64;
 
-        println!("Total rewards: {} sompi => {} KAS", total_rewards, total_rewards / SOMPI_PER_KASPA);
-        println!("Total high bps rewards: {} sompi => {} KAS", total_high_bps_rewards, total_high_bps_rewards / SOMPI_PER_KASPA);
-        println!("Delta: {} sompi => {} KAS", delta, delta / SOMPI_PER_KASPA as i64);
+        println!("Total rewards: {} sompi => {} KAS", total_rewards, total_rewards / SOMPI_PER_KARLSEN);
+        println!("Total high bps rewards: {} sompi => {} KAS", total_high_bps_rewards, total_high_bps_rewards / SOMPI_PER_KARLSEN);
+        println!("Delta: {} sompi => {} KAS", delta, delta / SOMPI_PER_KARLSEN as i64);
     }
 
     #[test]

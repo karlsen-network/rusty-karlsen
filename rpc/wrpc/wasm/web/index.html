@@ -1,10 +1,10 @@
 <html>
     <head>
         <script type="module">
-            import * as kaspa from './karlsen-rpc/karlsen-rpc.js';
+            import * as karlsen from './karlsen-rpc/karlsen-rpc.js';
             (async () => {
-                await kaspa.default('./karlsen-rpc/karlsen-rpc_bg.wasm');
-                console.log(kaspa.version());
+                await karlsen.default('./karlsen-rpc/karlsen-rpc_bg.wasm');
+                console.log(karlsen.version());
             })();
         </script>
     </head>

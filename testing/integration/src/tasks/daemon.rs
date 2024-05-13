@@ -66,7 +66,7 @@ impl DaemonArgs {
         let mut args = vec![
             "test".to_owned(),
             "--package".to_owned(),
-            "kaspa-testing-integration".to_owned(),
+            "karlsen-testing-integration".to_owned(),
             "--lib".to_owned(),
             "--features".to_owned(),
             "devnet-prealloc".to_owned(),

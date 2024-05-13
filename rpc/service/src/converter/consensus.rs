@@ -45,7 +45,7 @@ impl ConsensusConverter {
 
     /// Converts a consensus [`Block`] into an [`RpcBlock`], optionally including transaction verbose data.
     ///
-    /// _GO-KASPAD: PopulateBlockWithVerboseData_
+    /// _GO-KARLSEND: PopulateBlockWithVerboseData_
     pub async fn get_block(
         &self,
         consensus: &ConsensusProxy,
@@ -113,7 +113,7 @@ impl ConsensusConverter {
 
     /// Converts a consensus [`Transaction`] into an [`RpcTransaction`], optionally including verbose data.
     ///
-    /// _GO-KASPAD: PopulateTransactionWithVerboseData
+    /// _GO-KARLSEND: PopulateTransactionWithVerboseData
     pub fn get_transaction(
         &self,
         consensus: &ConsensusProxy,

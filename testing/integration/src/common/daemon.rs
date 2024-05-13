@@ -1,6 +1,6 @@
 use karlsen_consensus_core::network::NetworkId;
 use karlsen_core::{core::Core, signals::Shutdown, task::runtime::AsyncRuntime};
-use karlsen_database::utils::get_kaspa_tempdir;
+use karlsen_database::utils::get_karlsen_tempdir;
 use karlsen_grpc_client::GrpcClient;
 use karlsen_grpc_server::service::GrpcService;
 use karlsen_notify::subscription::context::SubscriptionContext;
@@ -135,7 +135,7 @@ impl Daemon {
     }
 
     pub fn with_manager(client_manager: Arc<ClientManager>, fd_total_budget: i32) -> Daemon {
-        let appdir_tempdir = get_kaspa_tempdir();
+        let appdir_tempdir = get_karlsen_tempdir();
         client_manager.args.write().appdir = Some(appdir_tempdir.path().to_str().unwrap().to_owned());
         let (core, _) = create_core_with_runtime(&Default::default(), &client_manager.args.read(), fd_total_budget);
         let async_service = &Arc::downcast::<AsyncRuntime>(core.find(AsyncRuntime::IDENT).unwrap().arc_any()).unwrap();

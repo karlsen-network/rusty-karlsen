@@ -34,7 +34,7 @@ pub fn register_link_matchers(cli: &Arc<KarlsenCli>) -> Result<()> {
                 if uri.starts_with("karlsentest") {
                     cli_.term().writeln("testnet addresses can not be currently looked up with the block explorer");
                 } else {
-                    let url = format!("https://explorer.kaspa.org/addresses/{uri}");
+                    let url = format!("https://explorer.karlsencoin.com/addresses/{uri}");
                     if is_nw() {
                         nw_sys::shell::open_external(&url);
                     } else {
@@ -47,7 +47,7 @@ pub fn register_link_matchers(cli: &Arc<KarlsenCli>) -> Result<()> {
         })),
     )?;
 
-    // blocks (open,copy) https://explorer.kaspa.org/blocks/
+    // blocks (open,copy) https://explorer.karlsencoin.com/blocks/
     let cli_ = cli.clone();
     cli.term().register_link_matcher(
         &js_sys::RegExp::new(r"(block|pool):?\s+[0-9a-fA-F]{64}", "i"),
@@ -56,7 +56,7 @@ pub fn register_link_matchers(cli: &Arc<KarlsenCli>) -> Result<()> {
             let uri = re.replace(text, "");
 
             if modifiers.ctrl || modifiers.meta {
-                nw_sys::shell::open_external(&format!("https://explorer.kaspa.org/blocks/{uri}"));
+                nw_sys::shell::open_external(&format!("https://explorer.karlsencoin.com/blocks/{uri}"));
             } else {
                 write_to_clipboard(&cli_, uri.to_string().as_str());
             }
@@ -72,7 +72,7 @@ pub fn register_link_matchers(cli: &Arc<KarlsenCli>) -> Result<()> {
             let uri = re.replace(text, "");
 
             if modifiers.ctrl || modifiers.meta {
-                nw_sys::shell::open_external(&format!("https://explorer.kaspa.org/txs/{uri}"));
+                nw_sys::shell::open_external(&format!("https://explorer.karlsencoin.com/txs/{uri}"));
             } else {
                 write_to_clipboard(&cli_, uri.to_string().as_str());
             }

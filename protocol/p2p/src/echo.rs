@@ -114,7 +114,7 @@ impl EchoFlowInitializer {
 impl ConnectionInitializer for EchoFlowInitializer {
     async fn initialize_connection(&self, router: Arc<Router>) -> Result<(), ProtocolError> {
         //
-        // Example code to illustrate kaspa P2P handshaking
+        // Example code to illustrate karlsen P2P handshaking
         //
 
         // Build the handshake object and subscribe to handshake messages

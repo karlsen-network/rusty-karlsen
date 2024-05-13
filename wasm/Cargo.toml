@@ -59,7 +59,7 @@ targets = ["wasm32-unknown-unknown"]
 
 [package.metadata.emanate.wasm]
 targets = [
-    { target = "nodejs", out-dir = "nodejs/kaspa" },
-    { target = "web", out-dir = "web/kaspa" }
+    { target = "nodejs", out-dir = "nodejs/karlsen" },
+    { target = "web", out-dir = "web/karlsen" }
 ]
 folder = "setup"

@@ -155,11 +155,11 @@ struct Envelope {
 fn legacy_v0_keydata_location() -> Result<(PathBuf, Options)> {
     let filename = if runtime::is_windows() {
         let appdata = env::var("APPDATA")?;
-        fs::resolve_path(&format!("{appdata}/Karlsen/kaspa.kpk"))?
+        fs::resolve_path(&format!("{appdata}/Karlsen/karlsen.kpk"))?
     } else if runtime::is_macos() {
-        fs::resolve_path("~/Library/Application Support/Karlsen/kaspa.kpk")?
+        fs::resolve_path("~/Library/Application Support/Karlsen/karlsen.kpk")?
     } else {
-        fs::resolve_path("~/.kaspa/kaspa.kpk")?
+        fs::resolve_path("~/.karlsen/karlsen.kpk")?
     };
 
     let options = workflow_store::fs::Options::with_local_storage_key("karlsen-wallet");

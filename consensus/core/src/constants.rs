@@ -9,7 +9,7 @@ pub const LOCK_TIME_THRESHOLD: u64 = 500_000_000_000;
 /// MAX_SCRIPT_PUBLIC_KEY_VERSION is the current latest supported public key script version.
 pub const MAX_SCRIPT_PUBLIC_KEY_VERSION: u16 = 0;
 
-/// SompiPerKarlsen is the number of sompi in one kaspa (1 KAS).
+/// SompiPerKarlsen is the number of sompi in one karlsen (1 KLS).
 pub const SOMPI_PER_KARLSEN: u64 = 100_000_000;
 
 /// The parameter for scaling inverse KAS value to mass units (KIP-0009)

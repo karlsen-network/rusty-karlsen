@@ -40,7 +40,7 @@ available NPM modules:
 The `karlsen-wasm` module is a pure WASM32 module that includes
 the entire wallet framework, but does not support RPC due to an absence
 of a native WebSocket in NodeJs environment, while
-the `kaspa` module includes `websocket` package dependency simulating
+the `karlsen` module includes `websocket` package dependency simulating
 the W3C WebSocket and due to this supports RPC.
 
 ## Examples
@@ -76,9 +76,9 @@ globalThis.WebSocket = require('websocket').w3cwebsocket;
 <html>
     <head>
         <script type="module">
-            import * as karlsen_wasm from './kaspa/karlsen-wasm.js';
+            import * as karlsen_wasm from './karlsen/karlsen-wasm.js';
             (async () => {
-                const kaspa = await karlsen_wasm.default('./kaspa/karlsen-wasm_bg.wasm');
+                const karlsen = await karlsen_wasm.default('./karlsen/karlsen-wasm_bg.wasm');
                 // ...
             })();
         </script>
@@ -91,7 +91,7 @@ globalThis.WebSocket = require('websocket').w3cwebsocket;
 
 ```javascript
 // W3C WebSocket module shim
-// this is provided by NPM `kaspa` module and is only needed
+// this is provided by NPM `karlsen` module and is only needed
 // if you are building WASM libraries for NodeJS from source
 // globalThis.WebSocket = require('websocket').w3cwebsocket;
 

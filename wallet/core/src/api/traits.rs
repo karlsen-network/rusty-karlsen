@@ -140,7 +140,7 @@ pub trait WalletApi: Send + Sync + AnySync {
 
     /// Opens a wallet. A wallet is opened by it's `filename`, which is available
     /// as a part of the `WalletDescriptor` struct returned during the `wallet_enumerate_call()` call.
-    /// If the `filename` is `None`, the wallet opens the default wallet named `kaspa`.
+    /// If the `filename` is `None`, the wallet opens the default wallet named `karlsen`.
     ///
     /// If `account_descriptors` is true, this call will return `Some(Vec<AccountDescriptor>)`
     /// for all accounts in the wallet.

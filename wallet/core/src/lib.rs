@@ -34,13 +34,13 @@
 //!
 //! For JavaScript / TypeScript environments, there are two
 //! available NPM modules:
-//! - <https://www.npmjs.com/package/kaspa>
+//! - <https://www.npmjs.com/package/karlsen>
 //! - <https://www.npmjs.com/package/karlsen-wasm>
 //!
 //! The `karlsen-wasm` module is a pure WASM32 module that includes
 //! the entire wallet framework, but does not support RPC due to an absence
 //! of a native WebSocket in NodeJs environment, while
-//! the `kaspa` module includes `websocket` module dependency simulating
+//! the `karlsen` module includes `websocket` module dependency simulating
 //! the W3C WebSocket and thus supports RPC.
 //!
 //! JavaScript examples for using this framework can be found at:

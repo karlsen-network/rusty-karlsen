@@ -1179,7 +1179,7 @@ impl Wallet {
     //     Ok(Box::pin(stream))
     // }
 
-    pub async fn import_kaspawallet_golang_single_v1<T: AsRef<[u8]>>(
+    pub async fn import_karlsenwallet_golang_single_v1<T: AsRef<[u8]>>(
         self: &Arc<Wallet>,
         import_secret: &Secret,
         wallet_secret: &Secret,
@@ -1201,7 +1201,7 @@ impl Wallet {
         self.import_with_mnemonic(wallet_secret, None, mnemonic, BIP32_ACCOUNT_KIND.into()).await
     }
 
-    pub async fn import_kaspawallet_golang_single_v0<T: AsRef<[u8]>>(
+    pub async fn import_karlsenwallet_golang_single_v0<T: AsRef<[u8]>>(
         self: &Arc<Wallet>,
         import_secret: &Secret,
         wallet_secret: &Secret,
@@ -1222,7 +1222,7 @@ impl Wallet {
         self.import_with_mnemonic(wallet_secret, None, mnemonic, BIP32_ACCOUNT_KIND.into()).await
     }
 
-    pub async fn import_kaspawallet_golang_multisig_v0<T: AsRef<[u8]>>(
+    pub async fn import_karlsenwallet_golang_multisig_v0<T: AsRef<[u8]>>(
         self: &Arc<Wallet>,
         import_secret: &Secret,
         wallet_secret: &Secret,
@@ -1264,7 +1264,7 @@ impl Wallet {
         self.import_multisig_with_mnemonic(wallet_secret, mnemonics_and_secrets, file.required_signatures, additional_pub_keys).await
     }
 
-    pub async fn import_kaspawallet_golang_multisig_v1<T: AsRef<[u8]>>(
+    pub async fn import_karlsenwallet_golang_multisig_v1<T: AsRef<[u8]>>(
         self: &Arc<Wallet>,
         import_secret: &Secret,
         wallet_secret: &Secret,
@@ -1665,7 +1665,7 @@ mod test {
         let result = wallet.get_info().await;
         println!("wallet.get_info(): {result:#?}");
 
-        let address = Address::try_from("kaspatest:qz7ulu4c25dh7fzec9zjyrmlhnkzrg4wmf89q7gzr3gfrsj3uz6xjceef60sd")?;
+        let address = Address::try_from("karlsentest:qz7ulu4c25dh7fzec9zjyrmlhnkzrg4wmf89q7gzr3gfrsj3uz6xjceef60sd")?;
 
         let utxo_context =
             self::create_utxos_context_with_addresses(rpc_api.clone(), vec![address.clone()], current_daa_score, utxo_processor)
@@ -1674,7 +1674,7 @@ mod test {
         let utxo_set_balance = utxo_context.calculate_balance().await;
         println!("get_utxos_by_addresses: {utxo_set_balance:?}");
 
-        let to_address = Address::try_from("kaspatest:qpakxqlesqywgkq7rg4wyhjd93kmw7trkl3gpa3vd5flyt59a43yyn8vu0w8c")?;
+        let to_address = Address::try_from("karlsentest:qpakxqlesqywgkq7rg4wyhjd93kmw7trkl3gpa3vd5flyt59a43yyn8vu0w8c")?;
         let mut iter = UtxoIterator::new(&utxo_context);
         let utxo = iter.next().unwrap();
         let utxo = (*utxo.utxo).clone();

@@ -1,5 +1,5 @@
 [package]
-name = "kaspa-testing-integration"
+name = "karlsen-testing-integration"
 publish = false
 rust-version.workspace = true
 version.workspace = true

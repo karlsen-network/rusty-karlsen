@@ -519,7 +519,7 @@ impl FlowContext {
     /// Updates the mempool after a new block arrival, relays newly unorphaned transactions
     /// and possibly rebroadcast manually added transactions when not in IBD.
     ///
-    /// _GO-KASPAD: OnNewBlock + broadcastTransactionsAfterBlockAdded_
+    /// _GO-KARLSEND: OnNewBlock + broadcastTransactionsAfterBlockAdded_
     pub async fn on_new_block(
         &self,
         consensus: &ConsensusProxy,

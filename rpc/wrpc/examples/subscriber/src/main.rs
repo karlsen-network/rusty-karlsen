@@ -186,7 +186,7 @@ impl Listener {
         // channels where sender acts as a trigger signaling termination
         // and the receiver is used to signal termination completion.
         // (this is a common pattern used for channel lifetime management
-        // in the rusty kaspa framework)
+        // in the rusty karlsen framework)
         let task_ctl_receiver = self.inner.task_ctl.request.receiver.clone();
         let task_ctl_sender = self.inner.task_ctl.response.sender.clone();
 

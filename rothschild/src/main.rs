@@ -5,7 +5,7 @@ use itertools::Itertools;
 use karlsen_addresses::{Address, Prefix, Version};
 use karlsen_consensus_core::{
     config::params::{TESTNET11_PARAMS, TESTNET_PARAMS},
-    constants::{SOMPI_PER_KASPA, TX_VERSION},
+    constants::{SOMPI_PER_KARLSEN, TX_VERSION},
     sign::sign,
     subnets::SUBNETWORK_ID_NATIVE,
     tx::{MutableTransaction, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry},
@@ -20,7 +20,7 @@ use rayon::prelude::*;
 use secp256k1::{rand::thread_rng, Keypair};
 use tokio::time::{interval, MissedTickBehavior};
 
-const DEFAULT_SEND_AMOUNT: u64 = 10 * SOMPI_PER_KASPA;
+const DEFAULT_SEND_AMOUNT: u64 = 10 * SOMPI_PER_KARLSEN;
 const FEE_PER_MASS: u64 = 10;
 const MILLIS_PER_TICK: u64 = 10;
 const ADDRESS_PREFIX: Prefix = Prefix::Testnet;
@@ -138,21 +138,21 @@ async fn main() {
         secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, &private_key_bytes).unwrap()
     } else {
         let (sk, pk) = &secp256k1::generate_keypair(&mut thread_rng());
-        let kaspa_addr = Address::new(ADDRESS_PREFIX, ADDRESS_VERSION, &pk.x_only_public_key().0.serialize());
+        let karlsen_addr = Address::new(ADDRESS_PREFIX, ADDRESS_VERSION, &pk.x_only_public_key().0.serialize());
         info!(
             "Generated private key {} and address {}. Send some funds to this address and rerun rothschild with `--private-key {}`",
             sk.display_secret(),
-            String::from(&kaspa_addr),
+            String::from(&karlsen_addr),
             sk.display_secret()
         );
         return;
     };
 
-    let kaspa_addr = Address::new(ADDRESS_PREFIX, ADDRESS_VERSION, &schnorr_key.x_only_public_key().0.serialize());
+    let karlsen_addr = Address::new(ADDRESS_PREFIX, ADDRESS_VERSION, &schnorr_key.x_only_public_key().0.serialize());
 
     rayon::ThreadPoolBuilder::new().num_threads(args.threads as usize).build_global().unwrap();
 
-    info!("Using Rothschild with private key {} and address {}", schnorr_key.display_secret(), String::from(&kaspa_addr));
+    info!("Using Rothschild with private key {} and address {}", schnorr_key.display_secret(), String::from(&karlsen_addr));
     let info = rpc_client.get_block_dag_info().await.unwrap();
     let coinbase_maturity = match info.network.suffix {
         Some(11) => TESTNET11_PARAMS.coinbase_maturity,
@@ -221,7 +221,7 @@ async fn main() {
     let target_tps = args.tps.min(if args.unleashed { u64::MAX } else { 100 });
     let should_tick_per_second = target_tps * MILLIS_PER_TICK / 1000 == 0;
     let avg_txs_per_tick = if should_tick_per_second { target_tps } else { target_tps * MILLIS_PER_TICK / 1000 };
-    let mut utxos = refresh_utxos(&rpc_client, kaspa_addr.clone(), &mut pending, coinbase_maturity).await;
+    let mut utxos = refresh_utxos(&rpc_client, karlsen_addr.clone(), &mut pending, coinbase_maturity).await;
     let mut ticker = interval(Duration::from_millis(if should_tick_per_second { 1000 } else { MILLIS_PER_TICK }));
     ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
@@ -249,7 +249,7 @@ async fn main() {
         let has_funds = maybe_send_tx(
             txs_to_send,
             &tx_sender,
-            kaspa_addr.clone(),
+            karlsen_addr.clone(),
             &mut utxos,
             &mut pending,
             schnorr_key,
@@ -264,7 +264,7 @@ async fn main() {
         if !has_funds || now - last_refresh > 60_000 {
             info!("Refetching UTXO set");
             tokio::time::sleep(Duration::from_millis(100)).await; // We don't want this operation to be too frequent since its heavy on the node, so we wait some time before executing it.
-            utxos = refresh_utxos(&rpc_client, kaspa_addr.clone(), &mut pending, coinbase_maturity).await;
+            utxos = refresh_utxos(&rpc_client, karlsen_addr.clone(), &mut pending, coinbase_maturity).await;
             last_refresh = unix_now();
             next_available_utxo_index = 0;
             pause_if_mempool_is_full(&rpc_client).await;
@@ -305,20 +305,20 @@ async fn pause_if_mempool_is_full(rpc_client: &GrpcClient) {
 
 async fn refresh_utxos(
     rpc_client: &GrpcClient,
-    kaspa_addr: Address,
+    karlsen_addr: Address,
     pending: &mut HashMap<TransactionOutpoint, u64>,
     coinbase_maturity: u64,
 ) -> Vec<(TransactionOutpoint, UtxoEntry)> {
-    populate_pending_outpoints_from_mempool(rpc_client, kaspa_addr.clone(), pending).await;
-    fetch_spendable_utxos(rpc_client, kaspa_addr, coinbase_maturity, pending).await
+    populate_pending_outpoints_from_mempool(rpc_client, karlsen_addr.clone(), pending).await;
+    fetch_spendable_utxos(rpc_client, karlsen_addr, coinbase_maturity, pending).await
 }
 
 async fn populate_pending_outpoints_from_mempool(
     rpc_client: &GrpcClient,
-    kaspa_addr: Address,
+    karlsen_addr: Address,
     pending_outpoints: &mut HashMap<TransactionOutpoint, u64>,
 ) {
-    let entries = rpc_client.get_mempool_entries_by_addresses(vec![kaspa_addr], true, false).await.unwrap();
+    let entries = rpc_client.get_mempool_entries_by_addresses(vec![karlsen_addr], true, false).await.unwrap();
     let now = unix_now();
     for entry in entries {
         for entry in entry.sending {
@@ -331,11 +331,11 @@ async fn populate_pending_outpoints_from_mempool(
 
 async fn fetch_spendable_utxos(
     rpc_client: &GrpcClient,
-    kaspa_addr: Address,
+    karlsen_addr: Address,
     coinbase_maturity: u64,
     pending: &mut HashMap<TransactionOutpoint, u64>,
 ) -> Vec<(TransactionOutpoint, UtxoEntry)> {
-    let resp = rpc_client.get_utxos_by_addresses(vec![kaspa_addr]).await.unwrap();
+    let resp = rpc_client.get_utxos_by_addresses(vec![karlsen_addr]).await.unwrap();
     let dag_info = rpc_client.get_block_dag_info().await.unwrap();
     let mut utxos = Vec::with_capacity(resp.len());
     for resp_entry in resp
@@ -362,7 +362,7 @@ fn is_utxo_spendable(entry: &UtxoEntry, virtual_daa_score: u64, coinbase_maturit
 async fn maybe_send_tx(
     txs_to_send: u64,
     tx_sender: &async_channel::Sender<ClientPoolArg>,
-    kaspa_addr: Address,
+    karlsen_addr: Address,
     utxos: &mut [(TransactionOutpoint, UtxoEntry)],
     pending: &mut HashMap<TransactionOutpoint, u64>,
     schnorr_key: Keypair,
@@ -403,7 +403,7 @@ async fn maybe_send_tx(
         .into_par_iter()
         .map(|utxo_option| {
             if let Some((selected_utxos, selected_amount)) = utxo_option {
-                let tx = generate_tx(schnorr_key, &selected_utxos, selected_amount, num_outs, &kaspa_addr);
+                let tx = generate_tx(schnorr_key, &selected_utxos, selected_amount, num_outs, &karlsen_addr);
 
                 return Some((tx, selected_utxos.len(), selected_utxos.into_iter().map(|(_, entry)| entry.amount).sum::<u64>()));
             }
@@ -450,9 +450,9 @@ fn generate_tx(
     utxos: &[(TransactionOutpoint, UtxoEntry)],
     send_amount: u64,
     num_outs: u64,
-    kaspa_addr: &Address,
+    karlsen_addr: &Address,
 ) -> Transaction {
-    let script_public_key = pay_to_address_script(kaspa_addr);
+    let script_public_key = pay_to_address_script(karlsen_addr);
     let inputs = utxos
         .iter()
         .map(|(op, _)| TransactionInput { previous_outpoint: *op, signature_script: vec![], sequence: 0, sig_op_count: 1 })

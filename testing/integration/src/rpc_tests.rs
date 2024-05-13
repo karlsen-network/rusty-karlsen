@@ -36,7 +36,7 @@ macro_rules! tst {
     };
 }
 
-/// `cargo test --release --package kaspa-testing-integration --lib -- rpc_tests::sanity_test`
+/// `cargo test --release --package karlsen-testing-integration --lib -- rpc_tests::sanity_test`
 #[tokio::test]
 async fn sanity_test() {
     karlsen_core::log::try_init_logger("info");

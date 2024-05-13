@@ -4,7 +4,7 @@ use crate::error::Error;
 use crate::result::Result;
 use crate::tx::{Fees, MassCalculator, PaymentDestination};
 use crate::utxo::UtxoEntryReference;
-use crate::{tx::PaymentOutputs, utils::kaspa_to_sompi};
+use crate::{tx::PaymentOutputs, utils::karlsen_to_sompi};
 use karlsen_addresses::Address;
 use karlsen_consensus_core::network::{NetworkId, NetworkType};
 use karlsen_consensus_core::tx::Transaction;
@@ -33,14 +33,14 @@ impl Debug for Karlsen {
 }
 
 impl From<Karlsen> for Sompi {
-    fn from(kaspa: Karlsen) -> Self {
-        Sompi(kaspa_to_sompi(kaspa.0))
+    fn from(karlsen: Karlsen) -> Self {
+        Sompi(karlsen_to_sompi(karlsen.0))
     }
 }
 
 impl From<&Karlsen> for Sompi {
-    fn from(kaspa: &Karlsen) -> Self {
-        Sompi(kaspa_to_sompi(kaspa.0))
+    fn from(karlsen: &Karlsen) -> Self {
+        Sompi(karlsen_to_sompi(karlsen.0))
     }
 }
 
@@ -387,7 +387,7 @@ where
     let mut values = head.to_vec();
     values.extend(tail);
 
-    let utxo_entries: Vec<UtxoEntryReference> = values.into_iter().map(kaspa_to_sompi).map(UtxoEntryReference::simulated).collect();
+    let utxo_entries: Vec<UtxoEntryReference> = values.into_iter().map(karlsen_to_sompi).map(UtxoEntryReference::simulated).collect();
     let multiplexer = None;
     let sig_op_count = 1;
     let minimum_signatures = 1;
@@ -417,16 +417,16 @@ where
 
 pub(crate) fn change_address(network_type: NetworkType) -> Address {
     match network_type {
-        NetworkType::Mainnet => Address::try_from("kaspa:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j").unwrap(),
-        NetworkType::Testnet => Address::try_from("kaspatest:qqz22l98sf8jun72rwh5rqe2tm8lhwtdxdmynrz4ypwak427qed5juktjt7ju").unwrap(),
+        NetworkType::Mainnet => Address::try_from("karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j").unwrap(),
+        NetworkType::Testnet => Address::try_from("karlsentest:qqz22l98sf8jun72rwh5rqe2tm8lhwtdxdmynrz4ypwak427qed5juktjt7ju").unwrap(),
         _ => unreachable!("network type not supported"),
     }
 }
 
 pub(crate) fn output_address(network_type: NetworkType) -> Address {
     match network_type {
-        NetworkType::Mainnet => Address::try_from("kaspa:qrd9efkvg3pg34sgp6ztwyv3r569qlc43wa5w8nfs302532dzj47knu04aftm").unwrap(),
-        NetworkType::Testnet => Address::try_from("kaspatest:qqrewmx4gpuekvk8grenkvj2hp7xt0c35rxgq383f6gy223c4ud5s58ptm6er").unwrap(),
+        NetworkType::Mainnet => Address::try_from("karlsen:qrd9efkvg3pg34sgp6ztwyv3r569qlc43wa5w8nfs302532dzj47knu04aftm").unwrap(),
+        NetworkType::Testnet => Address::try_from("karlsentest:qqrewmx4gpuekvk8grenkvj2hp7xt0c35rxgq383f6gy223c4ud5s58ptm6er").unwrap(),
         _ => unreachable!("network type not supported"),
     }
 }

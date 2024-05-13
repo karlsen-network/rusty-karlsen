@@ -1,9 +1,9 @@
 <html>
     <head>
         <script type="module">
-            import * as kaspa from './karlsen-wallet/karlsen-wallet.js';
+            import * as karlsen from './karlsen-wallet/karlsen-wallet.js';
             (async () => {
-                const wasm = await kaspa.default('./karlsen-wallet/karlsen-wallet_bg.wasm');
+                const wasm = await karlsen.default('./karlsen-wallet/karlsen-wallet_bg.wasm');
                 await wasm.load_karlsen_wallet_cli();
             })();
         </script>

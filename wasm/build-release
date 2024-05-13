@@ -19,30 +19,30 @@ mkdir -p release/karlsen-wasm32-sdk/docs
 # wasm-pack build --target web --out-name karlsen-rpc --out-dir web/karlsen-rpc --features wasm32-sdk $@
 # popd
 
-wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa-keygen --features wasm32-keygen $@
-wasm-pack build --weak-refs --dev --target web --out-name kaspa --out-dir web/kaspa-keygen-dev --features wasm32-keygen $@
+wasm-pack build --weak-refs --target web --out-name karlsen --out-dir web/karlsen-keygen --features wasm32-keygen $@
+wasm-pack build --weak-refs --dev --target web --out-name karlsen --out-dir web/karlsen-keygen-dev --features wasm32-keygen $@
 
-wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/karlsen-rpc --features wasm32-rpc $@
-wasm-pack build --weak-refs --dev --target web --out-name kaspa --out-dir web/karlsen-rpc-dev --features wasm32-rpc $@
+wasm-pack build --weak-refs --target web --out-name karlsen --out-dir web/karlsen-rpc --features wasm32-rpc $@
+wasm-pack build --weak-refs --dev --target web --out-name karlsen --out-dir web/karlsen-rpc-dev --features wasm32-rpc $@
 
-wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/karlsen-core --features wasm32-core $@
-wasm-pack build --weak-refs --dev --target web --out-name kaspa --out-dir web/karlsen-core-dev --features wasm32-core $@
+wasm-pack build --weak-refs --target web --out-name karlsen --out-dir web/karlsen-core --features wasm32-core $@
+wasm-pack build --weak-refs --dev --target web --out-name karlsen --out-dir web/karlsen-core-dev --features wasm32-core $@
 
-wasm-pack build --weak-refs --target web --out-name kaspa --out-dir web/kaspa --features wasm32-sdk $@
-wasm-pack build --weak-refs --dev --target web --out-name kaspa --out-dir web/kaspa-dev --features wasm32-sdk $@
+wasm-pack build --weak-refs --target web --out-name karlsen --out-dir web/karlsen --features wasm32-sdk $@
+wasm-pack build --weak-refs --dev --target web --out-name karlsen --out-dir web/karlsen-dev --features wasm32-sdk $@
 
-wasm-pack build --weak-refs --target nodejs --out-name kaspa --out-dir nodejs/kaspa --features wasm32-sdk $@
-wasm-pack build --weak-refs --dev --target nodejs --out-name kaspa --out-dir nodejs/kaspa-dev --features wasm32-sdk $@
+wasm-pack build --weak-refs --target nodejs --out-name karlsen --out-dir nodejs/karlsen --features wasm32-sdk $@
+wasm-pack build --weak-refs --dev --target nodejs --out-name karlsen --out-dir nodejs/karlsen-dev --features wasm32-sdk $@
 
-# wasm-pack build --target web --dev --out-name kaspa --out-dir build/docs/kaspa --features wasm32-sdk $@
-typedoc --name "Karlsen WASM32 SDK - Key Generation" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out docs/kaspa-keygen ./build/docs/kaspa-keygen.ts
+# wasm-pack build --target web --dev --out-name karlsen --out-dir build/docs/karlsen --features wasm32-sdk $@
+typedoc --name "Karlsen WASM32 SDK - Key Generation" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out docs/karlsen-keygen ./build/docs/karlsen-keygen.ts
 typedoc --name "Karlsen WASM32 SDK - RPC" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out docs/karlsen-rpc ./build/docs/karlsen-rpc.ts
 typedoc --name "Karlsen WASM32 SDK - Core" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out docs/karlsen-core ./build/docs/karlsen-core.ts
-typedoc --name "Karlsen WASM32 SDK" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out docs/kaspa ./build/docs/kaspa.ts
+typedoc --name "Karlsen WASM32 SDK" --sourceLinkExternal --readme ./README.md --options ./build/docs/ --out docs/karlsen ./build/docs/karlsen.ts
 
 # cp -r ../rpc/wrpc/wasm/web/karlsen-rpc release/karlsen-wasm32-sdk/web/karlsen-rpc
-cp -r web/kaspa-keygen release/karlsen-wasm32-sdk/web/kaspa-keygen
-cp -r web/kaspa-keygen-dev release/karlsen-wasm32-sdk/web/kaspa-keygen-dev
+cp -r web/karlsen-keygen release/karlsen-wasm32-sdk/web/karlsen-keygen
+cp -r web/karlsen-keygen-dev release/karlsen-wasm32-sdk/web/karlsen-keygen-dev
 
 cp -r web/karlsen-rpc release/karlsen-wasm32-sdk/web/karlsen-rpc
 cp -r web/karlsen-rpc-dev release/karlsen-wasm32-sdk/web/karlsen-rpc-dev
@@ -50,16 +50,16 @@ cp -r web/karlsen-rpc-dev release/karlsen-wasm32-sdk/web/karlsen-rpc-dev
 cp -r web/karlsen-core release/karlsen-wasm32-sdk/web/karlsen-core
 cp -r web/karlsen-core-dev release/karlsen-wasm32-sdk/web/karlsen-core-dev
 
-cp -r web/kaspa release/karlsen-wasm32-sdk/web/kaspa
-cp -r web/kaspa-dev release/karlsen-wasm32-sdk/web/kaspa-dev
+cp -r web/karlsen release/karlsen-wasm32-sdk/web/karlsen
+cp -r web/karlsen-dev release/karlsen-wasm32-sdk/web/karlsen-dev
 
-cp -r nodejs/kaspa release/karlsen-wasm32-sdk/nodejs/kaspa
-cp -r nodejs/kaspa-dev release/karlsen-wasm32-sdk/nodejs/kaspa-dev
+cp -r nodejs/karlsen release/karlsen-wasm32-sdk/nodejs/karlsen
+cp -r nodejs/karlsen-dev release/karlsen-wasm32-sdk/nodejs/karlsen-dev
 
-cp -r docs/kaspa-keygen release/karlsen-wasm32-sdk/docs/kaspa-keygen
+cp -r docs/karlsen-keygen release/karlsen-wasm32-sdk/docs/karlsen-keygen
 cp -r docs/karlsen-rpc release/karlsen-wasm32-sdk/docs/karlsen-rpc
 cp -r docs/karlsen-core release/karlsen-wasm32-sdk/docs/karlsen-core
-cp -r docs/kaspa release/karlsen-wasm32-sdk/docs/kaspa
+cp -r docs/karlsen release/karlsen-wasm32-sdk/docs/karlsen
 
 mkdir -p release/karlsen-wasm32-sdk/examples/data
 cp -r examples/data/.gitignore release/karlsen-wasm32-sdk/examples/data/.gitignore

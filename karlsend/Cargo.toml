@@ -1,7 +1,7 @@
 [package]
 name = "karlsend"
 description = "Karlsen full node daemon"
-keywords = ["kaspa", "blockdag"]
+keywords = ["karlsen", "blockdag"]
 rust-version.workspace = true
 version.workspace = true
 edition.workspace = true

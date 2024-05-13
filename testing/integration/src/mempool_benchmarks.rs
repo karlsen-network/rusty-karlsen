@@ -11,7 +11,7 @@ use crate::{
 use futures_util::future::join_all;
 use karlsen_addresses::Address;
 use karlsen_consensus::params::Params;
-use karlsen_consensus_core::{constants::SOMPI_PER_KASPA, network::NetworkType, tx::Transaction};
+use karlsen_consensus_core::{constants::SOMPI_PER_KARLSEN, network::NetworkType, tx::Transaction};
 use karlsen_core::{debug, info};
 use karlsen_notify::{
     listener::ListenerId,
@@ -35,7 +35,7 @@ use std::{
 use tokio::join;
 
 /// Run this benchmark with the following command line:
-/// `cargo test --release --package kaspa-testing-integration --lib --features devnet-prealloc -- mempool_benchmarks::bench_bbt_latency --exact --nocapture --ignored`
+/// `cargo test --release --package karlsen-testing-integration --lib --features devnet-prealloc -- mempool_benchmarks::bench_bbt_latency --exact --nocapture --ignored`
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_bbt_latency() {
@@ -87,7 +87,7 @@ async fn bench_bbt_latency() {
         enable_unsynced_mining: true,
         num_prealloc_utxos: Some(TX_LEVEL_WIDTH as u64 * CONTRACT_FACTOR),
         prealloc_address: Some(prealloc_address.to_string()),
-        prealloc_amount: 500 * SOMPI_PER_KASPA,
+        prealloc_amount: 500 * SOMPI_PER_KARLSEN,
         block_template_cache_lifetime: Some(0),
         ..Default::default()
     };
@@ -283,7 +283,7 @@ async fn bench_bbt_latency() {
 }
 
 /// Run this benchmark with the following command line:
-/// `cargo test --release --package kaspa-testing-integration --lib --features devnet-prealloc -- mempool_benchmarks::bench_bbt_latency_2 --exact --nocapture --ignored`
+/// `cargo test --release --package karlsen-testing-integration --lib --features devnet-prealloc -- mempool_benchmarks::bench_bbt_latency_2 --exact --nocapture --ignored`
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_bbt_latency_2() {

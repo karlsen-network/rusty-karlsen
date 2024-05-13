@@ -38,7 +38,7 @@ use karlsen_consensus_notify::service::NotifyService;
 use karlsen_consensusmanager::ConsensusManager;
 use karlsen_core::task::tick::TickService;
 use karlsen_core::time::unix_now;
-use karlsen_database::utils::get_kaspa_tempdir;
+use karlsen_database::utils::get_karlsen_tempdir;
 use karlsen_hashes::Hash;
 
 use flate2::read::GzDecoder;
@@ -1721,7 +1721,7 @@ async fn staging_consensus_test() {
     init_allocator_with_default_settings();
     let config = ConfigBuilder::new(MAINNET_PARAMS).build();
 
-    let db_tempdir = get_kaspa_tempdir();
+    let db_tempdir = get_karlsen_tempdir();
     let db_path = db_tempdir.path().to_owned();
     let consensus_db_dir = db_path.join("consensus");
     let meta_db_dir = db_path.join("meta");

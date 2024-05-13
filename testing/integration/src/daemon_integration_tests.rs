@@ -113,14 +113,14 @@ async fn daemon_mining_test() {
     }
 }
 
-/// `cargo test --release --package kaspa-testing-integration --lib -- daemon_integration_tests::daemon_utxos_propagation_test`
+/// `cargo test --release --package karlsen-testing-integration --lib -- daemon_integration_tests::daemon_utxos_propagation_test`
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn daemon_utxos_propagation_test() {
     #[cfg(feature = "heap")]
-    let _profiler = dhat::Profiler::builder().file_name("kaspa-testing-integration-heap.json").build();
+    let _profiler = dhat::Profiler::builder().file_name("karlsen-testing-integration-heap.json").build();
 
     karlsen_core::log::try_init_logger(
-        "INFO,kaspa_testing_integration=trace,karlsen_notify=debug,karlsen_rpc_core=debug,karlsen_grpc_client=debug",
+        "INFO,karlsen_testing_integration=trace,karlsen_notify=debug,karlsen_rpc_core=debug,karlsen_grpc_client=debug",
     );
 
     let args = Args {
