@@ -9,7 +9,7 @@ const {
     signTransaction,
     initConsolePanicHook,
     Resolver,
-} = require('../../../../nodejs/kaspa');
+} = require('../../../../nodejs/karlsen');
 
 initConsolePanicHook();
 
@@ -27,9 +27,9 @@ const { networkId, encoding } = require("../utils").parseArgs();
     // For example 02dff1d77f2a671c5f36183726db2341be58feae1da2deced843240f7b502ba659
     console.info(keypair.publicKey);
 
-    // An address such as kaspa:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jkdskewva
+    // An address such as karlsen:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jkdskewva
     const address = keypair.toAddress(networkId);
-    console.info(`Full kaspa address: ${address}`);
+    console.info(`Full karlsen address: ${address}`);
     console.info(address);
 
     const rpc = new RpcClient({
@@ -55,7 +55,7 @@ const { networkId, encoding } = require("../utils").parseArgs();
         console.info(utxos);
 
         if (utxos.length === 0) {
-            console.info('Send some kaspa to', address, 'before proceeding with the demo');
+            console.info('Send some karlsen to', address, 'before proceeding with the demo');
             return;
         }
 

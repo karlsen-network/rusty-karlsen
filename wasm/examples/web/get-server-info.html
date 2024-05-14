@@ -5,11 +5,11 @@
         <script type="module">
             import { log, stringify, currentNetwork } from './resources/utils.js';
 
-            import * as kaspa from '../../web/karlsen-rpc/kaspa.js';
-            let { Resolver, RpcClient, Encoding } = kaspa;
+            import * as karlsen from '../../web/karlsen-rpc/karlsen.js';
+            let { Resolver, RpcClient, Encoding } = karlsen;
 
             (async () => {
-                await kaspa.default('../../web/karlsen-rpc/kaspa_bg.wasm');
+                await karlsen.default('../../web/karlsen-rpc/karlsen_bg.wasm');
 
                 let networkId = currentNetwork();
                 log(`Connecting to Karlsen network...`);

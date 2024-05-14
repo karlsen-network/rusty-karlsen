@@ -9,10 +9,10 @@ const {
     Resolver,
     UtxoProcessor,
     UtxoContext,
-    kaspaToSompi,
+    karlsenToSompi,
     createTransactions,
     initConsolePanicHook
-} = require('../../../../nodejs/kaspa');
+} = require('../../../../nodejs/karlsen');
 
 initConsolePanicHook();
 
@@ -68,7 +68,7 @@ const { encoding, networkId, address : destinationAddress } = require("../utils"
     // });
 
     // default address (if not supplied) - TODO - change to built-in wallet-stub address
-    // kaspatest:qpa8gs8w0quc3ghpx2l2dv30ny0mjuwyaj30xduw92v6mmta7df6uuz3ryfhy
+    // karlsentest:qpa8gs8w0quc3ghpx2l2dv30ny0mjuwyaj30xduw92v6mmta7df6uuz3ryfhy
 
     processor.addEventListener("utxo-proc-start", async (event) => {
         // console.log("event:", event);

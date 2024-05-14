@@ -157,4 +157,4 @@ pub fn generate_random_transaction_outpoint(rng: &mut SmallRng) -> TransactionOu
     TransactionOutpoint::new(generate_random_hash(rng), rng.gen())
 }
 
-//TODO: create `assert_eq_<kaspa-sturct>!()` helper macros in `consensus::test_helpers`
+//TODO: create `assert_eq_<karlsen-sturct>!()` helper macros in `consensus::test_helpers`

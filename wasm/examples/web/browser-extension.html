@@ -5,11 +5,11 @@
         <script type="module">
             import { log, stringify, currentNetwork } from './resources/utils.js';
 
-            import * as kaspa from '../../web/kaspa/kaspa.js';
-            let { Resolver, RpcClient, Encoding, kaspaToSompi } = kaspa;
+            import * as karlsen from '../../web/karlsen/karlsen.js';
+            let { Resolver, RpcClient, Encoding, karlsenToSompi } = karlsen;
 
             (async () => {
-                await kaspa.default('../../web/kaspa/kaspa_bg.wasm');
+                await karlsen.default('../../web/karlsen/karlsen_bg.wasm');
 
                 let networkId = currentNetwork();
                 log(`Connecting to Karlsen network...`);
@@ -84,7 +84,7 @@
 
                     // let input = document.getElementById("amount");
                     // let amount = input.value;
-                    // //let sompi = kaspaToSompi(amount);
+                    // //let sompi = karlsenToSompi(amount);
                     // // TODO ... request payment
                     // input.value = "";
                     // Karlsen.send({address: "xxxx", amount:13.4});

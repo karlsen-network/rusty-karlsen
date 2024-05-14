@@ -1,14 +1,14 @@
 // @ts-ignore
 globalThis.WebSocket = require('websocket').w3cwebsocket; // W3C WebSocket module shim
 
-const kaspa = require('../../../../nodejs/kaspa');
+const karlsen = require('../../../../nodejs/karlsen');
 const { parseArgs } = require("../utils");
 const {
     RpcClient,
     Resolver,
-} = kaspa;
+} = karlsen;
 
-kaspa.initConsolePanicHook();
+karlsen.initConsolePanicHook();
 
 const {
     networkId,
@@ -27,8 +27,8 @@ const {
     await rpc.connect();
     console.log(`Connecting to ${rpc.url}`)
 
-    const info = await rpc.getBalancesByAddresses({ addresses : ["kaspa:qpamkvhgh0kzx50gwvvp5xs8ktmqutcy3dfs9dc3w7lm9rq0zs76vf959mmrp"]});
-    // const info = await rpc.getBalancesByAddresses(["kaspa:qpamkvhgh0kzx50gwvvp5xs8ktmqutcy3dfs9dc3w7lm9rq0zs76vf959mmrp"]);
+    const info = await rpc.getBalancesByAddresses({ addresses : ["karlsen:qpamkvhgh0kzx50gwvvp5xs8ktmqutcy3dfs9dc3w7lm9rq0zs76vf959mmrp"]});
+    // const info = await rpc.getBalancesByAddresses(["karlsen:qpamkvhgh0kzx50gwvvp5xs8ktmqutcy3dfs9dc3w7lm9rq0zs76vf959mmrp"]);
     console.log("GetBalancesByAddresses response:", info);
 
     await rpc.disconnect();

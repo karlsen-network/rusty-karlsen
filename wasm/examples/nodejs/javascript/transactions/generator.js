@@ -6,9 +6,9 @@ const {
     PrivateKey,
     RpcClient,
     Generator,
-    kaspaToSompi,
+    karlsenToSompi,
     initConsolePanicHook
-} = require('../../../../nodejs/kaspa');
+} = require('../../../../nodejs/karlsen');
 
 initConsolePanicHook();
 
@@ -74,9 +74,9 @@ const { encoding, networkId, address : destinationAddress } = require("../utils"
         // transaction according to the supplied outputs.
         let generator = new Generator({
             entries,
-            outputs: [{address, amount : kaspaToSompi(0.2)}],
+            outputs: [{address, amount : karlsenToSompi(0.2)}],
             // priorityFee: 1000n,
-            priorityFee: kaspaToSompi(0.0001),
+            priorityFee: karlsenToSompi(0.0001),
             changeAddress: sourceAddress,
         });
 

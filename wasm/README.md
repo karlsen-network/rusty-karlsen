@@ -43,9 +43,9 @@ For NodeJS, the SDK is built as a single package containing all features.
 
 The following is a brief overview of the SDK folder structure (as available in the release):
 
-- `web/kaspa` - **full** Rusty Karlsen WASM32 SDK bindings for use in web browsers.
+- `web/karlsen` - **full** Rusty Karlsen WASM32 SDK bindings for use in web browsers.
 - `web/karlsen-rpc` - only the RPC bindings for use in web browsers (reduced WASM binary size).
-- `nodejs/kaspa` - **full** Rusty Karlsen WASM32 SDK bindings for use with NodeJS.
+- `nodejs/karlsen` - **full** Rusty Karlsen WASM32 SDK bindings for use with NodeJS.
 - `docs` - Rusty Karlsen WASM32 SDK documentation.
 - `examples` folders contain examples for NodeJS and web browsers.
 - `examples/data` - folder user by examples for configuration and wallet data storage.
@@ -59,7 +59,7 @@ If you are using JavaScript and Visual Studio Code, it is highly recommended you
 the `jsconfig.json` configuration file as is done in the SDK examples. This file allows 
 Visual Studio to provide TypeScript-like code completion, type checking and documentation.
 
-Included documentation in the release can be accessed by loading the `docs/kaspa/index.html` 
+Included documentation in the release can be accessed by loading the `docs/karlsen/index.html` 
 file in a web browser.
 
 ## Building from Source
@@ -123,7 +123,7 @@ There are multiple ways to use RPC:
 - Use `RpcClient` class that handles the connectivity automatically and provides RPC interfaces in a form of async function calls.
 
 **NODEJS:** To use WASM RPC client in the Node.js environment, you need to introduce a W3C WebSocket object 
-before loading the WASM32 library. The compatible WebSocket library is [WebSocket](https://www.npmjs.com/package/websocket) and is included in the `kaspa` NPM package. `kaspa` package is a wrapper around `karlsen-wasm` that imports and installs this WebSocket shim in the `globalThis` object and then re-exports `karlsen-wasm` exports.
+before loading the WASM32 library. The compatible WebSocket library is [WebSocket](https://www.npmjs.com/package/websocket) and is included in the `karlsen` NPM package. `karlsen` package is a wrapper around `karlsen-wasm` that imports and installs this WebSocket shim in the `globalThis` object and then re-exports `karlsen-wasm` exports.
 
 
 ## Loading in a Web App
@@ -132,10 +132,10 @@ before loading the WASM32 library. The compatible WebSocket library is [WebSocke
 <html>
     <head>
         <script type="module">
-            import * as kaspa from './kaspa/karlsen-wasm.js';
+            import * as karlsen from './karlsen/karlsen-wasm.js';
             (async () => {
-                await kaspa.default('./kaspa/karlsen-wasm_bg.wasm');
-                console.log(kaspa.version());
+                await karlsen.default('./karlsen/karlsen-wasm_bg.wasm');
+                console.log(karlsen.version());
                 // ...
             })();
         </script>
@@ -149,7 +149,7 @@ before loading the WASM32 library. The compatible WebSocket library is [WebSocke
 ```javascript
 //
 // W3C WebSocket module shim
-// this is provided by NPM `kaspa` module and is only needed
+// this is provided by NPM `karlsen` module and is only needed
 // if you are building WASM libraries for NodeJS from source
 //
 // @ts-ignore
@@ -160,7 +160,7 @@ let {
     RpcClient,
     Encoding,
     initConsolePanicHook
-} = require('./kaspa');
+} = require('./karlsen');
 
 // enabling console panic hooks allows WASM to print panic details to console
 // initConsolePanicHook();

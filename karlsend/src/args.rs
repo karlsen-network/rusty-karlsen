@@ -237,7 +237,7 @@ pub fn cli() -> Command {
                 .require_equals(true)
                 .default_missing_value("default") // TODO: Find a way to use defaults.rpclisten_borsh
                 .value_parser(clap::value_parser!(WrpcNetAddress))
-                .help("Interface:port to listen for wRPC Borsh connections (default port: 17110, testnet: 17210)."),
+                .help("Interface:port to listen for wRPC Borsh connections (default port: 43110, testnet: 43210)."),
 
         )
         .arg(
@@ -248,7 +248,7 @@ pub fn cli() -> Command {
                 .require_equals(true)
                 .default_missing_value("default") // TODO: Find a way to use defaults.rpclisten_json
                 .value_parser(clap::value_parser!(WrpcNetAddress))
-                .help("Interface:port to listen for wRPC JSON connections (default port: 18110, testnet: 18210)."),
+                .help("Interface:port to listen for wRPC JSON connections (default port: 44110, testnet: 44210)."),
         )
         .arg(arg!(--unsaferpc "Enable RPC commands which affect the state of the node"))
         .arg(

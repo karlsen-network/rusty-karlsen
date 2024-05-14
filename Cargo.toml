@@ -79,7 +79,7 @@ include = [
 ]
 
 [workspace.dependencies]
-# kaspa-testing-integration = { version = "0.1.0", path = "testing/integration" }
+# karlsen-testing-integration = { version = "0.1.0", path = "testing/integration" }
 karlsen-addresses = { version = "0.1.0", path = "crypto/addresses" }
 karlsen-addressmanager = { version = "0.1.0", path = "components/addressmanager" }
 karlsen-bip32 = { version = "0.1.0", path = "wallet/bip32" }

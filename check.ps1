@@ -6,7 +6,7 @@ $crates = @(
   "karlsen-wallet-cli-wasm",
   "karlsen-wasm",
   "karlsen-cli",
-  "kaspa-os",
+  "karlsen-os",
   "karlsen-daemon"
 )
 

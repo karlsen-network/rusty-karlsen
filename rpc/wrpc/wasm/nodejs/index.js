@@ -5,7 +5,7 @@ let {RpcClient,Encoding,initConsolePanicHook,defer} = require('./karlsen-rpc');
 initConsolePanicHook();
 
 const MAX_NOTIFICATION = 10;
-let url = "ws://127.0.0.1:17110";
+let url = "ws://127.0.0.1:43110";
 let rpc = new RpcClient({
     url,
     encoding : Encoding.Borsh,

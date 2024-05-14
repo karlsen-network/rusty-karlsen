@@ -1,12 +1,12 @@
-let kaspa = require('../../../../nodejs/kaspa');
+let karlsen = require('../../../../nodejs/karlsen');
 let {
     PrivateKey,
     PublicKey,
     signMessage,
     verifyMessage,
-} = kaspa;
+} = karlsen;
 
-kaspa.initConsolePanicHook();
+karlsen.initConsolePanicHook();
 
 let message = 'Hello Karlsen!';
 let privkey = 'b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef';

@@ -1,13 +1,13 @@
 globalThis.WebSocket = require('websocket').w3cwebsocket; // W3C WebSocket module shim
 
-const kaspa = require('../karlsen/karlsen_wasm');
+const karlsen = require('../karlsen/karlsen_wasm');
 const {parseArgs} = require("../utils");
-kaspa.init_console_panic_hook();
+karlsen.init_console_panic_hook();
 
 (async () => {
     const {networkType} = parseArgs();
 
-    const wallet = new kaspa.Wallet({
+    const wallet = new karlsen.Wallet({
         resident: true,
         networkType: networkType,
     });
@@ -32,7 +32,7 @@ kaspa.init_console_panic_hook();
     console.log("keydata:", keyData);
 
     const account = await wallet.createAccount(keyData.id, {
-        accountKind: kaspa.AccountKind.Bip32,
+        accountKind: karlsen.AccountKind.Bip32,
         walletSecret
     });
 
@@ -45,7 +45,7 @@ kaspa.init_console_panic_hook();
     //     // await wallet.connect();
     //     await wallet.connect({
     //         // url : "ws://foobar",
-    //         url : "wrpc://127.0.0.1:17110",
+    //         url : "wrpc://127.0.0.1:43110",
     //         retry : false,
     //         block : true,
     //     });

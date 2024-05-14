@@ -1,13 +1,13 @@
-let kaspa = require('../../../../nodejs/kaspa');
+let karlsen = require('../../../../nodejs/karlsen');
 let {
     PrivateKey,
     PublicKey,
     PublicKeyGenerator,
     createAddress,
     NetworkType,
-} = kaspa;
+} = karlsen;
 
-kaspa.initConsolePanicHook();
+karlsen.initConsolePanicHook();
 
 (async () => {
     /*** Common Use-cases ***/
@@ -46,24 +46,25 @@ function demoGenerateAddressFromPrivateKeyHexString() {
 }
 
 function demoGenerateAddressFromPublicKeyHexString() {
+    //TODO : these addresses are not valid karlsen addresses
     // Given compressed public key: '02dff1d77f2a671c5f36183726db2341be58feae1da2deced843240f7b502ba659'
     const publicKey = new PublicKey('02dff1d77f2a671c5f36183726db2341be58feae1da2deced843240f7b502ba659');
     console.info("Given compressed public key: '02dff1d77f2a671c5f36183726db2341be58feae1da2deced843240f7b502ba659'");
     console.info(publicKey.toString());
     console.info(publicKey.toAddress(NetworkType.Mainnet).toString());
-    console.info(publicKey.toAddress(NetworkType.Mainnet).toString() == 'kaspa:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jkdskewva');
+    console.info(publicKey.toAddress(NetworkType.Mainnet).toString() == 'karlsen:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jkdskewva');
 
     // Given x-only public key: 'dff1d77f2a671c5f36183726db2341be58feae1da2deced843240f7b502ba659'
     const xOnlyPublicKey = new PublicKey('dff1d77f2a671c5f36183726db2341be58feae1da2deced843240f7b502ba659');
     console.info("Given x-only public key: 'dff1d77f2a671c5f36183726db2341be58feae1da2deced843240f7b502ba659'");
     console.info(xOnlyPublicKey.toString());
     console.info(xOnlyPublicKey.toAddress(NetworkType.Mainnet).toString());
-    console.info(xOnlyPublicKey.toAddress(NetworkType.Mainnet).toString() == 'kaspa:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jkdskewva');
+    console.info(xOnlyPublicKey.toAddress(NetworkType.Mainnet).toString() == 'karlsen:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jkdskewva');
 
     // Given full DER public key: '0421eb0c4270128b16c93c5f0dac48d56051a6237dae997b58912695052818e348b0a895cbd0c93a11ee7afac745929d96a4642a71831f54a7377893af71a2e2ae'
     const fullDERPublicKey = new PublicKey('0421eb0c4270128b16c93c5f0dac48d56051a6237dae997b58912695052818e348b0a895cbd0c93a11ee7afac745929d96a4642a71831f54a7377893af71a2e2ae');
     console.info("Given x-only public key: '0421eb0c4270128b16c93c5f0dac48d56051a6237dae997b58912695052818e348b0a895cbd0c93a11ee7afac745929d96a4642a71831f54a7377893af71a2e2ae'");
     console.info(fullDERPublicKey.toString());
     console.info(fullDERPublicKey.toAddress(NetworkType.Mainnet).toString());
-    console.info(fullDERPublicKey.toAddress(NetworkType.Mainnet).toString() == 'kaspa:qqs7krzzwqfgk9kf830smtzg64s9rf3r0khfj76cjynf2pfgrr35saatu88xq');
+    console.info(fullDERPublicKey.toAddress(NetworkType.Mainnet).toString() == 'karlsen:qqs7krzzwqfgk9kf830smtzg64s9rf3r0khfj76cjynf2pfgrr35saatu88xq');
 }

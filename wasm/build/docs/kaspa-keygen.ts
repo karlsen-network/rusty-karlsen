@@ -1,1 +1,1 @@
-export * from "../../web/kaspa-keygen";
+export * from "../../web/karlsen-keygen";

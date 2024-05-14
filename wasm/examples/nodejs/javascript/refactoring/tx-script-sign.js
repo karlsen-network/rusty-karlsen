@@ -1,6 +1,6 @@
 globalThis.WebSocket = require('websocket').w3cwebsocket; // W3C WebSocket module shim
 
-let kaspa = require('../karlsen/karlsen_wasm');
+let karlsen = require('../karlsen/karlsen_wasm');
 const { parseArgs, guardRpcIsSynced } = require("../utils");
 let {
     RpcClient, UtxoSet, Address, Encoding, UtxoOrdering,
@@ -10,8 +10,8 @@ let {
     createTransaction,
     signTransaction,
     signScriptHash
-} = kaspa;
-kaspa.init_console_panic_hook();
+} = karlsen;
+karlsen.init_console_panic_hook();
 
 (async () => {
     const args = parseArgs({});
@@ -20,8 +20,8 @@ kaspa.init_console_panic_hook();
     const networkType = args.networkType;
     // Either Encoding.Borsh or Encoding.JSON
     const encoding = args.encoding;
-    // The kaspa address that was passed as an argument or a default one
-    const address = args.address ?? "kaspatest:qz7ulu4c25dh7fzec9zjyrmlhnkzrg4wmf89q7gzr3gfrsj3uz6xjceef60sd";
+    // The karlsen address that was passed as an argument or a default one
+    const address = args.address ?? "karlsentest:qz7ulu4c25dh7fzec9zjyrmlhnkzrg4wmf89q7gzr3gfrsj3uz6xjceef60sd";
 
     const rpc = new RpcClient({
         url : "127.0.0.1",

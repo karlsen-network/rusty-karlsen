@@ -35,7 +35,7 @@
         <div class="banner">
             <img src="resources/ferris.svg" height="44px" />
             <img src="resources/wasm.svg" height="44px" />
-            <img src="resources/kaspa.svg" height="44px" />
+            <img src="resources/karlsen.svg" height="44px" />
         </div>
         Rusty Karlsen WASM32 SDK v<span id="version"></span><br>&nbsp;<br>
         Packages:<br>
@@ -66,10 +66,10 @@
             }
             let el = document.getElementById("packages");
             Object.entries({
-                "kaspa-keygen": ["KeyGen","Key & Address Generation only"],
+                "karlsen-keygen": ["KeyGen","Key & Address Generation only"],
                 "karlsen-rpc": ["RPC","RPC only"],
                 "karlsen-core": ["Core","RPC + Key & Address Generation + Wallet SDK"],
-                "kaspa": ["SDK","Full SDK + Integrated Wallet"],
+                "karlsen": ["SDK","Full SDK + Integrated Wallet"],
             }).forEach(([ident,[name,descr]]) => {
                 let size = packageSizes[ident] ? `${packageSizes[ident]}` : "";
                 el.innerHTML += `<li>WASM32 ${name} Package ${" ".repeat(6-name.length)}${size} - ${descr} - <a href="../../docs/${ident}/index.html" target="_blank">Docs</a></li>`;
@@ -78,12 +78,12 @@
         }
     </script>
     <script type="module">
-        import * as kaspa from '../../web/karlsen-core/kaspa.js';
+        import * as karlsen from '../../web/karlsen-core/karlsen.js';
         (async () => {
-            await kaspa.default('../../web/karlsen-core/kaspa_bg.wasm');
-            console.log("kaspa", kaspa);
-            console.log("version", kaspa.version());
-            document.getElementById("version").innerText = kaspa.version();
+            await karlsen.default('../../web/karlsen-core/karlsen_bg.wasm');
+            console.log("karlsen", karlsen);
+            console.log("version", karlsen.version());
+            document.getElementById("version").innerText = karlsen.version();
         })();
     </script>
 </html>

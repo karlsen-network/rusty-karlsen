@@ -320,7 +320,7 @@ Mining is currently supported only on testnet, so once you've setup a test node,
 2. In a separate terminal run the karlsen-network/karlsend miner:
 
     ```
-    kaspaminer --testnet --miningaddr kaspatest:qrcqat6l9zcjsu7swnaztqzrv0s7hu04skpaezxk43y4etj8ncwfk308jlcew
+    karlsenminer --testnet --miningaddr karlsentest:qrcqat6l9zcjsu7swnaztqzrv0s7hu04skpaezxk43y4etj8ncwfk308jlcew
     ```
 
     This will create and feed a DAG with the miner getting block templates from the node and submitting them back when mined. The node processes and stores the blocks while applying all currently implemented logic. Execution can be stopped and resumed, the data is persisted in a database.

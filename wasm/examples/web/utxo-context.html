@@ -5,13 +5,13 @@
         <script type="module">
             import { log, stringify, currentNetwork } from './resources/utils.js';
 
-            import * as kaspa from '../../web/karlsen-core/kaspa.js';
-            let { Resolver, RpcClient, Encoding, UtxoProcessor, UtxoContext } = kaspa;
+            import * as karlsen from '../../web/karlsen-core/karlsen.js';
+            let { Resolver, RpcClient, Encoding, UtxoProcessor, UtxoContext } = karlsen;
 
             window.monitor = {};
 
             (async () => {
-                await kaspa.default('../../web/karlsen-core/kaspa_bg.wasm');
+                await karlsen.default('../../web/karlsen-core/karlsen_bg.wasm');
 
                 let network = currentNetwork();
                 log(`Connecting to Karlsen network...`);
@@ -41,8 +41,8 @@
                     events += 1;
                 });
 
-                // kaspa:qpamkvhgh0kzx50gwvvp5xs8ktmqutcy3dfs9dc3w7lm9rq0zs76vf959mmrp
-                // kaspa:qzeln8eue9nnrz85kn7x47smxhfqudyz6urv2wpquuvslq7ck4umys8gkt5x8
+                // karlsen:qpamkvhgh0kzx50gwvvp5xs8ktmqutcy3dfs9dc3w7lm9rq0zs76vf959mmrp
+                // karlsen:qzeln8eue9nnrz85kn7x47smxhfqudyz6urv2wpquuvslq7ck4umys8gkt5x8
 
                 log("");
                 log("Please note that some addresses may have thousands of UTXOs which makes it");

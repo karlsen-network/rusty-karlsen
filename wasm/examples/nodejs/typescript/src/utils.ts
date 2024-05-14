@@ -6,7 +6,7 @@ import {
     Address,
     Encoding,
     NetworkId,
-} from "../../../../nodejs/kaspa";
+} from "../../../../nodejs/karlsen";
 
 /**
  * Helper function to parse command line arguments for running the scripts
@@ -54,7 +54,7 @@ function parseArgs(options = {
         process.exit(0);
     }
 
-    const addressRegex = new RegExp(/(kaspa|kaspatest):\S+/i);
+    const addressRegex = new RegExp(/(karlsen|karlsentest):\S+/i);
     const addressArg = values.address ?? positionals.find((positional) => addressRegex.test(positional)) ?? null;
     const destinationAddress = addressArg === null ? null : new Address(addressArg);
 
