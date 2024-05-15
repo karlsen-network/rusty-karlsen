@@ -20,17 +20,17 @@ karlsen.initConsolePanicHook();
     // karlsen
     let xPrv = new XPrv(seed);
     // derive full path upto second address of receive wallet
-    let pubkey1 = xPrv.derivePath("m/44'/111111'/0'/0/1").toXPub().toPublicKey();
+    let pubkey1 = xPrv.derivePath("m/44'/121337'/0'/0/1").toXPub().toPublicKey();
     console.log("address", pubkey1.toAddress(NetworkType.Mainnet));
 
     // create receive wallet
-    let receiveWalletXPub = xPrv.derivePath("m/44'/111111'/0'/0").toXPub();
+    let receiveWalletXPub = xPrv.derivePath("m/44'/121337'/0'/0").toXPub();
     // derive receive wallet for second address
     let pubkey2 = receiveWalletXPub.deriveChild(1, false).toPublicKey();
     console.log("address", pubkey2.toAddress(NetworkType.Mainnet));
 
     // create change wallet
-    let changeWalletXPub = xPrv.derivePath("m/44'/111111'/0'/1").toXPub();
+    let changeWalletXPub = xPrv.derivePath("m/44'/121337'/0'/1").toXPub();
     // derive change wallet for first address
     let pubkey3 = changeWalletXPub.deriveChild(0, false).toPublicKey();
     console.log("address", pubkey2.toAddress(NetworkType.Mainnet));

@@ -140,7 +140,7 @@ impl PubkeyDerivationManagerTrait for PubkeyDerivationManager {
 
 #[derive(Clone)]
 pub struct WalletDerivationManager {
-    /// extended public key derived upto `m/<Purpose>'/111111'/<Account Index>'`
+    /// extended public key derived upto `m/<Purpose>'/121337'/<Account Index>'`
     extended_public_key: ExtendedPublicKey<secp256k1::PublicKey>,
 
     /// receive address wallet
@@ -176,7 +176,7 @@ impl WalletDerivationManager {
         account_index: u64,
     ) -> Result<(SecretKey, ExtendedKeyAttrs)> {
         let purpose = if is_multisig { 45 } else { 44 };
-        let address_path = format!("{purpose}'/111111'/{account_index}'");
+        let address_path = format!("{purpose}'/121337'/{account_index}'");
         let children = address_path.split('/');
         for child in children {
             (private_key, attrs) = Self::derive_private_key(&private_key, &attrs, child.parse::<ChildNumber>()?)?;
@@ -195,7 +195,7 @@ impl WalletDerivationManager {
             return Err("cosigner_index is required for multisig path derivation".to_string().into());
         }
         let purpose = if is_multisig { 45 } else { 44 };
-        let mut path = format!("m/{purpose}'/111111'/{account_index}'");
+        let mut path = format!("m/{purpose}'/121337'/{account_index}'");
         if let Some(cosigner_index) = cosigner_index {
             path = format!("{path}/{}", cosigner_index)
         }
