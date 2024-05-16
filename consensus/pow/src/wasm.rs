@@ -3,7 +3,7 @@ use js_sys::BigInt;
 use karlsen_consensus_client::Header;
 use karlsen_consensus_core::hashing;
 use karlsen_hashes::Hash;
-use karlsen_hashes::PowHash;
+use karlsen_hashes::PowB3Hash;
 use karlsen_math::Uint256;
 use karlsen_utils::hex::ToHex;
 use num::Float;
