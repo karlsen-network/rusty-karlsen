@@ -15,7 +15,7 @@
     "wasm",
     "sdk"
   ],
-  "author": "Kaspa developers",
+  "author": "Karlsen developers",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/karlsen-network/rusty-karlsen/issues"

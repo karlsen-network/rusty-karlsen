@@ -63,7 +63,7 @@ members = [
 [workspace.package]
 rust-version = "1.78.0"
 version = "0.1.0"
-authors = ["Kaspa developers"]
+authors = ["Karlsen developers"]
 license = "ISC"
 repository = "https://github.com/karlsen-network/rusty-karlsen"
 edition = "2021"

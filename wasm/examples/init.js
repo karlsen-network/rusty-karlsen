@@ -91,7 +91,7 @@ function createConfigFile() {
 function basicWallet(networkId, mnemonic) {
     console.log("mnemonic:", mnemonic.phrase);
     let xprv = new XPrv(mnemonic.toSeed());
-    let account_0_root = xprv.derivePath("m/44'/111111'/0'/0").toXPub();
+    let account_0_root = xprv.derivePath("m/44'/121337'/0'/0").toXPub();
     let account_0 = {
         receive_xpub : account_0_root.deriveChild(0),
         change_xpub : account_0_root.deriveChild(1),

@@ -3,7 +3,7 @@ use js_sys::BigInt;
 use karlsen_consensus_client::Header;
 use karlsen_consensus_core::hashing;
 use karlsen_hashes::Hash;
-use karlsen_hashes::PowHash;
+use karlsen_hashes::PowB3Hash;
 use karlsen_math::Uint256;
 use karlsen_utils::hex::ToHex;
 use num::Float;
@@ -34,7 +34,7 @@ impl State {
         // Zero out the time and nonce.
         let pre_pow_hash = hashing::header::hash_override_nonce_time(header, 0, 0);
         // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-        let hasher = PowHash::new(pre_pow_hash, header.timestamp);
+        let hasher = PowB3Hash::new(pre_pow_hash, header.timestamp);
         let matrix = Matrix::generate(pre_pow_hash);
 
         Self { inner: crate::State { matrix, target, hasher }, pre_pow_hash }
