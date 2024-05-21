@@ -47,6 +47,10 @@ impl State {
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
         //println!("hash1:{0}", hash);
         let hash = self.matrix.heavy_hash(hash);
+        //Set the fishhash kernel hashing
+        //let hash = self.fishhasher.clone().hash(hash);
+        //Proceed to last blake3 pass
+        //let hash = self.fishhasher.clone().b3hash(hash);
 
         //println!("hash2:{0}", hash);
         Uint256::from_le_bytes(hash.as_bytes())
