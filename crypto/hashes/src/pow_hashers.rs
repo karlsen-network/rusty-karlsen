@@ -24,10 +24,6 @@ impl PowB3Hash {
         Self { hasher }
     }
 
-    
-
-    
-
     #[inline(always)]
     pub fn finalize_with_nonce(mut self, nonce: u64) -> Hash {
         
@@ -35,7 +31,6 @@ impl PowB3Hash {
         let hash = self.hasher.finalize();
         Hash(*hash.as_bytes())
 
-        //Hash::from_le_u64(self.0[..4].try_into().unwrap())
     }
 
 }
@@ -62,40 +57,17 @@ impl PowHash {
         Self(start)
     }
 
-    
-
-    
 
     #[inline(always)]
     pub fn finalize_with_nonce(mut self, nonce: u64) -> Hash {
         
         self.0[9] ^= nonce;
-
-
-        /*
-        let pre_pow_hash = Hash([42; 32]);
-        println!("pre_pow_hash : {:?}", pre_pow_hash);
-        let mut new_hash = b3::convert_u8_to_u64_array(pre_pow_hash.0);
-        println!("new_hash : {:?}", new_hash);
-        println!("Hash(new_hash) : {:?}", Hash::from_le_u64(new_hash[..4].try_into().unwrap()));
-        //keccak256::f1600(&mut new_hash);
-        b3::blake3_hash(&mut new_hash);
-        println!("Hash(new_hash) : {:?}", Hash::from_le_u64(new_hash[..4].try_into().unwrap()));
-        */
-
-        
-
-        //keccak256::f1600(&mut self.0);
-        //b3::blake3_hash_u64_array(&mut self.0);
-        //println!("self : {:?}", self.0);
-        b3::blake3_hash(&mut self.0);
-
+        keccak256::f1600(&mut self.0);
         Hash::from_le_u64(self.0[..4].try_into().unwrap())
     }
 
     #[inline(always)]
     pub fn test_hash(state: &mut [u64; 25]) {
-        //b3::blake3_hash(state);
         keccak256::f1600(state);
     }
 
@@ -120,115 +92,8 @@ impl KHeavyHash {
             *state_word ^= pre_pow_word;
         }
         keccak256::f1600(&mut state);
-        //b3::blake3_hash_u64_array(&mut state);
         Hash::from_le_u64(state[..4].try_into().unwrap())
     }
-}
-
-mod b3 {
-
-    pub fn convert_u8_to_u64_array(bytes: [u8; 32]) -> [u64; 25] {
-        let mut u64_array = [0u64; 25];
-    
-        // Fill the u64_array using data from bytes
-        for (i, chunk) in bytes.chunks_exact(8).enumerate() {
-            let mut u64_val = 0u64;
-    
-            for (j, &b) in chunk.iter().enumerate() {
-                u64_val |= (b as u64) << (j * 8);
-            }
-    
-            u64_array[i] = u64_val;
-        }
-    
-        // The remaining elements in the u64_array are already zero-filled
-        u64_array
-    }
-
-    /*
-    pub fn blake3_hash(state: &mut [u64; 25]) {
-        // Create a new Blake3 hasher
-        let mut hasher = blake3::Hasher::new();
-
-        // Update the hasher with the bytes of the array
-        for &num in state {
-            hasher.update(&num.to_le_bytes());
-        }
-
-        // Finalize the hash to obtain a 32-byte array
-        let result = hasher.finalize();
-
-    }
-    */
-
-    pub fn blake3_hash(state: &mut [u64; 25]) {
-        // Interpret the u64 state array as bytes for hashing
-        let state_as_bytes: &[u8] = unsafe {
-            std::slice::from_raw_parts(
-                state.as_ptr() as *const u8,
-                state.len() * std::mem::size_of::<u64>(),
-            )
-        };
-    
-        // Compute the BLAKE3 hash of the state bytes
-        let hash = blake3::hash(state_as_bytes);
-    
-        // Convert the hash output (32 bytes) into u64 and store back into the first 4 elements
-        let hash_bytes = hash.as_bytes();
-        for i in 0..4 {
-            state[i] = u64::from_le_bytes([
-                hash_bytes[i * 8 + 0],
-                hash_bytes[i * 8 + 1],
-                hash_bytes[i * 8 + 2],
-                hash_bytes[i * 8 + 3],
-                hash_bytes[i * 8 + 4],
-                hash_bytes[i * 8 + 5],
-                hash_bytes[i * 8 + 6],
-                hash_bytes[i * 8 + 7],
-            ]);
-        }
-    
-        // Optional: Zero out remaining parts of the state, or maintain their original values
-        for i in 4..25 {
-            state[i] = 0;
-        }
-    }
-
-    pub(super) fn blake3_hash_u64_array(input: &mut [u64; 25]) -> &mut [u64; 25] {
-        // Convert the `[u64; 25]` array to a byte slice
-        let byte_slice: &[u8] = unsafe {
-            std::slice::from_raw_parts(
-                input.as_ptr() as *const u8,
-                std::mem::size_of::<[u64; 25]>()
-            )
-        };
-    
-        // Compute the Blake3 hash of the input byte slice
-        let hash = blake3::hash(byte_slice);
-    
-        // Copy the hash output back into the original `[u64; 25]` array
-        // We will only copy as much data as can fit into the array
-        let mut hash_bytes = [0u8; std::mem::size_of::<[u64; 25]>()];
-        let hash_slice = hash.as_bytes();
-        let copy_length = std::cmp::min(hash_bytes.len(), hash_slice.len());
-        hash_bytes[..copy_length].copy_from_slice(&hash_slice[..copy_length]);
-    
-        // Now convert the bytes back to u64 chunks and modify the original array
-        let new_u64_slice: &[u64] = unsafe {
-            std::slice::from_raw_parts(
-                hash_bytes.as_ptr() as *const u64,
-                hash_bytes.len() / std::mem::size_of::<u64>()
-            )
-        };
-    
-        for (target, &src) in input.iter_mut().zip(new_u64_slice.iter()) {
-            *target = src;
-        }
-    
-        // Return the modified input array
-        input
-    }
-
 }
 
 mod keccak256 {
@@ -277,8 +142,7 @@ mod tests {
         */
 
 
-
-
+        // should migrate to B3 hasher
         let hasher = PowHash::new(pre_pow_hash, timestamp);
         let hash1 = hasher.finalize_with_nonce(nonce);
 
