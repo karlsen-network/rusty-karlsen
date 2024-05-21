@@ -11,7 +11,7 @@ use std::cmp::max;
 use crate::matrix::Matrix;
 use karlsen_consensus_core::{hashing, header::Header, BlockLevel};
 //use karlsen_hashes::Pow;
-use karlsen_hashes::PowB3Hash;
+use karlsen_hashes::{PowB3Hash, PowFishHash};
 use karlsen_math::Uint256;
 
 /// State is an intermediate data structure with pre-computed values to speed up mining.
@@ -20,6 +20,7 @@ pub struct State {
     pub(crate) target: Uint256,
     // PRE_POW_HASH || TIME || 32 zero byte padding; without NONCE
     pub(crate) hasher: PowB3Hash,
+    pub(crate) fishhasher: PowFishHash,
 }
 
 impl State {
@@ -32,8 +33,9 @@ impl State {
         //let hasher = PowHash::new(pre_pow_hash, header.timestamp);
         let hasher = PowB3Hash::new(pre_pow_hash, header.timestamp);
         let matrix = Matrix::generate(pre_pow_hash);
+        let fishhasher = PowFishHash::new();
 
-        Self { matrix, target, hasher }
+        Self { matrix, target, hasher, fishhasher }
     }
 
     #[inline]
@@ -45,6 +47,7 @@ impl State {
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
         //println!("hash1:{0}", hash);
         let hash = self.matrix.heavy_hash(hash);
+
         //println!("hash2:{0}", hash);
         Uint256::from_le_bytes(hash.as_bytes())
     }
