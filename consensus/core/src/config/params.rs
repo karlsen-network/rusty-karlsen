@@ -278,7 +278,7 @@ impl From<NetworkId> for Params {
         match value.network_type {
             NetworkType::Mainnet => MAINNET_PARAMS,
             NetworkType::Testnet => match value.suffix {
-                Some(10) => TESTNET_PARAMS,
+                Some(1) => TESTNET_PARAMS,
                 Some(11) => TESTNET11_PARAMS,
                 Some(x) => panic!("Testnet suffix {} is not supported", x),
                 None => panic!("Testnet suffix not provided"),
@@ -350,10 +350,9 @@ pub const MAINNET_PARAMS: Params = Params {
 
 pub const TESTNET_PARAMS: Params = Params {
     dns_seeders: &[
-        // This DNS seeder is run by Tiram
-        "seeder1-testnet.karlsend.net",
+        "testnet-1-dnsseed.karlsencoin.com",
     ],
-    net: NetworkId::with_suffix(NetworkType::Testnet, 10),
+    net: NetworkId::with_suffix(NetworkType::Testnet, 1),
     genesis: TESTNET_GENESIS,
     ghostdag_k: LEGACY_DEFAULT_GHOSTDAG_K,
     legacy_timestamp_deviation_tolerance: LEGACY_TIMESTAMP_DEVIATION_TOLERANCE,
@@ -409,10 +408,7 @@ pub const TESTNET_PARAMS: Params = Params {
 
 pub const TESTNET11_PARAMS: Params = Params {
     dns_seeders: &[
-        // This DNS seeder is run by Tiram
-        "seeder1-testnet-11.karlsend.net",
-        // This DNS seeder is run by supertypo
-        "n-testnet-11.kaspa.ws",
+        "testnet-1-dnsseed.karlsencoin.com",
     ],
     net: NetworkId::with_suffix(NetworkType::Testnet, 11),
     genesis: TESTNET11_GENESIS,

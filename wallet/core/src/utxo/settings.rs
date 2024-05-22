@@ -22,7 +22,7 @@ pub const MAINNET_NETWORK_PARAMS: NetworkParams = NetworkParams {
     additional_compound_transaction_mass: 0,
 };
 
-pub const TESTNET10_NETWORK_PARAMS: NetworkParams = NetworkParams {
+pub const TESTNET1_NETWORK_PARAMS: NetworkParams = NetworkParams {
     coinbase_transaction_maturity_period_daa: 100,
     coinbase_transaction_stasis_period_daa: 50,
     user_transaction_maturity_period_daa: 10,
@@ -30,6 +30,7 @@ pub const TESTNET10_NETWORK_PARAMS: NetworkParams = NetworkParams {
     additional_compound_transaction_mass: 100,
 };
 
+/* TODO next step kaarlsen bps upgrade */
 pub const TESTNET11_NETWORK_PARAMS: NetworkParams = NetworkParams {
     coinbase_transaction_maturity_period_daa: 1_000,
     coinbase_transaction_stasis_period_daa: 500,
@@ -59,7 +60,7 @@ impl From<NetworkId> for &'static NetworkParams {
         match value.network_type {
             NetworkType::Mainnet => &MAINNET_NETWORK_PARAMS,
             NetworkType::Testnet => match value.suffix {
-                Some(10) => &TESTNET10_NETWORK_PARAMS,
+                Some(1) => &TESTNET1_NETWORK_PARAMS,
                 Some(11) => &TESTNET11_NETWORK_PARAMS,
                 Some(x) => panic!("Testnet suffix {} is not supported", x),
                 None => panic!("Testnet suffix not provided"),
@@ -75,7 +76,7 @@ impl From<NetworkId> for NetworkParams {
         match value.network_type {
             NetworkType::Mainnet => MAINNET_NETWORK_PARAMS,
             NetworkType::Testnet => match value.suffix {
-                Some(10) => TESTNET10_NETWORK_PARAMS,
+                Some(1) => TESTNET1_NETWORK_PARAMS,
                 Some(11) => TESTNET11_NETWORK_PARAMS,
                 Some(x) => panic!("Testnet suffix {} is not supported", x),
                 None => panic!("Testnet suffix not provided"),

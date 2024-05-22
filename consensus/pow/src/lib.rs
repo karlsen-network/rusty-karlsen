@@ -9,7 +9,8 @@ pub mod xoshiro;
 use std::cmp::max;
 
 use crate::matrix::Matrix;
-use karlsen_consensus_core::{hashing, header::Header, BlockLevel};
+use karlsen_consensus_core::{constants, hashing::{self, header}, header::Header, BlockLevel};
+//use karlsen_consensus_core::errors::block::RuleError;
 //use karlsen_hashes::Pow;
 use karlsen_hashes::{PowB3Hash, PowFishHash};
 use karlsen_math::Uint256;
@@ -21,6 +22,7 @@ pub struct State {
     // PRE_POW_HASH || TIME || 32 zero byte padding; without NONCE
     pub(crate) hasher: PowB3Hash,
     pub(crate) fishhasher: PowFishHash,
+    pub(crate) header_version: u16,
 }
 
 impl State {
@@ -34,26 +36,39 @@ impl State {
         let hasher = PowB3Hash::new(pre_pow_hash, header.timestamp);
         let matrix = Matrix::generate(pre_pow_hash);
         let fishhasher = PowFishHash::new();
+        let header_version = header.version;
 
-        Self { matrix, target, hasher, fishhasher }
+        Self { matrix, target, hasher, fishhasher, header_version}
+    }
+
+
+    fn calculate_pow_khashv1(&self, nonce: u64) -> Uint256 {
+        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
+        let hash = self.hasher.clone().finalize_with_nonce(nonce);
+        let hash = self.matrix.heavy_hash(hash);
+        Uint256::from_le_bytes(hash.as_bytes())
+    }
+
+    fn calculate_pow_khashv2(&self, nonce: u64) -> Uint256 {
+        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
+        let hash = self.hasher.clone().finalize_with_nonce(nonce);
+        let hash = self.matrix.heavy_hash(hash);
+        Uint256::from_le_bytes(hash.as_bytes())
     }
 
     #[inline]
     #[must_use]
     /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
-        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
-        //println!("nonce:{0}", nonce);
-        let hash = self.hasher.clone().finalize_with_nonce(nonce);
-        //println!("hash1:{0}", hash);
-        let hash = self.matrix.heavy_hash(hash);
-        //Set the fishhash kernel hashing
-        //let hash = self.fishhasher.clone().hash(hash);
-        //Proceed to last blake3 pass
-        //let hash = self.fishhasher.clone().b3hash(hash);
-
-        //println!("hash2:{0}", hash);
-        Uint256::from_le_bytes(hash.as_bytes())
+        if self.header_version == constants::BLOCK_VERSION {
+            return self.calculate_pow_khashv1(nonce);
+        } else if self.header_version == constants::BLOCK_VERSION_KHASHV2 {
+            return self.calculate_pow_khashv2(nonce);
+        } else {
+            // TODO handle block version error
+            //Err(RuleError::WrongBlockVersion(self.header_version));
+            return self.calculate_pow_khashv1(nonce);
+        }
     }
 
     #[inline]
@@ -62,8 +77,6 @@ impl State {
         let pow = self.calculate_pow(nonce);
         // The pow hash must be less or equal than the claimed target.
         (pow <= self.target, pow)
-        //println!("pow:{0}, \n target:{1}, \n diff:{2}", pow, self.target, (pow-self.target));
-        //(true, pow)
     }
 }
 
