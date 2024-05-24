@@ -21,7 +21,7 @@ pub struct State {
     pub(crate) target: Uint256,
     // PRE_POW_HASH || TIME || 32 zero byte padding; without NONCE
     pub(crate) hasher: PowB3Hash,
-    pub(crate) fishhasher: PowFishHash,
+    //pub(crate) fishhasher: PowFishHash,
     pub(crate) header_version: u16,
 }
 
@@ -35,10 +35,10 @@ impl State {
         //let hasher = PowHash::new(pre_pow_hash, header.timestamp);
         let hasher = PowB3Hash::new(pre_pow_hash, header.timestamp);
         let matrix = Matrix::generate(pre_pow_hash);
-        let fishhasher = PowFishHash::new();
+        //let fishhasher = PowFishHash::new();
         let header_version = header.version;
 
-        Self { matrix, target, hasher, fishhasher, header_version}
+        Self { matrix, target, hasher, /*fishhasher,*/ header_version}
     }
 
 
@@ -52,7 +52,24 @@ impl State {
     fn calculate_pow_khashv2(&self, nonce: u64) -> Uint256 {
         // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
-        let hash = self.matrix.heavy_hash(hash);
+        //println!("hash-1 : {:?}", hash);
+        let hash = PowFishHash::fishhash_kernel(&hash);
+        //println!("hash-2 : {:?}", hash);
+        //last b3 hash
+        let hash = PowB3Hash::hash(hash);
+        //println!("hash-3 : {:?}", hash);
+        Uint256::from_le_bytes(hash.as_bytes())
+    }
+
+    fn calculate_pow_khashv2plus(&self, nonce: u64) -> Uint256 {
+        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
+        let hash = self.hasher.clone().finalize_with_nonce(nonce);
+        //println!("hash-1 : {:?}", hash);
+        let hash = PowFishHash::fishhashplus_kernel(&hash);
+        //println!("hash-2 : {:?}", hash);
+        //last b3 hash
+        let hash = PowB3Hash::hash(hash);
+        //println!("hash-3 : {:?}", hash);
         Uint256::from_le_bytes(hash.as_bytes())
     }
 
@@ -61,9 +78,9 @@ impl State {
     /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
         if self.header_version == constants::BLOCK_VERSION {
-            return self.calculate_pow_khashv1(nonce);
-        } else if self.header_version == constants::BLOCK_VERSION_KHASHV2 {
             return self.calculate_pow_khashv2(nonce);
+        } else if self.header_version == constants::BLOCK_VERSION_KHASHV2 {
+            return self.calculate_pow_khashv2plus(nonce);
         } else {
             // TODO handle block version error
             //Err(RuleError::WrongBlockVersion(self.header_version));

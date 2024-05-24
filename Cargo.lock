@@ -2908,6 +2908,7 @@ dependencies = [
  "js-sys",
  "karlsen-utils",
  "keccak",
+ "lazy_static",
  "once_cell",
  "rand 0.8.5",
  "serde",

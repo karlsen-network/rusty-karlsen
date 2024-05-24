@@ -13,6 +13,7 @@ repository.workspace = true
 no-asm = ["keccak"]
 
 [dependencies]
+lazy_static = "1.4.0"
 blake2b_simd.workspace = true
 borsh.workspace = true
 faster-hex.workspace = true

@@ -2,6 +2,8 @@ use crate::Hash;
 use std::ops::BitXor;
 use tiny_keccak::Hasher;
 
+use lazy_static::lazy_static;
+
 #[derive(Clone)]
 pub struct PowB3Hash{
     pub hasher: blake3::Hasher,
@@ -16,12 +18,12 @@ pub struct KHeavyHash;
 #[derive(Clone)]
 pub struct PowFishHash{
     // set the cache here not hasher
-    pub context: Context,
+    //pub context: Context,
 }
 
 const FNV_PRIME: u32 = 0x01000193;
 const FULL_DATASET_ITEM_PARENTS: u32 = 512;
-const NUM_DATASET_ACCESSES: i32 = 32;
+const NUM_DATASET_ACCESSES: u32 = 32;
 const LIGHT_CACHE_ROUNDS: i32 = 3;
 
 const LIGHT_CACHE_NUM_ITEMS: u32 = 1179641;
@@ -37,6 +39,7 @@ const SIZE_U64: usize = std::mem::size_of::<u64>();
 
 pub trait HashData {
     fn new() -> Self;
+    fn from_hash(hash: &Hash) -> Self;
     fn as_bytes(&self) -> &[u8];
     fn as_bytes_mut(&mut self) -> &mut [u8];
 
@@ -75,6 +78,10 @@ impl HashData for Hash256 {
         Self([0; 32])
     }
 
+    fn from_hash(hash: &Hash) -> Self {
+        Self(hash.0)
+    }
+
     fn as_bytes(&self) -> &[u8] {
         &self.0
     }
@@ -90,6 +97,14 @@ pub struct Hash512([u8; 64]);
 impl HashData for Hash512 {
     fn new() -> Self {
         Self([0; 64])
+    }
+
+    //Todo check if filled with 0
+    fn from_hash(hash: &Hash) -> Self {
+        let mut result = Self::new();
+        let (first_half, second_half) = result.0.split_at_mut(hash.0.len());
+        first_half.copy_from_slice(&hash.0);
+        result
     }
 
     fn as_bytes(&self) -> &[u8] {
@@ -123,6 +138,14 @@ impl HashData for Hash1024 {
         Self([0; 128])
     }
 
+    //Todo check if filled with 0
+    fn from_hash(hash: &Hash) -> Self {
+        let mut result = Self::new();
+        let (first_half, second_half) = result.0.split_at_mut(hash.0.len());
+        first_half.copy_from_slice(&hash.0);
+        result
+    }
+
     fn as_bytes(&self) -> &[u8] {
         &self.0
     }
@@ -141,12 +164,39 @@ impl Hash1024 {
 
         hash
     }
+
+    fn from_256s(first: &Hash256, second: &Hash256) -> Self {
+        //filled with 0 by default
+        let mut hash = Self::new();
+        let (first_half, second_half) = hash.0.split_at_mut(first.0.len() * 2);
+        first_half.copy_from_slice(&first.0);
+        second_half.copy_from_slice(&second.0);
+
+        hash
+    }
 }
 
 #[derive(Clone)]
 pub struct Context {
-    pub light_cache: Box<[Hash512]>,
-    pub full_dataset: Option<Box<[Hash1024]>>,
+    //pub light_cache: Box<[Hash512]>,
+    //pub full_dataset: Option<Box<[Hash1024]>>,
+}
+
+lazy_static! {
+    static ref LIGHT_CACHE: Box<[Hash512]> = {
+        //vec![Hash512::new(); LIGHT_CACHE_NUM_ITEMS as usize].into_boxed_slice()
+        println!("light cache processing started");
+        let mut light_cache =
+            vec![Hash512::new(); LIGHT_CACHE_NUM_ITEMS as usize].into_boxed_slice();
+            println!("light_cache[10] : {:?}", light_cache[10]);
+            println!("light_cache[42] : {:?}", light_cache[42]);
+            Context::build_light_cache(&mut light_cache);
+            println!("light_cache[10] : {:?}", light_cache[10]);
+            println!("light_cache[42] : {:?}", light_cache[42]);
+            println!("light cache processing done");
+        light_cache
+    };
+    static ref INITIALIZED: bool = false;
 }
 
 impl Context {
@@ -154,19 +204,10 @@ impl Context {
         // Vec into boxed sliced, because you can't allocate an array directly on
         // the heap in rust
         // https://stackoverflow.com/questions/25805174/creating-a-fixed-size-array-on-heap-in-rust/68122278#68122278
-        let mut light_cache =
-            vec![Hash512::new(); LIGHT_CACHE_NUM_ITEMS as usize].into_boxed_slice();
-            Context::build_light_cache(&mut light_cache);
-
-        let full_dataset = if full {
-            Some(vec![Hash1024::new(); FULL_DATASET_NUM_ITEMS as usize].into_boxed_slice())
-        } else {
-            None
-        };
 
         Context {
-            light_cache,
-            full_dataset,
+            //light_cache : *LIGHT_CACHE ,
+            //full_dataset,
         }
     }
 
@@ -205,9 +246,144 @@ impl PowFishHash {
 
 
     #[inline]
-    pub fn new() -> Self {
-        let mut context = Context::new(false);
-        Self { context }
+    //pub fn fishhash_kernel(context: &mut Context, seed: &Hash512) -> Hash256 {
+        pub fn fishhash_kernel(seed: &Hash) -> Hash {
+        let seed_hash512 = Hash512::from_hash(seed);
+        let mut mix = Hash1024::from_512s(&seed_hash512, &seed_hash512);
+        // Fishhash
+        
+        for _ in 0..NUM_DATASET_ACCESSES as usize {
+            // Calculate new fetching indexes
+            let p0 = mix.get_as_u32(0) % FULL_DATASET_NUM_ITEMS;
+            let p1 = mix.get_as_u32(4) % FULL_DATASET_NUM_ITEMS;
+            let p2 = mix.get_as_u32(8) % FULL_DATASET_NUM_ITEMS;
+        /*
+        // FishhashPlus
+        for i in 0..NUM_DATASET_ACCESSES {
+            // Calculate new fetching indexes
+            let mut mix_group: [u32; 8] = [0; 8];
+    
+            for (c, mix_group_elem) in mix_group.iter_mut().enumerate() {
+                *mix_group_elem = mix.get_as_u32(4 * c)
+                    ^ mix.get_as_u32(4 * c + 1)
+                    ^ mix.get_as_u32(4 * c + 2)
+                    ^ mix.get_as_u32(4 * c + 3);
+            }
+    
+            let p0 = (mix_group[0] ^ mix_group[3] ^ mix_group[6]) % FULL_DATASET_NUM_ITEMS;
+            let p1 = (mix_group[1] ^ mix_group[4] ^ mix_group[7]) % FULL_DATASET_NUM_ITEMS;
+            let p2 = (mix_group[2] ^ mix_group[5] ^ i) % FULL_DATASET_NUM_ITEMS;
+        */
+            /*
+            let fetch0 = PowFishHash::lookup(context, p0 as usize);
+            let mut fetch1 = PowFishHash::lookup(context, p1 as usize);
+            let mut fetch2 = PowFishHash::lookup(context, p2 as usize);
+            */
+            let fetch0 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE,p0 as usize);
+            let mut fetch1 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE,p1 as usize);
+            let mut fetch2 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE,p2 as usize);
+    
+            // Modify fetch1 and fetch2
+            for j in 0..32 {
+                fetch1.set_as_u32(j, PowFishHash::fnv1(mix.get_as_u32(j), fetch1.get_as_u32(j)));
+                fetch2.set_as_u32(j, mix.get_as_u32(j) ^ fetch2.get_as_u32(j));
+            }
+    
+            // Final computation of new mix
+            for j in 0..16 {
+                mix.set_as_u64(
+                    j,
+                    //fetch0.get_as_u64(j) * fetch1.get_as_u64(j) + fetch2.get_as_u64(j),
+                    fetch0
+                    .get_as_u64(j)
+                    .wrapping_mul(fetch1.get_as_u64(j))
+                    .wrapping_add(fetch2.get_as_u64(j)),
+                );
+            }
+        }
+    
+        // Collapse the result into 32 bytes
+        let mut mix_hash = Hash256::new();
+        let num_words = std::mem::size_of_val(&mix) / SIZE_U32;
+    
+        for i in (0..num_words).step_by(4) {
+            let h1 = PowFishHash::fnv1(mix.get_as_u32(i), mix.get_as_u32(i + 1));
+            let h2 = PowFishHash::fnv1(h1, mix.get_as_u32(i + 2));
+            let h3 = PowFishHash::fnv1(h2, mix.get_as_u32(i + 3));
+            mix_hash.set_as_u32(i / 4, h3);
+        }
+    
+        Hash::from_bytes(mix_hash.0) 
+    }
+
+    #[inline]
+    //pub fn fishhash_kernel(context: &mut Context, seed: &Hash512) -> Hash256 {
+        pub fn fishhashplus_kernel(seed: &Hash) -> Hash {
+        let seed_hash512 = Hash512::from_hash(seed);
+        let mut mix = Hash1024::from_512s(&seed_hash512, &seed_hash512);
+        // Fishhash
+        /*
+        for _ in 0..NUM_DATASET_ACCESSES as usize {
+            // Calculate new fetching indexes
+            let p0 = mix.get_as_u32(0) % FULL_DATASET_NUM_ITEMS;
+            let p1 = mix.get_as_u32(4) % FULL_DATASET_NUM_ITEMS;
+            let p2 = mix.get_as_u32(8) % FULL_DATASET_NUM_ITEMS;
+        */
+        // FishhashPlus
+        for i in 0..NUM_DATASET_ACCESSES {
+            // Calculate new fetching indexes
+            let mut mix_group: [u32; 8] = [0; 8];
+    
+            for (c, mix_group_elem) in mix_group.iter_mut().enumerate() {
+                *mix_group_elem = mix.get_as_u32(4 * c)
+                    ^ mix.get_as_u32(4 * c + 1)
+                    ^ mix.get_as_u32(4 * c + 2)
+                    ^ mix.get_as_u32(4 * c + 3);
+            }
+    
+            let p0 = (mix_group[0] ^ mix_group[3] ^ mix_group[6]) % FULL_DATASET_NUM_ITEMS;
+            let p1 = (mix_group[1] ^ mix_group[4] ^ mix_group[7]) % FULL_DATASET_NUM_ITEMS;
+            let p2 = (mix_group[2] ^ mix_group[5] ^ i) % FULL_DATASET_NUM_ITEMS;
+            /*
+            let fetch0 = PowFishHash::lookup(context, p0 as usize);
+            let mut fetch1 = PowFishHash::lookup(context, p1 as usize);
+            let mut fetch2 = PowFishHash::lookup(context, p2 as usize);
+            */
+            let fetch0 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE,p0 as usize);
+            let mut fetch1 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE,p1 as usize);
+            let mut fetch2 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE,p2 as usize);
+    
+            // Modify fetch1 and fetch2
+            for j in 0..32 {
+                fetch1.set_as_u32(j, PowFishHash::fnv1(mix.get_as_u32(j), fetch1.get_as_u32(j)));
+                fetch2.set_as_u32(j, mix.get_as_u32(j) ^ fetch2.get_as_u32(j));
+            }
+    
+            // Final computation of new mix
+            for j in 0..16 {
+                mix.set_as_u64(
+                    j,
+                    //fetch0.get_as_u64(j) * fetch1.get_as_u64(j) + fetch2.get_as_u64(j),
+                    fetch0
+                    .get_as_u64(j)
+                    .wrapping_mul(fetch1.get_as_u64(j))
+                    .wrapping_add(fetch2.get_as_u64(j)),
+                );
+            }
+        }
+    
+        // Collapse the result into 32 bytes
+        let mut mix_hash = Hash256::new();
+        let num_words = std::mem::size_of_val(&mix) / SIZE_U32;
+    
+        for i in (0..num_words).step_by(4) {
+            let h1 = PowFishHash::fnv1(mix.get_as_u32(i), mix.get_as_u32(i + 1));
+            let h2 = PowFishHash::fnv1(h1, mix.get_as_u32(i + 2));
+            let h3 = PowFishHash::fnv1(h2, mix.get_as_u32(i + 3));
+            mix_hash.set_as_u32(i / 4, h3);
+        }
+    
+        Hash::from_bytes(mix_hash.0) 
     }
 
     pub fn keccak(out: &mut [u8], data: &[u8]) {
@@ -224,7 +400,7 @@ impl PowFishHash {
     }
 
     fn fnv1(u: u32, v: u32) -> u32 {
-        (u * FNV_PRIME) ^ v
+        u.wrapping_mul(FNV_PRIME) ^ v
     }
     
     fn fnv1_512(u: Hash512, v: Hash512) -> Hash512 {
@@ -267,7 +443,14 @@ impl PowFishHash {
         Hash1024::from_512s(&mix0, &mix1)
     }
 
+    /*fn lookup(index: usize) -> Hash1024 {
+        PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, index)
+    }*/
+
     fn lookup(context: &mut Context, index: usize) -> Hash1024 {
+        //PowFishHash::calculate_dataset_item_1024(&context.light_cache, index);
+        PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, index)
+        /*
         match &mut context.full_dataset {
             Some(dataset) => {
                 let item = &mut dataset[index];
@@ -279,72 +462,13 @@ impl PowFishHash {
             }
             None => PowFishHash::calculate_dataset_item_1024(&context.light_cache, index),
         }
-    }
-    
-
-    fn fishhash_kernel(context: &mut Context, seed: &Hash512) -> Hash256 {
-        let mut mix = Hash1024::from_512s(seed, seed);
-    
-        for _ in 0..NUM_DATASET_ACCESSES as usize {
-            // Calculate new fetching indexes
-            let p0 = mix.get_as_u32(0) % FULL_DATASET_NUM_ITEMS;
-            let p1 = mix.get_as_u32(4) % FULL_DATASET_NUM_ITEMS;
-            let p2 = mix.get_as_u32(8) % FULL_DATASET_NUM_ITEMS;
-    
-            let fetch0 = PowFishHash::lookup(context, p0 as usize);
-            let mut fetch1 = PowFishHash::lookup(context, p1 as usize);
-            let mut fetch2 = PowFishHash::lookup(context, p2 as usize);
-    
-            // Modify fetch1 and fetch2
-            for j in 0..32 {
-                fetch1.set_as_u32(j, PowFishHash::fnv1(mix.get_as_u32(j), fetch1.get_as_u32(j)));
-                fetch2.set_as_u32(j, mix.get_as_u32(j) ^ fetch2.get_as_u32(j));
-            }
-    
-            // Final computation of new mix
-            for j in 0..16 {
-                mix.set_as_u64(
-                    j,
-                    fetch0.get_as_u64(j) * fetch1.get_as_u64(j) + fetch2.get_as_u64(j),
-                );
-            }
-        }
-    
-        // Collapse the result into 32 bytes
-        let mut mix_hash = Hash256::new();
-        let num_words = std::mem::size_of_val(&mix) / SIZE_U32;
-    
-        for i in (0..num_words).step_by(4) {
-            let h1 = PowFishHash::fnv1(mix.get_as_u32(i), mix.get_as_u32(i + 1));
-            let h2 = PowFishHash::fnv1(h1, mix.get_as_u32(i + 2));
-            let h3 = PowFishHash::fnv1(h2, mix.get_as_u32(i + 3));
-            mix_hash.set_as_u32(i / 4, h3);
-        }
-    
-        mix_hash
+        */
     }
 
-    #[inline]
-    pub fn hash(output: &mut [u8], context: &mut Context, header: &[u8]) {
-        let mut seed: Hash512 = Hash512::new();
-    
-        let mut hasher = blake3::Hasher::new();
-        hasher.update(header);
-        let mut output_reader = hasher.finalize_xof();
-        output_reader.fill(&mut seed.0);
-    
-        let mix_hash = PowFishHash::fishhash_kernel(context, &seed);
-    
-        let mut final_data: [u8; 96] = [0; 96];
-        final_data[0..64].copy_from_slice(&seed.0);
-        final_data[64..].copy_from_slice(&mix_hash.0);
-    
-        let hash = blake3::hash(&final_data);
-        output.copy_from_slice(hash.as_bytes());
-    }
 
 
 }
+
 
 impl PowB3Hash {
 
@@ -365,6 +489,13 @@ impl PowB3Hash {
         let hash = self.hasher.finalize();
         Hash(*hash.as_bytes())
 
+    }
+
+    pub fn hash(my_hash: Hash) -> Hash {
+        let mut hasher = blake3::Hasher::new();
+        hasher.update(&my_hash.as_bytes());
+        let hash = hasher.finalize();
+        Hash(*hash.as_bytes())
     }
 
 }
