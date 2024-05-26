@@ -36,7 +36,7 @@ impl HeaderProcessor {
 
     // TODO : setup dual block version managment
     fn check_header_version(&self, header: &Header) -> BlockProcessResult<()> {
-        if header.version != constants::BLOCK_VERSION_KHASHV2 {
+        if header.version != constants::BLOCK_VERSION {
             return Err(RuleError::WrongBlockVersion(header.version));
         }
         Ok(())
