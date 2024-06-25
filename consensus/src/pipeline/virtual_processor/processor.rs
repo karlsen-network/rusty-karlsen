@@ -7,6 +7,8 @@ use crate::{
         storage::ConsensusStorage,
     },
     constants::BLOCK_VERSION,
+    constants::BLOCK_VERSION_KHASHV1,
+    constants::BLOCK_VERSION_KHASHV2,
     errors::RuleError,
     model::{
         services::{
@@ -112,6 +114,7 @@ pub struct VirtualStateProcessor {
     pub(super) max_block_parents: u8,
     pub(super) mergeset_size_limit: u64,
     pub(super) pruning_depth: u64,
+    pub(super) hf_daa_score: u64,
 
     // Stores
     pub(super) statuses_store: Arc<RwLock<DbStatusesStore>>,
@@ -186,6 +189,7 @@ impl VirtualStateProcessor {
             max_block_parents: params.max_block_parents,
             mergeset_size_limit: params.mergeset_size_limit,
             pruning_depth: params.pruning_depth,
+            hf_daa_score: params.hf_daa_score,
 
             db,
             statuses_store: storage.statuses_store.clone(),
@@ -950,7 +954,7 @@ impl VirtualStateProcessor {
             )
             .unwrap();
         txs.insert(0, coinbase.tx);
-        let version = BLOCK_VERSION;
+        let version = if virtual_state.daa_score >= self.hf_daa_score {BLOCK_VERSION_KHASHV2} else {BLOCK_VERSION_KHASHV1};
         let parents_by_level = self.parents_manager.calc_block_parents(pruning_info.pruning_point, &virtual_state.parents);
 
         // Hash according to hardfork activation

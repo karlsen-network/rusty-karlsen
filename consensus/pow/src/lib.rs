@@ -77,9 +77,9 @@ impl State {
     #[must_use]
     /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
-        if self.header_version == constants::BLOCK_VERSION_KHASHV2 {
-            return self.calculate_pow_khashv2(nonce);
-        } else if self.header_version == constants::BLOCK_VERSION {
+        if self.header_version == constants::BLOCK_VERSION_KHASHV1 {
+            return self.calculate_pow_khashv1(nonce);
+        } else if self.header_version == constants::BLOCK_VERSION_KHASHV2 {
             return self.calculate_pow_khashv2plus(nonce);
         } else {
             // TODO handle block version error

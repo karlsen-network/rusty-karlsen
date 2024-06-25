@@ -91,6 +91,7 @@ pub struct Params {
     pub skip_proof_of_work: bool,
     pub max_block_level: BlockLevel,
     pub pruning_proof_m: u64,
+    pub hf_daa_score: u64,
 }
 
 fn unix_now() -> u64 {
@@ -346,6 +347,7 @@ pub const MAINNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 225,
     pruning_proof_m: 1000,
+    hf_daa_score: 22000042,
 };
 
 pub const TESTNET_PARAMS: Params = Params {
@@ -404,6 +406,7 @@ pub const TESTNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
+    hf_daa_score: 0,
 };
 
 pub const TESTNET11_PARAMS: Params = Params {
@@ -457,6 +460,7 @@ pub const TESTNET11_PARAMS: Params = Params {
 
     skip_proof_of_work: false,
     max_block_level: 250,
+    hf_daa_score: 0,
 };
 
 pub const SIMNET_PARAMS: Params = Params {
@@ -509,6 +513,7 @@ pub const SIMNET_PARAMS: Params = Params {
 
     skip_proof_of_work: true, // For simnet only, PoW can be simulated by default
     max_block_level: 250,
+    hf_daa_score: 0,
 };
 
 pub const DEVNET_PARAMS: Params = Params {
@@ -565,4 +570,5 @@ pub const DEVNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
+    hf_daa_score: 0,
 };
