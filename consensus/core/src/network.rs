@@ -30,8 +30,8 @@ impl NetworkType {
         match self {
             NetworkType::Mainnet => 42110,
             NetworkType::Testnet => 42210,
-            NetworkType::Simnet => 16510,
-            NetworkType::Devnet => 16610,
+            NetworkType::Simnet => 42510,
+            NetworkType::Devnet => 42610,
         }
     }
 
@@ -39,8 +39,8 @@ impl NetworkType {
         match self {
             NetworkType::Mainnet => 43110,
             NetworkType::Testnet => 43210,
-            NetworkType::Simnet => 17510,
-            NetworkType::Devnet => 17610,
+            NetworkType::Simnet => 43510,
+            NetworkType::Devnet => 43610,
         }
     }
 
@@ -48,8 +48,8 @@ impl NetworkType {
         match self {
             NetworkType::Mainnet => 44110,
             NetworkType::Testnet => 44210,
-            NetworkType::Simnet => 18510,
-            NetworkType::Devnet => 18610,
+            NetworkType::Simnet => 44510,
+            NetworkType::Devnet => 44610,
         }
     }
 

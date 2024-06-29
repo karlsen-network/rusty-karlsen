@@ -570,5 +570,5 @@ pub const DEVNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
-    hf_daa_score: 0,
+    hf_daa_score: 50,
 };

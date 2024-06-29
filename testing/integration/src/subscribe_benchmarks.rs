@@ -124,7 +124,7 @@ async fn utxos_changed_subscriptions_sanity_check() {
     daemon_process.wait().await.expect("failed to wait for the daemon process");
 }
 
-/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon --exact --nocapture --ignored -- --rpc=16610 --p2p=16611 --private-key=a2760251adb5b6e8d4514d23397f1631893e168c33f92ff8a7a24f397d355d62 --max-tracked-addresses=1000000 --utxoindex`
+/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon --exact --nocapture --ignored -- --rpc=42610 --p2p=42611 --private-key=a2760251adb5b6e8d4514d23397f1631893e168c33f92ff8a7a24f397d355d62 --max-tracked-addresses=1000000 --utxoindex`
 ///
 /// This test is designed to be run as a child process, with the parent process eventually shutting it down.
 /// Do not run it directly.
