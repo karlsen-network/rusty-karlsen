@@ -230,19 +230,19 @@ impl NetworkId {
         match self.network_type {
             NetworkType::Mainnet => 42111,
             NetworkType::Testnet => match self.suffix {
-                Some(10) => 42211,
-                Some(11) => 16311,
-                None | Some(_) => 16411,
+                Some(1) => 42211,
+                Some(11) => 42711,
+                None | Some(_) => 42211,
             },
-            NetworkType::Simnet => 16511,
-            NetworkType::Devnet => 16611,
+            NetworkType::Simnet => 42511,
+            NetworkType::Devnet => 42611,
         }
     }
 
     pub fn iter() -> impl Iterator<Item = Self> {
         static NETWORK_IDS: [NetworkId; 5] = [
             NetworkId::new(NetworkType::Mainnet),
-            NetworkId::with_suffix(NetworkType::Testnet, 10),
+            NetworkId::with_suffix(NetworkType::Testnet, 1),
             NetworkId::with_suffix(NetworkType::Testnet, 11),
             NetworkId::new(NetworkType::Devnet),
             NetworkId::new(NetworkType::Simnet),

@@ -36,8 +36,9 @@ impl State {
         // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
         let hasher = PowB3Hash::new(pre_pow_hash, header.timestamp);
         let matrix = Matrix::generate(pre_pow_hash);
+        let header_version = header.version;
 
-        Self { inner: crate::State { matrix, target, hasher }, pre_pow_hash }
+        Self { inner: crate::State { matrix, target, hasher, header_version }, pre_pow_hash }
     }
 
     #[wasm_bindgen(getter)]

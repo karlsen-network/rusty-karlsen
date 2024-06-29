@@ -110,7 +110,7 @@ impl Default for Args {
             enable_unsynced_mining: false,
             enable_mainnet_mining: true,
             testnet: false,
-            testnet_suffix: 10,
+            testnet_suffix: 1,
             devnet: false,
             simnet: false,
             archival: false,

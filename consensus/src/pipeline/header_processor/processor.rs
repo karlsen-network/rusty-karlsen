@@ -119,6 +119,7 @@ pub struct HeaderProcessor {
     pub(super) mergeset_size_limit: u64,
     pub(super) skip_proof_of_work: bool,
     pub(super) max_block_level: BlockLevel,
+    pub(super) hf_daa_score: u64,
 
     // DB
     db: Arc<DB>,
@@ -206,6 +207,7 @@ impl HeaderProcessor {
             mergeset_size_limit: params.mergeset_size_limit,
             skip_proof_of_work: params.skip_proof_of_work,
             max_block_level: params.max_block_level,
+            hf_daa_score: params.hf_daa_score,
         }
     }
 
@@ -294,7 +296,7 @@ impl HeaderProcessor {
 
     /// Runs full ordinary header validation
     fn validate_header(&self, header: &Arc<Header>) -> BlockProcessResult<HeaderProcessingContext> {
-        let block_level = self.validate_header_in_isolation(header)?;
+        let block_level = self.validate_header_in_isolation(header, self.hf_daa_score)?;
         self.validate_parent_relations(header)?;
         let mut ctx = self.build_processing_context(header, block_level);
         self.ghostdag(&mut ctx);
@@ -310,7 +312,7 @@ impl HeaderProcessor {
     fn validate_trusted_header(&self, header: &Arc<Header>) -> BlockProcessResult<HeaderProcessingContext> {
         // TODO: For now we skip most validations for trusted blocks, but in the future we should
         // employ some validations to avoid spam etc.
-        let block_level = self.validate_header_in_isolation(header)?;
+        let block_level = self.validate_header_in_isolation(header, self.hf_daa_score)?;
         let mut ctx = self.build_processing_context(header, block_level);
         self.ghostdag(&mut ctx);
         Ok(ctx)

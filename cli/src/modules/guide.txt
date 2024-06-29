@@ -11,9 +11,9 @@ On Windows you can use `Alt+F4` and on MacOS `Command+Q` to exit.
 ---
 
 Before you start, you must configure the default network setting.  There are currently
-3 networks available.  `mainnet`, `testnet-10` and `testnet-11`.  While this software
+3 networks available.  `mainnet`, `testnet-1` and `testnet-11`.  While this software
 is in alpha stage, you should not use it on the mainnet.  If you wish to experiment,
-you should select `testnet-10` by entering `network testnet-10`
+you should select `testnet-1` by entering `network testnet-1`
 
 The `server` command configures the target server.  You can connect to any Rusty Karlsen
 node that has User RPC enabled with `--rpclisten-borsh=public`. If you are running the node
@@ -44,7 +44,7 @@ accounts, as such you only need one wallet, unless, for example, you want to sep
 personal and business needs (but you can also create isolated accounts within a wallet).
 
 Make sure to record your mnemonic, even if working with a testnet, not to loose your
-testnet KAS.
+testnet KLS.
 
 `open <name>` - opens the wallet (the wallet is open automatically after creation).
 

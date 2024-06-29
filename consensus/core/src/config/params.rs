@@ -91,6 +91,7 @@ pub struct Params {
     pub skip_proof_of_work: bool,
     pub max_block_level: BlockLevel,
     pub pruning_proof_m: u64,
+    pub hf_daa_score: u64,
 }
 
 fn unix_now() -> u64 {
@@ -278,7 +279,7 @@ impl From<NetworkId> for Params {
         match value.network_type {
             NetworkType::Mainnet => MAINNET_PARAMS,
             NetworkType::Testnet => match value.suffix {
-                Some(10) => TESTNET_PARAMS,
+                Some(1) => TESTNET_PARAMS,
                 Some(11) => TESTNET11_PARAMS,
                 Some(x) => panic!("Testnet suffix {} is not supported", x),
                 None => panic!("Testnet suffix not provided"),
@@ -346,14 +347,14 @@ pub const MAINNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 225,
     pruning_proof_m: 1000,
+    hf_daa_score: 22000042,
 };
 
 pub const TESTNET_PARAMS: Params = Params {
     dns_seeders: &[
-        // This DNS seeder is run by Tiram
-        "seeder1-testnet.karlsend.net",
+        "testnet-1-dnsseed.karlsencoin.com",
     ],
-    net: NetworkId::with_suffix(NetworkType::Testnet, 10),
+    net: NetworkId::with_suffix(NetworkType::Testnet, 1),
     genesis: TESTNET_GENESIS,
     ghostdag_k: LEGACY_DEFAULT_GHOSTDAG_K,
     legacy_timestamp_deviation_tolerance: LEGACY_TIMESTAMP_DEVIATION_TOLERANCE,
@@ -405,14 +406,12 @@ pub const TESTNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
+    hf_daa_score: 0,
 };
 
 pub const TESTNET11_PARAMS: Params = Params {
     dns_seeders: &[
-        // This DNS seeder is run by Tiram
-        "seeder1-testnet-11.karlsend.net",
-        // This DNS seeder is run by supertypo
-        "n-testnet-11.kaspa.ws",
+        "testnet-1-dnsseed.karlsencoin.com",
     ],
     net: NetworkId::with_suffix(NetworkType::Testnet, 11),
     genesis: TESTNET11_GENESIS,
@@ -461,6 +460,7 @@ pub const TESTNET11_PARAMS: Params = Params {
 
     skip_proof_of_work: false,
     max_block_level: 250,
+    hf_daa_score: 0,
 };
 
 pub const SIMNET_PARAMS: Params = Params {
@@ -513,6 +513,7 @@ pub const SIMNET_PARAMS: Params = Params {
 
     skip_proof_of_work: true, // For simnet only, PoW can be simulated by default
     max_block_level: 250,
+    hf_daa_score: 0,
 };
 
 pub const DEVNET_PARAMS: Params = Params {
@@ -569,4 +570,5 @@ pub const DEVNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
+    hf_daa_score: 0,
 };
