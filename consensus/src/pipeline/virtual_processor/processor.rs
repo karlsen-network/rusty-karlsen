@@ -6,7 +6,6 @@ use crate::{
         },
         storage::ConsensusStorage,
     },
-    constants::BLOCK_VERSION,
     constants::BLOCK_VERSION_KHASHV1,
     constants::BLOCK_VERSION_KHASHV2,
     errors::RuleError,

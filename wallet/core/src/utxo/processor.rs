@@ -325,6 +325,7 @@ impl UtxoProcessor {
         Ok(())
     }
 
+    #[allow(clippy::mutable_key_type)]
     pub async fn handle_pending(&self, current_daa_score: u64) -> Result<()> {
         let params = self.network_params()?;
 
@@ -476,6 +477,7 @@ impl UtxoProcessor {
             .current_daa_score()
             .expect("DAA score expected when handling UTXO Changed notifications");
 
+        #[allow(clippy::mutable_key_type)]
         let mut updated_contexts: HashSet<UtxoContext> = HashSet::default();
 
         let removed = (*utxos.removed)

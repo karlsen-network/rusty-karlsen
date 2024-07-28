@@ -1,7 +1,6 @@
 use std::{collections::HashMap, fmt::Display};
 
 use crate::{
-    constants,
     errors::{coinbase::CoinbaseError, tx::TxRuleError},
     tx::{TransactionId, TransactionOutpoint},
     BlueWorkType,
