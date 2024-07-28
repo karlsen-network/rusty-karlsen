@@ -24,7 +24,13 @@ impl<T: Send + 'static> ClientPool<T> {
         let running_tasks = Arc::new(AtomicUsize::new(0));
         let started = SingleTrigger::new();
         let shutdown = SingleTrigger::new();
-        Self { clients, distribution_channel, running_tasks, started, shutdown }
+        Self {
+            clients,
+            distribution_channel,
+            running_tasks,
+            started,
+            shutdown,
+        }
     }
 
     pub fn start<F, R>(&self, client_op: F) -> Vec<JoinHandle<()>>
@@ -52,7 +58,11 @@ impl<T: Send + 'static> ClientPool<T> {
                         }
                     }
                     client.disconnect().await.unwrap();
-                    trace!("Client pool {} task {} exited", type_name_short::<Self>(), index);
+                    trace!(
+                        "Client pool {} task {} exited",
+                        type_name_short::<Self>(),
+                        index
+                    );
                     if running_tasks.fetch_sub(1, Ordering::SeqCst) == 1 {
                         shutdown_trigger.trigger();
                     }

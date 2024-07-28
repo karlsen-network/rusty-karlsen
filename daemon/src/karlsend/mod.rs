@@ -31,7 +31,12 @@ pub struct KarlsendConfig {
 
 impl KarlsendConfig {
     pub fn new(path: &str, network_id: NetworkId, mute: bool) -> Self {
-        Self { path: Some(path.to_string()), network: Some(network_id), mute, ..Default::default() }
+        Self {
+            path: Some(path.to_string()),
+            network: Some(network_id),
+            mute,
+            ..Default::default()
+        }
     }
 }
 
@@ -139,7 +144,10 @@ impl TryFrom<KarlsendConfig> for Vec<String> {
             argv.push(grpc_listen_flag.as_str());
         }
 
-        let perf_metrics_interval_sec = format!("--perf-metrics-interval-sec={}", args.perf_metrics_interval_sec.unwrap_or(1));
+        let perf_metrics_interval_sec = format!(
+            "--perf-metrics-interval-sec={}",
+            args.perf_metrics_interval_sec.unwrap_or(1)
+        );
         if args.perf_metrics {
             argv.push("--perf-metrics");
             argv.push(perf_metrics_interval_sec.as_str());
@@ -156,7 +164,10 @@ struct Inner {
 
 impl Default for Inner {
     fn default() -> Self {
-        Self { process: None, config: Mutex::new(Default::default()) }
+        Self {
+            process: None,
+            config: Mutex::new(Default::default()),
+        }
     }
 }
 
@@ -168,7 +179,11 @@ pub struct Karlsend {
 
 impl Default for Karlsend {
     fn default() -> Self {
-        Self { inner: Arc::new(Mutex::new(Inner::default())), mute: Arc::new(AtomicBool::new(false)), events: Channel::unbounded() }
+        Self {
+            inner: Arc::new(Mutex::new(Inner::default())),
+            mute: Arc::new(AtomicBool::new(false)),
+            events: Channel::unbounded(),
+        }
     }
 }
 
@@ -176,7 +191,10 @@ impl Karlsend {
     pub fn new(args: KarlsendConfig) -> Self {
         Self {
             mute: Arc::new(AtomicBool::new(args.mute)),
-            inner: Arc::new(Mutex::new(Inner { config: Mutex::new(args), ..Default::default() })),
+            inner: Arc::new(Mutex::new(Inner {
+                config: Mutex::new(args),
+                ..Default::default()
+            })),
             events: Channel::unbounded(),
         }
     }
@@ -215,7 +233,9 @@ impl Karlsend {
         let process = self.process();
         if let Some(process) = process {
             if process.is_running() {
-                return Err(Error::Custom("Karlsen node is already running.".to_string()));
+                return Err(Error::Custom(
+                    "Karlsen node is already running.".to_string(),
+                ));
             }
         }
 

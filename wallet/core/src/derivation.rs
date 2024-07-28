@@ -14,10 +14,14 @@ use crate::account::AccountKind;
 use crate::error::Error;
 use crate::imports::*;
 use crate::result::Result;
-use karlsen_bip32::{AddressType, DerivationPath, ExtendedPrivateKey, ExtendedPublicKey, Language, Mnemonic, SecretKeyExt};
+use karlsen_bip32::{
+    AddressType, DerivationPath, ExtendedPrivateKey, ExtendedPublicKey, Language, Mnemonic,
+    SecretKeyExt,
+};
 use karlsen_consensus_core::network::NetworkType;
 use karlsen_txscript::{
-    extract_script_pub_key_address, multisig_redeem_script, multisig_redeem_script_ecdsa, pay_to_script_hash_script,
+    extract_script_pub_key_address, multisig_redeem_script, multisig_redeem_script_ecdsa,
+    pay_to_script_hash_script,
 };
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
@@ -75,9 +79,19 @@ impl AddressManager {
             m.set_index(index)?;
         }
 
-        let inner = Inner { index, address_to_index_map: HashMap::new() };
+        let inner = Inner {
+            index,
+            address_to_index_map: HashMap::new(),
+        };
 
-        Ok(Self { wallet, account_kind, pubkey_managers, ecdsa, minimum_signatures, inner: Arc::new(Mutex::new(inner)) })
+        Ok(Self {
+            wallet,
+            account_kind,
+            pubkey_managers,
+            ecdsa,
+            minimum_signatures,
+            inner: Arc::new(Mutex::new(inner)),
+        })
     }
 
     pub fn inner(&self) -> MutexGuard<Inner> {
@@ -93,7 +107,9 @@ impl AddressManager {
         let list = self.pubkey_managers.iter().map(|m| m.current_pubkey());
 
         // let keys = join_all(list).await.into_iter().collect::<Result<Vec<_>>>()?;
-        let keys = list.into_iter().collect::<karlsen_wallet_keys::result::Result<Vec<_>>>()?;
+        let keys = list
+            .into_iter()
+            .collect::<karlsen_wallet_keys::result::Result<Vec<_>>>()?;
         let address = self.create_address(keys)?;
 
         self.update_address_to_index_map(self.index(), &[address.clone()])?;
@@ -103,7 +119,13 @@ impl AddressManager {
 
     fn create_address(&self, keys: Vec<secp256k1::PublicKey>) -> Result<Address> {
         let address_prefix = self.wallet.address_prefix()?;
-        create_address(self.minimum_signatures, keys, address_prefix, self.ecdsa, Some(self.account_kind))
+        create_address(
+            self.minimum_signatures,
+            keys,
+            address_prefix,
+            self.ecdsa,
+            Some(self.account_kind),
+        )
     }
 
     pub fn index(&self) -> u32 {
@@ -121,12 +143,21 @@ impl AddressManager {
         self.get_range_with_args(indexes, true)
     }
 
-    pub fn get_range_with_args(&self, indexes: std::ops::Range<u32>, update_indexes: bool) -> Result<Vec<Address>> {
+    pub fn get_range_with_args(
+        &self,
+        indexes: std::ops::Range<u32>,
+        update_indexes: bool,
+    ) -> Result<Vec<Address>> {
         let manager_length = self.pubkey_managers.len();
 
-        let list = self.pubkey_managers.iter().map(|m| m.get_range(indexes.clone()));
+        let list = self
+            .pubkey_managers
+            .iter()
+            .map(|m| m.get_range(indexes.clone()));
 
-        let manager_keys = list.into_iter().collect::<karlsen_wallet_keys::result::Result<Vec<_>>>()?;
+        let manager_keys = list
+            .into_iter()
+            .collect::<karlsen_wallet_keys::result::Result<Vec<_>>>()?;
 
         let is_multisig = manager_length > 1;
 
@@ -146,7 +177,9 @@ impl AddressManager {
         for key_index in indexes.clone() {
             let mut keys = vec![];
             for i in 0..manager_length {
-                let Some(k) = manager_keys.get(i).unwrap().get(key_index as usize) else { continue };
+                let Some(k) = manager_keys.get(i).unwrap().get(key_index as usize) else {
+                    continue;
+                };
                 keys.push(*k);
             }
             if keys.is_empty() {
@@ -194,7 +227,9 @@ impl AddressDerivationManager {
         address_derivation_indexes: AddressDerivationMeta,
     ) -> Result<Arc<AddressDerivationManager>> {
         if keys.is_empty() {
-            return Err("Invalid keys: keys are required for address derivation".to_string().into());
+            return Err("Invalid keys: keys are required for address derivation"
+                .to_string()
+                .into());
         }
 
         let mut receive_pubkey_managers = vec![];
@@ -202,12 +237,23 @@ impl AddressDerivationManager {
         let mut derivators = vec![];
         for xpub in keys.iter() {
             let derivator: Arc<dyn WalletDerivationManagerTrait> = match account_kind.as_ref() {
-                LEGACY_ACCOUNT_KIND => Arc::new(WalletDerivationManagerV0::from_extended_public_key(xpub.clone(), cosigner_index)?),
+                LEGACY_ACCOUNT_KIND => {
+                    Arc::new(WalletDerivationManagerV0::from_extended_public_key(
+                        xpub.clone(),
+                        cosigner_index,
+                    )?)
+                }
                 MULTISIG_ACCOUNT_KIND => {
                     let cosigner_index = cosigner_index.ok_or(Error::InvalidAccountKind)?;
-                    Arc::new(WalletDerivationManager::from_extended_public_key(xpub.clone(), Some(cosigner_index))?)
+                    Arc::new(WalletDerivationManager::from_extended_public_key(
+                        xpub.clone(),
+                        Some(cosigner_index),
+                    )?)
                 }
-                _ => Arc::new(WalletDerivationManager::from_extended_public_key(xpub.clone(), cosigner_index)?),
+                _ => Arc::new(WalletDerivationManager::from_extended_public_key(
+                    xpub.clone(),
+                    cosigner_index,
+                )?),
             };
 
             receive_pubkey_managers.push(derivator.receive_pubkey_manager());
@@ -253,8 +299,9 @@ impl AddressDerivationManager {
     ) -> Result<Arc<AddressDerivationManager>> {
         let mut receive_pubkey_managers = vec![];
         let mut change_pubkey_managers = vec![];
-        let derivator: Arc<dyn WalletDerivationManagerTrait> =
-            Arc::new(WalletDerivationManagerV0::create_uninitialized(account_index, None, None)?);
+        let derivator: Arc<dyn WalletDerivationManagerTrait> = Arc::new(
+            WalletDerivationManagerV0::create_uninitialized(account_index, None, None)?,
+        );
         receive_pubkey_managers.push(derivator.receive_pubkey_manager());
         change_pubkey_managers.push(derivator.change_pubkey_manager());
 
@@ -269,8 +316,14 @@ impl AddressDerivationManager {
             1,
         )?;
 
-        let change_address_manager =
-            AddressManager::new(wallet.clone(), account_kind, change_pubkey_managers, false, address_derivation_indexes.change(), 1)?;
+        let change_address_manager = AddressManager::new(
+            wallet.clone(),
+            account_kind,
+            change_pubkey_managers,
+            false,
+            address_derivation_indexes.change(),
+            1,
+        )?;
 
         let manager = Self {
             account_kind,
@@ -299,7 +352,8 @@ impl AddressDerivationManager {
         update_indexes: bool,
         xkey: &ExtendedPrivateKey<secp256k1::SecretKey>,
     ) -> Result<Vec<(Address, secp256k1::SecretKey)>> {
-        self.get_range_with_keys_impl(false, indexes, update_indexes, xkey).await
+        self.get_range_with_keys_impl(false, indexes, update_indexes, xkey)
+            .await
     }
 
     pub async fn get_change_range_with_keys(
@@ -308,7 +362,8 @@ impl AddressDerivationManager {
         update_indexes: bool,
         xkey: &ExtendedPrivateKey<secp256k1::SecretKey>,
     ) -> Result<Vec<(Address, secp256k1::SecretKey)>> {
-        self.get_range_with_keys_impl(true, indexes, update_indexes, xkey).await
+        self.get_range_with_keys_impl(true, indexes, update_indexes, xkey)
+            .await
     }
 
     async fn get_range_with_keys_impl(
@@ -320,17 +375,33 @@ impl AddressDerivationManager {
     ) -> Result<Vec<(Address, secp256k1::SecretKey)>> {
         let start = indexes.start;
         let addresses = if change_address {
-            self.change_address_manager.get_range_with_args(indexes, update_indexes)?
+            self.change_address_manager
+                .get_range_with_args(indexes, update_indexes)?
         } else {
-            self.receive_address_manager.get_range_with_args(indexes, update_indexes)?
+            self.receive_address_manager
+                .get_range_with_args(indexes, update_indexes)?
         };
 
-        let addresses = addresses.iter().enumerate().map(|(index, a)| (a, start + index as u32)).collect::<Vec<(&Address, u32)>>();
+        let addresses = addresses
+            .iter()
+            .enumerate()
+            .map(|(index, a)| (a, start + index as u32))
+            .collect::<Vec<(&Address, u32)>>();
 
-        let (receive, change) = if change_address { (vec![], addresses) } else { (addresses, vec![]) };
+        let (receive, change) = if change_address {
+            (vec![], addresses)
+        } else {
+            (addresses, vec![])
+        };
 
-        let private_keys =
-            create_private_keys(&self.account_kind, self.cosigner_index.unwrap_or(0), self.account_index, xkey, &receive, &change)?;
+        let private_keys = create_private_keys(
+            &self.account_kind,
+            self.cosigner_index.unwrap_or(0),
+            self.account_index,
+            xkey,
+            &receive,
+            &change,
+        )?;
 
         let mut result = vec![];
         for (address, private_key) in private_keys {
@@ -341,7 +412,10 @@ impl AddressDerivationManager {
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn get_addresses_indexes<'l>(&self, addresses: &[&'l Address]) -> Result<(Vec<(&'l Address, u32)>, Vec<(&'l Address, u32)>)> {
+    pub fn get_addresses_indexes<'l>(
+        &self,
+        addresses: &[&'l Address],
+    ) -> Result<(Vec<(&'l Address, u32)>, Vec<(&'l Address, u32)>)> {
         let mut receive_indexes = vec![];
         let mut change_indexes = vec![];
         let receive_map = &self.receive_address_manager.inner().address_to_index_map;
@@ -353,7 +427,9 @@ impl AddressDerivationManager {
             } else if let Some(index) = change_map.get(*address) {
                 change_indexes.push((*address, *index));
             } else {
-                return Err(Error::Custom(format!("Address ({address}) index not found.")));
+                return Err(Error::Custom(format!(
+                    "Address ({address}) index not found."
+                )));
             }
         }
 
@@ -367,11 +443,17 @@ impl AddressDerivationManager {
         self.indexes_by_addresses(addresses, &self.change_address_manager)
     }
 
-    pub fn indexes_by_addresses(&self, addresses: &Vec<Address>, manager: &Arc<AddressManager>) -> Result<Vec<u32>> {
+    pub fn indexes_by_addresses(
+        &self,
+        addresses: &Vec<Address>,
+        manager: &Arc<AddressManager>,
+    ) -> Result<Vec<u32>> {
         let map = &manager.inner().address_to_index_map;
         let mut indexes = vec![];
         for address in addresses {
-            let index = map.get(address).ok_or(Error::Custom(format!("Address ({address}) index not found.")))?;
+            let index = map.get(address).ok_or(Error::Custom(format!(
+                "Address ({address}) index not found."
+            )))?;
             indexes.push(*index);
         }
 
@@ -394,7 +476,10 @@ impl AddressDerivationManager {
     }
 
     pub fn address_derivation_meta(&self) -> AddressDerivationMeta {
-        AddressDerivationMeta::new(self.receive_address_manager.index(), self.change_address_manager.index())
+        AddressDerivationMeta::new(
+            self.receive_address_manager.index(),
+            self.change_address_manager.index(),
+        )
     }
 }
 
@@ -409,7 +494,10 @@ impl AddressDerivationManagerTrait for AddressDerivationManager {
     }
 
     #[allow(clippy::type_complexity)]
-    fn addresses_indexes<'l>(&self, addresses: &[&'l Address]) -> Result<(Vec<(&'l Address, u32)>, Vec<(&'l Address, u32)>)> {
+    fn addresses_indexes<'l>(
+        &self,
+        addresses: &[&'l Address],
+    ) -> Result<(Vec<(&'l Address, u32)>, Vec<(&'l Address, u32)>)> {
         self.get_addresses_indexes(addresses)
     }
 
@@ -420,7 +508,9 @@ impl AddressDerivationManagerTrait for AddressDerivationManager {
         update_indexes: bool,
         xkey: &ExtendedPrivateKey<secp256k1::SecretKey>,
     ) -> Result<Vec<(Address, secp256k1::SecretKey)>> {
-        Ok(self.get_range_with_keys_impl(change_address, indexes, update_indexes, xkey).await?)
+        Ok(self
+            .get_range_with_keys_impl(change_address, indexes, update_indexes, xkey)
+            .await?)
     }
 }
 
@@ -429,7 +519,10 @@ pub trait AddressDerivationManagerTrait: AnySync + Send + Sync + 'static {
     fn receive_address_manager(&self) -> Arc<AddressManager>;
     fn change_address_manager(&self) -> Arc<AddressManager>;
     #[allow(clippy::type_complexity)]
-    fn addresses_indexes<'l>(&self, addresses: &[&'l Address]) -> Result<(Vec<(&'l Address, u32)>, Vec<(&'l Address, u32)>)>;
+    fn addresses_indexes<'l>(
+        &self,
+        addresses: &[&'l Address],
+    ) -> Result<(Vec<(&'l Address, u32)>, Vec<(&'l Address, u32)>)>;
     async fn get_range_with_keys(
         &self,
         change_address: bool,
@@ -446,7 +539,10 @@ pub fn create_multisig_address(
     ecdsa: bool,
 ) -> Result<Address> {
     let script = if !ecdsa {
-        multisig_redeem_script(keys.iter().map(|pk| pk.x_only_public_key().0.serialize()), minimum_signatures)
+        multisig_redeem_script(
+            keys.iter().map(|pk| pk.x_only_public_key().0.serialize()),
+            minimum_signatures,
+        )
     } else {
         multisig_redeem_script_ecdsa(keys.iter().map(|pk| pk.serialize()), minimum_signatures)
     }?;
@@ -464,7 +560,13 @@ pub fn create_address_js(
     account_kind: Option<AccountKind>,
 ) -> Result<Address> {
     let public_key = PublicKey::try_cast_from(key)?;
-    create_address(1, vec![public_key.as_ref().try_into()?], network_type.into(), ecdsa.unwrap_or(false), account_kind)
+    create_address(
+        1,
+        vec![public_key.as_ref().try_into()?],
+        network_type.into(),
+        ecdsa.unwrap_or(false),
+        account_kind,
+    )
 }
 
 /// @category Wallet SDK
@@ -476,7 +578,13 @@ pub fn create_multisig_address_js(
     ecdsa: Option<bool>,
     account_kind: Option<AccountKind>,
 ) -> Result<Address> {
-    create_address(minimum_signatures, keys.try_into()?, network_type.into(), ecdsa.unwrap_or(false), account_kind)
+    create_address(
+        minimum_signatures,
+        keys.try_into()?,
+        network_type.into(),
+        ecdsa.unwrap_or(false),
+        account_kind,
+    )
 }
 
 pub fn create_address(
@@ -495,10 +603,17 @@ pub fn create_address(
         return create_multisig_address(minimum_signatures, keys, prefix, ecdsa);
     }
 
-    if account_kind.map(|kind| kind == LEGACY_ACCOUNT_KIND).unwrap_or(false) {
-        Ok(PubkeyDerivationManagerV0::create_address(&keys[0], prefix, ecdsa)?)
+    if account_kind
+        .map(|kind| kind == LEGACY_ACCOUNT_KIND)
+        .unwrap_or(false)
+    {
+        Ok(PubkeyDerivationManagerV0::create_address(
+            &keys[0], prefix, ecdsa,
+        )?)
     } else {
-        Ok(PubkeyDerivationManager::create_address(&keys[0], prefix, ecdsa)?)
+        Ok(PubkeyDerivationManager::create_address(
+            &keys[0], prefix, ecdsa,
+        )?)
     }
 }
 
@@ -512,12 +627,25 @@ pub async fn create_xpub_from_mnemonic(
     let xkey = ExtendedPrivateKey::<secp256k1::SecretKey>::new(seed)?;
 
     let (secret_key, attrs) = match account_kind.as_ref() {
-        LEGACY_ACCOUNT_KIND => WalletDerivationManagerV0::derive_extended_key_from_master_key(xkey, false, account_index)?,
-        MULTISIG_ACCOUNT_KIND => WalletDerivationManager::derive_extended_key_from_master_key(xkey, true, account_index)?,
-        _ => WalletDerivationManager::derive_extended_key_from_master_key(xkey, false, account_index)?,
+        LEGACY_ACCOUNT_KIND => WalletDerivationManagerV0::derive_extended_key_from_master_key(
+            xkey,
+            false,
+            account_index,
+        )?,
+        MULTISIG_ACCOUNT_KIND => {
+            WalletDerivationManager::derive_extended_key_from_master_key(xkey, true, account_index)?
+        }
+        _ => WalletDerivationManager::derive_extended_key_from_master_key(
+            xkey,
+            false,
+            account_index,
+        )?,
     };
 
-    let xkey = ExtendedPublicKey { public_key: secret_key.get_public_key(), attrs };
+    let xkey = ExtendedPublicKey {
+        public_key: secret_key.get_public_key(),
+        attrs,
+    };
 
     Ok(xkey)
 }
@@ -528,13 +656,29 @@ pub async fn create_xpub_from_xprv(
     account_index: u64,
 ) -> Result<ExtendedPublicKey<secp256k1::PublicKey>> {
     let (secret_key, attrs) = match account_kind.as_ref() {
-        LEGACY_ACCOUNT_KIND => WalletDerivationManagerV0::derive_extended_key_from_master_key(xprv, false, account_index)?,
-        MULTISIG_ACCOUNT_KIND => WalletDerivationManager::derive_extended_key_from_master_key(xprv, true, account_index)?,
-        BIP32_ACCOUNT_KIND => WalletDerivationManager::derive_extended_key_from_master_key(xprv, false, account_index)?,
-        _ => panic!("create_xpub_from_xprv not supported for account kind: {:?}", account_kind),
+        LEGACY_ACCOUNT_KIND => WalletDerivationManagerV0::derive_extended_key_from_master_key(
+            xprv,
+            false,
+            account_index,
+        )?,
+        MULTISIG_ACCOUNT_KIND => {
+            WalletDerivationManager::derive_extended_key_from_master_key(xprv, true, account_index)?
+        }
+        BIP32_ACCOUNT_KIND => WalletDerivationManager::derive_extended_key_from_master_key(
+            xprv,
+            false,
+            account_index,
+        )?,
+        _ => panic!(
+            "create_xpub_from_xprv not supported for account kind: {:?}",
+            account_kind
+        ),
     };
 
-    let xkey = ExtendedPublicKey { public_key: secret_key.get_public_key(), attrs };
+    let xkey = ExtendedPublicKey {
+        public_key: secret_key.get_public_key(),
+        attrs,
+    };
 
     Ok(xkey)
 }
@@ -546,13 +690,27 @@ pub fn build_derivate_path(
     address_type: AddressType,
 ) -> Result<DerivationPath> {
     match account_kind.as_ref() {
-        LEGACY_ACCOUNT_KIND => Ok(WalletDerivationManagerV0::build_derivate_path(account_index, Some(address_type))?),
-        BIP32_ACCOUNT_KIND => Ok(WalletDerivationManager::build_derivate_path(false, account_index, None, Some(address_type))?),
-        MULTISIG_ACCOUNT_KIND => {
-            Ok(WalletDerivationManager::build_derivate_path(true, account_index, Some(cosigner_index), Some(address_type))?)
-        }
+        LEGACY_ACCOUNT_KIND => Ok(WalletDerivationManagerV0::build_derivate_path(
+            account_index,
+            Some(address_type),
+        )?),
+        BIP32_ACCOUNT_KIND => Ok(WalletDerivationManager::build_derivate_path(
+            false,
+            account_index,
+            None,
+            Some(address_type),
+        )?),
+        MULTISIG_ACCOUNT_KIND => Ok(WalletDerivationManager::build_derivate_path(
+            true,
+            account_index,
+            Some(cosigner_index),
+            Some(address_type),
+        )?),
         _ => {
-            panic!("build derivate path not supported for account kind: {:?}", account_kind);
+            panic!(
+                "build derivate path not supported for account kind: {:?}",
+                account_kind
+            );
         }
     }
 }
@@ -562,7 +720,17 @@ pub fn build_derivate_paths(
     account_index: u64,
     cosigner_index: u32,
 ) -> Result<(DerivationPath, DerivationPath)> {
-    let receive_path = build_derivate_path(account_kind, account_index, cosigner_index, AddressType::Receive)?;
-    let change_path = build_derivate_path(account_kind, account_index, cosigner_index, AddressType::Change)?;
+    let receive_path = build_derivate_path(
+        account_kind,
+        account_index,
+        cosigner_index,
+        AddressType::Receive,
+    )?;
+    let change_path = build_derivate_path(
+        account_kind,
+        account_index,
+        cosigner_index,
+        AddressType::Change,
+    )?;
     Ok((receive_path, change_path))
 }

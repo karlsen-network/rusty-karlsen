@@ -13,7 +13,8 @@ pub enum AssocPrvKeyDataIds {
 
 impl IntoIterator for &AssocPrvKeyDataIds {
     type Item = PrvKeyDataId;
-    type IntoIter = Either<Either<Empty<Self::Item>, Once<Self::Item>>, std::vec::IntoIter<Self::Item>>;
+    type IntoIter =
+        Either<Either<Empty<Self::Item>, Once<Self::Item>>, std::vec::IntoIter<Self::Item>>;
 
     fn into_iter(self) -> Self::IntoIter {
         match self {
@@ -75,7 +76,10 @@ impl TryFrom<AssocPrvKeyDataIds> for Option<Arc<Vec<PrvKeyDataId>>> {
         match value {
             AssocPrvKeyDataIds::None => Ok(None),
             AssocPrvKeyDataIds::Multiple(ids) => Ok(Some(ids)),
-            _ => Err(Error::AssocPrvKeyDataIds("None or Multiple".to_string(), value)),
+            _ => Err(Error::AssocPrvKeyDataIds(
+                "None or Multiple".to_string(),
+                value,
+            )),
         }
     }
 }
@@ -97,7 +101,11 @@ mod tests {
     #[test]
     fn test_assoc_prv_key_data_ids() -> Result<()> {
         let id = PrvKeyDataId::new(0x1ee7c0de);
-        let vec = vec![PrvKeyDataId::new(0x1ee7c0de), PrvKeyDataId::new(0xbaadc0de), PrvKeyDataId::new(0xba5ec0de)];
+        let vec = vec![
+            PrvKeyDataId::new(0x1ee7c0de),
+            PrvKeyDataId::new(0xbaadc0de),
+            PrvKeyDataId::new(0xba5ec0de),
+        ];
 
         let iter = AssocPrvKeyDataIds::Single(id).into_iter();
         iter.for_each(|id| assert_eq!(id, id));

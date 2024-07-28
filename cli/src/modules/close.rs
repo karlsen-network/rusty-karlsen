@@ -5,7 +5,12 @@ use crate::imports::*;
 pub struct Close;
 
 impl Close {
-    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, _argv: Vec<String>, cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        _argv: Vec<String>,
+        cmd: &str,
+    ) -> Result<()> {
         Ok(ctx.term().exec(format!("wallet {cmd}")).await?)
     }
 }

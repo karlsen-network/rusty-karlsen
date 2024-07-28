@@ -9,7 +9,10 @@ pub struct MinerData<T: AsRef<[u8]> = Vec<u8>> {
 
 impl<T: AsRef<[u8]>> MinerData<T> {
     pub fn new(script_public_key: ScriptPublicKey, extra_data: T) -> Self {
-        Self { script_public_key, extra_data }
+        Self {
+            script_public_key,
+            extra_data,
+        }
     }
 }
 
@@ -29,7 +32,11 @@ pub struct BlockRewardData {
 
 impl BlockRewardData {
     pub fn new(subsidy: u64, total_fees: u64, script_public_key: ScriptPublicKey) -> Self {
-        Self { subsidy, total_fees, script_public_key }
+        Self {
+            subsidy,
+            total_fees,
+            script_public_key,
+        }
     }
 }
 

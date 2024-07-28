@@ -58,9 +58,12 @@ impl U3072 {
     #[inline(always)]
     pub fn from_le_bytes(bytes: [u8; ELEMENT_BYTE_SIZE]) -> Self {
         let mut res = Self::zero();
-        bytes.chunks_exact(LIMB_SIZE_BYTES).zip(res.limbs.iter_mut()).for_each(|(chunk, word)| {
-            *word = Limb::from_le_bytes(chunk.try_into().unwrap());
-        });
+        bytes
+            .chunks_exact(LIMB_SIZE_BYTES)
+            .zip(res.limbs.iter_mut())
+            .for_each(|(chunk, word)| {
+                *word = Limb::from_le_bytes(chunk.try_into().unwrap());
+            });
         res
     }
 
@@ -68,9 +71,12 @@ impl U3072 {
     #[must_use]
     pub fn to_le_bytes(self) -> [u8; ELEMENT_BYTE_SIZE] {
         let mut res = [0u8; ELEMENT_BYTE_SIZE];
-        self.limbs.iter().zip(res.chunks_exact_mut(LIMB_SIZE_BYTES)).for_each(|(limb, chunk)| {
-            chunk.copy_from_slice(&limb.to_le_bytes());
-        });
+        self.limbs
+            .iter()
+            .zip(res.chunks_exact_mut(LIMB_SIZE_BYTES))
+            .for_each(|(limb, chunk)| {
+                chunk.copy_from_slice(&limb.to_le_bytes());
+            });
         res
     }
 
@@ -96,25 +102,38 @@ impl U3072 {
             let (mut low, mut high) = mul_wide(self.limbs[j + 1], other.limbs[LIMBS + j - (1 + j)]);
             let mut carry = 0;
             for i in 2 + j..LIMBS {
-                (low, high, carry) = muladd3(self.limbs[i], other.limbs[LIMBS + j - i], low, high, carry);
+                (low, high, carry) =
+                    muladd3(self.limbs[i], other.limbs[LIMBS + j - i], low, high, carry);
             }
-            (carry_low, carry_high, carry_highest) = mulnadd3(carry_low, carry_high, low, high, carry, PRIME_DIFF);
+            (carry_low, carry_high, carry_highest) =
+                mulnadd3(carry_low, carry_high, low, high, carry, PRIME_DIFF);
 
             for i in 0..j + 1 {
-                (carry_low, carry_high, carry_highest) =
-                    muladd3(self.limbs[i], other.limbs[j - i], carry_low, carry_high, carry_highest);
+                (carry_low, carry_high, carry_highest) = muladd3(
+                    self.limbs[i],
+                    other.limbs[j - i],
+                    carry_low,
+                    carry_high,
+                    carry_highest,
+                );
             }
 
             // Extract the lowest limb of [low,high,carry] into n, and left shift the number by 1 limb
-            (tmp.limbs[j], carry_low, carry_high, carry_highest) = (carry_low, carry_high, carry_highest, 0);
+            (tmp.limbs[j], carry_low, carry_high, carry_highest) =
+                (carry_low, carry_high, carry_highest, 0);
         }
 
         // Compute limb N-1 of a*b into tmp
         assert_eq!(carry_highest, 0);
 
         for i in 0..LIMBS {
-            (carry_low, carry_high, carry_highest) =
-                muladd3(self.limbs[i], other.limbs[LIMBS - 1 - i], carry_low, carry_high, carry_highest);
+            (carry_low, carry_high, carry_highest) = muladd3(
+                self.limbs[i],
+                other.limbs[LIMBS - 1 - i],
+                carry_low,
+                carry_high,
+                carry_highest,
+            );
         }
 
         // Extract the lowest limb into temp and shift all the rest.
@@ -153,7 +172,12 @@ impl U3072 {
         if a == Self::zero() {
             return a;
         }
-        let inv = Self { limbs: Uint3072(a.limbs).mod_inverse(Self::UINT_PRIME).expect("Cannot fail, 0 < a < prime").0 };
+        let inv = Self {
+            limbs: Uint3072(a.limbs)
+                .mod_inverse(Self::UINT_PRIME)
+                .expect("Cannot fail, 0 < a < prime")
+                .0,
+        };
         if cfg!(debug_assertions) {
             let mut one = inv;
             one *= a;
@@ -298,8 +322,18 @@ mod tests {
             expected_high: Limb,
         }
         let tests = [
-            TestVector { a: Limb::MAX, b: Limb::MAX, expected_low: 1, expected_high: 18446744073709551614 },
-            TestVector { a: Limb::MAX - 100, b: Limb::MAX - 30, expected_low: 3131, expected_high: 18446744073709551484 },
+            TestVector {
+                a: Limb::MAX,
+                b: Limb::MAX,
+                expected_low: 1,
+                expected_high: 18446744073709551614,
+            },
+            TestVector {
+                a: Limb::MAX - 100,
+                b: Limb::MAX - 30,
+                expected_low: 3131,
+                expected_high: 18446744073709551484,
+            },
         ];
 
         for test in tests {
@@ -364,7 +398,13 @@ mod tests {
             expected_high: Limb,
         }
         let tests = [
-            TestVector { low: Limb::MAX - 99, high: Limb::MAX - 75, n: Limb::MAX - 543, expected_low: 54400, expected_high: 40700 },
+            TestVector {
+                low: Limb::MAX - 99,
+                high: Limb::MAX - 75,
+                n: Limb::MAX - 543,
+                expected_low: 54400,
+                expected_high: 40700,
+            },
             TestVector {
                 low: 0,
                 high: Limb::MAX - 32432432,
@@ -415,7 +455,8 @@ mod tests {
             },
         ];
         for test in tests {
-            let (low, high, carry) = u3072::muladd3(test.a, test.b, test.low, test.high, test.carry);
+            let (low, high, carry) =
+                u3072::muladd3(test.a, test.b, test.low, test.high, test.carry);
             assert_eq!(low, test.expected_low);
             assert_eq!(high, test.expected_high);
             assert_eq!(carry, test.expected_carry);
@@ -447,7 +488,9 @@ mod tests {
         use super::PRIME_DIFF;
         use rayon::prelude::*;
 
-        let max = U3072 { limbs: [Limb::MAX; LIMBS] };
+        let max = U3072 {
+            limbs: [Limb::MAX; LIMBS],
+        };
         let one = U3072::one();
         // Exhaustively test all the 1,103,717 overflowing numbers.
         (0..PRIME_DIFF).into_par_iter().for_each(|i| {
@@ -475,7 +518,9 @@ mod tests {
 
     #[test]
     fn test_mul_max() {
-        let mut max = U3072 { limbs: [Limb::MAX; LIMBS] };
+        let mut max = U3072 {
+            limbs: [Limb::MAX; LIMBS],
+        };
         max.limbs[0] -= u3072::PRIME_DIFF;
         let copy_max = max;
         max *= copy_max;

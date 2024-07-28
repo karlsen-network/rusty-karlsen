@@ -74,7 +74,12 @@ pub fn js_verify_message(value: IVerifyMessage) -> Result<bool, Error> {
         let mut signature_bytes = [0u8; 64];
         faster_hex::hex_decode(signature.as_bytes(), &mut signature_bytes)?;
 
-        Ok(verify_message(&pm, &signature_bytes.to_vec(), &public_key.as_ref().xonly_public_key).is_ok())
+        Ok(verify_message(
+            &pm,
+            &signature_bytes.to_vec(),
+            &public_key.as_ref().xonly_public_key,
+        )
+        .is_ok())
     } else {
         Err(Error::custom("Failed to parse input"))
     }

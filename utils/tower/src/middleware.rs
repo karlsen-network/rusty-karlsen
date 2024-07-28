@@ -38,7 +38,10 @@ where
     type Data = B::Data;
     type Error = B::Error;
 
-    fn poll_data(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Result<Self::Data, Self::Error>>> {
+    fn poll_data(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Option<Result<Self::Data, Self::Error>>> {
         let this = self.project();
         let counter: Arc<AtomicUsize> = this.counter.clone();
         match ready!(this.inner.poll_data(cx)) {
@@ -53,7 +56,10 @@ where
         }
     }
 
-    fn poll_trailers(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<Option<HeaderMap>, Self::Error>> {
+    fn poll_trailers(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Result<Option<HeaderMap>, Self::Error>> {
         self.project().inner.poll_trailers(cx)
     }
 
@@ -71,7 +77,10 @@ where
     B: HttpBody<Data = Bytes> + Default,
 {
     fn default() -> Self {
-        Self { inner: Default::default(), counter: Default::default() }
+        Self {
+            inner: Default::default(),
+            counter: Default::default(),
+        }
     }
 }
 

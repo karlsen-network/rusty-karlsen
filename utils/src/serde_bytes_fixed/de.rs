@@ -14,7 +14,9 @@ pub trait Deserialize<'de, const N: usize>: Sized + crate::hex::FromHex + From<[
 /// or newtype structs or other types based on [`From<[u8; $size]>`].
 macro_rules! deser_fixed_bytes {
     ($size: expr) => {
-        impl<'de, T: $crate::hex::FromHex + From<[u8; $size]>> $crate::serde_bytes_fixed::Deserialize<'de, $size> for T {
+        impl<'de, T: $crate::hex::FromHex + From<[u8; $size]>>
+            $crate::serde_bytes_fixed::Deserialize<'de, $size> for T
+        {
             /// Deserialization function for types `T`
             fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
             where
@@ -35,7 +37,8 @@ macro_rules! deser_fixed_bytes {
                     where
                         E: serde::de::Error,
                     {
-                        let v: [u8; $size] = v.as_bytes().try_into().map_err(serde::de::Error::custom)?;
+                        let v: [u8; $size] =
+                            v.as_bytes().try_into().map_err(serde::de::Error::custom)?;
                         Ok(Self::Value::from(v))
                     }
                     #[inline]
@@ -43,7 +46,8 @@ macro_rules! deser_fixed_bytes {
                     where
                         E: serde::de::Error,
                     {
-                        let v: [u8; $size] = v.as_bytes().try_into().map_err(serde::de::Error::custom)?;
+                        let v: [u8; $size] =
+                            v.as_bytes().try_into().map_err(serde::de::Error::custom)?;
                         Ok(Self::Value::from(v))
                     }
                     #[inline]
@@ -64,11 +68,15 @@ macro_rules! deser_fixed_bytes {
                     }
 
                     #[inline]
-                    fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+                    fn visit_newtype_struct<D>(
+                        self,
+                        deserializer: D,
+                    ) -> Result<Self::Value, D::Error>
                     where
                         D: serde::Deserializer<'de>,
                     {
-                        <[u8; $size] as serde::Deserialize>::deserialize(deserializer).map(|v| Self::Value::from(v))
+                        <[u8; $size] as serde::Deserialize>::deserialize(deserializer)
+                            .map(|v| Self::Value::from(v))
                     }
                     #[inline]
                     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -76,7 +84,10 @@ macro_rules! deser_fixed_bytes {
                         A: serde::de::SeqAccess<'de>,
                     {
                         let Some(value): Option<[u8; $size]> = seq.next_element()? else {
-                            return Err(serde::de::Error::invalid_length(0usize, &"tuple struct fixed array with 1 element"));
+                            return Err(serde::de::Error::invalid_length(
+                                0usize,
+                                &"tuple struct fixed array with 1 element",
+                            ));
                         };
                         Ok(Self::Value::from(value))
                     }
@@ -86,7 +97,13 @@ macro_rules! deser_fixed_bytes {
                     deserializer.deserialize_str($crate::serde_bytes::FromHexVisitor::default())
                 } else {
                     deserializer
-                        .deserialize_tuple($size, FixedBytesVisitor { marker: Default::default(), lifetime: Default::default() })
+                        .deserialize_tuple(
+                            $size,
+                            FixedBytesVisitor {
+                                marker: Default::default(),
+                                lifetime: Default::default(),
+                            },
+                        )
                         .map(Into::into)
                 }
             }
@@ -99,5 +116,6 @@ macro_rules! apply_deser_fixed_bytes {
 }
 
 apply_deser_fixed_bytes!(
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    26, 27, 28, 29, 30, 31, 32
 );

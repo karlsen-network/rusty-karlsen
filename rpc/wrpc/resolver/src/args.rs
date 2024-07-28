@@ -42,9 +42,12 @@ impl FromStr for RateLimit {
             }
             Some(x) => x,
         };
-        let requests = requests
-            .parse()
-            .map_err(|_| format!("Unable to parse number of requests, the value must be an integer, supplied: {:?}", requests))?;
+        let requests = requests.parse().map_err(|_| {
+            format!(
+                "Unable to parse number of requests, the value must be an integer, supplied: {:?}",
+                requests
+            )
+        })?;
         let period = period.parse().map_err(|_| {
             format!("Unable to parse period, the value must be an integer specifying number of seconds, supplied: {:?}", period)
         })?;

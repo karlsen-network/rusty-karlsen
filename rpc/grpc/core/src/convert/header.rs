@@ -82,7 +82,11 @@ mod tests {
     #[test]
     fn test_rpc_block_level_parents() {
         let p = protowire::RpcBlockLevelParents {
-            parent_hashes: vec![new_unique().to_string(), new_unique().to_string(), new_unique().to_string()],
+            parent_hashes: vec![
+                new_unique().to_string(),
+                new_unique().to_string(),
+                new_unique().to_string(),
+            ],
         };
         let r: Vec<RpcHash> = (&p).try_into().unwrap();
         let p2: protowire::RpcBlockLevelParents = (&r).into();
@@ -108,7 +112,11 @@ mod tests {
     fn test_rpc_header() {
         let r = RpcHeader::new_finalized(
             0,
-            vec![vec![new_unique(), new_unique(), new_unique()], vec![new_unique()], vec![new_unique(), new_unique()]],
+            vec![
+                vec![new_unique(), new_unique(), new_unique()],
+                vec![new_unique()],
+                vec![new_unique(), new_unique()],
+            ],
             new_unique(),
             new_unique(),
             new_unique(),

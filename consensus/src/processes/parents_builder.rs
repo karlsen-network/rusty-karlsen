@@ -1,19 +1,25 @@
 use indexmap::IndexSet;
 use itertools::Itertools;
-use karlsen_consensus_core::{blockhash::ORIGIN, header::Header, BlockHashMap, BlockHasher, BlockLevel};
+use karlsen_consensus_core::{
+    blockhash::ORIGIN, header::Header, BlockHashMap, BlockHasher, BlockLevel,
+};
 use karlsen_hashes::Hash;
 use smallvec::{smallvec, SmallVec};
 use std::sync::Arc;
 
 use crate::model::{
     services::reachability::{MTReachabilityService, ReachabilityService},
-    stores::{headers::HeaderStoreReader, reachability::ReachabilityStoreReader, relations::RelationsStoreReader},
+    stores::{
+        headers::HeaderStoreReader, reachability::ReachabilityStoreReader,
+        relations::RelationsStoreReader,
+    },
 };
 
 use super::reachability::ReachabilityResultExtensions;
 
 #[derive(Clone)]
-pub struct ParentsManager<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> {
+pub struct ParentsManager<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader>
+{
     max_block_level: BlockLevel,
     genesis_hash: Hash,
 
@@ -22,7 +28,9 @@ pub struct ParentsManager<T: HeaderStoreReader, U: ReachabilityStoreReader, V: R
     relations_service: V,
 }
 
-impl<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> ParentsManager<T, U, V> {
+impl<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader>
+    ParentsManager<T, U, V>
+{
     pub fn new(
         max_block_level: BlockLevel,
         genesis_hash: Hash,
@@ -30,14 +38,31 @@ impl<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> 
         reachability_service: MTReachabilityService<U>,
         relations_service: V,
     ) -> Self {
-        Self { max_block_level, genesis_hash, headers_store, reachability_service, relations_service }
+        Self {
+            max_block_level,
+            genesis_hash,
+            headers_store,
+            reachability_service,
+            relations_service,
+        }
     }
 
     /// Calculates the parents for each level based on the direct parents. Expects the current
     /// global pruning point s.t. at least one of the direct parents is in its inclusive future
-    pub fn calc_block_parents(&self, current_pruning_point: Hash, direct_parents: &[Hash]) -> Vec<Vec<Hash>> {
-        let mut direct_parent_headers =
-            direct_parents.iter().copied().map(|parent| self.headers_store.get_header_with_block_level(parent).unwrap()).collect_vec();
+    pub fn calc_block_parents(
+        &self,
+        current_pruning_point: Hash,
+        direct_parents: &[Hash],
+    ) -> Vec<Vec<Hash>> {
+        let mut direct_parent_headers = direct_parents
+            .iter()
+            .copied()
+            .map(|parent| {
+                self.headers_store
+                    .get_header_with_block_level(parent)
+                    .unwrap()
+            })
+            .collect_vec();
 
         // The first candidates to be added should be from a parent in the future of the pruning
         // point, so later on we'll know that every block that doesn't have reachability data
@@ -48,13 +73,28 @@ impl<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> 
         let first_parent_in_future_of_pruning_point = direct_parents
             .iter()
             .copied()
-            .position(|parent| self.reachability_service.is_dag_ancestor_of(current_pruning_point, parent))
-            .expect("at least one of the parents is expected to be in the future of the pruning point");
+            .position(|parent| {
+                self.reachability_service
+                    .is_dag_ancestor_of(current_pruning_point, parent)
+            })
+            .expect(
+                "at least one of the parents is expected to be in the future of the pruning point",
+            );
         direct_parent_headers.swap(0, first_parent_in_future_of_pruning_point);
 
-        let origin_children = self.relations_service.get_children(ORIGIN).unwrap().read().iter().copied().collect_vec();
-        let origin_children_headers =
-            origin_children.iter().copied().map(|parent| self.headers_store.get_header(parent).unwrap()).collect_vec();
+        let origin_children = self
+            .relations_service
+            .get_children(ORIGIN)
+            .unwrap()
+            .read()
+            .iter()
+            .copied()
+            .collect_vec();
+        let origin_children_headers = origin_children
+            .iter()
+            .copied()
+            .map(|parent| self.headers_store.get_header(parent).unwrap())
+            .collect_vec();
 
         let mut parents = Vec::with_capacity(self.max_block_level as usize);
 
@@ -74,25 +114,32 @@ impl<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> 
                 // This means no direct parents at the level, hence we must give precedence to first parent's parents
                 // which should all be added as candidates in the processing loop below (since we verified that first
                 // parent was in the pruning point's future)
-                let mut grandparents = self.parents_at_level(&direct_parent_headers[0].header, block_level)
+                let mut grandparents = self
+                    .parents_at_level(&direct_parent_headers[0].header, block_level)
                     .iter()
                     .copied()
-                    // We use IndexSet in order to preserve iteration order and make sure the 
+                    // We use IndexSet in order to preserve iteration order and make sure the
                     // processing loop visits the parents of the first parent first
                     .collect::<IndexSet<Hash, BlockHasher>>();
                 // Mark the end index of first parent's parents
                 first_parent_marker = grandparents.len();
                 // Add the remaining level-grandparents
-                grandparents.extend(
-                    direct_parent_headers[1..].iter().flat_map(|h| self.parents_at_level(&h.header, block_level).iter().copied()),
-                );
+                grandparents.extend(direct_parent_headers[1..].iter().flat_map(|h| {
+                    self.parents_at_level(&h.header, block_level)
+                        .iter()
+                        .copied()
+                }));
                 grandparents
             } else {
                 direct_parent_headers
                     .iter()
                     // We need to iterate parent's parents only if parent is not at block_level
                     .filter(|h| block_level > h.block_level)
-                    .flat_map(|h| self.parents_at_level(&h.header, block_level).iter().copied())
+                    .flat_map(|h| {
+                        self.parents_at_level(&h.header, block_level)
+                            .iter()
+                            .copied()
+                    })
                     .collect::<IndexSet<Hash, BlockHasher>>()
             };
 
@@ -118,7 +165,10 @@ impl<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> 
                 } else {
                     let mut reference_blocks = SmallVec::with_capacity(origin_children.len());
                     for child_header in origin_children_headers.iter() {
-                        if self.parents_at_level(child_header, block_level).contains(&parent) {
+                        if self
+                            .parents_at_level(child_header, block_level)
+                            .contains(&parent)
+                        {
                             reference_blocks.push(child_header.hash);
                         }
                     }
@@ -138,16 +188,25 @@ impl<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> 
                 }
 
                 let len_before_retain = level_candidates_to_reference_blocks.len();
-                level_candidates_to_reference_blocks
-                    .retain(|_, refs| !self.reachability_service.is_any_dag_ancestor(&mut refs.iter().copied(), parent));
-                let is_any_candidate_ancestor_of = level_candidates_to_reference_blocks.len() < len_before_retain;
+                level_candidates_to_reference_blocks.retain(|_, refs| {
+                    !self
+                        .reachability_service
+                        .is_any_dag_ancestor(&mut refs.iter().copied(), parent)
+                });
+                let is_any_candidate_ancestor_of =
+                    level_candidates_to_reference_blocks.len() < len_before_retain;
 
                 // We should add the block as a candidate if it's in the future of another candidate
                 // or in the anticone of all candidates.
                 if is_any_candidate_ancestor_of
-                    || !level_candidates_to_reference_blocks.iter().any(|(_, candidate_references)| {
-                        self.reachability_service.is_dag_ancestor_of_any(parent, &mut candidate_references.iter().copied())
-                    })
+                    || !level_candidates_to_reference_blocks.iter().any(
+                        |(_, candidate_references)| {
+                            self.reachability_service.is_dag_ancestor_of_any(
+                                parent,
+                                &mut candidate_references.iter().copied(),
+                            )
+                        },
+                    )
                 {
                     level_candidates_to_reference_blocks.insert(parent, reference_blocks);
                 }
@@ -160,7 +219,12 @@ impl<T: HeaderStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> 
                 break;
             }
 
-            parents.push(level_candidates_to_reference_blocks.keys().copied().collect_vec());
+            parents.push(
+                level_candidates_to_reference_blocks
+                    .keys()
+                    .copied()
+                    .collect_vec(),
+            );
         }
 
         parents
@@ -214,7 +278,9 @@ mod tests {
 
     impl HeaderStoreMock {
         fn new() -> Self {
-            Self { map: RwLock::new(BlockHashMap::new()) }
+            Self {
+                map: RwLock::new(BlockHashMap::new()),
+            }
         }
     }
 
@@ -247,7 +313,10 @@ mod tests {
             unimplemented!()
         }
 
-        fn get_header_with_block_level(&self, hash: karlsen_hashes::Hash) -> Result<HeaderWithBlockLevel, StoreError> {
+        fn get_header_with_block_level(
+            &self,
+            hash: karlsen_hashes::Hash,
+        ) -> Result<HeaderWithBlockLevel, StoreError> {
             Ok(self.map.read().get(&hash).unwrap().clone())
         }
     }
@@ -258,7 +327,10 @@ mod tests {
 
     #[allow(unused_variables)]
     impl RelationsStoreReader for RelationsStoreMock {
-        fn get_parents(&self, hash: Hash) -> Result<karlsen_consensus_core::blockhash::BlockHashes, StoreError> {
+        fn get_parents(
+            &self,
+            hash: Hash,
+        ) -> Result<karlsen_consensus_core::blockhash::BlockHashes, StoreError> {
             unimplemented!()
         }
 
@@ -429,13 +501,25 @@ mod tests {
                 id: 10,
                 block_level: 0,
                 direct_parents: vec![3001, 1],
-                expected_parents: vec![vec![3001, 1], vec![1001], vec![1001], vec![1001], vec![1002]], // Check that it functions well while one of the parents is in PP anticone
+                expected_parents: vec![
+                    vec![3001, 1],
+                    vec![1001],
+                    vec![1001],
+                    vec![1001],
+                    vec![1002],
+                ], // Check that it functions well while one of the parents is in PP anticone
             },
             TestBlock {
                 id: 11,
                 block_level: 0,
                 direct_parents: vec![3002, 1],
-                expected_parents: vec![vec![3002, 1], vec![1001], vec![1001], vec![1001], vec![1002]], // Check that it functions well while one of the parents is in PP anticone
+                expected_parents: vec![
+                    vec![3002, 1],
+                    vec![1001],
+                    vec![1001],
+                    vec![1001],
+                    vec![1002],
+                ], // Check that it functions well while one of the parents is in PP anticone
             },
         ];
 
@@ -444,15 +528,27 @@ mod tests {
             .init()
             .add_block(DagBlock::new(pruning_point, vec![ORIGIN]))
             .add_block(DagBlock::new(pp_anticone_block, vec![ORIGIN]))
-            .add_block(DagBlock::new(pp_anticone_block_child, vec![pp_anticone_block]));
+            .add_block(DagBlock::new(
+                pp_anticone_block_child,
+                vec![pp_anticone_block],
+            ));
 
         for test_block in test_blocks.iter() {
             let hash = test_block.id.into();
-            let direct_parents = test_block.direct_parents.iter().map(|parent| Hash::from_u64_word(*parent)).collect_vec();
+            let direct_parents = test_block
+                .direct_parents
+                .iter()
+                .map(|parent| Hash::from_u64_word(*parent))
+                .collect_vec();
             let expected_parents: Vec<Vec<Hash>> = test_block
                 .expected_parents
                 .iter()
-                .map(|parents| parents.iter().map(|parent| Hash::from_u64_word(*parent)).collect_vec())
+                .map(|parents| {
+                    parents
+                        .iter()
+                        .map(|parent| Hash::from_u64_word(*parent))
+                        .collect_vec()
+                })
                 .collect_vec();
             dag_builder.add_block(DagBlock::new(hash, direct_parents));
 
@@ -479,22 +575,41 @@ mod tests {
             );
         }
 
-        let reachability_service = MTReachabilityService::new(Arc::new(RwLock::new(reachability_store)));
-        let relations_store =
-            Arc::new(RwLock::new(vec![RelationsStoreMock { children: BlockHashes::new(vec![pruning_point, pp_anticone_block]) }]));
+        let reachability_service =
+            MTReachabilityService::new(Arc::new(RwLock::new(reachability_store)));
+        let relations_store = Arc::new(RwLock::new(vec![RelationsStoreMock {
+            children: BlockHashes::new(vec![pruning_point, pp_anticone_block]),
+        }]));
         let relations_service = MTRelationsService::new(relations_store, 0);
-        let parents_manager = ParentsManager::new(250, genesis_hash, headers_store, reachability_service, relations_service);
+        let parents_manager = ParentsManager::new(
+            250,
+            genesis_hash,
+            headers_store,
+            reachability_service,
+            relations_service,
+        );
 
         for test_block in test_blocks {
-            let direct_parents = test_block.direct_parents.iter().map(|parent| Hash::from_u64_word(*parent)).collect_vec();
+            let direct_parents = test_block
+                .direct_parents
+                .iter()
+                .map(|parent| Hash::from_u64_word(*parent))
+                .collect_vec();
             let parents = parents_manager.calc_block_parents(pruning_point, &direct_parents);
-            let actual_parents = parents.iter().map(|parents| BlockHashSet::from_iter(parents.iter().copied())).collect_vec();
+            let actual_parents = parents
+                .iter()
+                .map(|parents| BlockHashSet::from_iter(parents.iter().copied()))
+                .collect_vec();
             let expected_parents = test_block
                 .expected_parents
                 .iter()
                 .map(|v| BlockHashSet::from_iter(v.iter().copied().map(Hash::from_u64_word)))
                 .collect_vec();
-            assert_eq!(expected_parents, actual_parents, "failed for block {}", test_block.id);
+            assert_eq!(
+                expected_parents, actual_parents,
+                "failed for block {}",
+                test_block.id
+            );
         }
     }
 
@@ -524,7 +639,10 @@ mod tests {
                 header: Arc::new(Header {
                     hash: pruning_point,
                     version: 0,
-                    parents_by_level: vec![vec![1001.into(), 1002.into()], vec![1001.into(), 1002.into()]],
+                    parents_by_level: vec![
+                        vec![1001.into(), 1002.into()],
+                        vec![1001.into(), 1002.into()],
+                    ],
                     hash_merkle_root: 1.into(),
                     accepted_id_merkle_root: 1.into(),
                     utxo_commitment: 1.into(),
@@ -541,21 +659,47 @@ mod tests {
         );
 
         let test_blocks = vec![
-            TestBlock { id: 2, block_level: 0, direct_parents: vec![1], expected_parents: vec![vec![1], vec![1001, 1002]] },
-            TestBlock { id: 3, block_level: 0, direct_parents: vec![1], expected_parents: vec![vec![1], vec![1001, 1002]] },
-            TestBlock { id: 4, block_level: 0, direct_parents: vec![2, 3], expected_parents: vec![vec![2, 3], vec![1001, 1002]] },
+            TestBlock {
+                id: 2,
+                block_level: 0,
+                direct_parents: vec![1],
+                expected_parents: vec![vec![1], vec![1001, 1002]],
+            },
+            TestBlock {
+                id: 3,
+                block_level: 0,
+                direct_parents: vec![1],
+                expected_parents: vec![vec![1], vec![1001, 1002]],
+            },
+            TestBlock {
+                id: 4,
+                block_level: 0,
+                direct_parents: vec![2, 3],
+                expected_parents: vec![vec![2, 3], vec![1001, 1002]],
+            },
         ];
 
         let mut dag_builder = DagBuilder::new(&mut reachability_store, &mut relations_store);
-        dag_builder.init().add_block(DagBlock::new(pruning_point, vec![ORIGIN]));
+        dag_builder
+            .init()
+            .add_block(DagBlock::new(pruning_point, vec![ORIGIN]));
 
         for test_block in test_blocks.iter() {
             let hash = test_block.id.into();
-            let direct_parents = test_block.direct_parents.iter().map(|parent| Hash::from_u64_word(*parent)).collect_vec();
+            let direct_parents = test_block
+                .direct_parents
+                .iter()
+                .map(|parent| Hash::from_u64_word(*parent))
+                .collect_vec();
             let expected_parents: Vec<Vec<Hash>> = test_block
                 .expected_parents
                 .iter()
-                .map(|parents| parents.iter().map(|parent| Hash::from_u64_word(*parent)).collect_vec())
+                .map(|parents| {
+                    parents
+                        .iter()
+                        .map(|parent| Hash::from_u64_word(*parent))
+                        .collect_vec()
+                })
                 .collect_vec();
             dag_builder.add_block(DagBlock::new(hash, direct_parents));
 
@@ -582,21 +726,41 @@ mod tests {
             );
         }
 
-        let reachability_service = MTReachabilityService::new(Arc::new(RwLock::new(reachability_store)));
-        let relations_store = Arc::new(RwLock::new(vec![RelationsStoreMock { children: BlockHashes::new(vec![pruning_point]) }]));
+        let reachability_service =
+            MTReachabilityService::new(Arc::new(RwLock::new(reachability_store)));
+        let relations_store = Arc::new(RwLock::new(vec![RelationsStoreMock {
+            children: BlockHashes::new(vec![pruning_point]),
+        }]));
         let relations_service = MTRelationsService::new(relations_store, 0);
-        let parents_manager = ParentsManager::new(250, genesis_hash, headers_store, reachability_service, relations_service);
+        let parents_manager = ParentsManager::new(
+            250,
+            genesis_hash,
+            headers_store,
+            reachability_service,
+            relations_service,
+        );
 
         for test_block in test_blocks {
-            let direct_parents = test_block.direct_parents.iter().map(|parent| Hash::from_u64_word(*parent)).collect_vec();
+            let direct_parents = test_block
+                .direct_parents
+                .iter()
+                .map(|parent| Hash::from_u64_word(*parent))
+                .collect_vec();
             let parents = parents_manager.calc_block_parents(pruning_point, &direct_parents);
-            let actual_parents = parents.iter().map(|parents| BlockHashSet::from_iter(parents.iter().copied())).collect_vec();
+            let actual_parents = parents
+                .iter()
+                .map(|parents| BlockHashSet::from_iter(parents.iter().copied()))
+                .collect_vec();
             let expected_parents = test_block
                 .expected_parents
                 .iter()
                 .map(|v| BlockHashSet::from_iter(v.iter().copied().map(Hash::from_u64_word)))
                 .collect_vec();
-            assert_eq!(expected_parents, actual_parents, "failed for block {}", test_block.id);
+            assert_eq!(
+                expected_parents, actual_parents,
+                "failed for block {}",
+                test_block.id
+            );
         }
     }
 }

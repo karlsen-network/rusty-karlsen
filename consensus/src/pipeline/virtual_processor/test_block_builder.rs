@@ -1,11 +1,12 @@
 use std::{ops::Deref, sync::Arc};
 
 use crate::model::stores::{
-    pruning::PruningStoreReader, utxo_multisets::UtxoMultisetsStoreReader, virtual_state::VirtualStateStoreReader,
+    pruning::PruningStoreReader, utxo_multisets::UtxoMultisetsStoreReader,
+    virtual_state::VirtualStateStoreReader,
 };
 use karlsen_consensus_core::{
-    block::BlockTemplate, blockhash::ORIGIN, coinbase::MinerData, errors::block::RuleError, tx::Transaction,
-    utxo::utxo_view::UtxoViewComposition,
+    block::BlockTemplate, blockhash::ORIGIN, coinbase::MinerData, errors::block::RuleError,
+    tx::Transaction, utxo::utxo_view::UtxoViewComposition,
 };
 use karlsen_hashes::Hash;
 
@@ -46,8 +47,14 @@ impl TestBlockBuilder {
         let sink = virtual_state.ghostdag_data.selected_parent;
         let mut accumulated_diff = virtual_state.utxo_diff.clone().to_reversed();
         // Search for the sink block from the PoV of this virtual
-        let (pov_sink, virtual_parent_candidates) =
-            self.sink_search_algorithm(&virtual_read, &mut accumulated_diff, sink, parents, finality_point, pruning_point);
+        let (pov_sink, virtual_parent_candidates) = self.sink_search_algorithm(
+            &virtual_read,
+            &mut accumulated_diff,
+            sink,
+            parents,
+            finality_point,
+            pruning_point,
+        );
         let (pov_virtual_parents, pov_virtual_ghostdag_data) =
             self.pick_virtual_parents(pov_sink, virtual_parent_candidates, pruning_point);
         let pov_sink_multiset = self.utxo_multisets_store.get(pov_sink).unwrap();
@@ -59,7 +66,11 @@ impl TestBlockBuilder {
             &mut accumulated_diff,
         )?;
         let pov_virtual_utxo_view = (&virtual_read.utxo_set).compose(accumulated_diff);
-        self.validate_block_template_transactions(&txs, &pov_virtual_state, &pov_virtual_utxo_view)?;
+        self.validate_block_template_transactions(
+            &txs,
+            &pov_virtual_state,
+            &pov_virtual_utxo_view,
+        )?;
         drop(virtual_read);
         self.build_block_template_from_virtual_state(pov_virtual_state, miner_data, txs)
     }

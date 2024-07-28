@@ -1,4 +1,6 @@
-use crate::{consensus::test_consensus::TestConsensus, model::services::reachability::ReachabilityService};
+use crate::{
+    consensus::test_consensus::TestConsensus, model::services::reachability::ReachabilityService,
+};
 use karlsen_consensus_core::{
     api::ConsensusApi,
     block::{Block, BlockTemplate, MutableBlock, TemplateBuildMode, TemplateTransactionSelector},
@@ -47,7 +49,8 @@ struct TestContext {
 
 impl Drop for TestContext {
     fn drop(&mut self) {
-        self.consensus.shutdown(std::mem::take(&mut self.join_handles));
+        self.consensus
+            .shutdown(std::mem::take(&mut self.join_handles));
     }
 }
 
@@ -69,14 +72,18 @@ impl TestContext {
     pub fn build_block_template_row(&mut self, nonces: impl Iterator<Item = usize>) -> &mut Self {
         for nonce in nonces {
             self.simulated_time += self.consensus.params().target_time_per_block;
-            self.current_templates.push_back(self.build_block_template(nonce as u64, self.simulated_time));
+            self.current_templates
+                .push_back(self.build_block_template(nonce as u64, self.simulated_time));
         }
         self
     }
 
     pub fn assert_row_parents(&mut self) -> &mut Self {
         for t in self.current_templates.iter() {
-            assert_eq!(self.current_tips, BlockHashSet::from_iter(t.block.header.direct_parents().iter().copied()));
+            assert_eq!(
+                self.current_tips,
+                BlockHashSet::from_iter(t.block.header.direct_parents().iter().copied())
+            );
         }
         self
     }
@@ -90,7 +97,11 @@ impl TestContext {
         self
     }
 
-    pub async fn build_and_insert_disqualified_chain(&mut self, mut parents: Vec<Hash>, len: usize) -> Hash {
+    pub async fn build_and_insert_disqualified_chain(
+        &mut self,
+        mut parents: Vec<Hash>,
+        len: usize,
+    ) -> Hash {
         // The chain will be disqualified since build_block_with_parents builds utxo-invalid blocks
         for _ in 0..len {
             self.simulated_time += self.consensus.params().target_time_per_block;
@@ -116,8 +127,17 @@ impl TestContext {
         t
     }
 
-    pub fn build_block_with_parents(&self, parents: Vec<Hash>, nonce: u64, timestamp: u64) -> MutableBlock {
-        let mut b = self.consensus.build_block_with_parents_and_transactions(blockhash::NONE, parents, Default::default());
+    pub fn build_block_with_parents(
+        &self,
+        parents: Vec<Hash>,
+        nonce: u64,
+        timestamp: u64,
+    ) -> MutableBlock {
+        let mut b = self.consensus.build_block_with_parents_and_transactions(
+            blockhash::NONE,
+            parents,
+            Default::default(),
+        );
         b.header.timestamp = timestamp;
         b.header.nonce = nonce;
         b.header.finalize(); // This overrides the NONE hash we passed earlier with the actual hash
@@ -125,36 +145,57 @@ impl TestContext {
     }
 
     pub async fn validate_and_insert_block(&mut self, block: Block) -> &mut Self {
-        let status = self.consensus.validate_and_insert_block(block).virtual_state_task.await.unwrap();
+        let status = self
+            .consensus
+            .validate_and_insert_block(block)
+            .virtual_state_task
+            .await
+            .unwrap();
         assert!(status.has_block_body());
         self
     }
 
     pub fn assert_tips(&mut self) -> &mut Self {
-        assert_eq!(BlockHashSet::from_iter(self.consensus.get_tips().into_iter()), self.current_tips);
+        assert_eq!(
+            BlockHashSet::from_iter(self.consensus.get_tips().into_iter()),
+            self.current_tips
+        );
         self
     }
 
     pub fn assert_tips_num(&mut self, expected_num: usize) -> &mut Self {
-        assert_eq!(BlockHashSet::from_iter(self.consensus.get_tips().into_iter()).len(), expected_num);
+        assert_eq!(
+            BlockHashSet::from_iter(self.consensus.get_tips().into_iter()).len(),
+            expected_num
+        );
         self
     }
 
     pub fn assert_virtual_parents_subset(&mut self) -> &mut Self {
-        assert!(self.consensus.get_virtual_parents().is_subset(&self.current_tips));
+        assert!(self
+            .consensus
+            .get_virtual_parents()
+            .is_subset(&self.current_tips));
         self
     }
 
     pub fn assert_valid_utxo_tip(&mut self) -> &mut Self {
         // Assert that at least one body tip was resolved with valid UTXO
-        assert!(self.consensus.body_tips().iter().copied().any(|h| self.consensus.block_status(h) == BlockStatus::StatusUTXOValid));
+        assert!(self
+            .consensus
+            .body_tips()
+            .iter()
+            .copied()
+            .any(|h| self.consensus.block_status(h) == BlockStatus::StatusUTXOValid));
         self
     }
 }
 
 #[tokio::test]
 async fn template_mining_sanity_test() {
-    let config = ConfigBuilder::new(MAINNET_PARAMS).skip_proof_of_work().build();
+    let config = ConfigBuilder::new(MAINNET_PARAMS)
+        .skip_proof_of_work()
+        .build();
     let mut ctx = TestContext::new(TestConsensus::new(&config));
     let rounds = 10;
     let width = 3;
@@ -191,7 +232,10 @@ async fn antichain_merge_test() {
 
     // Mine a long enough chain s.t. the antichain is fully merged
     for _ in 0..32 {
-        ctx.build_block_template_row(0..1).validate_and_insert_row().await.assert_valid_utxo_tip();
+        ctx.build_block_template_row(0..1)
+            .validate_and_insert_row()
+            .await
+            .assert_valid_utxo_tip();
     }
     ctx.assert_tips_num(1);
 }
@@ -211,19 +255,30 @@ async fn basic_utxo_disqualified_test() {
 
     // Mine a valid chain
     for _ in 0..10 {
-        ctx.build_block_template_row(0..1).validate_and_insert_row().await.assert_valid_utxo_tip();
+        ctx.build_block_template_row(0..1)
+            .validate_and_insert_row()
+            .await
+            .assert_valid_utxo_tip();
     }
 
     // Get current sink
     let sink = ctx.consensus.get_sink();
 
     // Mine a longer disqualified chain
-    let disqualified_tip = ctx.build_and_insert_disqualified_chain(vec![config.genesis.hash], 20).await;
+    let disqualified_tip = ctx
+        .build_and_insert_disqualified_chain(vec![config.genesis.hash], 20)
+        .await;
 
     assert_ne!(sink, disqualified_tip);
     assert_eq!(sink, ctx.consensus.get_sink());
-    assert_eq!(BlockHashSet::from_iter([sink, disqualified_tip]), BlockHashSet::from_iter(ctx.consensus.get_tips().into_iter()));
-    assert!(!ctx.consensus.get_virtual_parents().contains(&disqualified_tip));
+    assert_eq!(
+        BlockHashSet::from_iter([sink, disqualified_tip]),
+        BlockHashSet::from_iter(ctx.consensus.get_tips().into_iter())
+    );
+    assert!(!ctx
+        .consensus
+        .get_virtual_parents()
+        .contains(&disqualified_tip));
 }
 
 #[tokio::test]
@@ -262,22 +317,38 @@ async fn double_search_disqualified_test() {
 
     // Mine a valid chain
     for _ in 0..10 {
-        ctx.build_block_template_row(0..1).validate_and_insert_row().await.assert_valid_utxo_tip();
+        ctx.build_block_template_row(0..1)
+            .validate_and_insert_row()
+            .await
+            .assert_valid_utxo_tip();
     }
 
     // Get current sink
     let sink = ctx.consensus.get_sink();
 
-    assert!(ctx.consensus.reachability_service().is_chain_ancestor_of(original_sink, sink));
+    assert!(ctx
+        .consensus
+        .reachability_service()
+        .is_chain_ancestor_of(original_sink, sink));
 
     // Mine a long disqualified chain
-    let disqualified_tip_1 = ctx.build_and_insert_disqualified_chain(vec![root_1], 30).await;
+    let disqualified_tip_1 = ctx
+        .build_and_insert_disqualified_chain(vec![root_1], 30)
+        .await;
 
     // And another shorter disqualified chain
-    let disqualified_tip_2 = ctx.build_and_insert_disqualified_chain(vec![root_2], 20).await;
+    let disqualified_tip_2 = ctx
+        .build_and_insert_disqualified_chain(vec![root_2], 20)
+        .await;
 
-    assert_eq!(ctx.consensus.get_block_status(root_1), Some(BlockStatus::StatusUTXOValid));
-    assert_eq!(ctx.consensus.get_block_status(root_2), Some(BlockStatus::StatusUTXOValid));
+    assert_eq!(
+        ctx.consensus.get_block_status(root_1),
+        Some(BlockStatus::StatusUTXOValid)
+    );
+    assert_eq!(
+        ctx.consensus.get_block_status(root_2),
+        Some(BlockStatus::StatusUTXOValid)
+    );
 
     assert_ne!(sink, disqualified_tip_1);
     assert_ne!(sink, disqualified_tip_2);
@@ -286,12 +357,21 @@ async fn double_search_disqualified_test() {
         BlockHashSet::from_iter([sink, disqualified_tip_1, disqualified_tip_2]),
         BlockHashSet::from_iter(ctx.consensus.get_tips().into_iter())
     );
-    assert!(!ctx.consensus.get_virtual_parents().contains(&disqualified_tip_1));
-    assert!(!ctx.consensus.get_virtual_parents().contains(&disqualified_tip_2));
+    assert!(!ctx
+        .consensus
+        .get_virtual_parents()
+        .contains(&disqualified_tip_1));
+    assert!(!ctx
+        .consensus
+        .get_virtual_parents()
+        .contains(&disqualified_tip_2));
 
     // Mine a long enough valid chain s.t. both disqualified chains are fully merged
     for _ in 0..30 {
-        ctx.build_block_template_row(0..1).validate_and_insert_row().await.assert_valid_utxo_tip();
+        ctx.build_block_template_row(0..1)
+            .validate_and_insert_row()
+            .await
+            .assert_valid_utxo_tip();
     }
     ctx.assert_tips_num(1);
 }

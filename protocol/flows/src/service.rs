@@ -65,9 +65,13 @@ impl AsyncService for P2pService {
         // Prepare a shutdown signal receiver
         let shutdown_signal = self.shutdown.listener.clone();
 
-        let p2p_adaptor =
-            Adaptor::bidirectional(self.listen, self.flow_context.hub().clone(), self.flow_context.clone(), self.counters.clone())
-                .unwrap();
+        let p2p_adaptor = Adaptor::bidirectional(
+            self.listen,
+            self.flow_context.hub().clone(),
+            self.flow_context.clone(),
+            self.counters.clone(),
+        )
+        .unwrap();
         let connection_manager = ConnectionManager::new(
             p2p_adaptor.clone(),
             self.outbound_target,
@@ -77,13 +81,21 @@ impl AsyncService for P2pService {
             self.flow_context.address_manager.clone(),
         );
 
-        self.flow_context.set_connection_manager(connection_manager.clone());
+        self.flow_context
+            .set_connection_manager(connection_manager.clone());
         self.flow_context.start_async_services();
 
         // Launch the service and wait for a shutdown signal
         Box::pin(async move {
-            for peer_address in self.connect_peers.iter().cloned().chain(self.add_peers.iter().cloned()) {
-                connection_manager.add_connection_request(peer_address.into(), true).await;
+            for peer_address in self
+                .connect_peers
+                .iter()
+                .cloned()
+                .chain(self.add_peers.iter().cloned())
+            {
+                connection_manager
+                    .add_connection_request(peer_address.into(), true)
+                    .await;
             }
 
             // Keep the P2P server running until a service shutdown signal is received

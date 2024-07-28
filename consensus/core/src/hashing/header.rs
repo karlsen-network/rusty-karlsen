@@ -6,7 +6,9 @@ use karlsen_hashes::{Hash, HasherBase};
 #[inline]
 pub fn hash_override_nonce_time(header: &Header, nonce: u64, timestamp: u64) -> Hash {
     let mut hasher = karlsen_hashes::BlockHash::new();
-    hasher.update(header.version.to_le_bytes()).write_len(header.parents_by_level.len()); // Write the number of parent levels
+    hasher
+        .update(header.version.to_le_bytes())
+        .write_len(header.parents_by_level.len()); // Write the number of parent levels
 
     // Write parents at each level
     header.parents_by_level.iter().for_each(|level| {
@@ -60,8 +62,10 @@ mod tests {
 
     #[test]
     fn test_hash_blue_work() {
-        let tests: Vec<(BlueWorkType, Vec<u8>)> =
-            vec![(0.into(), vec![0, 0, 0, 0, 0, 0, 0, 0]), (123456.into(), vec![3, 0, 0, 0, 0, 0, 0, 0, 1, 226, 64])];
+        let tests: Vec<(BlueWorkType, Vec<u8>)> = vec![
+            (0.into(), vec![0, 0, 0, 0, 0, 0, 0, 0]),
+            (123456.into(), vec![3, 0, 0, 0, 0, 0, 0, 0, 1, 226, 64]),
+        ];
 
         for test in tests {
             let mut hasher = karlsen_hashes::BlockHash::new();

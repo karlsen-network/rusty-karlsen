@@ -33,8 +33,16 @@ pub struct Keypair {
 
 #[wasm_bindgen]
 impl Keypair {
-    fn new(secret_key: secp256k1::SecretKey, public_key: secp256k1::PublicKey, xonly_public_key: XOnlyPublicKey) -> Self {
-        Self { secret_key, public_key, xonly_public_key }
+    fn new(
+        secret_key: secp256k1::SecretKey,
+        public_key: secp256k1::PublicKey,
+        xonly_public_key: XOnlyPublicKey,
+    ) -> Self {
+        Self {
+            secret_key,
+            public_key,
+            xonly_public_key,
+        }
     }
 
     /// Get the [`PublicKey`] of this [`Keypair`].

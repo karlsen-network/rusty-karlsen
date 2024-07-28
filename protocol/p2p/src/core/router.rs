@@ -83,7 +83,8 @@ impl From<KarlsendMessagePayloadType> for IncomingRouteOverflowPolicy {
     fn from(msg_type: KarlsendMessagePayloadType) -> Self {
         match msg_type {
             // Inv messages are unique in the sense that no harm is done if some of them are dropped
-            KarlsendMessagePayloadType::InvTransactions | KarlsendMessagePayloadType::InvRelayBlock => IncomingRouteOverflowPolicy::Drop,
+            KarlsendMessagePayloadType::InvTransactions
+            | KarlsendMessagePayloadType::InvRelayBlock => IncomingRouteOverflowPolicy::Drop,
             _ => IncomingRouteOverflowPolicy::Disconnect,
         }
     }
@@ -105,8 +106,15 @@ struct RouterMutableState {
 }
 
 impl RouterMutableState {
-    fn new(start_signal: Option<OneshotSender<()>>, shutdown_signal: Option<OneshotSender<()>>) -> Self {
-        Self { start_signal, shutdown_signal, ..Default::default() }
+    fn new(
+        start_signal: Option<OneshotSender<()>>,
+        shutdown_signal: Option<OneshotSender<()>>,
+    ) -> Self {
+        Self {
+            start_signal,
+            shutdown_signal,
+            ..Default::default()
+        }
     }
 }
 
@@ -169,7 +177,9 @@ impl From<&Router> for Peer {
 fn message_summary(msg: &KarlsendMessage) -> impl Debug {
     // TODO (low priority): display a concise summary of the message. Printing full messages
     // overflows the logs and is hardly useful, hence we currently only return the type
-    msg.payload.as_ref().map(std::convert::Into::<KarlsendMessagePayloadType>::into)
+    msg.payload
+        .as_ref()
+        .map(std::convert::Into::<KarlsendMessagePayloadType>::into)
 }
 
 impl Router {
@@ -192,7 +202,10 @@ impl Router {
             routing_map_by_id: RwLock::new(HashMap::new()),
             outgoing_route,
             hub_sender,
-            mutable_state: Mutex::new(RouterMutableState::new(Some(start_sender), Some(shutdown_sender))),
+            mutable_state: Mutex::new(RouterMutableState::new(
+                Some(start_sender),
+                Some(shutdown_sender),
+            )),
         });
 
         let router_clone = router.clone();
@@ -240,7 +253,11 @@ impl Router {
                 }
             }
             router.close().await;
-            debug!("P2P, Router receive loop - exited, router-id: {}, router refs: {}", router.identity(), Arc::strong_count(&router));
+            debug!(
+                "P2P, Router receive loop - exited, router-id: {}, router refs: {}",
+                router.identity(),
+                Arc::strong_count(&router)
+            );
         });
 
         router_clone
@@ -274,7 +291,9 @@ impl Router {
     }
 
     pub fn time_connected(&self) -> u64 {
-        Instant::now().duration_since(self.connection_started).as_millis() as u64
+        Instant::now()
+            .duration_since(self.connection_started)
+            .as_millis() as u64
     }
 
     pub fn properties(&self) -> Arc<PeerProperties> {
@@ -305,7 +324,10 @@ impl Router {
         if let Some(signal) = op {
             let _ = signal.send(());
         } else {
-            debug!("P2P, Router start was called more than once, router-id: {}", self.identity())
+            debug!(
+                "P2P, Router start was called more than once, router-id: {}",
+                self.identity()
+            )
         }
     }
 
@@ -319,7 +341,11 @@ impl Router {
     /// Subscribe to specific message types with a specific channel capacity.
     ///
     /// This should be used by `ConnectionInitializer` instances to register application-specific flows.
-    pub fn subscribe_with_capacity(&self, msg_types: Vec<KarlsendMessagePayloadType>, capacity: usize) -> IncomingRoute {
+    pub fn subscribe_with_capacity(
+        &self,
+        msg_types: Vec<KarlsendMessagePayloadType>,
+        capacity: usize,
+    ) -> IncomingRoute {
         let (sender, receiver) = mpsc_channel(capacity);
         let incoming_route = IncomingRoute::new(receiver);
         let mut map_by_type = self.routing_map_by_type.write();
@@ -365,12 +391,20 @@ impl Router {
     pub fn route_to_flow(&self, msg: KarlsendMessage) -> Result<(), ProtocolError> {
         if msg.payload.is_none() {
             debug!("P2P, Route to flow got empty payload, peer: {}", self);
-            return Err(ProtocolError::Other("received karlsend p2p message with empty payload"));
+            return Err(ProtocolError::Other(
+                "received karlsend p2p message with empty payload",
+            ));
         }
-        let msg_type: KarlsendMessagePayloadType = msg.payload.as_ref().expect("payload was just verified").into();
+        let msg_type: KarlsendMessagePayloadType = msg
+            .payload
+            .as_ref()
+            .expect("payload was just verified")
+            .into();
         // Handle the special case of a reject message ending the connection
         if msg_type == KarlsendMessagePayloadType::Reject {
-            let Some(KarlsendMessagePayload::Reject(reject)) = msg.payload else { unreachable!() };
+            let Some(KarlsendMessagePayload::Reject(reject)) = msg.payload else {
+                unreachable!()
+            };
             return Err(ProtocolError::from_reject_message(reject.reason));
         }
 
@@ -388,9 +422,9 @@ impl Router {
                     let overflow_policy: IncomingRouteOverflowPolicy = msg_type.into();
                     match overflow_policy {
                         IncomingRouteOverflowPolicy::Drop => Ok(()),
-                        IncomingRouteOverflowPolicy::Disconnect => {
-                            Err(ProtocolError::IncomingRouteCapacityReached(msg_type, self.to_string()))
-                        }
+                        IncomingRouteOverflowPolicy::Disconnect => Err(
+                            ProtocolError::IncomingRouteCapacityReached(msg_type, self.to_string()),
+                        ),
                     }
                 }
             }
@@ -401,11 +435,16 @@ impl Router {
 
     /// Enqueues a locally-originated message to be sent to the network peer
     pub async fn enqueue(&self, msg: KarlsendMessage) -> Result<(), ProtocolError> {
-        assert!(msg.payload.is_some(), "Karlsend P2P message should always have a value");
+        assert!(
+            msg.payload.is_some(),
+            "Karlsend P2P message should always have a value"
+        );
         match self.outgoing_route.try_send(msg) {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => Err(ProtocolError::ConnectionClosed),
-            Err(TrySendError::Full(_)) => Err(ProtocolError::OutgoingRouteCapacityReached(self.to_string())),
+            Err(TrySendError::Full(_)) => Err(ProtocolError::OutgoingRouteCapacityReached(
+                self.to_string(),
+            )),
         }
     }
 
@@ -414,7 +453,14 @@ impl Router {
         if err.can_send_outgoing_message() {
             // Send an explicit reject message for easier tracing of logical bugs causing protocol errors.
             // No need to handle errors since we are closing anyway
-            let _ = self.enqueue(make_message!(KarlsendMessagePayload::Reject, RejectMessage { reason: err.to_reject_message() })).await;
+            let _ = self
+                .enqueue(make_message!(
+                    KarlsendMessagePayload::Reject,
+                    RejectMessage {
+                        reason: err.to_reject_message()
+                    }
+                ))
+                .await;
         }
     }
 
@@ -435,7 +481,10 @@ impl Router {
                 let _ = signal.send(());
             } else {
                 // This means the router was already closed
-                trace!("P2P, Router close was called more than once, router-id: {}", self.identity());
+                trace!(
+                    "P2P, Router close was called more than once, router-id: {}",
+                    self.identity()
+                );
                 return false;
             }
         }
@@ -445,7 +494,10 @@ impl Router {
         self.routing_map_by_id.write().clear();
 
         // Send a close notification to the central Hub
-        self.hub_sender.send(HubEvent::PeerClosing(self.clone())).await.expect("hub receiver should never drop before senders");
+        self.hub_sender
+            .send(HubEvent::PeerClosing(self.clone()))
+            .await
+            .expect("hub receiver should never drop before senders");
 
         true
     }

@@ -6,8 +6,8 @@ use std::{collections::HashSet, iter, net::SocketAddr, sync::Arc, time::Duration
 
 use address_manager::port_mapping_extender::Extender;
 use igd_next::{
-    self as igd, aio::tokio::Tokio, AddAnyPortError, AddPortError, Gateway, GetExternalIpError, GetGenericPortMappingEntryError,
-    SearchError,
+    self as igd, aio::tokio::Tokio, AddAnyPortError, AddPortError, Gateway, GetExternalIpError,
+    GetGenericPortMappingEntryError, SearchError,
 };
 use itertools::{
     Either::{Left, Right},
@@ -19,7 +19,10 @@ use karlsen_database::prelude::{CachePolicy, StoreResultExtensions, DB};
 use karlsen_utils::networking::IpAddress;
 use local_ip_address::list_afinet_netifas;
 use parking_lot::Mutex;
-use stores::banned_address_store::{BannedAddressesStore, BannedAddressesStoreReader, ConnectionBanTimestamp, DbBannedAddressesStore};
+use stores::banned_address_store::{
+    BannedAddressesStore, BannedAddressesStoreReader, ConnectionBanTimestamp,
+    DbBannedAddressesStore,
+};
 use thiserror::Error;
 
 pub use stores::NetAddress;
@@ -59,9 +62,16 @@ pub struct AddressManager {
 }
 
 impl AddressManager {
-    pub fn new(config: Arc<Config>, db: Arc<DB>, tick_service: Arc<TickService>) -> (Arc<Mutex<Self>>, Option<Extender>) {
+    pub fn new(
+        config: Arc<Config>,
+        db: Arc<DB>,
+        tick_service: Arc<TickService>,
+    ) -> (Arc<Mutex<Self>>, Option<Extender>) {
         let mut instance = Self {
-            banned_address_store: DbBannedAddressesStore::new(db.clone(), CachePolicy::Count(MAX_ADDRESSES)),
+            banned_address_store: DbBannedAddressesStore::new(
+                db.clone(),
+                CachePolicy::Count(MAX_ADDRESSES),
+            ),
             address_store: address_store_with_cache::new(db),
             local_net_addresses: Vec::new(),
             config,
@@ -76,7 +86,14 @@ impl AddressManager {
         self.local_net_addresses = self.local_addresses().collect();
 
         let extender = if self.local_net_addresses.is_empty() && !self.config.disable_upnp {
-            let (net_address, ExtendHelper { gateway, local_addr, external_port }) = match self.upnp() {
+            let (
+                net_address,
+                ExtendHelper {
+                    gateway,
+                    local_addr,
+                    external_port,
+                },
+            ) = match self.upnp() {
                 Err(err) => {
                     warn!("[UPnP] Error adding port mapping: {err}");
                     return None;
@@ -107,7 +124,10 @@ impl AddressManager {
         };
 
         self.local_net_addresses.iter().for_each(|net_addr| {
-            info!("Publicly routable local address {} added to store", net_addr);
+            info!(
+                "Publicly routable local address {} added to store",
+                net_addr
+            );
         });
         extender
     }
@@ -116,11 +136,17 @@ impl AddressManager {
         match self.config.externalip {
             // An external IP was passed, we will try to bind that if it's valid
             Some(local_net_address) if local_net_address.ip.is_publicly_routable() => {
-                info!("External address is publicly routable {}", local_net_address);
+                info!(
+                    "External address is publicly routable {}",
+                    local_net_address
+                );
                 return Left(iter::once(local_net_address));
             }
             Some(local_net_address) => {
-                info!("External address is not publicly routable {}", local_net_address);
+                info!(
+                    "External address is not publicly routable {}",
+                    local_net_address
+                );
             }
             None => {}
         };
@@ -131,9 +157,15 @@ impl AddressManager {
     fn routable_addresses_from_net_interfaces(&self) -> impl Iterator<Item = NetAddress> + '_ {
         // check whatever was passed as listen address (if routable)
         // otherwise(listen_address === 0.0.0.0) check all interfaces
-        let listen_address = self.config.p2p_listen_address.normalize(self.config.default_p2p_port());
+        let listen_address = self
+            .config
+            .p2p_listen_address
+            .normalize(self.config.default_p2p_port());
         if listen_address.ip.is_publicly_routable() {
-            info!("Publicly routable local address found: {}", listen_address.ip);
+            info!(
+                "Publicly routable local address found: {}",
+                listen_address.ip
+            );
             Left(Left(iter::once(listen_address)))
         } else if listen_address.ip.is_unspecified() {
             let network_interfaces = list_afinet_netifas();
@@ -142,19 +174,25 @@ impl AddressManager {
                 return Left(Right(iter::empty()));
             };
             // TODO: Add Check IPv4 or IPv6 match from Go code
-            Right(network_interfaces.into_iter().map(|(_, ip)| IpAddress::from(ip)).filter(|&ip| ip.is_publicly_routable()).map(
-                |ip| {
-                    info!("Publicly routable local address found: {}", ip);
-                    NetAddress::new(ip, self.config.default_p2p_port())
-                },
-            ))
+            Right(
+                network_interfaces
+                    .into_iter()
+                    .map(|(_, ip)| IpAddress::from(ip))
+                    .filter(|&ip| ip.is_publicly_routable())
+                    .map(|ip| {
+                        info!("Publicly routable local address found: {}", ip);
+                        NetAddress::new(ip, self.config.default_p2p_port())
+                    }),
+            )
         } else {
             Left(Right(iter::empty()))
         }
     }
 
     fn upnp(&self) -> Result<Option<(NetAddress, ExtendHelper)>, UpnpError> {
-        info!("[UPnP] Attempting to register upnp... (to disable run the node with --disable-upnp)");
+        info!(
+            "[UPnP] Attempting to register upnp... (to disable run the node with --disable-upnp)"
+        );
         let gateway = igd::search_gateway(Default::default())?;
         let ip = IpAddress::new(gateway.get_external_ip()?);
         if !ip.is_publicly_routable() {
@@ -163,9 +201,15 @@ impl AddressManager {
         }
         info!("[UPnP] Got external ip from gateway using upnp: {ip}");
 
-        let normalized_p2p_listen_address = self.config.p2p_listen_address.normalize(self.config.default_p2p_port());
+        let normalized_p2p_listen_address = self
+            .config
+            .p2p_listen_address
+            .normalize(self.config.default_p2p_port());
         let local_addr = if normalized_p2p_listen_address.ip.is_unspecified() {
-            SocketAddr::new(local_ip_address::local_ip().unwrap(), normalized_p2p_listen_address.port)
+            SocketAddr::new(
+                local_ip_address::local_ip().unwrap(),
+                normalized_p2p_listen_address.port,
+            )
         } else {
             normalized_p2p_listen_address.into()
         };
@@ -207,10 +251,21 @@ impl AddressManager {
             }
         };
         if already_in_use {
-            let port =
-                gateway.add_any_port(igd::PortMappingProtocol::TCP, local_addr, UPNP_DEADLINE_SEC as u32, UPNP_REGISTRATION_NAME)?;
+            let port = gateway.add_any_port(
+                igd::PortMappingProtocol::TCP,
+                local_addr,
+                UPNP_DEADLINE_SEC as u32,
+                UPNP_REGISTRATION_NAME,
+            )?;
             info!("[UPnP] Added port mapping to random external port: {ip}:{port}");
-            return Ok(Some((NetAddress { ip, port }, ExtendHelper { gateway, local_addr, external_port: port })));
+            return Ok(Some((
+                NetAddress { ip, port },
+                ExtendHelper {
+                    gateway,
+                    local_addr,
+                    external_port: port,
+                },
+            )));
         }
 
         match gateway.add_port(
@@ -223,8 +278,15 @@ impl AddressManager {
             Ok(_) => {
                 info!("[UPnP] Added port mapping to default external port: {ip}:{desired_external_port}");
                 Ok(Some((
-                    NetAddress { ip, port: desired_external_port },
-                    ExtendHelper { gateway, local_addr, external_port: desired_external_port },
+                    NetAddress {
+                        ip,
+                        port: desired_external_port,
+                    },
+                    ExtendHelper {
+                        gateway,
+                        local_addr,
+                        external_port: desired_external_port,
+                    },
                 )))
             }
             Err(AddPortError::PortInUse {}) => {
@@ -235,7 +297,14 @@ impl AddressManager {
                     UPNP_REGISTRATION_NAME,
                 )?;
                 info!("[UPnP] Added port mapping to random external port: {ip}:{port}");
-                Ok(Some((NetAddress { ip, port }, ExtendHelper { gateway, local_addr, external_port: port })))
+                Ok(Some((
+                    NetAddress { ip, port },
+                    ExtendHelper {
+                        gateway,
+                        local_addr,
+                        external_port: port,
+                    },
+                )))
             }
             Err(err) => Err(err.into()),
         }
@@ -290,12 +359,18 @@ impl AddressManager {
         self.address_store.iterate_addresses()
     }
 
-    pub fn iterate_prioritized_random_addresses(&self, exceptions: HashSet<NetAddress>) -> impl ExactSizeIterator<Item = NetAddress> {
-        self.address_store.iterate_prioritized_random_addresses(exceptions)
+    pub fn iterate_prioritized_random_addresses(
+        &self,
+        exceptions: HashSet<NetAddress>,
+    ) -> impl ExactSizeIterator<Item = NetAddress> {
+        self.address_store
+            .iterate_prioritized_random_addresses(exceptions)
     }
 
     pub fn ban(&mut self, ip: IpAddress) {
-        self.banned_address_store.set(ip.into(), ConnectionBanTimestamp(unix_now())).unwrap();
+        self.banned_address_store
+            .set(ip.into(), ConnectionBanTimestamp(unix_now()))
+            .unwrap();
         self.address_store.remove_by_ip(ip.into());
     }
 
@@ -323,7 +398,10 @@ impl AddressManager {
     }
 
     pub fn get_all_banned_addresses(&self) -> Vec<IpAddress> {
-        self.banned_address_store.iterator().map(|x| IpAddress::from(x.unwrap().0)).collect_vec()
+        self.banned_address_store
+            .iterator()
+            .map(|x| IpAddress::from(x.unwrap().0))
+            .collect_vec()
     }
 }
 
@@ -366,7 +444,10 @@ mod address_store_with_cache {
                 addresses.insert(key, entry);
             }
 
-            Self { db_store, addresses }
+            Self {
+                db_store,
+                addresses,
+            }
         }
 
         pub fn has(&mut self, address: NetAddress) -> bool {
@@ -375,8 +456,14 @@ mod address_store_with_cache {
 
         pub fn set(&mut self, address: NetAddress, connection_failed_count: u64) {
             let entry = match self.addresses.get(&address.into()) {
-                Some(entry) => Entry { connection_failed_count, address: entry.address },
-                None => Entry { connection_failed_count, address },
+                Some(entry) => Entry {
+                    connection_failed_count,
+                    address: entry.address,
+                },
+                None => Entry {
+                    connection_failed_count,
+                    address,
+                },
             };
             self.db_store.set(address.into(), entry).unwrap();
             self.addresses.insert(address.into(), entry);
@@ -385,8 +472,15 @@ mod address_store_with_cache {
 
         fn keep_limit(&mut self) {
             while self.addresses.len() > MAX_ADDRESSES {
-                let to_remove =
-                    self.addresses.iter().max_by(|a, b| (a.1).connection_failed_count.cmp(&(b.1).connection_failed_count)).unwrap();
+                let to_remove = self
+                    .addresses
+                    .iter()
+                    .max_by(|a, b| {
+                        (a.1)
+                            .connection_failed_count
+                            .cmp(&(b.1).connection_failed_count)
+                    })
+                    .unwrap();
                 self.remove_by_key(*to_remove.0);
             }
         }
@@ -429,7 +523,8 @@ mod address_store_with_cache {
             &self,
             exceptions: HashSet<NetAddress>,
         ) -> impl ExactSizeIterator<Item = NetAddress> {
-            let exceptions: HashSet<AddressKey> = exceptions.into_iter().map(|addr| addr.into()).collect();
+            let exceptions: HashSet<AddressKey> =
+                exceptions.into_iter().map(|addr| addr.into()).collect();
             let mut prefix_counter: HashMap<PrefixBucket, usize> = HashMap::new();
             let (mut weights, filtered_addresses): (Vec<f64>, Vec<NetAddress>) = self
                 .addresses
@@ -438,20 +533,32 @@ mod address_store_with_cache {
                 .map(|(_, e)| {
                     let count = prefix_counter.entry(e.address.prefix_bucket()).or_insert(0);
                     *count += 1;
-                    (64f64.powf((MAX_CONNECTION_FAILED_COUNT + 1 - e.connection_failed_count) as f64), e.address)
+                    (
+                        64f64.powf(
+                            (MAX_CONNECTION_FAILED_COUNT + 1 - e.connection_failed_count) as f64,
+                        ),
+                        e.address,
+                    )
                 })
                 .unzip();
 
             // Divide weights by size of bucket of the prefix bytes, to partially uniform the distribution over prefix buckets.
             for (i, address) in filtered_addresses.iter().enumerate() {
-                *weights.get_mut(i).unwrap() /= *prefix_counter.get(&address.prefix_bucket()).unwrap() as f64;
+                *weights.get_mut(i).unwrap() /=
+                    *prefix_counter.get(&address.prefix_bucket()).unwrap() as f64;
             }
 
             RandomWeightedIterator::new(weights, filtered_addresses)
         }
 
         pub fn remove_by_ip(&mut self, ip: IpAddr) {
-            for key in self.addresses.keys().filter(|key| key.is_ip(ip)).copied().collect_vec() {
+            for key in self
+                .addresses
+                .keys()
+                .filter(|key| key.is_ip(ip))
+                .copied()
+                .collect_vec()
+            {
                 self.remove_by_key(key);
             }
         }
@@ -476,7 +583,11 @@ mod address_store_with_cache {
                 Err(WeightedError::NoItem) => None,
                 Err(e) => panic!("{e}"),
             };
-            Self { weighted_index, remaining, addresses }
+            Self {
+                weighted_index,
+                remaining,
+                addresses,
+            }
         }
     }
 
@@ -527,7 +638,8 @@ mod address_store_with_cache {
         #[test]
         fn test_weighted_iterator() {
             let address = NetAddress::new(IpAddr::V6(Ipv6Addr::LOCALHOST).into(), 1);
-            let iter = RandomWeightedIterator::new(vec![0.2, 0.3, 0.0], vec![address, address, address]);
+            let iter =
+                RandomWeightedIterator::new(vec![0.2, 0.3, 0.0], vec![address, address, address]);
             assert_eq!(iter.len(), 2);
             assert_eq!(iter.count(), 2);
 
@@ -549,7 +661,8 @@ mod address_store_with_cache {
 
             let db = create_temp_db!(ConnBuilder::default().with_files_limit(10));
             let config = Config::new(SIMNET_PARAMS);
-            let (am, _) = AddressManager::new(Arc::new(config), db.1, Arc::new(TickService::default()));
+            let (am, _) =
+                AddressManager::new(Arc::new(config), db.1, Arc::new(TickService::default()));
 
             let mut am_guard = am.lock();
 
@@ -560,12 +673,19 @@ mod address_store_with_cache {
             for current_prefix_bytes in 0..u16::MAX {
                 num_of_buckets += 1;
                 for current_suffix_bytes in 0..current_bucket_size {
-                    let current_ip_bytes =
-                        [current_prefix_bytes.to_be_bytes(), current_suffix_bytes.to_be_bytes()].concat().to_owned();
+                    let current_ip_bytes = [
+                        current_prefix_bytes.to_be_bytes(),
+                        current_suffix_bytes.to_be_bytes(),
+                    ]
+                    .concat()
+                    .to_owned();
                     am_guard.add_address(NetAddress::new(
                         IpAddress::from_str(&format!(
                             "{0}.{1}.{2}.{3}",
-                            current_ip_bytes[0], current_ip_bytes[1], current_ip_bytes[2], current_ip_bytes[3]
+                            current_ip_bytes[0],
+                            current_ip_bytes[1],
+                            current_ip_bytes[2],
+                            current_ip_bytes[3]
                         ))
                         .unwrap(),
                         42111,
@@ -574,9 +694,13 @@ mod address_store_with_cache {
                 }
 
                 let last_bucket_size = current_bucket_size;
-                current_bucket_size = ((current_bucket_size as f64) * (1.0 / bucket_reduction_ratio)).round() as u16;
+                current_bucket_size =
+                    ((current_bucket_size as f64) * (1.0 / bucket_reduction_ratio)).round() as u16;
 
-                if current_bucket_size == last_bucket_size || current_bucket_size == 0 || current_prefix_bytes == u16::MAX {
+                if current_bucket_size == last_bucket_size
+                    || current_bucket_size == 0
+                    || current_prefix_bytes == u16::MAX
+                {
                     // Address generation exhausted - exit loop
                     break;
                 }

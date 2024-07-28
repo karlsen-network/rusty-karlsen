@@ -8,7 +8,10 @@ use karlsen_consensus_core::{
     constants::{SOMPI_PER_KARLSEN, TX_VERSION},
     sign::sign,
     subnets::SUBNETWORK_ID_NATIVE,
-    tx::{MutableTransaction, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry},
+    tx::{
+        MutableTransaction, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput,
+        UtxoEntry,
+    },
 };
 use karlsen_core::{info, karlsend_env::version, time::unix_now, warn};
 use karlsen_grpc_client::{ClientPool, GrpcClient};
@@ -48,7 +51,10 @@ impl Args {
         Args {
             private_key: m.get_one::<String>("private-key").cloned(),
             tps: m.get_one::<u64>("tps").cloned().unwrap(),
-            rpc_server: m.get_one::<String>("rpcserver").cloned().unwrap_or("localhost:42210".to_owned()),
+            rpc_server: m
+                .get_one::<String>("rpcserver")
+                .cloned()
+                .unwrap_or("localhost:42210".to_owned()),
             threads: m.get_one::<u8>("threads").cloned().unwrap(),
             unleashed: m.get_one::<bool>("unleashed").cloned().unwrap_or(false),
         }
@@ -115,7 +121,13 @@ struct ClientPoolArg {
 async fn main() {
     karlsen_core::log::init_logger(None, "");
     let args = Args::parse();
-    let stats = Arc::new(Mutex::new(Stats { num_txs: 0, since: unix_now(), num_utxos: 0, utxos_amount: 0, num_outs: 0 }));
+    let stats = Arc::new(Mutex::new(Stats {
+        num_txs: 0,
+        since: unix_now(),
+        num_utxos: 0,
+        utxos_amount: 0,
+        num_outs: 0,
+    }));
     let subscription_context = SubscriptionContext::new();
     let rpc_client = GrpcClient::connect_with_args(
         NotificationMode::Direct,
@@ -138,7 +150,11 @@ async fn main() {
         secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, &private_key_bytes).unwrap()
     } else {
         let (sk, pk) = &secp256k1::generate_keypair(&mut thread_rng());
-        let karlsen_addr = Address::new(ADDRESS_PREFIX, ADDRESS_VERSION, &pk.x_only_public_key().0.serialize());
+        let karlsen_addr = Address::new(
+            ADDRESS_PREFIX,
+            ADDRESS_VERSION,
+            &pk.x_only_public_key().0.serialize(),
+        );
         info!(
             "Generated private key {} and address {}. Send some funds to this address and rerun rothschild with `--private-key {}`",
             sk.display_secret(),
@@ -148,11 +164,22 @@ async fn main() {
         return;
     };
 
-    let karlsen_addr = Address::new(ADDRESS_PREFIX, ADDRESS_VERSION, &schnorr_key.x_only_public_key().0.serialize());
+    let karlsen_addr = Address::new(
+        ADDRESS_PREFIX,
+        ADDRESS_VERSION,
+        &schnorr_key.x_only_public_key().0.serialize(),
+    );
 
-    rayon::ThreadPoolBuilder::new().num_threads(args.threads as usize).build_global().unwrap();
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(args.threads as usize)
+        .build_global()
+        .unwrap();
 
-    info!("Using Rothschild with private key {} and address {}", schnorr_key.display_secret(), String::from(&karlsen_addr));
+    info!(
+        "Using Rothschild with private key {} and address {}",
+        schnorr_key.display_secret(),
+        String::from(&karlsen_addr)
+    );
     let info = rpc_client.get_block_dag_info().await.unwrap();
     let coinbase_maturity = match info.network.suffix {
         Some(11) => TESTNET11_PARAMS.coinbase_maturity,
@@ -177,7 +204,9 @@ async fn main() {
     const CLIENT_POOL_SIZE: usize = 8;
     let mut rpc_clients = Vec::with_capacity(CLIENT_POOL_SIZE);
     for _ in 0..CLIENT_POOL_SIZE {
-        rpc_clients.push(Arc::new(new_rpc_client(&subscription_context, &args.rpc_server).await));
+        rpc_clients.push(Arc::new(
+            new_rpc_client(&subscription_context, &args.rpc_server).await,
+        ));
     }
 
     let submit_tx_pool = ClientPool::new(rpc_clients, 1000);
@@ -220,9 +249,23 @@ async fn main() {
 
     let target_tps = args.tps.min(if args.unleashed { u64::MAX } else { 100 });
     let should_tick_per_second = target_tps * MILLIS_PER_TICK / 1000 == 0;
-    let avg_txs_per_tick = if should_tick_per_second { target_tps } else { target_tps * MILLIS_PER_TICK / 1000 };
-    let mut utxos = refresh_utxos(&rpc_client, karlsen_addr.clone(), &mut pending, coinbase_maturity).await;
-    let mut ticker = interval(Duration::from_millis(if should_tick_per_second { 1000 } else { MILLIS_PER_TICK }));
+    let avg_txs_per_tick = if should_tick_per_second {
+        target_tps
+    } else {
+        target_tps * MILLIS_PER_TICK / 1000
+    };
+    let mut utxos = refresh_utxos(
+        &rpc_client,
+        karlsen_addr.clone(),
+        &mut pending,
+        coinbase_maturity,
+    )
+    .await;
+    let mut ticker = interval(Duration::from_millis(if should_tick_per_second {
+        1000
+    } else {
+        MILLIS_PER_TICK
+    }));
     ticker.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
     let mut maximize_inputs = false;
@@ -264,7 +307,13 @@ async fn main() {
         if !has_funds || now - last_refresh > 60_000 {
             info!("Refetching UTXO set");
             tokio::time::sleep(Duration::from_millis(100)).await; // We don't want this operation to be too frequent since its heavy on the node, so we wait some time before executing it.
-            utxos = refresh_utxos(&rpc_client, karlsen_addr.clone(), &mut pending, coinbase_maturity).await;
+            utxos = refresh_utxos(
+                &rpc_client,
+                karlsen_addr.clone(),
+                &mut pending,
+                coinbase_maturity,
+            )
+            .await;
             last_refresh = unix_now();
             next_available_utxo_index = 0;
             pause_if_mempool_is_full(&rpc_client).await;
@@ -278,7 +327,11 @@ fn should_maximize_inputs(
     utxos: &[(TransactionOutpoint, UtxoEntry)],
     pending: &HashMap<TransactionOutpoint, u64>,
 ) -> bool {
-    let estimated_utxos = if utxos.len() > pending.len() { utxos.len() - pending.len() } else { 0 };
+    let estimated_utxos = if utxos.len() > pending.len() {
+        utxos.len() - pending.len()
+    } else {
+        0
+    };
     if !old_value && estimated_utxos > 1_000_000 {
         info!("Starting to maximize inputs");
         true
@@ -298,7 +351,10 @@ async fn pause_if_mempool_is_full(rpc_client: &GrpcClient) {
         }
 
         const PAUSE_DURATION: u64 = 10;
-        info!("Mempool has {} entries. Pausing for {} seconds to reduce mempool pressure", mempool_size, PAUSE_DURATION);
+        info!(
+            "Mempool has {} entries. Pausing for {} seconds to reduce mempool pressure",
+            mempool_size, PAUSE_DURATION
+        );
         tokio::time::sleep(Duration::from_secs(PAUSE_DURATION)).await;
     }
 }
@@ -318,7 +374,10 @@ async fn populate_pending_outpoints_from_mempool(
     karlsen_addr: Address,
     pending_outpoints: &mut HashMap<TransactionOutpoint, u64>,
 ) {
-    let entries = rpc_client.get_mempool_entries_by_addresses(vec![karlsen_addr], true, false).await.unwrap();
+    let entries = rpc_client
+        .get_mempool_entries_by_addresses(vec![karlsen_addr], true, false)
+        .await
+        .unwrap();
     let now = unix_now();
     for entry in entries {
         for entry in entry.sending {
@@ -335,12 +394,21 @@ async fn fetch_spendable_utxos(
     coinbase_maturity: u64,
     pending: &mut HashMap<TransactionOutpoint, u64>,
 ) -> Vec<(TransactionOutpoint, UtxoEntry)> {
-    let resp = rpc_client.get_utxos_by_addresses(vec![karlsen_addr]).await.unwrap();
+    let resp = rpc_client
+        .get_utxos_by_addresses(vec![karlsen_addr])
+        .await
+        .unwrap();
     let dag_info = rpc_client.get_block_dag_info().await.unwrap();
     let mut utxos = Vec::with_capacity(resp.len());
     for resp_entry in resp
         .into_iter()
-        .filter(|resp_entry| is_utxo_spendable(&resp_entry.utxo_entry, dag_info.virtual_daa_score, coinbase_maturity))
+        .filter(|resp_entry| {
+            is_utxo_spendable(
+                &resp_entry.utxo_entry,
+                dag_info.virtual_daa_score,
+                coinbase_maturity,
+            )
+        })
         // Eliminates UTXOs we already tried to spend so we don't try to spend them again in this period
         .filter(|utxo| !pending.contains_key(&utxo.outpoint))
     {
@@ -376,8 +444,13 @@ async fn maybe_send_tx(
 
     let selected_utxos_groups = (0..txs_to_send)
         .map(|_| {
-            let (selected_utxos, selected_amount) =
-                select_utxos(utxos, DEFAULT_SEND_AMOUNT, num_outs, maximize_inputs, next_available_utxo_index);
+            let (selected_utxos, selected_amount) = select_utxos(
+                utxos,
+                DEFAULT_SEND_AMOUNT,
+                num_outs,
+                maximize_inputs,
+                next_available_utxo_index,
+            );
             if selected_amount == 0 {
                 return None;
             }
@@ -403,9 +476,22 @@ async fn maybe_send_tx(
         .into_par_iter()
         .map(|utxo_option| {
             if let Some((selected_utxos, selected_amount)) = utxo_option {
-                let tx = generate_tx(schnorr_key, &selected_utxos, selected_amount, num_outs, &karlsen_addr);
+                let tx = generate_tx(
+                    schnorr_key,
+                    &selected_utxos,
+                    selected_amount,
+                    num_outs,
+                    &karlsen_addr,
+                );
 
-                return Some((tx, selected_utxos.len(), selected_utxos.into_iter().map(|(_, entry)| entry.amount).sum::<u64>()));
+                return Some((
+                    tx,
+                    selected_utxos.len(),
+                    selected_utxos
+                        .into_iter()
+                        .map(|(_, entry)| entry.amount)
+                        .sum::<u64>(),
+                ));
             }
 
             None
@@ -431,7 +517,11 @@ async fn maybe_send_tx(
 
 fn clean_old_pending_outpoints(pending: &mut HashMap<TransactionOutpoint, u64>) {
     let now = unix_now();
-    let old_keys = pending.iter().filter(|(_, time)| now - *time > 3600 * 1000).map(|(op, _)| *op).collect_vec();
+    let old_keys = pending
+        .iter()
+        .filter(|(_, time)| now - *time > 3600 * 1000)
+        .map(|(op, _)| *op)
+        .collect_vec();
     for key in old_keys {
         pending.remove(&key).unwrap();
     }
@@ -455,15 +545,36 @@ fn generate_tx(
     let script_public_key = pay_to_address_script(karlsen_addr);
     let inputs = utxos
         .iter()
-        .map(|(op, _)| TransactionInput { previous_outpoint: *op, signature_script: vec![], sequence: 0, sig_op_count: 1 })
+        .map(|(op, _)| TransactionInput {
+            previous_outpoint: *op,
+            signature_script: vec![],
+            sequence: 0,
+            sig_op_count: 1,
+        })
         .collect_vec();
 
     let outputs = (0..num_outs)
-        .map(|_| TransactionOutput { value: send_amount / num_outs, script_public_key: script_public_key.clone() })
+        .map(|_| TransactionOutput {
+            value: send_amount / num_outs,
+            script_public_key: script_public_key.clone(),
+        })
         .collect_vec();
-    let unsigned_tx = Transaction::new_non_finalized(TX_VERSION, inputs, outputs, 0, SUBNETWORK_ID_NATIVE, 0, vec![]);
-    let signed_tx =
-        sign(MutableTransaction::with_entries(unsigned_tx, utxos.iter().map(|(_, entry)| entry.clone()).collect_vec()), schnorr_key);
+    let unsigned_tx = Transaction::new_non_finalized(
+        TX_VERSION,
+        inputs,
+        outputs,
+        0,
+        SUBNETWORK_ID_NATIVE,
+        0,
+        vec![],
+    );
+    let signed_tx = sign(
+        MutableTransaction::with_entries(
+            unsigned_tx,
+            utxos.iter().map(|(_, entry)| entry.clone()).collect_vec(),
+        ),
+        schnorr_key,
+    );
     signed_tx.tx
 }
 

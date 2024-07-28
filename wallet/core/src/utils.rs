@@ -67,7 +67,10 @@ pub fn sompi_to_karlsen_string_with_suffix(sompi: u64, network_type: &NetworkTyp
 }
 
 #[inline]
-pub fn sompi_to_karlsen_string_with_trailing_zeroes_and_suffix(sompi: u64, network_type: &NetworkType) -> String {
+pub fn sompi_to_karlsen_string_with_trailing_zeroes_and_suffix(
+    sompi: u64,
+    network_type: &NetworkType,
+) -> String {
     let kas = sompi_to_karlsen_string_with_trailing_zeroes(sompi);
     let suffix = karlsen_suffix(network_type);
     format!("{kas} {suffix}")

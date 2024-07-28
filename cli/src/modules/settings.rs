@@ -5,7 +5,12 @@ use crate::imports::*;
 pub struct Settings;
 
 impl Settings {
-    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, _argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        _argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 
         tprintln!(ctx, "\nSettings:\n");
@@ -13,16 +18,34 @@ impl Settings {
         let list = list
             .iter()
             .map(|setting| {
-                let value: String = ctx.wallet().settings().get(setting.clone()).unwrap_or_else(|| "-".to_string());
+                let value: String = ctx
+                    .wallet()
+                    .settings()
+                    .get(setting.clone())
+                    .unwrap_or_else(|| "-".to_string());
                 let descr = setting.descr();
                 (setting.as_str().to_lowercase(), value, descr)
             })
             .collect::<Vec<(_, _, _)>>();
-        let c1 = list.iter().map(|(c, _, _)| c.len()).fold(0, |a, b| a.max(b)) + 4;
-        let c2 = list.iter().map(|(_, c, _)| c.len()).fold(0, |a, b| a.max(b)) + 4;
+        let c1 = list
+            .iter()
+            .map(|(c, _, _)| c.len())
+            .fold(0, |a, b| a.max(b))
+            + 4;
+        let c2 = list
+            .iter()
+            .map(|(_, c, _)| c.len())
+            .fold(0, |a, b| a.max(b))
+            + 4;
 
         list.iter().for_each(|(k, v, d)| {
-            tprintln!(ctx, "{}: {} \t {}", k.pad_to_width_with_alignment(c1, pad::Alignment::Right), v.pad_to_width(c2), d);
+            tprintln!(
+                ctx,
+                "{}: {} \t {}",
+                k.pad_to_width_with_alignment(c1, pad::Alignment::Right),
+                v.pad_to_width(c2),
+                d
+            );
         });
 
         tprintln!(ctx);

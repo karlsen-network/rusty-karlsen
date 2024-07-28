@@ -60,8 +60,14 @@ impl ToTokens for RpcTable {
         let payload_ops = &self.payload_ops;
 
         for handler in self.handlers.elems.iter() {
-            let Handler { fn_call, request_type, is_subscription, response_message_type, fallback_request_type, .. } =
-                Handler::new(handler);
+            let Handler {
+                fn_call,
+                request_type,
+                is_subscription,
+                response_message_type,
+                fallback_request_type,
+                ..
+            } = Handler::new(handler);
 
             match is_subscription {
                 false => {

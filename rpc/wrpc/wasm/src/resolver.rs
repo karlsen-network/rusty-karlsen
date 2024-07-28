@@ -57,7 +57,10 @@ impl TryFrom<IResolverConnect> for ResolverConnect {
     type Error = Error;
     fn try_from(config: IResolverConnect) -> Result<Self> {
         if let Ok(network_id) = NetworkId::try_owned_from(&config) {
-            Ok(Self { encoding: None, network_id })
+            Ok(Self {
+                encoding: None,
+                network_id,
+            })
         } else {
             Ok(serde_wasm_bindgen::from_value(config.into())?)
         }
@@ -119,9 +122,13 @@ impl Resolver {
     #[wasm_bindgen(constructor)]
     pub fn ctor(args: Option<IResolverConfig>) -> Result<Resolver> {
         if let Some(args) = args {
-            Ok(Self { resolver: NativeResolver::try_from(args)? })
+            Ok(Self {
+                resolver: NativeResolver::try_from(args)?,
+            })
         } else {
-            Ok(Self { resolver: NativeResolver::default() })
+            Ok(Self {
+                resolver: NativeResolver::default(),
+            })
         }
     }
 }
@@ -131,29 +138,51 @@ impl Resolver {
     /// List of public Karlsen Resolver URLs.
     #[wasm_bindgen(getter)]
     pub fn urls(&self) -> ResolverArrayT {
-        Array::from_iter(self.resolver.urls().iter().map(|v| JsValue::from(v.as_str()))).unchecked_into()
+        Array::from_iter(
+            self.resolver
+                .urls()
+                .iter()
+                .map(|v| JsValue::from(v.as_str())),
+        )
+        .unchecked_into()
     }
 
     /// Fetches a public Karlsen wRPC endpoint for the given encoding and network identifier.
     /// @see {@link Encoding}, {@link NetworkId}, {@link Node}
     #[wasm_bindgen(js_name = getNode)]
-    pub async fn get_node(&self, encoding: Encoding, network_id: NetworkIdT) -> Result<NodeDescriptor> {
-        self.resolver.get_node(encoding, *network_id.try_into_cast()?).await
+    pub async fn get_node(
+        &self,
+        encoding: Encoding,
+        network_id: NetworkIdT,
+    ) -> Result<NodeDescriptor> {
+        self.resolver
+            .get_node(encoding, *network_id.try_into_cast()?)
+            .await
     }
 
     /// Fetches a public Karlsen wRPC endpoint URL for the given encoding and network identifier.
     /// @see {@link Encoding}, {@link NetworkId}
     #[wasm_bindgen(js_name = getUrl)]
     pub async fn get_url(&self, encoding: Encoding, network_id: NetworkIdT) -> Result<String> {
-        self.resolver.get_url(encoding, *network_id.try_into_cast()?).await
+        self.resolver
+            .get_url(encoding, *network_id.try_into_cast()?)
+            .await
     }
 
     /// Connect to a public Karlsen wRPC endpoint for the given encoding and network identifier
     /// supplied via {@link IResolverConnect} interface.
     /// @see {@link IResolverConnect}, {@link RpcClient}
     pub async fn connect(&self, options: IResolverConnect) -> Result<RpcClient> {
-        let ResolverConnect { encoding, network_id } = options.try_into()?;
-        let config = RpcConfig { resolver: Some(self.clone()), url: None, encoding, network_id: Some(network_id) };
+        let ResolverConnect {
+            encoding,
+            network_id,
+        } = options.try_into()?;
+        let config = RpcConfig {
+            resolver: Some(self.clone()),
+            url: None,
+            encoding,
+            network_id: Some(network_id),
+        };
         let client = RpcClient::new(Some(config))?;
         client.connect(None).await?;
         Ok(client)
@@ -165,8 +194,18 @@ impl TryFrom<IResolverConfig> for NativeResolver {
     fn try_from(config: IResolverConfig) -> Result<Self> {
         let resolver = config
             .get_vec("urls")
-            .map(|urls| urls.into_iter().map(|v| v.as_string()).collect::<Option<Vec<_>>>())
-            .or_else(|_| config.dyn_into::<Array>().map(|urls| urls.into_iter().map(|v| v.as_string()).collect::<Option<Vec<_>>>()))
+            .map(|urls| {
+                urls.into_iter()
+                    .map(|v| v.as_string())
+                    .collect::<Option<Vec<_>>>()
+            })
+            .or_else(|_| {
+                config.dyn_into::<Array>().map(|urls| {
+                    urls.into_iter()
+                        .map(|v| v.as_string())
+                        .collect::<Option<Vec<_>>>()
+                })
+            })
             .map_err(|_| Error::custom("Invalid or missing resolver URL"))?
             .map(|urls| NativeResolver::new(urls.into_iter().map(Arc::new).collect()));
 

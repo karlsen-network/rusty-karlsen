@@ -15,7 +15,8 @@ pub fn encode_benchmark(c: &mut Criterion) {
 
 pub fn decode_benchmark(c: &mut Criterion) {
     c.bench_function("String::into::Address", |b| {
-        let address = "karlsen:qp0l70zd5x85ttwd6jv7g3s3a8llzj96d8dncn4zmhv4tlzx5k2jyqh70xmfj".to_string();
+        let address =
+            "karlsen:qp0l70zd5x85ttwd6jv7g3s3a8llzj96d8dncn4zmhv4tlzx5k2jyqh70xmfj".to_string();
         b.iter(|| -> Address { String::try_into(black_box(address.clone())).expect("Should work") })
     });
 }

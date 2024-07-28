@@ -56,7 +56,10 @@ pub struct ScriptPublicKey {
 
 impl std::fmt::Debug for ScriptPublicKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ScriptPublicKey").field("version", &self.version).field("script", &self.script.to_hex()).finish()
+        f.debug_struct("ScriptPublicKey")
+            .field("version", &self.version)
+            .field("script", &self.script.to_hex())
+            .finish()
     }
 }
 
@@ -83,11 +86,17 @@ impl Serialize for ScriptPublicKey {
     {
         if serializer.is_human_readable() {
             let mut hex = vec![0u8; self.script.len() * 2 + 4];
-            faster_hex::hex_encode(&self.version.to_be_bytes(), &mut hex).map_err(serde::ser::Error::custom)?;
-            faster_hex::hex_encode(&self.script, &mut hex[4..]).map_err(serde::ser::Error::custom)?;
+            faster_hex::hex_encode(&self.version.to_be_bytes(), &mut hex)
+                .map_err(serde::ser::Error::custom)?;
+            faster_hex::hex_encode(&self.script, &mut hex[4..])
+                .map_err(serde::ser::Error::custom)?;
             serializer.serialize_str(unsafe { str::from_utf8_unchecked(&hex) })
         } else {
-            ScriptPublicKeyInternal { version: self.version, script: &self.script }.serialize(serializer)
+            ScriptPublicKeyInternal {
+                version: self.version,
+                script: &self.script,
+            }
+            .serialize(serializer)
         }
     }
 }
@@ -113,7 +122,10 @@ impl<'de: 'a, 'a> Deserialize<'de> for ScriptPublicKey {
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 {
-                    write!(formatter, "string-type: string, str; bytes-type: slice of bytes, vec of bytes; map")
+                    write!(
+                        formatter,
+                        "string-type: string, str; bytes-type: slice of bytes, vec of bytes; map"
+                    )
                 }
             }
 
@@ -240,7 +252,9 @@ impl<'de: 'a, 'a> Deserialize<'de> for ScriptPublicKey {
                 }
                 impl From<Value<'_>> for u16 {
                     fn from(value: Value<'_>) -> Self {
-                        let Value::U16(v) = value else { panic!("unexpected conversion: {value:?}") };
+                        let Value::U16(v) = value else {
+                            panic!("unexpected conversion: {value:?}")
+                        };
                         v
                     }
                 }
@@ -255,7 +269,10 @@ impl<'de: 'a, 'a> Deserialize<'de> for ScriptPublicKey {
                             }
                             Value::String(script) => {
                                 let mut script_bytes = vec![0u8; script.len() / 2];
-                                faster_hex::hex_decode(script.as_bytes(), script_bytes.as_mut_slice())?;
+                                faster_hex::hex_decode(
+                                    script.as_bytes(),
+                                    script_bytes.as_mut_slice(),
+                                )?;
 
                                 Ok(script_bytes)
                             }
@@ -290,8 +307,12 @@ impl<'de: 'a, 'a> Deserialize<'de> for ScriptPublicKey {
         if deserializer.is_human_readable() {
             deserializer.deserialize_any(ScriptPublicKeyVisitor::default())
         } else {
-            ScriptPublicKeyInternal::deserialize(deserializer)
-                .map(|ScriptPublicKeyInternal { script, version }| Self { version, script: SmallVec::from_slice(script) })
+            ScriptPublicKeyInternal::deserialize(deserializer).map(
+                |ScriptPublicKeyInternal { script, version }| Self {
+                    version,
+                    script: SmallVec::from_slice(script),
+                },
+            )
         }
     }
 }
@@ -306,7 +327,10 @@ impl FromStr for ScriptPublicKey {
         let mut bytes = vec![0u8; hex_len / 2];
         faster_hex::hex_decode(hex_str.as_bytes(), bytes.as_mut_slice())?;
         let version = u16::from_be_bytes(bytes[0..2].try_into().unwrap());
-        Ok(Self { version, script: SmallVec::from_slice(&bytes[2..]) })
+        Ok(Self {
+            version,
+            script: SmallVec::from_slice(&bytes[2..]),
+        })
     }
 }
 
@@ -316,7 +340,10 @@ impl ScriptPublicKey {
     }
 
     pub fn from_vec(version: ScriptPublicKeyVersion, script: Vec<u8>) -> Self {
-        Self { version, script: ScriptVec::from_vec(script) }
+        Self {
+            version,
+            script: ScriptVec::from_vec(script),
+        }
     }
 
     pub fn version(&self) -> ScriptPublicKeyVersion {
@@ -359,7 +386,10 @@ impl BorshSerialize for ScriptPublicKey {
 impl BorshDeserialize for ScriptPublicKey {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
         // Deserialize into vec first since we have no custom smallvec support
-        Ok(Self::from_vec(borsh::BorshDeserialize::deserialize(buf)?, borsh::BorshDeserialize::deserialize(buf)?))
+        Ok(Self::from_vec(
+            borsh::BorshDeserialize::deserialize(buf)?,
+            borsh::BorshDeserialize::deserialize(buf)?,
+        ))
     }
 }
 
@@ -371,7 +401,10 @@ impl TryCastFromJs for ScriptPublicKey {
             if let Some(hex_str) = value.as_ref().as_string() {
                 Ok(Self::from_str(&hex_str).map_err(CastError::custom)?)
             } else {
-                Err(CastError::custom(format!("Unable to convert ScriptPublicKey from: {:?}", value.as_ref())))
+                Err(CastError::custom(format!(
+                    "Unable to convert ScriptPublicKey from: {:?}",
+                    value.as_ref()
+                )))
             }
         })
     }
@@ -388,14 +421,20 @@ mod tests {
         let vec = (0..SCRIPT_VECTOR_SIZE as u8).collect::<Vec<_>>();
         let spk = ScriptPublicKey::from_vec(0xc0de, vec.clone()); // 0xc0de == 49374,
         let hex: String = serde_json::to_string(&spk).unwrap();
-        assert_eq!("\"c0de000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212223\"", hex);
+        assert_eq!(
+            "\"c0de000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212223\"",
+            hex
+        );
         let spk = serde_json::from_str::<ScriptPublicKey>(&hex).unwrap();
         assert_eq!(spk.version, 0xc0de);
         assert_eq!(spk.script.as_slice(), vec.as_slice());
         let result = "00".parse::<ScriptPublicKey>();
         assert!(matches!(result, Err(faster_hex::Error::InvalidLength(2))));
         let result = "0000".parse::<ScriptPublicKey>();
-        let _empty = ScriptPublicKey { version: 0, script: ScriptVec::new() };
+        let _empty = ScriptPublicKey {
+            version: 0,
+            script: ScriptVec::new(),
+        };
         assert!(matches!(result, Ok(_empty)));
     }
 
@@ -428,7 +467,12 @@ mod tests {
         let script_hex = spk.script_as_hex();
         let script_hex_js: JsValue = JsValue::from_str(&script_hex);
 
-        let spk_js = to_value(&ScriptPublicKey::constructor(version, script_hex_js).map_err(|_| ()).unwrap()).unwrap();
+        let spk_js = to_value(
+            &ScriptPublicKey::constructor(version, script_hex_js)
+                .map_err(|_| ())
+                .unwrap(),
+        )
+        .unwrap();
         assert_eq!(JsValue::from_str(str), spk_js.clone());
         assert_eq!(spk, from_value(spk_js.clone()).map_err(|_| ()).unwrap());
         assert_eq!(JsValue::from_str("string"), spk_js.js_typeof());
@@ -462,7 +506,9 @@ mod tests {
         let script_hex = spk.script_as_hex();
         let script_hex_js: JsValue = JsValue::from_str(&script_hex);
 
-        let expected = ScriptPublicKey::constructor(version, script_hex_js).map_err(|_| ()).unwrap();
+        let expected = ScriptPublicKey::constructor(version, script_hex_js)
+            .map_err(|_| ())
+            .unwrap();
         let wasm_js_value: JsValue = expected.clone().into_abi().into();
 
         let actual = from_value(wasm_js_value).unwrap();

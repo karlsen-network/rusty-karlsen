@@ -5,8 +5,8 @@ use crate::{
     listener::ListenerId,
     scope::{Scope, UtxosChangedScope, VirtualChainChangedScope},
     subscription::{
-        context::SubscriptionContext, BroadcastingSingle, Command, DynSubscription, Mutation, MutationOutcome, MutationPolicies,
-        Single, Subscription, UtxosChangedMutationPolicy,
+        context::SubscriptionContext, BroadcastingSingle, Command, DynSubscription, Mutation,
+        MutationOutcome, MutationPolicies, Single, Subscription, UtxosChangedMutationPolicy,
     },
 };
 use itertools::Itertools;
@@ -82,7 +82,10 @@ pub struct VirtualChainChangedSubscription {
 
 impl VirtualChainChangedSubscription {
     pub fn new(active: bool, include_accepted_transaction_ids: bool) -> Self {
-        Self { active, include_accepted_transaction_ids }
+        Self {
+            active,
+            include_accepted_transaction_ids,
+        }
     }
     pub fn include_accepted_transaction_ids(&self) -> bool {
         self.include_accepted_transaction_ids
@@ -118,7 +121,13 @@ impl Single for VirtualChainChangedSubscription {
                 if !mutation.active() {
                     // Mutation None
                     let mutated = Self::new(false, false);
-                    Some((Arc::new(mutated), vec![Mutation::new(Command::Stop, VirtualChainChangedScope::new(false).into())]))
+                    Some((
+                        Arc::new(mutated),
+                        vec![Mutation::new(
+                            Command::Stop,
+                            VirtualChainChangedScope::new(false).into(),
+                        )],
+                    ))
                 } else if !scope.include_accepted_transaction_ids {
                     // Mutation Reduced
                     None
@@ -127,7 +136,13 @@ impl Single for VirtualChainChangedSubscription {
                     let mutated = Self::new(true, true);
                     Some((
                         Arc::new(mutated),
-                        vec![Mutation::new(Command::Stop, VirtualChainChangedScope::new(false).into()), mutation],
+                        vec![
+                            Mutation::new(
+                                Command::Stop,
+                                VirtualChainChangedScope::new(false).into(),
+                            ),
+                            mutation,
+                        ],
                     ))
                 }
             } else {
@@ -135,11 +150,26 @@ impl Single for VirtualChainChangedSubscription {
                 if !mutation.active() {
                     // Mutation None
                     let mutated = Self::new(false, false);
-                    Some((Arc::new(mutated), vec![Mutation::new(Command::Stop, VirtualChainChangedScope::new(true).into())]))
+                    Some((
+                        Arc::new(mutated),
+                        vec![Mutation::new(
+                            Command::Stop,
+                            VirtualChainChangedScope::new(true).into(),
+                        )],
+                    ))
                 } else if !scope.include_accepted_transaction_ids {
                     // Mutation Reduced
                     let mutated = Self::new(true, false);
-                    Some((Arc::new(mutated), vec![mutation, Mutation::new(Command::Stop, VirtualChainChangedScope::new(true).into())]))
+                    Some((
+                        Arc::new(mutated),
+                        vec![
+                            mutation,
+                            Mutation::new(
+                                Command::Stop,
+                                VirtualChainChangedScope::new(true).into(),
+                            ),
+                        ],
+                    ))
                 } else {
                     // Mutation All
                     None
@@ -270,25 +300,44 @@ impl UtxosChangedSubscriptionData {
     }
 
     pub fn contains_address(&self, address: &Address, context: &SubscriptionContext) -> bool {
-        context.address_tracker.contains_address(&self.indexes, address)
+        context
+            .address_tracker
+            .contains_address(&self.indexes, address)
     }
 
     pub fn to_addresses(&self, prefix: Prefix, context: &SubscriptionContext) -> Vec<Address> {
-        self.indexes.iter().filter_map(|index| context.address_tracker.get_address_at_index(*index, prefix)).collect_vec()
+        self.indexes
+            .iter()
+            .filter_map(|index| context.address_tracker.get_address_at_index(*index, prefix))
+            .collect_vec()
     }
 
-    pub fn register(&mut self, addresses: Vec<Address>, context: &SubscriptionContext) -> Result<Vec<Address>> {
-        Ok(context.address_tracker.register(&mut self.indexes, addresses)?)
+    pub fn register(
+        &mut self,
+        addresses: Vec<Address>,
+        context: &SubscriptionContext,
+    ) -> Result<Vec<Address>> {
+        Ok(context
+            .address_tracker
+            .register(&mut self.indexes, addresses)?)
     }
 
-    pub fn unregister(&mut self, addresses: Vec<Address>, context: &SubscriptionContext) -> Vec<Address> {
-        context.address_tracker.unregister(&mut self.indexes, addresses)
+    pub fn unregister(
+        &mut self,
+        addresses: Vec<Address>,
+        context: &SubscriptionContext,
+    ) -> Vec<Address> {
+        context
+            .address_tracker
+            .unregister(&mut self.indexes, addresses)
     }
 
     pub fn unregister_indexes(&mut self, context: &SubscriptionContext) -> Vec<Address> {
         // TODO: consider using a provided prefix
         let removed = self.to_addresses(Prefix::Mainnet, context);
-        context.address_tracker.unregister_indexes(&mut self.indexes);
+        context
+            .address_tracker
+            .unregister_indexes(&mut self.indexes);
         removed
     }
 
@@ -322,7 +371,11 @@ impl UtxosChangedSubscription {
         Self::with_capacity(state, listener_id, 0)
     }
 
-    pub fn with_capacity(state: UtxosChangedState, listener_id: ListenerId, capacity: usize) -> Self {
+    pub fn with_capacity(
+        state: UtxosChangedState,
+        listener_id: ListenerId,
+        capacity: usize,
+    ) -> Self {
         let data = RwLock::new(UtxosChangedSubscriptionData::with_capacity(state, capacity));
         let subscription = Self { data, listener_id };
         trace!(
@@ -334,7 +387,12 @@ impl UtxosChangedSubscription {
     }
 
     #[cfg(test)]
-    pub fn with_addresses(active: bool, addresses: Vec<Address>, listener_id: ListenerId, context: &SubscriptionContext) -> Self {
+    pub fn with_addresses(
+        active: bool,
+        addresses: Vec<Address>,
+        listener_id: ListenerId,
+        context: &SubscriptionContext,
+    ) -> Self {
         let state = match (active, addresses.is_empty()) {
             (false, _) => UtxosChangedState::None,
             (true, false) => UtxosChangedState::Selected,
@@ -365,7 +423,10 @@ impl UtxosChangedSubscription {
 
 impl Clone for UtxosChangedSubscription {
     fn clone(&self) -> Self {
-        let subscription = Self { data: RwLock::new(self.data().clone()), listener_id: self.listener_id };
+        let subscription = Self {
+            data: RwLock::new(self.data().clone()),
+            listener_id: self.listener_id,
+        };
         trace!(
             "UtxosChangedSubscription: {} in total (clone {})",
             UTXOS_CHANGED_SUBSCRIPTIONS.fetch_add(1, Ordering::SeqCst) + 1,
@@ -420,7 +481,10 @@ impl Single for UtxosChangedSubscription {
             let state = data.state;
             let mutation_type = UtxosChangedMutation::from((mutation.command, &scope));
             match (state, mutation_type) {
-                (UtxosChangedState::None, UtxosChangedMutation::None | UtxosChangedMutation::Remove) => {
+                (
+                    UtxosChangedState::None,
+                    UtxosChangedMutation::None | UtxosChangedMutation::Remove,
+                ) => {
                     // State None + Mutations None or Remove(R) => No change
                     MutationOutcome::new()
                 }
@@ -430,10 +494,16 @@ impl Single for UtxosChangedSubscription {
                     data.update_state(UtxosChangedState::Selected);
                     let mutations = match policies.utxo_changed {
                         UtxosChangedMutationPolicy::AddressSet => {
-                            vec![Mutation::new(mutation.command, UtxosChangedScope::new(addresses).into())]
+                            vec![Mutation::new(
+                                mutation.command,
+                                UtxosChangedScope::new(addresses).into(),
+                            )]
                         }
                         UtxosChangedMutationPolicy::Wildcard => {
-                            vec![Mutation::new(mutation.command, UtxosChangedScope::default().into())]
+                            vec![Mutation::new(
+                                mutation.command,
+                                UtxosChangedScope::default().into(),
+                            )]
                         }
                     };
                     MutationOutcome::with_mutated(current.clone(), mutations)
@@ -441,20 +511,32 @@ impl Single for UtxosChangedSubscription {
                 (UtxosChangedState::None, UtxosChangedMutation::All) => {
                     // State None + Mutation All => Mutated new state All
                     data.update_state(UtxosChangedState::All);
-                    let mutations = vec![Mutation::new(mutation.command, UtxosChangedScope::default().into())];
+                    let mutations = vec![Mutation::new(
+                        mutation.command,
+                        UtxosChangedScope::default().into(),
+                    )];
                     MutationOutcome::with_mutated(current.clone(), mutations)
                 }
                 (UtxosChangedState::Selected, UtxosChangedMutation::None) => {
                     // State Selected(S) + Mutation None => Mutated new state None
                     data.update_state(UtxosChangedState::None);
                     let removed = data.unregister_indexes(context);
-                    assert!(!removed.is_empty(), "state Selected implies a non empty address set");
+                    assert!(
+                        !removed.is_empty(),
+                        "state Selected implies a non empty address set"
+                    );
                     let mutations = match policies.utxo_changed {
                         UtxosChangedMutationPolicy::AddressSet => {
-                            vec![Mutation::new(Command::Stop, UtxosChangedScope::new(removed).into())]
+                            vec![Mutation::new(
+                                Command::Stop,
+                                UtxosChangedScope::new(removed).into(),
+                            )]
                         }
                         UtxosChangedMutationPolicy::Wildcard => {
-                            vec![Mutation::new(Command::Stop, UtxosChangedScope::default().into())]
+                            vec![Mutation::new(
+                                Command::Stop,
+                                UtxosChangedScope::default().into(),
+                            )]
                         }
                     };
                     MutationOutcome::with_mutated(current.clone(), mutations)
@@ -466,7 +548,10 @@ impl Single for UtxosChangedSubscription {
                         (false, false) => {
                             let mutations = match policies.utxo_changed {
                                 UtxosChangedMutationPolicy::AddressSet => {
-                                    vec![Mutation::new(Command::Stop, UtxosChangedScope::new(removed).into())]
+                                    vec![Mutation::new(
+                                        Command::Stop,
+                                        UtxosChangedScope::new(removed).into(),
+                                    )]
                                 }
                                 UtxosChangedMutationPolicy::Wildcard => vec![],
                             };
@@ -476,10 +561,16 @@ impl Single for UtxosChangedSubscription {
                             data.update_state(UtxosChangedState::None);
                             let mutations = match policies.utxo_changed {
                                 UtxosChangedMutationPolicy::AddressSet => {
-                                    vec![Mutation::new(Command::Stop, UtxosChangedScope::new(removed).into())]
+                                    vec![Mutation::new(
+                                        Command::Stop,
+                                        UtxosChangedScope::new(removed).into(),
+                                    )]
                                 }
                                 UtxosChangedMutationPolicy::Wildcard => {
-                                    vec![Mutation::new(Command::Stop, UtxosChangedScope::default().into())]
+                                    vec![Mutation::new(
+                                        Command::Stop,
+                                        UtxosChangedScope::default().into(),
+                                    )]
                                 }
                             };
                             MutationOutcome::with_mutated(current.clone(), mutations)
@@ -494,7 +585,10 @@ impl Single for UtxosChangedSubscription {
                         false => {
                             let mutations = match policies.utxo_changed {
                                 UtxosChangedMutationPolicy::AddressSet => {
-                                    vec![Mutation::new(Command::Start, UtxosChangedScope::new(added).into())]
+                                    vec![Mutation::new(
+                                        Command::Start,
+                                        UtxosChangedScope::new(added).into(),
+                                    )]
                                 }
                                 UtxosChangedMutationPolicy::Wildcard => vec![],
                             };
@@ -506,7 +600,10 @@ impl Single for UtxosChangedSubscription {
                 (UtxosChangedState::Selected, UtxosChangedMutation::All) => {
                     // State Selected(S) + Mutation All => Mutated new state All
                     let removed = data.unregister_indexes(context);
-                    assert!(!removed.is_empty(), "state Selected implies a non empty address set");
+                    assert!(
+                        !removed.is_empty(),
+                        "state Selected implies a non empty address set"
+                    );
                     data.update_state(UtxosChangedState::All);
                     let mutations = match policies.utxo_changed {
                         UtxosChangedMutationPolicy::AddressSet => vec![
@@ -520,7 +617,10 @@ impl Single for UtxosChangedSubscription {
                 (UtxosChangedState::All, UtxosChangedMutation::None) => {
                     // State All + Mutation None => Mutated new state None
                     data.update_state(UtxosChangedState::None);
-                    let mutations = vec![Mutation::new(Command::Stop, UtxosChangedScope::default().into())];
+                    let mutations = vec![Mutation::new(
+                        Command::Stop,
+                        UtxosChangedScope::default().into(),
+                    )];
                     MutationOutcome::with_mutated(current.clone(), mutations)
                 }
                 (UtxosChangedState::All, UtxosChangedMutation::Remove) => {
@@ -571,7 +671,10 @@ impl BroadcastingSingle for DynSubscription {
     fn broadcasting(self, context: &SubscriptionContext) -> DynSubscription {
         match self.event_type() {
             EventType::UtxosChanged => {
-                let utxos_changed_subscription = self.as_any().downcast_ref::<UtxosChangedSubscription>().unwrap();
+                let utxos_changed_subscription = self
+                    .as_any()
+                    .downcast_ref::<UtxosChangedSubscription>()
+                    .unwrap();
                 match utxos_changed_subscription.to_all() {
                     true => context.utxos_changed_subscription_to_all.clone(),
                     false => self,
@@ -598,10 +701,18 @@ mod tests {
         }
         impl Comparison {
             fn new(left: usize, right: usize, should_match: bool) -> Self {
-                Self { left, right, should_match }
+                Self {
+                    left,
+                    right,
+                    should_match,
+                }
             }
             fn compare(&self, name: &str, subscriptions: &[DynSubscription]) {
-                let equal = if self.should_match { "be equal" } else { "not be equal" };
+                let equal = if self.should_match {
+                    "be equal"
+                } else {
+                    "not be equal"
+                };
                 // Compare Box dyn Single
                 #[allow(clippy::op_ref)]
                 let cmp = &subscriptions[self.left] == &subscriptions[self.right];
@@ -660,7 +771,11 @@ mod tests {
                     Arc::new(OverallSubscription::new(EventType::BlockAdded, true)),
                     Arc::new(OverallSubscription::new(EventType::BlockAdded, true)),
                 ],
-                comparisons: vec![Comparison::new(0, 1, false), Comparison::new(0, 2, false), Comparison::new(1, 2, true)],
+                comparisons: vec![
+                    Comparison::new(0, 1, false),
+                    Comparison::new(0, 2, false),
+                    Comparison::new(1, 2, true),
+                ],
             },
             Test {
                 name: "test virtual selected parent chain changed subscription",
@@ -682,12 +797,42 @@ mod tests {
             Test {
                 name: "test utxos changed subscription",
                 subscriptions: vec![
-                    Arc::new(UtxosChangedSubscription::with_addresses(false, vec![], 0, &context)),
-                    Arc::new(UtxosChangedSubscription::with_addresses(true, addresses[0..2].to_vec(), 1, &context)),
-                    Arc::new(UtxosChangedSubscription::with_addresses(true, addresses[0..3].to_vec(), 2, &context)),
-                    Arc::new(UtxosChangedSubscription::with_addresses(true, sorted_addresses[0..3].to_vec(), 2, &context)),
-                    Arc::new(UtxosChangedSubscription::with_addresses(true, vec![], 3, &context)),
-                    Arc::new(UtxosChangedSubscription::with_addresses(true, vec![], 4, &context)),
+                    Arc::new(UtxosChangedSubscription::with_addresses(
+                        false,
+                        vec![],
+                        0,
+                        &context,
+                    )),
+                    Arc::new(UtxosChangedSubscription::with_addresses(
+                        true,
+                        addresses[0..2].to_vec(),
+                        1,
+                        &context,
+                    )),
+                    Arc::new(UtxosChangedSubscription::with_addresses(
+                        true,
+                        addresses[0..3].to_vec(),
+                        2,
+                        &context,
+                    )),
+                    Arc::new(UtxosChangedSubscription::with_addresses(
+                        true,
+                        sorted_addresses[0..3].to_vec(),
+                        2,
+                        &context,
+                    )),
+                    Arc::new(UtxosChangedSubscription::with_addresses(
+                        true,
+                        vec![],
+                        3,
+                        &context,
+                    )),
+                    Arc::new(UtxosChangedSubscription::with_addresses(
+                        true,
+                        vec![],
+                        4,
+                        &context,
+                    )),
                 ],
                 comparisons: vec![
                     Comparison::new(0, 0, true),
@@ -750,11 +895,31 @@ mod tests {
         fn run(&self, context: &SubscriptionContext) {
             for test in self.tests.iter() {
                 let mut new_state = test.state.clone();
-                let outcome = new_state.mutate(test.mutation.clone(), Default::default(), context).unwrap();
-                assert_eq!(test.new_state.active(), new_state.active(), "Testing '{}': wrong new state activity", test.name);
-                assert_eq!(*test.new_state, *new_state, "Testing '{}': wrong new state", test.name);
-                assert_eq!(test.outcome.has_new_state(), outcome.has_new_state(), "Testing '{}': wrong new state presence", test.name);
-                assert_eq!(test.outcome.mutations, outcome.mutations, "Testing '{}': wrong mutations", test.name);
+                let outcome = new_state
+                    .mutate(test.mutation.clone(), Default::default(), context)
+                    .unwrap();
+                assert_eq!(
+                    test.new_state.active(),
+                    new_state.active(),
+                    "Testing '{}': wrong new state activity",
+                    test.name
+                );
+                assert_eq!(
+                    *test.new_state, *new_state,
+                    "Testing '{}': wrong new state",
+                    test.name
+                );
+                assert_eq!(
+                    test.outcome.has_new_state(),
+                    outcome.has_new_state(),
+                    "Testing '{}': wrong new state presence",
+                    test.name
+                );
+                assert_eq!(
+                    test.outcome.mutations, outcome.mutations,
+                    "Testing '{}': wrong mutations",
+                    test.name
+                );
             }
         }
     }
@@ -764,10 +929,16 @@ mod tests {
         let context = SubscriptionContext::new();
 
         fn s(active: bool) -> DynSubscription {
-            Arc::new(OverallSubscription { event_type: EventType::BlockAdded, active })
+            Arc::new(OverallSubscription {
+                event_type: EventType::BlockAdded,
+                active,
+            })
         }
         fn m(command: Command) -> Mutation {
-            Mutation { command, scope: Scope::BlockAdded(BlockAddedScope {}) }
+            Mutation {
+                command,
+                scope: Scope::BlockAdded(BlockAddedScope {}),
+            }
         }
 
         // Subscriptions
@@ -817,10 +988,18 @@ mod tests {
         let context = SubscriptionContext::new();
 
         fn s(active: bool, include_accepted_transaction_ids: bool) -> DynSubscription {
-            Arc::new(VirtualChainChangedSubscription { active, include_accepted_transaction_ids })
+            Arc::new(VirtualChainChangedSubscription {
+                active,
+                include_accepted_transaction_ids,
+            })
         }
         fn m(command: Command, include_accepted_transaction_ids: bool) -> Mutation {
-            Mutation { command, scope: Scope::VirtualChainChanged(VirtualChainChangedScope { include_accepted_transaction_ids }) }
+            Mutation {
+                command,
+                scope: Scope::VirtualChainChanged(VirtualChainChangedScope {
+                    include_accepted_transaction_ids,
+                }),
+            }
         }
 
         // Subscriptions
@@ -904,7 +1083,10 @@ mod tests {
                 state: all(),
                 mutation: start_reduced(),
                 new_state: reduced(),
-                outcome: MutationOutcome::with_mutated(reduced(), vec![start_reduced(), stop_all()]),
+                outcome: MutationOutcome::with_mutated(
+                    reduced(),
+                    vec![start_reduced(), stop_all()],
+                ),
             },
             MutationTest {
                 name: "VirtualChainChangedSubscription All to None (stop reduced)",
@@ -929,14 +1111,31 @@ mod tests {
         let context = SubscriptionContext::new();
         let a_stock = get_3_addresses(true);
 
-        let av = |indexes: &[usize]| indexes.iter().map(|idx| (a_stock[*idx]).clone()).collect::<Vec<_>>();
-        let ah = |indexes: &[usize]| indexes.iter().map(|idx| (a_stock[*idx]).clone()).collect::<Vec<_>>();
+        let av = |indexes: &[usize]| {
+            indexes
+                .iter()
+                .map(|idx| (a_stock[*idx]).clone())
+                .collect::<Vec<_>>()
+        };
+        let ah = |indexes: &[usize]| {
+            indexes
+                .iter()
+                .map(|idx| (a_stock[*idx]).clone())
+                .collect::<Vec<_>>()
+        };
         let s = |active: bool, indexes: &[usize]| {
-            Arc::new(UtxosChangedSubscription::with_addresses(active, ah(indexes).to_vec(), MutationTests::LISTENER_ID, &context))
-                as DynSubscription
+            Arc::new(UtxosChangedSubscription::with_addresses(
+                active,
+                ah(indexes).to_vec(),
+                MutationTests::LISTENER_ID,
+                &context,
+            )) as DynSubscription
         };
         let m = |command: Command, indexes: &[usize]| -> Mutation {
-            Mutation { command, scope: Scope::UtxosChanged(UtxosChangedScope::new(av(indexes))) }
+            Mutation {
+                command,
+                scope: Scope::UtxosChanged(UtxosChangedScope::new(av(indexes))),
+            }
         };
 
         // Subscriptions

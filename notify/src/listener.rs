@@ -5,7 +5,8 @@ use karlsen_core::debug;
 use crate::{
     error::Result,
     subscription::{
-        context::SubscriptionContext, DynSubscription, MutateSingle, MutationOutcome, MutationPolicies, UtxosChangedMutationPolicy,
+        context::SubscriptionContext, DynSubscription, MutateSingle, MutationOutcome,
+        MutationPolicies, UtxosChangedMutationPolicy,
     },
 };
 
@@ -39,23 +40,39 @@ where
     C: Connection,
 {
     pub fn new(id: ListenerId, connection: C) -> Self {
-        Self { connection, subscriptions: ArrayBuilder::single(id, None), _lifespan: ListenerLifespan::Dynamic }
+        Self {
+            connection,
+            subscriptions: ArrayBuilder::single(id, None),
+            _lifespan: ListenerLifespan::Dynamic,
+        }
     }
 
-    pub fn new_static(id: ListenerId, connection: C, context: &SubscriptionContext, policies: MutationPolicies) -> Self {
+    pub fn new_static(
+        id: ListenerId,
+        connection: C,
+        context: &SubscriptionContext,
+        policies: MutationPolicies,
+    ) -> Self {
         let capacity = match policies.utxo_changed {
             UtxosChangedMutationPolicy::AddressSet => {
                 debug!(
                     "Creating a static listener {} with UtxosChanged capacity of {}",
                     connection,
-                    context.address_tracker.addresses_preallocation().unwrap_or_default()
+                    context
+                        .address_tracker
+                        .addresses_preallocation()
+                        .unwrap_or_default()
                 );
                 context.address_tracker.addresses_preallocation()
             }
             UtxosChangedMutationPolicy::Wildcard => None,
         };
         let subscriptions = ArrayBuilder::single(id, capacity);
-        Self { connection, subscriptions, _lifespan: ListenerLifespan::Static(policies) }
+        Self {
+            connection,
+            subscriptions,
+            _lifespan: ListenerLifespan::Static(policies),
+        }
     }
 
     pub fn connection(&self) -> C {

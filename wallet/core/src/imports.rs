@@ -20,7 +20,9 @@ pub use crate::storage::*;
 pub use crate::tx::MassCombinationStrategy;
 pub use crate::utxo::balance::Balance;
 pub use crate::utxo::scan::{Scan, ScanExtent};
-pub use crate::utxo::{Maturity, NetworkParams, OutgoingTransaction, UtxoContext, UtxoEntryReference, UtxoProcessor};
+pub use crate::utxo::{
+    Maturity, NetworkParams, OutgoingTransaction, UtxoContext, UtxoEntryReference, UtxoProcessor,
+};
 pub use crate::wallet::*;
 pub use crate::{storage, utils};
 

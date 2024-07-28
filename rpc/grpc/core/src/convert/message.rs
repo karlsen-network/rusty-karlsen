@@ -23,8 +23,8 @@ use karlsen_consensus_core::network::NetworkId;
 use karlsen_core::debug;
 use karlsen_notify::subscription::Command;
 use karlsen_rpc_core::{
-    RpcContextualPeerAddress, RpcError, RpcExtraData, RpcHash, RpcIpAddress, RpcNetworkType, RpcPeerAddress, RpcResult,
-    SubmitBlockRejectReason, SubmitBlockReport,
+    RpcContextualPeerAddress, RpcError, RpcExtraData, RpcHash, RpcIpAddress, RpcNetworkType,
+    RpcPeerAddress, RpcResult, SubmitBlockRejectReason, SubmitBlockReport,
 };
 use std::str::FromStr;
 
@@ -49,7 +49,9 @@ macro_rules! from {
     (RpcResult<&$from_type:ty>, $to_type:ty) => {
         impl From<RpcResult<&$from_type>> for $to_type {
             fn from(item: RpcResult<&$from_type>) -> Self {
-                Self { error: item.map_err(protowire::RpcError::from).err() }
+                Self {
+                    error: item.map_err(protowire::RpcError::from).err(),
+                }
             }
         }
     };
@@ -82,7 +84,8 @@ macro_rules! try_from {
                 if let Some(ref err) = $name.error {
                     Err(err.into())
                 } else {
-                    #[allow(unreachable_code)] // TODO: remove attribute when all converters are implemented
+                    #[allow(unreachable_code)]
+                    // TODO: remove attribute when all converters are implemented
                     Ok($ctor)
                 }
             }
@@ -104,7 +107,8 @@ macro_rules! try_from {
         impl TryFrom<$from_type> for $to_type {
             type Error = RpcError;
             fn try_from($name: $from_type) -> RpcResult<Self> {
-                #[allow(unreachable_code)] // TODO: remove attribute when all converters are implemented
+                #[allow(unreachable_code)]
+                // TODO: remove attribute when all converters are implemented
                 Ok($body)
             }
         }
@@ -171,9 +175,15 @@ from!(item: RpcResult<&karlsen_rpc_core::GetBlockResponse>, protowire::GetBlockR
 from!(item: &karlsen_rpc_core::NotifyBlockAddedRequest, protowire::NotifyBlockAddedRequestMessage, {
     Self { command: item.command.into() }
 });
-from!(RpcResult<&karlsen_rpc_core::NotifyBlockAddedResponse>, protowire::NotifyBlockAddedResponseMessage);
+from!(
+    RpcResult<&karlsen_rpc_core::NotifyBlockAddedResponse>,
+    protowire::NotifyBlockAddedResponseMessage
+);
 
-from!(&karlsen_rpc_core::GetInfoRequest, protowire::GetInfoRequestMessage);
+from!(
+    &karlsen_rpc_core::GetInfoRequest,
+    protowire::GetInfoRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetInfoResponse>, protowire::GetInfoResponseMessage, {
     Self {
         p2p_id: item.p2p_id.clone(),
@@ -190,16 +200,25 @@ from!(item: RpcResult<&karlsen_rpc_core::GetInfoResponse>, protowire::GetInfoRes
 from!(item: &karlsen_rpc_core::NotifyNewBlockTemplateRequest, protowire::NotifyNewBlockTemplateRequestMessage, {
     Self { command: item.command.into() }
 });
-from!(RpcResult<&karlsen_rpc_core::NotifyNewBlockTemplateResponse>, protowire::NotifyNewBlockTemplateResponseMessage);
+from!(
+    RpcResult<&karlsen_rpc_core::NotifyNewBlockTemplateResponse>,
+    protowire::NotifyNewBlockTemplateResponseMessage
+);
 
 // ~~~
 
-from!(&karlsen_rpc_core::GetCurrentNetworkRequest, protowire::GetCurrentNetworkRequestMessage);
+from!(
+    &karlsen_rpc_core::GetCurrentNetworkRequest,
+    protowire::GetCurrentNetworkRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetCurrentNetworkResponse>, protowire::GetCurrentNetworkResponseMessage, {
     Self { current_network: item.network.to_string(), error: None }
 });
 
-from!(&karlsen_rpc_core::GetPeerAddressesRequest, protowire::GetPeerAddressesRequestMessage);
+from!(
+    &karlsen_rpc_core::GetPeerAddressesRequest,
+    protowire::GetPeerAddressesRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetPeerAddressesResponse>, protowire::GetPeerAddressesResponseMessage, {
     Self {
         addresses: item.known_addresses.iter().map(|x| x.into()).collect(),
@@ -208,7 +227,10 @@ from!(item: RpcResult<&karlsen_rpc_core::GetPeerAddressesResponse>, protowire::G
     }
 });
 
-from!(&karlsen_rpc_core::GetSinkRequest, protowire::GetSinkRequestMessage);
+from!(
+    &karlsen_rpc_core::GetSinkRequest,
+    protowire::GetSinkRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetSinkResponse>, protowire::GetSinkResponseMessage, {
     Self { sink: item.sink.to_string(), error: None }
 });
@@ -231,7 +253,10 @@ from!(item: RpcResult<&karlsen_rpc_core::GetMempoolEntriesResponse>, protowire::
     Self { entries: item.mempool_entries.iter().map(|x| x.into()).collect(), error: None }
 });
 
-from!(&karlsen_rpc_core::GetConnectedPeerInfoRequest, protowire::GetConnectedPeerInfoRequestMessage);
+from!(
+    &karlsen_rpc_core::GetConnectedPeerInfoRequest,
+    protowire::GetConnectedPeerInfoRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetConnectedPeerInfoResponse>, protowire::GetConnectedPeerInfoResponseMessage, {
     Self { infos: item.peer_info.iter().map(|x| x.into()).collect(), error: None }
 });
@@ -239,7 +264,10 @@ from!(item: RpcResult<&karlsen_rpc_core::GetConnectedPeerInfoResponse>, protowir
 from!(item: &karlsen_rpc_core::AddPeerRequest, protowire::AddPeerRequestMessage, {
     Self { address: item.peer_address.to_string(), is_permanent: item.is_permanent }
 });
-from!(RpcResult<&karlsen_rpc_core::AddPeerResponse>, protowire::AddPeerResponseMessage);
+from!(
+    RpcResult<&karlsen_rpc_core::AddPeerResponse>,
+    protowire::AddPeerResponseMessage
+);
 
 from!(item: &karlsen_rpc_core::SubmitTransactionRequest, protowire::SubmitTransactionRequestMessage, {
     Self { transaction: Some((&item.transaction).into()), allow_orphan: item.allow_orphan }
@@ -284,12 +312,18 @@ from!(item: RpcResult<&karlsen_rpc_core::GetBlocksResponse>, protowire::GetBlock
     }
 });
 
-from!(&karlsen_rpc_core::GetBlockCountRequest, protowire::GetBlockCountRequestMessage);
+from!(
+    &karlsen_rpc_core::GetBlockCountRequest,
+    protowire::GetBlockCountRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetBlockCountResponse>, protowire::GetBlockCountResponseMessage, {
     Self { block_count: item.block_count, header_count: item.header_count, error: None }
 });
 
-from!(&karlsen_rpc_core::GetBlockDagInfoRequest, protowire::GetBlockDagInfoRequestMessage);
+from!(
+    &karlsen_rpc_core::GetBlockDagInfoRequest,
+    protowire::GetBlockDagInfoRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetBlockDagInfoResponse>, protowire::GetBlockDagInfoResponseMessage, {
     Self {
         network_name: item.network.to_prefixed(),
@@ -313,8 +347,14 @@ from!(_item: RpcResult<&karlsen_rpc_core::ResolveFinalityConflictResponse>, prot
     Self { error: None }
 });
 
-from!(&karlsen_rpc_core::ShutdownRequest, protowire::ShutdownRequestMessage);
-from!(RpcResult<&karlsen_rpc_core::ShutdownResponse>, protowire::ShutdownResponseMessage);
+from!(
+    &karlsen_rpc_core::ShutdownRequest,
+    protowire::ShutdownRequestMessage
+);
+from!(
+    RpcResult<&karlsen_rpc_core::ShutdownResponse>,
+    protowire::ShutdownResponseMessage
+);
 
 from!(item: &karlsen_rpc_core::GetHeadersRequest, protowire::GetHeadersRequestMessage, {
     Self { start_hash: item.start_hash.to_string(), limit: item.limit, is_ascending: item.is_ascending }
@@ -347,7 +387,10 @@ from!(item: RpcResult<&karlsen_rpc_core::GetBalancesByAddressesResponse>, protow
     Self { entries: item.entries.iter().map(|x| x.into()).collect(), error: None }
 });
 
-from!(&karlsen_rpc_core::GetSinkBlueScoreRequest, protowire::GetSinkBlueScoreRequestMessage);
+from!(
+    &karlsen_rpc_core::GetSinkBlueScoreRequest,
+    protowire::GetSinkBlueScoreRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetSinkBlueScoreResponse>, protowire::GetSinkBlueScoreResponseMessage, {
     Self { blue_score: item.blue_score, error: None }
 });
@@ -380,7 +423,10 @@ from!(
     { Self { entries: item.entries.iter().map(|x| x.into()).collect(), error: None } }
 );
 
-from!(&karlsen_rpc_core::GetCoinSupplyRequest, protowire::GetCoinSupplyRequestMessage);
+from!(
+    &karlsen_rpc_core::GetCoinSupplyRequest,
+    protowire::GetCoinSupplyRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetCoinSupplyResponse>, protowire::GetCoinSupplyResponseMessage, {
     Self { max_sompi: item.max_sompi, circulating_sompi: item.circulating_sompi, error: None }
 });
@@ -394,8 +440,14 @@ from!(item: RpcResult<&karlsen_rpc_core::GetDaaScoreTimestampEstimateResponse>, 
     Self { timestamps: item.timestamps.clone(), error: None }
 });
 
-from!(&karlsen_rpc_core::PingRequest, protowire::PingRequestMessage);
-from!(RpcResult<&karlsen_rpc_core::PingResponse>, protowire::PingResponseMessage);
+from!(
+    &karlsen_rpc_core::PingRequest,
+    protowire::PingRequestMessage
+);
+from!(
+    RpcResult<&karlsen_rpc_core::PingResponse>,
+    protowire::PingResponseMessage
+);
 
 from!(item: &karlsen_rpc_core::GetMetricsRequest, protowire::GetMetricsRequestMessage, {
     Self {
@@ -415,7 +467,10 @@ from!(item: RpcResult<&karlsen_rpc_core::GetMetricsResponse>, protowire::GetMetr
         error: None,
     }
 });
-from!(&karlsen_rpc_core::GetServerInfoRequest, protowire::GetServerInfoRequestMessage);
+from!(
+    &karlsen_rpc_core::GetServerInfoRequest,
+    protowire::GetServerInfoRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetServerInfoResponse>, protowire::GetServerInfoResponseMessage, {
     Self {
         rpc_api_version: item.rpc_api_version.iter().map(|x| *x as u32).collect(),
@@ -428,7 +483,10 @@ from!(item: RpcResult<&karlsen_rpc_core::GetServerInfoResponse>, protowire::GetS
     }
 });
 
-from!(&karlsen_rpc_core::GetSyncStatusRequest, protowire::GetSyncStatusRequestMessage);
+from!(
+    &karlsen_rpc_core::GetSyncStatusRequest,
+    protowire::GetSyncStatusRequestMessage
+);
 from!(item: RpcResult<&karlsen_rpc_core::GetSyncStatusResponse>, protowire::GetSyncStatusResponseMessage, {
     Self {
         is_synced: item.is_synced,
@@ -442,13 +500,22 @@ from!(item: &karlsen_rpc_core::NotifyUtxosChangedRequest, protowire::NotifyUtxos
 from!(item: &karlsen_rpc_core::NotifyUtxosChangedRequest, protowire::StopNotifyingUtxosChangedRequestMessage, {
     Self { addresses: item.addresses.iter().map(|x| x.into()).collect() }
 });
-from!(RpcResult<&karlsen_rpc_core::NotifyUtxosChangedResponse>, protowire::NotifyUtxosChangedResponseMessage);
-from!(RpcResult<&karlsen_rpc_core::NotifyUtxosChangedResponse>, protowire::StopNotifyingUtxosChangedResponseMessage);
+from!(
+    RpcResult<&karlsen_rpc_core::NotifyUtxosChangedResponse>,
+    protowire::NotifyUtxosChangedResponseMessage
+);
+from!(
+    RpcResult<&karlsen_rpc_core::NotifyUtxosChangedResponse>,
+    protowire::StopNotifyingUtxosChangedResponseMessage
+);
 
 from!(item: &karlsen_rpc_core::NotifyPruningPointUtxoSetOverrideRequest, protowire::NotifyPruningPointUtxoSetOverrideRequestMessage, {
     Self { command: item.command.into() }
 });
-from!(&karlsen_rpc_core::NotifyPruningPointUtxoSetOverrideRequest, protowire::StopNotifyingPruningPointUtxoSetOverrideRequestMessage);
+from!(
+    &karlsen_rpc_core::NotifyPruningPointUtxoSetOverrideRequest,
+    protowire::StopNotifyingPruningPointUtxoSetOverrideRequestMessage
+);
 from!(
     RpcResult<&karlsen_rpc_core::NotifyPruningPointUtxoSetOverrideResponse>,
     protowire::NotifyPruningPointUtxoSetOverrideResponseMessage
@@ -461,22 +528,34 @@ from!(
 from!(item: &karlsen_rpc_core::NotifyFinalityConflictRequest, protowire::NotifyFinalityConflictRequestMessage, {
     Self { command: item.command.into() }
 });
-from!(RpcResult<&karlsen_rpc_core::NotifyFinalityConflictResponse>, protowire::NotifyFinalityConflictResponseMessage);
+from!(
+    RpcResult<&karlsen_rpc_core::NotifyFinalityConflictResponse>,
+    protowire::NotifyFinalityConflictResponseMessage
+);
 
 from!(item: &karlsen_rpc_core::NotifyVirtualDaaScoreChangedRequest, protowire::NotifyVirtualDaaScoreChangedRequestMessage, {
     Self { command: item.command.into() }
 });
-from!(RpcResult<&karlsen_rpc_core::NotifyVirtualDaaScoreChangedResponse>, protowire::NotifyVirtualDaaScoreChangedResponseMessage);
+from!(
+    RpcResult<&karlsen_rpc_core::NotifyVirtualDaaScoreChangedResponse>,
+    protowire::NotifyVirtualDaaScoreChangedResponseMessage
+);
 
 from!(item: &karlsen_rpc_core::NotifyVirtualChainChangedRequest, protowire::NotifyVirtualChainChangedRequestMessage, {
     Self { include_accepted_transaction_ids: item.include_accepted_transaction_ids, command: item.command.into() }
 });
-from!(RpcResult<&karlsen_rpc_core::NotifyVirtualChainChangedResponse>, protowire::NotifyVirtualChainChangedResponseMessage);
+from!(
+    RpcResult<&karlsen_rpc_core::NotifyVirtualChainChangedResponse>,
+    protowire::NotifyVirtualChainChangedResponseMessage
+);
 
 from!(item: &karlsen_rpc_core::NotifySinkBlueScoreChangedRequest, protowire::NotifySinkBlueScoreChangedRequestMessage, {
     Self { command: item.command.into() }
 });
-from!(RpcResult<&karlsen_rpc_core::NotifySinkBlueScoreChangedResponse>, protowire::NotifySinkBlueScoreChangedResponseMessage);
+from!(
+    RpcResult<&karlsen_rpc_core::NotifySinkBlueScoreChangedResponse>,
+    protowire::NotifySinkBlueScoreChangedResponseMessage
+);
 
 // ----------------------------------------------------------------------------
 // protowire to rpc_core
@@ -507,13 +586,19 @@ impl TryFrom<&protowire::SubmitBlockResponseMessage> for karlsen_rpc_core::Submi
     // in the RouteIsFull case where reject_reason is None (because this reason has no variant in protowire)
     // but a specific error message is provided.
     fn try_from(item: &protowire::SubmitBlockResponseMessage) -> RpcResult<Self> {
-        let report: SubmitBlockReport =
-            RejectReason::try_from(item.reject_reason).map_err(|_| RpcError::PrimitiveToEnumConversionError)?.into();
+        let report: SubmitBlockReport = RejectReason::try_from(item.reject_reason)
+            .map_err(|_| RpcError::PrimitiveToEnumConversionError)?
+            .into();
         if let Some(ref err) = item.error {
             match report {
                 SubmitBlockReport::Success => {
-                    if err.message == RpcError::SubmitBlockError(SubmitBlockRejectReason::RouteIsFull).to_string() {
-                        Ok(Self { report: SubmitBlockReport::Reject(SubmitBlockRejectReason::RouteIsFull) })
+                    if err.message
+                        == RpcError::SubmitBlockError(SubmitBlockRejectReason::RouteIsFull)
+                            .to_string()
+                    {
+                        Ok(Self {
+                            report: SubmitBlockReport::Reject(SubmitBlockRejectReason::RouteIsFull),
+                        })
                     } else {
                         Err(err.into())
                     }
@@ -556,9 +641,15 @@ try_from!(item: &protowire::GetBlockResponseMessage, RpcResult<karlsen_rpc_core:
 try_from!(item: &protowire::NotifyBlockAddedRequestMessage, karlsen_rpc_core::NotifyBlockAddedRequest, {
     Self { command: item.command.into() }
 });
-try_from!(&protowire::NotifyBlockAddedResponseMessage, RpcResult<karlsen_rpc_core::NotifyBlockAddedResponse>);
+try_from!(
+    &protowire::NotifyBlockAddedResponseMessage,
+    RpcResult<karlsen_rpc_core::NotifyBlockAddedResponse>
+);
 
-try_from!(&protowire::GetInfoRequestMessage, karlsen_rpc_core::GetInfoRequest);
+try_from!(
+    &protowire::GetInfoRequestMessage,
+    karlsen_rpc_core::GetInfoRequest
+);
 try_from!(item: &protowire::GetInfoResponseMessage, RpcResult<karlsen_rpc_core::GetInfoResponse>, {
     Self {
         p2p_id: item.p2p_id.clone(),
@@ -574,11 +665,17 @@ try_from!(item: &protowire::GetInfoResponseMessage, RpcResult<karlsen_rpc_core::
 try_from!(item: &protowire::NotifyNewBlockTemplateRequestMessage, karlsen_rpc_core::NotifyNewBlockTemplateRequest, {
     Self { command: item.command.into() }
 });
-try_from!(&protowire::NotifyNewBlockTemplateResponseMessage, RpcResult<karlsen_rpc_core::NotifyNewBlockTemplateResponse>);
+try_from!(
+    &protowire::NotifyNewBlockTemplateResponseMessage,
+    RpcResult<karlsen_rpc_core::NotifyNewBlockTemplateResponse>
+);
 
 // ~~~
 
-try_from!(&protowire::GetCurrentNetworkRequestMessage, karlsen_rpc_core::GetCurrentNetworkRequest);
+try_from!(
+    &protowire::GetCurrentNetworkRequestMessage,
+    karlsen_rpc_core::GetCurrentNetworkRequest
+);
 try_from!(item: &protowire::GetCurrentNetworkResponseMessage, RpcResult<karlsen_rpc_core::GetCurrentNetworkResponse>, {
     // Note that current_network is first converted to lowercase because the golang implementation
     // returns a "human readable" version with a capital first letter while the rusty version
@@ -586,7 +683,10 @@ try_from!(item: &protowire::GetCurrentNetworkResponseMessage, RpcResult<karlsen_
     Self { network: RpcNetworkType::from_str(&item.current_network.to_lowercase())? }
 });
 
-try_from!(&protowire::GetPeerAddressesRequestMessage, karlsen_rpc_core::GetPeerAddressesRequest);
+try_from!(
+    &protowire::GetPeerAddressesRequestMessage,
+    karlsen_rpc_core::GetPeerAddressesRequest
+);
 try_from!(item: &protowire::GetPeerAddressesResponseMessage, RpcResult<karlsen_rpc_core::GetPeerAddressesResponse>, {
     Self {
         known_addresses: item.addresses.iter().map(RpcPeerAddress::try_from).collect::<Result<Vec<_>, _>>()?,
@@ -594,7 +694,10 @@ try_from!(item: &protowire::GetPeerAddressesResponseMessage, RpcResult<karlsen_r
     }
 });
 
-try_from!(&protowire::GetSinkRequestMessage, karlsen_rpc_core::GetSinkRequest);
+try_from!(
+    &protowire::GetSinkRequestMessage,
+    karlsen_rpc_core::GetSinkRequest
+);
 try_from!(item: &protowire::GetSinkResponseMessage, RpcResult<karlsen_rpc_core::GetSinkResponse>, {
     Self { sink: RpcHash::from_str(&item.sink)? }
 });
@@ -623,7 +726,10 @@ try_from!(item: &protowire::GetMempoolEntriesResponseMessage, RpcResult<karlsen_
     Self { mempool_entries: item.entries.iter().map(karlsen_rpc_core::RpcMempoolEntry::try_from).collect::<Result<Vec<_>, _>>()? }
 });
 
-try_from!(&protowire::GetConnectedPeerInfoRequestMessage, karlsen_rpc_core::GetConnectedPeerInfoRequest);
+try_from!(
+    &protowire::GetConnectedPeerInfoRequestMessage,
+    karlsen_rpc_core::GetConnectedPeerInfoRequest
+);
 try_from!(item: &protowire::GetConnectedPeerInfoResponseMessage, RpcResult<karlsen_rpc_core::GetConnectedPeerInfoResponse>, {
     Self { peer_info: item.infos.iter().map(karlsen_rpc_core::RpcPeerInfo::try_from).collect::<Result<Vec<_>, _>>()? }
 });
@@ -631,7 +737,10 @@ try_from!(item: &protowire::GetConnectedPeerInfoResponseMessage, RpcResult<karls
 try_from!(item: &protowire::AddPeerRequestMessage, karlsen_rpc_core::AddPeerRequest, {
     Self { peer_address: RpcContextualPeerAddress::from_str(&item.address)?, is_permanent: item.is_permanent }
 });
-try_from!(&protowire::AddPeerResponseMessage, RpcResult<karlsen_rpc_core::AddPeerResponse>);
+try_from!(
+    &protowire::AddPeerResponseMessage,
+    RpcResult<karlsen_rpc_core::AddPeerResponse>
+);
 
 try_from!(item: &protowire::SubmitTransactionRequestMessage, karlsen_rpc_core::SubmitTransactionRequest, {
     Self {
@@ -683,12 +792,18 @@ try_from!(item: &protowire::GetBlocksResponseMessage, RpcResult<karlsen_rpc_core
     }
 });
 
-try_from!(&protowire::GetBlockCountRequestMessage, karlsen_rpc_core::GetBlockCountRequest);
+try_from!(
+    &protowire::GetBlockCountRequestMessage,
+    karlsen_rpc_core::GetBlockCountRequest
+);
 try_from!(item: &protowire::GetBlockCountResponseMessage, RpcResult<karlsen_rpc_core::GetBlockCountResponse>, {
     Self { header_count: item.header_count, block_count: item.block_count }
 });
 
-try_from!(&protowire::GetBlockDagInfoRequestMessage, karlsen_rpc_core::GetBlockDagInfoRequest);
+try_from!(
+    &protowire::GetBlockDagInfoRequestMessage,
+    karlsen_rpc_core::GetBlockDagInfoRequest
+);
 try_from!(item: &protowire::GetBlockDagInfoResponseMessage, RpcResult<karlsen_rpc_core::GetBlockDagInfoResponse>, {
     Self {
         network: karlsen_rpc_core::RpcNetworkId::from_prefixed(&item.network_name)?,
@@ -707,10 +822,19 @@ try_from!(item: &protowire::GetBlockDagInfoResponseMessage, RpcResult<karlsen_rp
 try_from!(item: &protowire::ResolveFinalityConflictRequestMessage, karlsen_rpc_core::ResolveFinalityConflictRequest, {
     Self { finality_block_hash: RpcHash::from_str(&item.finality_block_hash)? }
 });
-try_from!(&protowire::ResolveFinalityConflictResponseMessage, RpcResult<karlsen_rpc_core::ResolveFinalityConflictResponse>);
+try_from!(
+    &protowire::ResolveFinalityConflictResponseMessage,
+    RpcResult<karlsen_rpc_core::ResolveFinalityConflictResponse>
+);
 
-try_from!(&protowire::ShutdownRequestMessage, karlsen_rpc_core::ShutdownRequest);
-try_from!(&protowire::ShutdownResponseMessage, RpcResult<karlsen_rpc_core::ShutdownResponse>);
+try_from!(
+    &protowire::ShutdownRequestMessage,
+    karlsen_rpc_core::ShutdownRequest
+);
+try_from!(
+    &protowire::ShutdownResponseMessage,
+    RpcResult<karlsen_rpc_core::ShutdownResponse>
+);
 
 try_from!(item: &protowire::GetHeadersRequestMessage, karlsen_rpc_core::GetHeadersRequest, {
     Self { start_hash: RpcHash::from_str(&item.start_hash)?, limit: item.limit, is_ascending: item.is_ascending }
@@ -741,16 +865,25 @@ try_from!(item: &protowire::GetBalancesByAddressesResponseMessage, RpcResult<kar
     Self { entries: item.entries.iter().map(|x| x.try_into()).collect::<Result<Vec<_>, _>>()? }
 });
 
-try_from!(&protowire::GetSinkBlueScoreRequestMessage, karlsen_rpc_core::GetSinkBlueScoreRequest);
+try_from!(
+    &protowire::GetSinkBlueScoreRequestMessage,
+    karlsen_rpc_core::GetSinkBlueScoreRequest
+);
 try_from!(item: &protowire::GetSinkBlueScoreResponseMessage, RpcResult<karlsen_rpc_core::GetSinkBlueScoreResponse>, {
     Self { blue_score: item.blue_score }
 });
 
 try_from!(item: &protowire::BanRequestMessage, karlsen_rpc_core::BanRequest, { Self { ip: RpcIpAddress::from_str(&item.ip)? } });
-try_from!(&protowire::BanResponseMessage, RpcResult<karlsen_rpc_core::BanResponse>);
+try_from!(
+    &protowire::BanResponseMessage,
+    RpcResult<karlsen_rpc_core::BanResponse>
+);
 
 try_from!(item: &protowire::UnbanRequestMessage, karlsen_rpc_core::UnbanRequest, { Self { ip: RpcIpAddress::from_str(&item.ip)? } });
-try_from!(&protowire::UnbanResponseMessage, RpcResult<karlsen_rpc_core::UnbanResponse>);
+try_from!(
+    &protowire::UnbanResponseMessage,
+    RpcResult<karlsen_rpc_core::UnbanResponse>
+);
 
 try_from!(item: &protowire::EstimateNetworkHashesPerSecondRequestMessage, karlsen_rpc_core::EstimateNetworkHashesPerSecondRequest, {
     Self {
@@ -777,7 +910,10 @@ try_from!(
     { Self { entries: item.entries.iter().map(|x| x.try_into()).collect::<Result<Vec<_>, _>>()? } }
 );
 
-try_from!(&protowire::GetCoinSupplyRequestMessage, karlsen_rpc_core::GetCoinSupplyRequest);
+try_from!(
+    &protowire::GetCoinSupplyRequestMessage,
+    karlsen_rpc_core::GetCoinSupplyRequest
+);
 try_from!(item: &protowire::GetCoinSupplyResponseMessage, RpcResult<karlsen_rpc_core::GetCoinSupplyResponse>, {
     Self { max_sompi: item.max_sompi, circulating_sompi: item.circulating_sompi }
 });
@@ -791,8 +927,14 @@ try_from!(item: &protowire::GetDaaScoreTimestampEstimateResponseMessage, RpcResu
     Self { timestamps: item.timestamps.clone() }
 });
 
-try_from!(&protowire::PingRequestMessage, karlsen_rpc_core::PingRequest);
-try_from!(&protowire::PingResponseMessage, RpcResult<karlsen_rpc_core::PingResponse>);
+try_from!(
+    &protowire::PingRequestMessage,
+    karlsen_rpc_core::PingRequest
+);
+try_from!(
+    &protowire::PingResponseMessage,
+    RpcResult<karlsen_rpc_core::PingResponse>
+);
 
 try_from!(item: &protowire::GetMetricsRequestMessage, karlsen_rpc_core::GetMetricsRequest, {
     Self { process_metrics: item.process_metrics, connection_metrics: item.connection_metrics, bandwidth_metrics:item.bandwidth_metrics, consensus_metrics: item.consensus_metrics }
@@ -807,7 +949,10 @@ try_from!(item: &protowire::GetMetricsResponseMessage, RpcResult<karlsen_rpc_cor
     }
 });
 
-try_from!(&protowire::GetServerInfoRequestMessage, karlsen_rpc_core::GetServerInfoRequest);
+try_from!(
+    &protowire::GetServerInfoRequestMessage,
+    karlsen_rpc_core::GetServerInfoRequest
+);
 try_from!(item: &protowire::GetServerInfoResponseMessage, RpcResult<karlsen_rpc_core::GetServerInfoResponse>, {
     Self {
         rpc_api_version: item.rpc_api_version.iter().map(|x| *x as u16).collect::<Vec<_>>().as_slice().try_into().map_err(|_| RpcError::RpcApiVersionFormatError)?,
@@ -819,7 +964,10 @@ try_from!(item: &protowire::GetServerInfoResponseMessage, RpcResult<karlsen_rpc_
     }
 });
 
-try_from!(&protowire::GetSyncStatusRequestMessage, karlsen_rpc_core::GetSyncStatusRequest);
+try_from!(
+    &protowire::GetSyncStatusRequestMessage,
+    karlsen_rpc_core::GetSyncStatusRequest
+);
 try_from!(item: &protowire::GetSyncStatusResponseMessage, RpcResult<karlsen_rpc_core::GetSyncStatusResponse>, {
     Self {
         is_synced: item.is_synced,
@@ -838,8 +986,14 @@ try_from!(item: &protowire::StopNotifyingUtxosChangedRequestMessage, karlsen_rpc
         command: Command::Stop,
     }
 });
-try_from!(&protowire::NotifyUtxosChangedResponseMessage, RpcResult<karlsen_rpc_core::NotifyUtxosChangedResponse>);
-try_from!(&protowire::StopNotifyingUtxosChangedResponseMessage, RpcResult<karlsen_rpc_core::NotifyUtxosChangedResponse>);
+try_from!(
+    &protowire::NotifyUtxosChangedResponseMessage,
+    RpcResult<karlsen_rpc_core::NotifyUtxosChangedResponse>
+);
+try_from!(
+    &protowire::StopNotifyingUtxosChangedResponseMessage,
+    RpcResult<karlsen_rpc_core::NotifyUtxosChangedResponse>
+);
 
 try_from!(
     item: &protowire::NotifyPruningPointUtxoSetOverrideRequestMessage,
@@ -863,22 +1017,34 @@ try_from!(
 try_from!(item: &protowire::NotifyFinalityConflictRequestMessage, karlsen_rpc_core::NotifyFinalityConflictRequest, {
     Self { command: item.command.into() }
 });
-try_from!(&protowire::NotifyFinalityConflictResponseMessage, RpcResult<karlsen_rpc_core::NotifyFinalityConflictResponse>);
+try_from!(
+    &protowire::NotifyFinalityConflictResponseMessage,
+    RpcResult<karlsen_rpc_core::NotifyFinalityConflictResponse>
+);
 
 try_from!(item: &protowire::NotifyVirtualDaaScoreChangedRequestMessage, karlsen_rpc_core::NotifyVirtualDaaScoreChangedRequest, {
     Self { command: item.command.into() }
 });
-try_from!(&protowire::NotifyVirtualDaaScoreChangedResponseMessage, RpcResult<karlsen_rpc_core::NotifyVirtualDaaScoreChangedResponse>);
+try_from!(
+    &protowire::NotifyVirtualDaaScoreChangedResponseMessage,
+    RpcResult<karlsen_rpc_core::NotifyVirtualDaaScoreChangedResponse>
+);
 
 try_from!(item: &protowire::NotifyVirtualChainChangedRequestMessage, karlsen_rpc_core::NotifyVirtualChainChangedRequest, {
     Self { include_accepted_transaction_ids: item.include_accepted_transaction_ids, command: item.command.into() }
 });
-try_from!(&protowire::NotifyVirtualChainChangedResponseMessage, RpcResult<karlsen_rpc_core::NotifyVirtualChainChangedResponse>);
+try_from!(
+    &protowire::NotifyVirtualChainChangedResponseMessage,
+    RpcResult<karlsen_rpc_core::NotifyVirtualChainChangedResponse>
+);
 
 try_from!(item: &protowire::NotifySinkBlueScoreChangedRequestMessage, karlsen_rpc_core::NotifySinkBlueScoreChangedRequest, {
     Self { command: item.command.into() }
 });
-try_from!(&protowire::NotifySinkBlueScoreChangedResponseMessage, RpcResult<karlsen_rpc_core::NotifySinkBlueScoreChangedResponse>);
+try_from!(
+    &protowire::NotifySinkBlueScoreChangedResponseMessage,
+    RpcResult<karlsen_rpc_core::NotifySinkBlueScoreChangedResponse>
+);
 
 // ----------------------------------------------------------------------------
 // Unit tests
@@ -888,9 +1054,13 @@ try_from!(&protowire::NotifySinkBlueScoreChangedResponseMessage, RpcResult<karls
 
 #[cfg(test)]
 mod tests {
-    use karlsen_rpc_core::{RpcError, RpcResult, SubmitBlockRejectReason, SubmitBlockReport, SubmitBlockResponse};
+    use karlsen_rpc_core::{
+        RpcError, RpcResult, SubmitBlockRejectReason, SubmitBlockReport, SubmitBlockResponse,
+    };
 
-    use crate::protowire::{self, submit_block_response_message::RejectReason, SubmitBlockResponseMessage};
+    use crate::protowire::{
+        self, submit_block_response_message::RejectReason, SubmitBlockResponseMessage,
+    };
 
     #[test]
     fn test_submit_block_response() {
@@ -903,58 +1073,83 @@ mod tests {
                 rpc_core: RpcResult<karlsen_rpc_core::SubmitBlockResponse>,
                 protowire: protowire::SubmitBlockResponseMessage,
             ) -> Self {
-                Self { rpc_core, protowire }
+                Self {
+                    rpc_core,
+                    protowire,
+                }
             }
         }
         let tests = vec![
             Test::new(
-                Ok(SubmitBlockResponse { report: SubmitBlockReport::Success }),
-                SubmitBlockResponseMessage { reject_reason: RejectReason::None as i32, error: None },
+                Ok(SubmitBlockResponse {
+                    report: SubmitBlockReport::Success,
+                }),
+                SubmitBlockResponseMessage {
+                    reject_reason: RejectReason::None as i32,
+                    error: None,
+                },
             ),
             Test::new(
-                Ok(SubmitBlockResponse { report: SubmitBlockReport::Reject(SubmitBlockRejectReason::BlockInvalid) }),
+                Ok(SubmitBlockResponse {
+                    report: SubmitBlockReport::Reject(SubmitBlockRejectReason::BlockInvalid),
+                }),
                 SubmitBlockResponseMessage {
                     reject_reason: RejectReason::BlockInvalid as i32,
                     error: Some(protowire::RpcError {
-                        message: RpcError::SubmitBlockError(SubmitBlockRejectReason::BlockInvalid).to_string(),
+                        message: RpcError::SubmitBlockError(SubmitBlockRejectReason::BlockInvalid)
+                            .to_string(),
                     }),
                 },
             ),
             Test::new(
-                Ok(SubmitBlockResponse { report: SubmitBlockReport::Reject(SubmitBlockRejectReason::IsInIBD) }),
+                Ok(SubmitBlockResponse {
+                    report: SubmitBlockReport::Reject(SubmitBlockRejectReason::IsInIBD),
+                }),
                 SubmitBlockResponseMessage {
                     reject_reason: RejectReason::IsInIbd as i32,
                     error: Some(protowire::RpcError {
-                        message: RpcError::SubmitBlockError(SubmitBlockRejectReason::IsInIBD).to_string(),
+                        message: RpcError::SubmitBlockError(SubmitBlockRejectReason::IsInIBD)
+                            .to_string(),
                     }),
                 },
             ),
             Test::new(
-                Ok(SubmitBlockResponse { report: SubmitBlockReport::Reject(SubmitBlockRejectReason::RouteIsFull) }),
+                Ok(SubmitBlockResponse {
+                    report: SubmitBlockReport::Reject(SubmitBlockRejectReason::RouteIsFull),
+                }),
                 SubmitBlockResponseMessage {
                     reject_reason: RejectReason::None as i32, // This rpc core reject reason has no matching protowire variant
                     error: Some(protowire::RpcError {
-                        message: RpcError::SubmitBlockError(SubmitBlockRejectReason::RouteIsFull).to_string(),
+                        message: RpcError::SubmitBlockError(SubmitBlockRejectReason::RouteIsFull)
+                            .to_string(),
                     }),
                 },
             ),
         ];
 
         for test in tests {
-            let cnv_protowire: SubmitBlockResponseMessage = test.rpc_core.as_ref().map_err(|x| x.clone()).into();
+            let cnv_protowire: SubmitBlockResponseMessage =
+                test.rpc_core.as_ref().map_err(|x| x.clone()).into();
             assert_eq!(cnv_protowire.reject_reason, test.protowire.reject_reason);
-            assert_eq!(cnv_protowire.error.is_some(), test.protowire.error.is_some());
+            assert_eq!(
+                cnv_protowire.error.is_some(),
+                test.protowire.error.is_some()
+            );
             assert_eq!(cnv_protowire.error, test.protowire.error);
 
             let cnv_rpc_core: RpcResult<SubmitBlockResponse> = (&test.protowire).try_into();
             assert_eq!(cnv_rpc_core.is_ok(), test.rpc_core.is_ok());
             match cnv_rpc_core {
                 Ok(ref cnv_response) => {
-                    let Ok(ref response) = test.rpc_core else { panic!() };
+                    let Ok(ref response) = test.rpc_core else {
+                        panic!()
+                    };
                     assert_eq!(cnv_response.report, response.report);
                 }
                 Err(ref cnv_err) => {
-                    let Err(ref err) = test.rpc_core else { panic!() };
+                    let Err(ref err) = test.rpc_core else {
+                        panic!()
+                    };
                     assert_eq!(cnv_err.to_string(), err.to_string());
                 }
             }

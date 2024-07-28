@@ -65,7 +65,11 @@ impl Notification {
 }
 
 impl NotificationTrait for Notification {
-    fn apply_overall_subscription(&self, subscription: &OverallSubscription, _context: &SubscriptionContext) -> Option<Self> {
+    fn apply_overall_subscription(
+        &self,
+        subscription: &OverallSubscription,
+        _context: &SubscriptionContext,
+    ) -> Option<Self> {
         match subscription.active() {
             true => Some(self.clone()),
             false => None,
@@ -80,12 +84,18 @@ impl NotificationTrait for Notification {
         match subscription.active() {
             true => {
                 if let Notification::VirtualChainChanged(ref payload) = self {
-                    if !subscription.include_accepted_transaction_ids() && !payload.accepted_transaction_ids.is_empty() {
-                        return Some(Notification::VirtualChainChanged(VirtualChainChangedNotification {
-                            removed_chain_block_hashes: payload.removed_chain_block_hashes.clone(),
-                            added_chain_block_hashes: payload.added_chain_block_hashes.clone(),
-                            accepted_transaction_ids: Arc::new(vec![]),
-                        }));
+                    if !subscription.include_accepted_transaction_ids()
+                        && !payload.accepted_transaction_ids.is_empty()
+                    {
+                        return Some(Notification::VirtualChainChanged(
+                            VirtualChainChangedNotification {
+                                removed_chain_block_hashes: payload
+                                    .removed_chain_block_hashes
+                                    .clone(),
+                                added_chain_block_hashes: payload.added_chain_block_hashes.clone(),
+                                accepted_transaction_ids: Arc::new(vec![]),
+                            },
+                        ));
                     }
                 }
                 Some(self.clone())
@@ -101,8 +111,12 @@ impl NotificationTrait for Notification {
     ) -> Option<Self> {
         match subscription.active() {
             true => {
-                let Self::UtxosChanged(notification) = self else { return None };
-                notification.apply_utxos_changed_subscription(subscription, context).map(Self::UtxosChanged)
+                let Self::UtxosChanged(notification) = self else {
+                    return None;
+                };
+                notification
+                    .apply_utxos_changed_subscription(subscription, context)
+                    .map(Self::UtxosChanged)
             }
             false => None,
         }

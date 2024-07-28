@@ -23,7 +23,12 @@ impl Ctl {
     ) -> Self {
         let consensus_db_path = consensus_db.path().to_owned();
         let consensus_db_ref = Arc::downgrade(&consensus_db);
-        Self { management_store, consensus_db_ref, consensus_db_path, consensus }
+        Self {
+            management_store,
+            consensus_db_ref,
+            consensus_db_path,
+            consensus,
+        }
     }
 }
 
@@ -38,7 +43,10 @@ impl ConsensusCtl for Ctl {
 
     fn make_active(&self) {
         // TODO: pass a value to make sure the correct consensus is committed
-        self.management_store.write().commit_staging_consensus().unwrap();
+        self.management_store
+            .write()
+            .commit_staging_consensus()
+            .unwrap();
     }
 }
 

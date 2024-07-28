@@ -26,7 +26,10 @@ pub struct DbUtxoIndexTipsStore {
 
 impl DbUtxoIndexTipsStore {
     pub fn new(db: Arc<DB>) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbItem::new(db.clone(), DatabaseStorePrefixes::UtxoIndexTips.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbItem::new(db.clone(), DatabaseStorePrefixes::UtxoIndexTips.into()),
+        }
     }
 }
 
@@ -38,7 +41,8 @@ impl UtxoIndexTipsStoreReader for DbUtxoIndexTipsStore {
 
 impl UtxoIndexTipsStore for DbUtxoIndexTipsStore {
     fn set_tips(&mut self, new_tips: BlockHashSet) -> Result<(), StoreError> {
-        self.access.write(DirectDbWriter::new(&self.db), &Arc::new(new_tips))
+        self.access
+            .write(DirectDbWriter::new(&self.db), &Arc::new(new_tips))
     }
 
     fn remove(&mut self) -> Result<(), StoreError> {

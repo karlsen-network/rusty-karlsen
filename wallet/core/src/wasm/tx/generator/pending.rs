@@ -62,12 +62,20 @@ impl PendingTransaction {
     /// This method can be used to determine addresses used by transaction inputs
     /// in order to select private keys needed for transaction signing.
     pub fn addresses(&self) -> Array {
-        self.inner.addresses().iter().map(|address| JsValue::from(address.to_string())).collect()
+        self.inner
+            .addresses()
+            .iter()
+            .map(|address| JsValue::from(address.to_string()))
+            .collect()
     }
 
     #[wasm_bindgen(js_name = getUtxoEntries)]
     pub fn get_utxo_entries(&self) -> Array {
-        self.inner.utxo_entries().values().map(|utxo_entry| JsValue::from(utxo_entry.clone())).collect()
+        self.inner
+            .utxo_entries()
+            .values()
+            .map(|utxo_entry| JsValue::from(utxo_entry.clone()))
+            .collect()
     }
 
     /// Sign transaction with supplied [`Array`] or [`PrivateKey`] or an array of
@@ -78,7 +86,10 @@ impl PendingTransaction {
                 .iter()
                 .map(PrivateKey::try_cast_from)
                 .collect::<std::result::Result<Vec<_>, karlsen_wallet_keys::error::Error>>()?;
-            let mut keys = keys.iter().map(|key| key.as_ref().secret_bytes()).collect::<Vec<_>>();
+            let mut keys = keys
+                .iter()
+                .map(|key| key.as_ref().secret_bytes())
+                .collect::<Vec<_>>();
             self.inner.try_sign_with_keys(&keys)?;
             keys.zeroize();
             Ok(())
@@ -102,7 +113,10 @@ impl PendingTransaction {
     /// Returns encapsulated network [`Transaction`]
     #[wasm_bindgen(getter)]
     pub fn transaction(&self) -> Result<Transaction> {
-        Ok(Transaction::from_cctx_transaction(&self.inner.transaction(), self.inner.utxo_entries()))
+        Ok(Transaction::from_cctx_transaction(
+            &self.inner.transaction(),
+            self.inner.utxo_entries(),
+        ))
     }
 
     /// Serializes the transaction to a pure JavaScript Object.
@@ -111,9 +125,12 @@ impl PendingTransaction {
     /// @see {@link Transaction}, {@link ISerializableTransaction}
     #[wasm_bindgen(js_name = "serializeToObject")]
     pub fn serialize_to_object(&self) -> Result<ITransaction> {
-        Ok(numeric::SerializableTransaction::from_cctx_transaction(&self.inner.transaction(), self.inner.utxo_entries())?
-            .serialize_to_object()?
-            .into())
+        Ok(numeric::SerializableTransaction::from_cctx_transaction(
+            &self.inner.transaction(),
+            self.inner.utxo_entries(),
+        )?
+        .serialize_to_object()?
+        .into())
     }
 
     /// Serializes the transaction to a JSON string.
@@ -122,8 +139,11 @@ impl PendingTransaction {
     /// @see {@link Transaction}, {@link ISerializableTransaction}
     #[wasm_bindgen(js_name = "serializeToJSON")]
     pub fn serialize_to_json(&self) -> Result<String> {
-        Ok(numeric::SerializableTransaction::from_cctx_transaction(&self.inner.transaction(), self.inner.utxo_entries())?
-            .serialize_to_json()?)
+        Ok(numeric::SerializableTransaction::from_cctx_transaction(
+            &self.inner.transaction(),
+            self.inner.utxo_entries(),
+        )?
+        .serialize_to_json()?)
     }
 
     /// Serializes the transaction to a "Safe" JSON schema where it converts all `bigint` values to `string` to avoid potential client-side precision loss.
@@ -131,13 +151,18 @@ impl PendingTransaction {
     /// @see {@link Transaction}, {@link ISerializableTransaction}
     #[wasm_bindgen(js_name = "serializeToSafeJSON")]
     pub fn serialize_to_json_safe(&self) -> Result<String> {
-        Ok(string::SerializableTransaction::from_cctx_transaction(&self.inner.transaction(), self.inner.utxo_entries())?
-            .serialize_to_json()?)
+        Ok(string::SerializableTransaction::from_cctx_transaction(
+            &self.inner.transaction(),
+            self.inner.utxo_entries(),
+        )?
+        .serialize_to_json()?)
     }
 }
 
 impl From<native::PendingTransaction> for PendingTransaction {
     fn from(pending_transaction: native::PendingTransaction) -> Self {
-        Self { inner: pending_transaction }
+        Self {
+            inner: pending_transaction,
+        }
     }
 }

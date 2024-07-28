@@ -23,7 +23,9 @@ pub use karlsen_consensus_client::UtxoEntryId;
 pub use outgoing::OutgoingTransaction;
 pub use pending::PendingUtxoEntryReference;
 pub use processor::UtxoProcessor;
-pub use reference::{Maturity, TryIntoUtxoEntryReferences, UtxoEntryReference, UtxoEntryReferenceExtension};
+pub use reference::{
+    Maturity, TryIntoUtxoEntryReferences, UtxoEntryReference, UtxoEntryReferenceExtension,
+};
 pub use scan::{Scan, ScanExtent};
 pub use settings::*;
 pub use stream::UtxoStream;

@@ -39,7 +39,11 @@ where
     N: Notification,
 {
     pub fn new(name: &'static str, sender: Sender<N>, channel_type: ChannelType) -> Self {
-        Self { name, sender, channel_type }
+        Self {
+            name,
+            sender,
+            channel_type,
+        }
     }
 
     /// Close the connection, ignoring the channel type

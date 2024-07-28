@@ -5,8 +5,8 @@ mod macros;
 
 use crate::data_stack::{DataStack, OpcodeData};
 use crate::{
-    ScriptSource, TxScriptEngine, TxScriptError, LOCK_TIME_THRESHOLD, MAX_TX_IN_SEQUENCE_NUM, NO_COST_OPCODE,
-    SEQUENCE_LOCK_TIME_DISABLED, SEQUENCE_LOCK_TIME_MASK,
+    ScriptSource, TxScriptEngine, TxScriptError, LOCK_TIME_THRESHOLD, MAX_TX_IN_SEQUENCE_NUM,
+    NO_COST_OPCODE, SEQUENCE_LOCK_TIME_DISABLED, SEQUENCE_LOCK_TIME_MASK,
 };
 use blake2b_simd::Params;
 use core::cmp::{max, min};
@@ -96,7 +96,10 @@ pub trait OpcodeSerialization {
         Self: Sized;
 }
 
-pub trait OpCodeImplementation<T: VerifiableTransaction>: OpCodeExecution<T> + OpCodeMetadata + OpcodeSerialization {}
+pub trait OpCodeImplementation<T: VerifiableTransaction>:
+    OpCodeExecution<T> + OpCodeMetadata + OpcodeSerialization
+{
+}
 
 impl<const CODE: u8> OpCodeMetadata for OpCode<CODE> {
     fn value(&self) -> u8 {
@@ -151,7 +154,10 @@ impl<const CODE: u8> OpCodeMetadata for OpCode<CODE> {
                     "zero length data push is encoded with opcode {self:?} instead of OpFalse"
                 )));
             }
-        } else if data_len == 1 && OP_SMALL_INT_MIN_VAL <= self.data[0] && self.data[0] <= OP_SMALL_INT_MAX_VAL {
+        } else if data_len == 1
+            && OP_SMALL_INT_MIN_VAL <= self.data[0]
+            && self.data[0] <= OP_SMALL_INT_MAX_VAL
+        {
             if opcode != codes::OpTrue + self.data[0] - 1 {
                 return Err(TxScriptError::NotMinimalData(format!(
                     "zero length data push is encoded with opcode {:?} instead of Op_{}",
@@ -966,7 +972,10 @@ pub fn to_small_int<T: VerifiableTransaction>(opcode: &Box<dyn OpCodeImplementat
         return 0;
     }
 
-    assert!((codes::OpTrue..codes::Op16).contains(&value), "expected op codes between from the list of Op0 to Op16");
+    assert!(
+        (codes::OpTrue..codes::Op16).contains(&value),
+        "expected op codes between from the list of Op0 to Op16"
+    );
     value - (codes::OpTrue - 1)
 }
 
@@ -975,14 +984,16 @@ mod test {
     use crate::caches::Cache;
     use crate::data_stack::Stack;
     use crate::opcodes::{OpCodeExecution, OpCodeImplementation};
-    use crate::{opcodes, pay_to_address_script, TxScriptEngine, TxScriptError, LOCK_TIME_THRESHOLD};
+    use crate::{
+        opcodes, pay_to_address_script, TxScriptEngine, TxScriptError, LOCK_TIME_THRESHOLD,
+    };
     use karlsen_addresses::{Address, Prefix, Version};
     use karlsen_consensus_core::constants::{SOMPI_PER_KARLSEN, TX_VERSION};
     use karlsen_consensus_core::hashing::sighash::SigHashReusedValues;
     use karlsen_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
     use karlsen_consensus_core::tx::{
-        PopulatedTransaction, ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry,
-        VerifiableTransaction,
+        PopulatedTransaction, ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint,
+        TransactionOutput, UtxoEntry, VerifiableTransaction,
     };
 
     struct TestCase<'a> {
@@ -1003,8 +1014,14 @@ mod test {
         for TestCase { init, code, dstack } in tests {
             let mut vm = TxScriptEngine::new(&mut reused_values, &cache);
             vm.dstack = init;
-            code.execute(&mut vm).unwrap_or_else(|_| panic!("Opcode {} should not fail", code.value()));
-            assert_eq!(*vm.dstack, dstack, "OpCode {} Pushed wrong value", code.value());
+            code.execute(&mut vm)
+                .unwrap_or_else(|_| panic!("Opcode {} should not fail", code.value()));
+            assert_eq!(
+                *vm.dstack,
+                dstack,
+                "OpCode {} Pushed wrong value",
+                code.value()
+            );
         }
     }
 
@@ -1015,8 +1032,14 @@ mod test {
             let mut vm = TxScriptEngine::new(&mut reused_values, &cache);
             vm.dstack.clone_from(&init);
             assert_eq!(
-                code.execute(&mut vm)
-                    .expect_err(format!("Opcode {} should have errored (init: {:?})", code.value(), init.clone()).as_str()),
+                code.execute(&mut vm).expect_err(
+                    format!(
+                        "Opcode {} should have errored (init: {:?})",
+                        code.value(),
+                        init.clone()
+                    )
+                    .as_str()
+                ),
                 error,
                 "Opcode {} returned wrong error {:?}",
                 code.value(),
@@ -1174,7 +1197,11 @@ mod test {
     #[test]
     fn test_push_data() {
         run_success_test_cases(vec![
-            TestCase { code: opcodes::OpFalse::empty().expect("Should accept empty"), dstack: vec![vec![]], init: Default::default() },
+            TestCase {
+                code: opcodes::OpFalse::empty().expect("Should accept empty"),
+                dstack: vec![vec![]],
+                init: Default::default(),
+            },
             TestCase {
                 code: opcodes::OpData1::new([1u8; 1].to_vec()).expect("Valid opcode"),
                 dstack: vec![[1u8; 1].to_vec()],
@@ -1576,72 +1603,212 @@ mod test {
                 dstack: vec![vec![0x81]],
                 init: Default::default(),
             },
-            TestCase { code: opcodes::Op1::empty().expect("Should accept empty"), dstack: vec![vec![1]], init: Default::default() },
-            TestCase { code: opcodes::Op2::empty().expect("Should accept empty"), dstack: vec![vec![2]], init: Default::default() },
-            TestCase { code: opcodes::Op3::empty().expect("Should accept empty"), dstack: vec![vec![3]], init: Default::default() },
-            TestCase { code: opcodes::Op4::empty().expect("Should accept empty"), dstack: vec![vec![4]], init: Default::default() },
-            TestCase { code: opcodes::Op5::empty().expect("Should accept empty"), dstack: vec![vec![5]], init: Default::default() },
-            TestCase { code: opcodes::Op6::empty().expect("Should accept empty"), dstack: vec![vec![6]], init: Default::default() },
-            TestCase { code: opcodes::Op7::empty().expect("Should accept empty"), dstack: vec![vec![7]], init: Default::default() },
-            TestCase { code: opcodes::Op8::empty().expect("Should accept empty"), dstack: vec![vec![8]], init: Default::default() },
-            TestCase { code: opcodes::Op9::empty().expect("Should accept empty"), dstack: vec![vec![9]], init: Default::default() },
-            TestCase { code: opcodes::Op10::empty().expect("Should accept empty"), dstack: vec![vec![10]], init: Default::default() },
-            TestCase { code: opcodes::Op11::empty().expect("Should accept empty"), dstack: vec![vec![11]], init: Default::default() },
-            TestCase { code: opcodes::Op12::empty().expect("Should accept empty"), dstack: vec![vec![12]], init: Default::default() },
-            TestCase { code: opcodes::Op13::empty().expect("Should accept empty"), dstack: vec![vec![13]], init: Default::default() },
-            TestCase { code: opcodes::Op14::empty().expect("Should accept empty"), dstack: vec![vec![14]], init: Default::default() },
-            TestCase { code: opcodes::Op15::empty().expect("Should accept empty"), dstack: vec![vec![15]], init: Default::default() },
-            TestCase { code: opcodes::Op16::empty().expect("Should accept empty"), dstack: vec![vec![16]], init: Default::default() },
+            TestCase {
+                code: opcodes::Op1::empty().expect("Should accept empty"),
+                dstack: vec![vec![1]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op2::empty().expect("Should accept empty"),
+                dstack: vec![vec![2]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op3::empty().expect("Should accept empty"),
+                dstack: vec![vec![3]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op4::empty().expect("Should accept empty"),
+                dstack: vec![vec![4]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op5::empty().expect("Should accept empty"),
+                dstack: vec![vec![5]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op6::empty().expect("Should accept empty"),
+                dstack: vec![vec![6]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op7::empty().expect("Should accept empty"),
+                dstack: vec![vec![7]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op8::empty().expect("Should accept empty"),
+                dstack: vec![vec![8]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op9::empty().expect("Should accept empty"),
+                dstack: vec![vec![9]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op10::empty().expect("Should accept empty"),
+                dstack: vec![vec![10]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op11::empty().expect("Should accept empty"),
+                dstack: vec![vec![11]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op12::empty().expect("Should accept empty"),
+                dstack: vec![vec![12]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op13::empty().expect("Should accept empty"),
+                dstack: vec![vec![13]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op14::empty().expect("Should accept empty"),
+                dstack: vec![vec![14]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op15::empty().expect("Should accept empty"),
+                dstack: vec![vec![15]],
+                init: Default::default(),
+            },
+            TestCase {
+                code: opcodes::Op16::empty().expect("Should accept empty"),
+                dstack: vec![vec![16]],
+                init: Default::default(),
+            },
         ]);
     }
 
     #[test]
     fn test_uniary_num_ops() {
         run_success_test_cases(vec![
-            TestCase { code: opcodes::Op1Add::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![vec![1]] },
-            TestCase { code: opcodes::Op1Add::empty().expect("Should accept empty"), init: vec![vec![1]], dstack: vec![vec![2]] },
+            TestCase {
+                code: opcodes::Op1Add::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![vec![1]],
+            },
+            TestCase {
+                code: opcodes::Op1Add::empty().expect("Should accept empty"),
+                init: vec![vec![1]],
+                dstack: vec![vec![2]],
+            },
             TestCase {
                 code: opcodes::Op1Add::empty().expect("Should accept empty"),
                 init: vec![vec![2, 1]],
                 dstack: vec![vec![3, 1]],
             },
-            TestCase { code: opcodes::Op1Add::empty().expect("Should accept empty"), init: vec![vec![0x81]], dstack: vec![vec![]] },
-            TestCase { code: opcodes::Op1Sub::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![vec![0x81]] },
-            TestCase { code: opcodes::Op1Sub::empty().expect("Should accept empty"), init: vec![vec![1]], dstack: vec![vec![]] },
-            TestCase { code: opcodes::Op1Sub::empty().expect("Should accept empty"), init: vec![vec![2]], dstack: vec![vec![1]] },
+            TestCase {
+                code: opcodes::Op1Add::empty().expect("Should accept empty"),
+                init: vec![vec![0x81]],
+                dstack: vec![vec![]],
+            },
+            TestCase {
+                code: opcodes::Op1Sub::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![vec![0x81]],
+            },
+            TestCase {
+                code: opcodes::Op1Sub::empty().expect("Should accept empty"),
+                init: vec![vec![1]],
+                dstack: vec![vec![]],
+            },
+            TestCase {
+                code: opcodes::Op1Sub::empty().expect("Should accept empty"),
+                init: vec![vec![2]],
+                dstack: vec![vec![1]],
+            },
             TestCase {
                 code: opcodes::Op1Sub::empty().expect("Should accept empty"),
                 init: vec![vec![3, 1]],
                 dstack: vec![vec![2, 1]],
             },
-            TestCase { code: opcodes::OpNegate::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![vec![]] },
-            TestCase { code: opcodes::OpNegate::empty().expect("Should accept empty"), init: vec![vec![1]], dstack: vec![vec![0x81]] },
-            TestCase { code: opcodes::OpNegate::empty().expect("Should accept empty"), init: vec![vec![0x81]], dstack: vec![vec![1]] },
+            TestCase {
+                code: opcodes::OpNegate::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![vec![]],
+            },
+            TestCase {
+                code: opcodes::OpNegate::empty().expect("Should accept empty"),
+                init: vec![vec![1]],
+                dstack: vec![vec![0x81]],
+            },
+            TestCase {
+                code: opcodes::OpNegate::empty().expect("Should accept empty"),
+                init: vec![vec![0x81]],
+                dstack: vec![vec![1]],
+            },
             TestCase {
                 code: opcodes::OpNegate::empty().expect("Should accept empty"),
                 init: vec![vec![3, 1]],
                 dstack: vec![vec![3, 0x81]],
             },
-            TestCase { code: opcodes::OpAbs::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![vec![]] },
-            TestCase { code: opcodes::OpAbs::empty().expect("Should accept empty"), init: vec![vec![3, 1]], dstack: vec![vec![3, 1]] },
+            TestCase {
+                code: opcodes::OpAbs::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![vec![]],
+            },
+            TestCase {
+                code: opcodes::OpAbs::empty().expect("Should accept empty"),
+                init: vec![vec![3, 1]],
+                dstack: vec![vec![3, 1]],
+            },
             TestCase {
                 code: opcodes::OpAbs::empty().expect("Should accept empty"),
                 init: vec![vec![3, 0x81]],
                 dstack: vec![vec![3, 1]],
             },
-            TestCase { code: opcodes::OpAbs::empty().expect("Should accept empty"), init: vec![vec![1]], dstack: vec![vec![1]] },
-            TestCase { code: opcodes::OpAbs::empty().expect("Should accept empty"), init: vec![vec![0x81]], dstack: vec![vec![1]] },
+            TestCase {
+                code: opcodes::OpAbs::empty().expect("Should accept empty"),
+                init: vec![vec![1]],
+                dstack: vec![vec![1]],
+            },
+            TestCase {
+                code: opcodes::OpAbs::empty().expect("Should accept empty"),
+                init: vec![vec![0x81]],
+                dstack: vec![vec![1]],
+            },
             TestCase {
                 code: opcodes::OpAbs::empty().expect("Should accept empty"),
                 init: vec![vec![1, 1, 0x82]],
                 dstack: vec![vec![1, 1, 2]],
             },
-            TestCase { code: opcodes::OpNot::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![vec![1]] },
-            TestCase { code: opcodes::OpNot::empty().expect("Should accept empty"), init: vec![vec![1]], dstack: vec![vec![]] },
-            TestCase { code: opcodes::OpNot::empty().expect("Should accept empty"), init: vec![vec![1, 2, 3]], dstack: vec![vec![]] },
-            TestCase { code: opcodes::Op0NotEqual::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![vec![]] },
-            TestCase { code: opcodes::Op0NotEqual::empty().expect("Should accept empty"), init: vec![vec![1]], dstack: vec![vec![1]] },
-            TestCase { code: opcodes::Op0NotEqual::empty().expect("Should accept empty"), init: vec![vec![2]], dstack: vec![vec![1]] },
+            TestCase {
+                code: opcodes::OpNot::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![vec![1]],
+            },
+            TestCase {
+                code: opcodes::OpNot::empty().expect("Should accept empty"),
+                init: vec![vec![1]],
+                dstack: vec![vec![]],
+            },
+            TestCase {
+                code: opcodes::OpNot::empty().expect("Should accept empty"),
+                init: vec![vec![1, 2, 3]],
+                dstack: vec![vec![]],
+            },
+            TestCase {
+                code: opcodes::Op0NotEqual::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![vec![]],
+            },
+            TestCase {
+                code: opcodes::Op0NotEqual::empty().expect("Should accept empty"),
+                init: vec![vec![1]],
+                dstack: vec![vec![1]],
+            },
+            TestCase {
+                code: opcodes::Op0NotEqual::empty().expect("Should accept empty"),
+                init: vec![vec![2]],
+                dstack: vec![vec![1]],
+            },
             TestCase {
                 code: opcodes::Op0NotEqual::empty().expect("Should accept empty"),
                 init: vec![vec![1, 2, 3]],
@@ -1653,7 +1820,11 @@ mod test {
     #[test]
     fn test_binary_num_ops() {
         run_success_test_cases(vec![
-            TestCase { code: opcodes::OpAdd::empty().expect("Should accept empty"), init: vec![vec![], vec![]], dstack: vec![vec![]] },
+            TestCase {
+                code: opcodes::OpAdd::empty().expect("Should accept empty"),
+                init: vec![vec![], vec![]],
+                dstack: vec![vec![]],
+            },
             TestCase {
                 code: opcodes::OpAdd::empty().expect("Should accept empty"),
                 init: vec![vec![], vec![1]],
@@ -1689,7 +1860,11 @@ mod test {
                 init: vec![vec![0xff, 0], vec![1]],
                 dstack: vec![vec![0, 1]],
             },
-            TestCase { code: opcodes::OpSub::empty().expect("Should accept empty"), init: vec![vec![], vec![]], dstack: vec![vec![]] },
+            TestCase {
+                code: opcodes::OpSub::empty().expect("Should accept empty"),
+                init: vec![vec![], vec![]],
+                dstack: vec![vec![]],
+            },
             TestCase {
                 code: opcodes::OpSub::empty().expect("Should accept empty"),
                 init: vec![vec![], vec![1]],
@@ -2022,7 +2197,11 @@ mod test {
     #[test]
     fn test_opdepth() {
         run_success_test_cases(vec![
-            TestCase { code: opcodes::OpDepth::empty().expect("Should accept empty"), init: vec![], dstack: vec![vec![]] },
+            TestCase {
+                code: opcodes::OpDepth::empty().expect("Should accept empty"),
+                init: vec![],
+                dstack: vec![vec![]],
+            },
             TestCase {
                 code: opcodes::OpDepth::empty().expect("Should accept empty"),
                 init: vec![vec![]],
@@ -2039,7 +2218,11 @@ mod test {
     #[test]
     fn test_opdrop() {
         run_success_test_cases(vec![
-            TestCase { code: opcodes::OpDrop::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![] },
+            TestCase {
+                code: opcodes::OpDrop::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![],
+            },
             TestCase {
                 code: opcodes::OpDrop::empty().expect("Should accept empty"),
                 init: vec![vec![], vec![1]],
@@ -2062,7 +2245,11 @@ mod test {
     #[test]
     fn test_op2drop() {
         run_success_test_cases(vec![
-            TestCase { code: opcodes::Op2Drop::empty().expect("Should accept empty"), init: vec![vec![], vec![1]], dstack: vec![] },
+            TestCase {
+                code: opcodes::Op2Drop::empty().expect("Should accept empty"),
+                init: vec![vec![], vec![1]],
+                dstack: vec![],
+            },
             TestCase {
                 code: opcodes::Op2Drop::empty().expect("Should accept empty"),
                 init: vec![vec![1], vec![2], vec![3], vec![3]],
@@ -2087,7 +2274,11 @@ mod test {
     #[test]
     fn test_opdup() {
         run_success_test_cases(vec![
-            TestCase { code: opcodes::OpDup::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![vec![], vec![]] },
+            TestCase {
+                code: opcodes::OpDup::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![vec![], vec![]],
+            },
             TestCase {
                 code: opcodes::OpDup::empty().expect("Should accept empty"),
                 init: vec![vec![], vec![1]],
@@ -2249,7 +2440,15 @@ mod test {
             TestCase {
                 code: opcodes::Op2Over::empty().expect("Should accept empty"),
                 init: vec![vec![], vec![0x81], vec![2], vec![], vec![1]],
-                dstack: vec![vec![], vec![0x81], vec![2], vec![], vec![1], vec![0x81], vec![2]],
+                dstack: vec![
+                    vec![],
+                    vec![0x81],
+                    vec![2],
+                    vec![],
+                    vec![1],
+                    vec![0x81],
+                    vec![2],
+                ],
             },
         ]);
 
@@ -2712,7 +2911,9 @@ mod test {
         }
     }
 
-    fn make_mock_transaction(lock_time: u64) -> (VerifiableTransactionMock, TransactionInput, UtxoEntry) {
+    fn make_mock_transaction(
+        lock_time: u64,
+    ) -> (VerifiableTransactionMock, TransactionInput, UtxoEntry) {
         let dummy_prev_out = TransactionOutpoint::new(karlsen_hashes::Hash::from_u64_word(1), 1);
         let dummy_sig_script = vec![0u8; 65];
         let dummy_tx_input = TransactionInput::new(dummy_prev_out, dummy_sig_script, 10, 1);
@@ -2746,15 +2947,22 @@ mod test {
         let code = opcodes::OpCheckLockTimeVerify::empty().expect("Should accept empty");
 
         for (tx_lock_time, lock_time, should_fail) in [
-            (1u64, vec![], false),                                // Case 1: 0 = locktime < txLockTime
-            (0x800000, vec![0x7f, 0, 0], false),                  // Case 2: 0 < locktime < txLockTime
+            (1u64, vec![], false),               // Case 1: 0 = locktime < txLockTime
+            (0x800000, vec![0x7f, 0, 0], false), // Case 2: 0 < locktime < txLockTime
             (0x800000, vec![0x7f, 0, 0, 0, 0, 0, 0, 0, 0], true), // Case 3: locktime too big
             (LOCK_TIME_THRESHOLD * 2, vec![0x7f, 0, 0, 0], true), // Case 4: lock times are inconsistant
         ] {
             let mut tx = base_tx.clone();
             tx.0.lock_time = tx_lock_time;
-            let mut vm = TxScriptEngine::from_transaction_input(&tx, &input, 0, &utxo_entry, &mut reused_values, &sig_cache)
-                .expect("Shouldn't fail");
+            let mut vm = TxScriptEngine::from_transaction_input(
+                &tx,
+                &input,
+                0,
+                &utxo_entry,
+                &mut reused_values,
+                &sig_cache,
+            )
+            .expect("Shouldn't fail");
             vm.dstack = vec![lock_time.clone()];
             match code.execute(&mut vm) {
                 // Message is based on the should_fail values
@@ -2788,21 +2996,34 @@ mod test {
         let code = opcodes::OpCheckSequenceVerify::empty().expect("Should accept empty");
 
         for (tx_sequence, sequence, should_fail) in [
-            (1u64, vec![], false),                                // Case 1: 0 = sequence < tx_sequence
-            (0x800000, vec![0x7f, 0, 0], false),                  // Case 2: 0 < sequence < tx_sequence
+            (1u64, vec![], false),               // Case 1: 0 = sequence < tx_sequence
+            (0x800000, vec![0x7f, 0, 0], false), // Case 2: 0 < sequence < tx_sequence
             (0x800000, vec![0x7f, 0, 0, 0, 0, 0, 0, 0, 0], true), // Case 3: sequence too big
-            (1 << 63, vec![0x7f, 0, 0], true),                    // Case 4: disabled
-            ((1 << 63) | 0xffff, vec![0x7f, 0, 0], true),         // Case 5: another disabled
+            (1 << 63, vec![0x7f, 0, 0], true),   // Case 4: disabled
+            ((1 << 63) | 0xffff, vec![0x7f, 0, 0], true), // Case 5: another disabled
         ] {
             let mut input = base_input.clone();
             input.sequence = tx_sequence;
-            let mut vm = TxScriptEngine::from_transaction_input(&tx, &input, 0, &utxo_entry, &mut reused_values, &sig_cache)
-                .expect("Shouldn't fail");
+            let mut vm = TxScriptEngine::from_transaction_input(
+                &tx,
+                &input,
+                0,
+                &utxo_entry,
+                &mut reused_values,
+                &sig_cache,
+            )
+            .expect("Shouldn't fail");
             vm.dstack = vec![sequence.clone()];
             match code.execute(&mut vm) {
                 // Message is based on the should_fail values
                 Ok(()) => {
-                    assert!(!should_fail, "Opcode {} must fail (tx_sequence: {}, sequence: {:?})", code.value(), tx_sequence, sequence)
+                    assert!(
+                        !should_fail,
+                        "Opcode {} must fail (tx_sequence: {}, sequence: {:?})",
+                        code.value(),
+                        tx_sequence,
+                        sequence
+                    )
                 }
                 Err(e) => assert!(
                     should_fail,
@@ -2828,9 +3049,21 @@ mod test {
     #[test]
     fn test_opverify() {
         run_success_test_cases(vec![
-            TestCase { code: opcodes::OpVerify::empty().expect("Should accept empty"), init: vec![vec![1]], dstack: vec![] },
-            TestCase { code: opcodes::OpVerify::empty().expect("Should accept empty"), init: vec![vec![0x81]], dstack: vec![] },
-            TestCase { code: opcodes::OpVerify::empty().expect("Should accept empty"), init: vec![vec![0x80, 0]], dstack: vec![] },
+            TestCase {
+                code: opcodes::OpVerify::empty().expect("Should accept empty"),
+                init: vec![vec![1]],
+                dstack: vec![],
+            },
+            TestCase {
+                code: opcodes::OpVerify::empty().expect("Should accept empty"),
+                init: vec![vec![0x81]],
+                dstack: vec![],
+            },
+            TestCase {
+                code: opcodes::OpVerify::empty().expect("Should accept empty"),
+                init: vec![vec![0x80, 0]],
+                dstack: vec![],
+            },
             TestCase {
                 code: opcodes::OpVerify::empty().expect("Should accept empty"),
                 init: vec![vec![1, 0, 0, 0, 0]],
@@ -2885,7 +3118,11 @@ mod test {
                 init: vec![vec![0x80, 0]],
                 dstack: vec![vec![0x80, 0], vec![0x80, 0]],
             },
-            TestCase { code: opcodes::OpIfDup::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![vec![]] },
+            TestCase {
+                code: opcodes::OpIfDup::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![vec![]],
+            },
             TestCase {
                 code: opcodes::OpIfDup::empty().expect("Should accept empty"),
                 init: vec![vec![0x80]],
@@ -2896,7 +3133,11 @@ mod test {
                 init: vec![vec![0, 0x80]],
                 dstack: vec![vec![0, 0x80]],
             },
-            TestCase { code: opcodes::OpIfDup::empty().expect("Should accept empty"), init: vec![vec![]], dstack: vec![vec![]] },
+            TestCase {
+                code: opcodes::OpIfDup::empty().expect("Should accept empty"),
+                init: vec![vec![]],
+                dstack: vec![vec![]],
+            },
         ])
     }
 }

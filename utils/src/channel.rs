@@ -1,4 +1,7 @@
-use async_channel::{bounded, unbounded, Receiver, RecvError, SendError, Sender, TryRecvError, TrySendError, WeakReceiver};
+use async_channel::{
+    bounded, unbounded, Receiver, RecvError, SendError, Sender, TryRecvError, TrySendError,
+    WeakReceiver,
+};
 
 /// Multiple producers multiple consumers channel
 #[derive(Clone, Debug)]
@@ -9,12 +12,18 @@ pub struct Channel<T> {
 
 impl<T> Channel<T> {
     pub fn new(channel: (Sender<T>, Receiver<T>)) -> Channel<T> {
-        Self { sender: channel.0, receiver: channel.1 }
+        Self {
+            sender: channel.0,
+            receiver: channel.1,
+        }
     }
 
     pub fn bounded(capacity: usize) -> Channel<T> {
         let channel = bounded(capacity);
-        Self { sender: channel.0, receiver: channel.1 }
+        Self {
+            sender: channel.0,
+            receiver: channel.1,
+        }
     }
 
     pub fn sender(&self) -> Sender<T> {
@@ -70,7 +79,10 @@ impl<T> Channel<T> {
 impl<T> Default for Channel<T> {
     fn default() -> Self {
         let ch = unbounded();
-        Self { sender: ch.0, receiver: ch.1 }
+        Self {
+            sender: ch.0,
+            receiver: ch.1,
+        }
     }
 }
 
@@ -79,7 +91,13 @@ impl<T> Default for Channel<T> {
 /// can attempt to replace the current `job` via `selector` logic. See [`JobSender::try_send`]
 pub fn job<T>() -> (JobSender<T>, JobReceiver<T>) {
     let (send, recv) = bounded(1);
-    (JobSender { sender: send, receiver: recv.downgrade() }, recv)
+    (
+        JobSender {
+            sender: send,
+            receiver: recv.downgrade(),
+        },
+        recv,
+    )
 }
 
 pub type JobReceiver<T> = Receiver<T>;

@@ -27,7 +27,11 @@ pub struct CompactUtxoEntry {
 impl CompactUtxoEntry {
     /// Creates a new [`CompactUtxoEntry`]
     pub fn new(amount: u64, block_daa_score: u64, is_coinbase: bool) -> Self {
-        Self { amount, block_daa_score, is_coinbase }
+        Self {
+            amount,
+            block_daa_score,
+            is_coinbase,
+        }
     }
 }
 
@@ -35,7 +39,11 @@ impl MemSizeEstimator for CompactUtxoEntry {}
 
 impl From<UtxoEntry> for CompactUtxoEntry {
     fn from(utxo_entry: UtxoEntry) -> Self {
-        Self { amount: utxo_entry.amount, block_daa_score: utxo_entry.block_daa_score, is_coinbase: utxo_entry.is_coinbase }
+        Self {
+            amount: utxo_entry.amount,
+            block_daa_score: utxo_entry.block_daa_score,
+            is_coinbase: utxo_entry.is_coinbase,
+        }
     }
 }
 

@@ -26,7 +26,9 @@ use karlsen_consensus_core::{
     BlockHashMap, BlockHashSet, BlockLevel, HashMapCustomHasher, KType,
 };
 use karlsen_core::{debug, info, trace};
-use karlsen_database::prelude::{CachePolicy, ConnBuilder, StoreResultEmptyTuple, StoreResultExtensions};
+use karlsen_database::prelude::{
+    CachePolicy, ConnBuilder, StoreResultEmptyTuple, StoreResultExtensions,
+};
 use karlsen_hashes::Hash;
 use karlsen_pow::calc_block_level;
 use karlsen_utils::{binary_heap::BinaryHeapExtensions, vec::VecExtensions};
@@ -46,17 +48,21 @@ use crate::{
             headers_selected_tip::DbHeadersSelectedTipStore,
             past_pruning_points::{DbPastPruningPointsStore, PastPruningPointsStore},
             pruning::{DbPruningStore, PruningStoreReader},
-            reachability::{DbReachabilityStore, ReachabilityStoreReader, StagingReachabilityStore},
+            reachability::{
+                DbReachabilityStore, ReachabilityStoreReader, StagingReachabilityStore,
+            },
             relations::{DbRelationsStore, RelationsStoreReader, StagingRelationsStore},
             selected_chain::{DbSelectedChainStore, SelectedChainStore},
             tips::DbTipsStore,
-            virtual_state::{VirtualState, VirtualStateStore, VirtualStateStoreReader, VirtualStores},
+            virtual_state::{
+                VirtualState, VirtualStateStore, VirtualStateStoreReader, VirtualStores,
+            },
             DB,
         },
     },
     processes::{
-        ghostdag::ordering::SortableBlock, reachability::inquirer as reachability, relations::RelationsStoreExtensions,
-        window::WindowType,
+        ghostdag::ordering::SortableBlock, reachability::inquirer as reachability,
+        relations::RelationsStoreExtensions, window::WindowType,
     },
 };
 
@@ -84,7 +90,10 @@ struct CachedPruningPointData<T: ?Sized> {
 
 impl<T> Clone for CachedPruningPointData<T> {
     fn clone(&self) -> Self {
-        Self { pruning_point: self.pruning_point, data: self.data.clone() }
+        Self {
+            pruning_point: self.pruning_point,
+            data: self.data.clone(),
+        }
     }
 }
 
@@ -175,7 +184,9 @@ impl PruningProofManager {
 
     pub fn import_pruning_points(&self, pruning_points: &[Arc<Header>]) {
         for (i, header) in pruning_points.iter().enumerate() {
-            self.past_pruning_points_store.set(i as u64, header.hash).unwrap();
+            self.past_pruning_points_store
+                .set(i as u64, header.hash)
+                .unwrap();
 
             if self.headers_store.has(header.hash).unwrap() {
                 continue;
@@ -185,7 +196,9 @@ impl PruningProofManager {
             let (_, pow) = state.check_pow(header.nonce);
             let signed_block_level = self.max_block_level as i64 - pow.bits() as i64;
             let block_level = max(signed_block_level, 0) as BlockLevel;
-            self.headers_store.insert(header.hash, header.clone(), block_level).unwrap();
+            self.headers_store
+                .insert(header.hash, header.clone(), block_level)
+                .unwrap();
         }
 
         let new_pruning_point = pruning_points.last().unwrap().hash;
@@ -193,13 +206,26 @@ impl PruningProofManager {
 
         let mut pruning_point_write = self.pruning_point_store.write();
         let mut batch = WriteBatch::default();
-        pruning_point_write.set_batch(&mut batch, new_pruning_point, new_pruning_point, (pruning_points.len() - 1) as u64).unwrap();
-        pruning_point_write.set_history_root(&mut batch, new_pruning_point).unwrap();
+        pruning_point_write
+            .set_batch(
+                &mut batch,
+                new_pruning_point,
+                new_pruning_point,
+                (pruning_points.len() - 1) as u64,
+            )
+            .unwrap();
+        pruning_point_write
+            .set_history_root(&mut batch, new_pruning_point)
+            .unwrap();
         self.db.write(batch).unwrap();
         drop(pruning_point_write);
     }
 
-    pub fn apply_proof(&self, mut proof: PruningPointProof, trusted_set: &[TrustedBlock]) -> PruningImportResult<()> {
+    pub fn apply_proof(
+        &self,
+        mut proof: PruningPointProof,
+        trusted_set: &[TrustedBlock],
+    ) -> PruningImportResult<()> {
         let pruning_point_header = proof[0].last().unwrap().clone();
         let pruning_point = pruning_point_header.hash;
 
@@ -221,15 +247,21 @@ impl PruningProofManager {
             let reachability_read = self.reachability_store.read();
             for tb in trusted_set.iter() {
                 // Header-only trusted blocks are expected to be in pruning point past
-                if tb.block.is_header_only() && !reachability_read.is_dag_ancestor_of(tb.block.hash(), pruning_point) {
-                    return Err(PruningImportError::PruningPointPastMissingReachability(tb.block.hash()));
+                if tb.block.is_header_only()
+                    && !reachability_read.is_dag_ancestor_of(tb.block.hash(), pruning_point)
+                {
+                    return Err(PruningImportError::PruningPointPastMissingReachability(
+                        tb.block.hash(),
+                    ));
                 }
             }
         }
 
         for (level, headers) in proof.iter().enumerate() {
             trace!("Applying level {} from the pruning point proof", level);
-            self.ghostdag_stores[level].insert(ORIGIN, self.ghostdag_managers[level].origin_ghostdag_data()).unwrap();
+            self.ghostdag_stores[level]
+                .insert(ORIGIN, self.ghostdag_managers[level].origin_ghostdag_data())
+                .unwrap();
             for header in headers.iter() {
                 let parents = Arc::new(
                     self.parents_manager
@@ -241,7 +273,9 @@ impl PruningProofManager {
                         .push_if_empty(ORIGIN),
                 );
 
-                self.relations_stores.write()[level].insert(header.hash, parents.clone()).unwrap();
+                self.relations_stores.write()[level]
+                    .insert(header.hash, parents.clone())
+                    .unwrap();
                 let gd = if header.hash == self.genesis_hash {
                     self.ghostdag_managers[level].genesis_ghostdag_data()
                 } else if level == 0 {
@@ -262,7 +296,9 @@ impl PruningProofManager {
                 } else {
                     self.ghostdag_managers[level].ghostdag(&parents)
                 };
-                self.ghostdag_stores[level].insert(header.hash, Arc::new(gd)).unwrap();
+                self.ghostdag_stores[level]
+                    .insert(header.hash, Arc::new(gd))
+                    .unwrap();
             }
         }
 
@@ -272,16 +308,34 @@ impl PruningProofManager {
             ghostdag_data: self.ghostdag_managers[0].ghostdag(&virtual_parents),
             ..VirtualState::default()
         });
-        self.virtual_stores.write().state.set(virtual_state).unwrap();
+        self.virtual_stores
+            .write()
+            .state
+            .set(virtual_state)
+            .unwrap();
 
         let mut batch = WriteBatch::default();
-        self.body_tips_store.write().init_batch(&mut batch, &virtual_parents).unwrap();
+        self.body_tips_store
+            .write()
+            .init_batch(&mut batch, &virtual_parents)
+            .unwrap();
         self.headers_selected_tip_store
             .write()
-            .set_batch(&mut batch, SortableBlock { hash: pruning_point, blue_work: pruning_point_header.blue_work })
+            .set_batch(
+                &mut batch,
+                SortableBlock {
+                    hash: pruning_point,
+                    blue_work: pruning_point_header.blue_work,
+                },
+            )
             .unwrap();
-        self.selected_chain_store.write().init_with_pruning_point(&mut batch, pruning_point).unwrap();
-        self.depth_store.insert_batch(&mut batch, pruning_point, ORIGIN, ORIGIN).unwrap();
+        self.selected_chain_store
+            .write()
+            .init_with_pruning_point(&mut batch, pruning_point)
+            .unwrap();
+        self.depth_store
+            .insert_batch(&mut batch, pruning_point, ORIGIN, ORIGIN)
+            .unwrap();
         self.db.write(batch).unwrap();
 
         Ok(())
@@ -289,8 +343,13 @@ impl PruningProofManager {
 
     fn estimate_proof_unique_size(&self, proof: &PruningPointProof) -> usize {
         let approx_history_size = proof[0][0].daa_score;
-        let approx_unique_full_levels = f64::log2(approx_history_size as f64 / self.pruning_proof_m as f64).max(0f64) as usize;
-        proof.iter().map(|l| l.len()).sum::<usize>().min((approx_unique_full_levels + 1) * self.pruning_proof_m as usize)
+        let approx_unique_full_levels =
+            f64::log2(approx_history_size as f64 / self.pruning_proof_m as f64).max(0f64) as usize;
+        proof
+            .iter()
+            .map(|l| l.len())
+            .sum::<usize>()
+            .min((approx_unique_full_levels + 1) * self.pruning_proof_m as usize)
     }
 
     pub fn populate_reachability_and_headers(&self, proof: &PruningPointProof) {
@@ -303,7 +362,9 @@ impl PruningProofManager {
                 let (_, pow) = state.check_pow(header.nonce); // TODO: Check if pow passes
                 let signed_block_level = self.max_block_level as i64 - pow.bits() as i64;
                 let block_level = max(signed_block_level, 0) as BlockLevel;
-                self.headers_store.insert(header.hash, header.clone(), block_level).unwrap();
+                self.headers_store
+                    .insert(header.hash, header.clone(), block_level)
+                    .unwrap();
 
                 let mut parents = BlockHashSet::with_capacity(header.direct_parents().len() * 2);
                 // We collect all available parent relations in order to maximize reachability information.
@@ -321,12 +382,22 @@ impl PruningProofManager {
                     parents: Arc<BlockHashSet>,
                 }
 
-                up_heap.push(Reverse(SortableBlock { hash: header.hash, blue_work: header.blue_work }));
-                e.insert(DagEntry { header, parents: Arc::new(parents) });
+                up_heap.push(Reverse(SortableBlock {
+                    hash: header.hash,
+                    blue_work: header.blue_work,
+                }));
+                e.insert(DagEntry {
+                    header,
+                    parents: Arc::new(parents),
+                });
             }
         }
 
-        debug!("Estimated proof size: {}, actual size: {}", capacity_estimate, dag.len());
+        debug!(
+            "Estimated proof size: {}, actual size: {}",
+            capacity_estimate,
+            dag.len()
+        );
 
         for reverse_sortable_block in up_heap.into_sorted_iter() {
             // TODO: Convert to into_iter_sorted once it gets stable
@@ -340,7 +411,10 @@ impl PruningProofManager {
                     .iter()
                     .cloned()
                     .filter(|parent| dag.contains_key(parent))
-                    .map(|parent| SortableBlock { hash: parent, blue_work: dag.get(&parent).unwrap().header.blue_work }),
+                    .map(|parent| SortableBlock {
+                        hash: parent,
+                        blue_work: dag.get(&parent).unwrap().header.blue_work,
+                    }),
             );
 
             let reachability_read = self.reachability_store.upgradable_read();
@@ -348,31 +422,52 @@ impl PruningProofManager {
             // Find the maximal parent antichain from the possibly redundant set of existing parents
             let mut reachability_parents: Vec<SortableBlock> = Vec::new();
             for parent in parents_in_dag.into_sorted_iter() {
-                if reachability_read.is_dag_ancestor_of_any(parent.hash, &mut reachability_parents.iter().map(|parent| parent.hash)) {
+                if reachability_read.is_dag_ancestor_of_any(
+                    parent.hash,
+                    &mut reachability_parents.iter().map(|parent| parent.hash),
+                ) {
                     continue;
                 }
 
                 reachability_parents.push(parent);
             }
-            let reachability_parents_hashes =
-                BlockHashes::new(reachability_parents.iter().map(|parent| parent.hash).collect_vec().push_if_empty(ORIGIN));
-            let selected_parent = reachability_parents.iter().max().map(|parent| parent.hash).unwrap_or(ORIGIN);
+            let reachability_parents_hashes = BlockHashes::new(
+                reachability_parents
+                    .iter()
+                    .map(|parent| parent.hash)
+                    .collect_vec()
+                    .push_if_empty(ORIGIN),
+            );
+            let selected_parent = reachability_parents
+                .iter()
+                .max()
+                .map(|parent| parent.hash)
+                .unwrap_or(ORIGIN);
 
             // Prepare batch
             let mut batch = WriteBatch::default();
             let mut reachability_relations_write = self.reachability_relations_store.write();
             let mut staging_reachability = StagingReachabilityStore::new(reachability_read);
-            let mut staging_reachability_relations = StagingRelationsStore::new(&mut reachability_relations_write);
+            let mut staging_reachability_relations =
+                StagingRelationsStore::new(&mut reachability_relations_write);
 
             // Stage
-            staging_reachability_relations.insert(hash, reachability_parents_hashes.clone()).unwrap();
+            staging_reachability_relations
+                .insert(hash, reachability_parents_hashes.clone())
+                .unwrap();
             let mergeset = unordered_mergeset_without_selected_parent(
                 &staging_reachability_relations,
                 &staging_reachability,
                 selected_parent,
                 &reachability_parents_hashes,
             );
-            reachability::add_block(&mut staging_reachability, hash, selected_parent, &mut mergeset.iter().copied()).unwrap();
+            reachability::add_block(
+                &mut staging_reachability,
+                hash,
+                selected_parent,
+                &mut mergeset.iter().copied(),
+            )
+            .unwrap();
 
             // Commit
             let reachability_write = staging_reachability.commit(&mut batch).unwrap();
@@ -387,9 +482,14 @@ impl PruningProofManager {
         }
     }
 
-    pub fn validate_pruning_point_proof(&self, proof: &PruningPointProof) -> PruningImportResult<()> {
+    pub fn validate_pruning_point_proof(
+        &self,
+        proof: &PruningPointProof,
+    ) -> PruningImportResult<()> {
         if proof.len() != self.max_block_level as usize + 1 {
-            return Err(PruningImportError::ProofNotEnoughLevels(self.max_block_level as usize + 1));
+            return Err(PruningImportError::ProofNotEnoughLevels(
+                self.max_block_level as usize + 1,
+            ));
         }
         if proof[0].is_empty() {
             return Err(PruningImportError::PruningProofNotEnoughHeaders);
@@ -399,17 +499,36 @@ impl PruningProofManager {
         let proof_pp_header = proof[0].last().expect("checked if empty");
         let proof_pp = proof_pp_header.hash;
         let proof_pp_level = calc_block_level(proof_pp_header, self.max_block_level);
-        let (db_lifetime, db) = karlsen_database::create_temp_db!(ConnBuilder::default().with_files_limit(10));
+        let (db_lifetime, db) =
+            karlsen_database::create_temp_db!(ConnBuilder::default().with_files_limit(10));
         let cache_policy = CachePolicy::Count(2 * self.pruning_proof_m as usize);
-        let headers_store =
-            Arc::new(DbHeadersStore::new(db.clone(), CachePolicy::Count(headers_estimate), CachePolicy::Count(headers_estimate)));
+        let headers_store = Arc::new(DbHeadersStore::new(
+            db.clone(),
+            CachePolicy::Count(headers_estimate),
+            CachePolicy::Count(headers_estimate),
+        ));
         let ghostdag_stores = (0..=self.max_block_level)
-            .map(|level| Arc::new(DbGhostdagStore::new(db.clone(), level, cache_policy, cache_policy)))
+            .map(|level| {
+                Arc::new(DbGhostdagStore::new(
+                    db.clone(),
+                    level,
+                    cache_policy,
+                    cache_policy,
+                ))
+            })
             .collect_vec();
-        let mut relations_stores =
-            (0..=self.max_block_level).map(|level| DbRelationsStore::new(db.clone(), level, cache_policy, cache_policy)).collect_vec();
+        let mut relations_stores = (0..=self.max_block_level)
+            .map(|level| DbRelationsStore::new(db.clone(), level, cache_policy, cache_policy))
+            .collect_vec();
         let reachability_stores = (0..=self.max_block_level)
-            .map(|level| Arc::new(RwLock::new(DbReachabilityStore::with_block_level(db.clone(), cache_policy, cache_policy, level))))
+            .map(|level| {
+                Arc::new(RwLock::new(DbReachabilityStore::with_block_level(
+                    db.clone(),
+                    cache_policy,
+                    cache_policy,
+                    level,
+                )))
+            })
             .collect_vec();
 
         let reachability_services = (0..=self.max_block_level)
@@ -437,8 +556,12 @@ impl PruningProofManager {
             for level in 0..=self.max_block_level {
                 let level = level as usize;
                 reachability::init(reachability_stores[level].write().deref_mut()).unwrap();
-                relations_stores[level].insert_batch(&mut batch, ORIGIN, BlockHashes::new(vec![])).unwrap();
-                ghostdag_stores[level].insert(ORIGIN, self.ghostdag_managers[level].origin_ghostdag_data()).unwrap();
+                relations_stores[level]
+                    .insert_batch(&mut batch, ORIGIN, BlockHashes::new(vec![]))
+                    .unwrap();
+                ghostdag_stores[level]
+                    .insert(ORIGIN, self.ghostdag_managers[level].origin_ghostdag_data())
+                    .unwrap();
             }
 
             db.write(batch).unwrap();
@@ -451,7 +574,10 @@ impl PruningProofManager {
                 return Err(PruningImportError::PruningValidationInterrupted);
             }
 
-            info!("Validating level {level} from the pruning point proof ({} headers)", proof[level as usize].len());
+            info!(
+                "Validating level {level} from the pruning point proof ({} headers)",
+                proof[level as usize].len()
+            );
             let level_idx = level as usize;
             let mut selected_tip = None;
             for (i, header) in proof[level as usize].iter().enumerate() {
@@ -460,11 +586,16 @@ impl PruningProofManager {
                 if header_level < level {
                     //headers_store.insert(header.hash, header.clone(), level).unwrap_or_exists();
                     //println!("block {0} level is {1} when it's expected to be at least {2}", header.hash, header_level, level);
-                    return Err(PruningImportError::PruningProofWrongBlockLevel(header.hash, header_level, level));
+                    return Err(PruningImportError::PruningProofWrongBlockLevel(
+                        header.hash,
+                        header_level,
+                        level,
+                    ));
                 } else {
-                    headers_store.insert(header.hash, header.clone(), header_level).unwrap_or_exists();
+                    headers_store
+                        .insert(header.hash, header.clone(), header_level)
+                        .unwrap_or_exists();
                 }
-
 
                 let parents = self
                     .parents_manager
@@ -476,20 +607,32 @@ impl PruningProofManager {
 
                 // Only the first block at each level is allowed to have no known parents
                 if parents.is_empty() && i != 0 {
-                    return Err(PruningImportError::PruningProofHeaderWithNoKnownParents(header.hash, level));
+                    return Err(PruningImportError::PruningProofHeaderWithNoKnownParents(
+                        header.hash,
+                        level,
+                    ));
                 }
 
                 let parents: BlockHashes = parents.push_if_empty(ORIGIN).into();
 
                 if relations_stores[level_idx].has(header.hash).unwrap() {
-                    return Err(PruningImportError::PruningProofDuplicateHeaderAtLevel(header.hash, level));
+                    return Err(PruningImportError::PruningProofDuplicateHeaderAtLevel(
+                        header.hash,
+                        level,
+                    ));
                 }
 
-                relations_stores[level_idx].insert(header.hash, parents.clone()).unwrap();
+                relations_stores[level_idx]
+                    .insert(header.hash, parents.clone())
+                    .unwrap();
                 let ghostdag_data = Arc::new(ghostdag_managers[level_idx].ghostdag(&parents));
-                ghostdag_stores[level_idx].insert(header.hash, ghostdag_data.clone()).unwrap();
+                ghostdag_stores[level_idx]
+                    .insert(header.hash, ghostdag_data.clone())
+                    .unwrap();
                 selected_tip = Some(match selected_tip {
-                    Some(tip) => ghostdag_managers[level_idx].find_selected_parent([tip, header.hash]),
+                    Some(tip) => {
+                        ghostdag_managers[level_idx].find_selected_parent([tip, header.hash])
+                    }
                     None => header.hash,
                 });
 
@@ -510,8 +653,11 @@ impl PruningProofManager {
                 .unwrap();
 
                 if selected_tip.unwrap() == header.hash {
-                    reachability::hint_virtual_selected_parent(reachability_stores[level_idx].write().deref_mut(), header.hash)
-                        .unwrap();
+                    reachability::hint_virtual_selected_parent(
+                        reachability_stores[level_idx].write().deref_mut(),
+                        header.hash,
+                    )
+                    .unwrap();
                 }
             }
 
@@ -523,15 +669,31 @@ impl PruningProofManager {
                         self.pruning_proof_m,
                     )
                     .unwrap();
-                if !relations_stores[level_idx].has(block_at_depth_m_at_next_level).unwrap() {
-                    return Err(PruningImportError::PruningProofMissingBlockAtDepthMFromNextLevel(level, level + 1));
+                if !relations_stores[level_idx]
+                    .has(block_at_depth_m_at_next_level)
+                    .unwrap()
+                {
+                    return Err(
+                        PruningImportError::PruningProofMissingBlockAtDepthMFromNextLevel(
+                            level,
+                            level + 1,
+                        ),
+                    );
                 }
             }
 
             if selected_tip.unwrap() != proof_pp
-                && !self.parents_manager.parents_at_level(proof_pp_header, level).contains(&selected_tip.unwrap())
+                && !self
+                    .parents_manager
+                    .parents_at_level(proof_pp_header, level)
+                    .contains(&selected_tip.unwrap())
             {
-                return Err(PruningImportError::PruningProofMissesBlocksBelowPruningPoint(selected_tip.unwrap(), level));
+                return Err(
+                    PruningImportError::PruningProofMissesBlocksBelowPruningPoint(
+                        selected_tip.unwrap(),
+                        level,
+                    ),
+                );
             }
 
             selected_tip_by_level[level_idx] = selected_tip;
@@ -547,16 +709,30 @@ impl PruningProofManager {
             let selected_tip = selected_tip.unwrap();
             if level <= proof_pp_level {
                 if selected_tip != proof_pp {
-                    return Err(PruningImportError::PruningProofSelectedTipIsNotThePruningPoint(selected_tip, level));
+                    return Err(
+                        PruningImportError::PruningProofSelectedTipIsNotThePruningPoint(
+                            selected_tip,
+                            level,
+                        ),
+                    );
                 }
-            } else if !self.parents_manager.parents_at_level(proof_pp_header, level).contains(&selected_tip) {
+            } else if !self
+                .parents_manager
+                .parents_at_level(proof_pp_header, level)
+                .contains(&selected_tip)
+            {
                 /* TODO analyse & fix that */
-                return Err(PruningImportError::PruningProofSelectedTipNotParentOfPruningPoint(selected_tip, level));
-                
-                
+                return Err(
+                    PruningImportError::PruningProofSelectedTipNotParentOfPruningPoint(
+                        selected_tip,
+                        level,
+                    ),
+                );
             }
 
-            let proof_selected_tip_gd = ghostdag_stores[level_idx].get_compact_data(selected_tip).unwrap();
+            let proof_selected_tip_gd = ghostdag_stores[level_idx]
+                .get_compact_data(selected_tip)
+                .unwrap();
             if proof_selected_tip_gd.blue_score < 2 * self.pruning_proof_m {
                 continue;
             }
@@ -564,7 +740,10 @@ impl PruningProofManager {
             let mut proof_current = selected_tip;
             let mut proof_current_gd = proof_selected_tip_gd;
             let common_ancestor_data = loop {
-                match self.ghostdag_stores[level_idx].get_compact_data(proof_current).unwrap_option() {
+                match self.ghostdag_stores[level_idx]
+                    .get_compact_data(proof_current)
+                    .unwrap_option()
+                {
                     Some(current_gd) => {
                         break Some((proof_current_gd, current_gd));
                     }
@@ -573,18 +752,28 @@ impl PruningProofManager {
                         if proof_current.is_origin() {
                             break None;
                         }
-                        proof_current_gd = ghostdag_stores[level_idx].get_compact_data(proof_current).unwrap();
+                        proof_current_gd = ghostdag_stores[level_idx]
+                            .get_compact_data(proof_current)
+                            .unwrap();
                     }
                 };
             };
 
             if let Some((proof_common_ancestor_gd, common_ancestor_gd)) = common_ancestor_data {
                 let selected_tip_blue_work_diff =
-                    SignedInteger::from(proof_selected_tip_gd.blue_work) - SignedInteger::from(proof_common_ancestor_gd.blue_work);
-                for parent in self.parents_manager.parents_at_level(&current_pp_header, level).iter().copied() {
-                    let parent_blue_work = self.ghostdag_stores[level_idx].get_blue_work(parent).unwrap();
-                    let parent_blue_work_diff =
-                        SignedInteger::from(parent_blue_work) - SignedInteger::from(common_ancestor_gd.blue_work);
+                    SignedInteger::from(proof_selected_tip_gd.blue_work)
+                        - SignedInteger::from(proof_common_ancestor_gd.blue_work);
+                for parent in self
+                    .parents_manager
+                    .parents_at_level(&current_pp_header, level)
+                    .iter()
+                    .copied()
+                {
+                    let parent_blue_work = self.ghostdag_stores[level_idx]
+                        .get_blue_work(parent)
+                        .unwrap();
+                    let parent_blue_work_diff = SignedInteger::from(parent_blue_work)
+                        - SignedInteger::from(common_ancestor_gd.blue_work);
                     if parent_blue_work_diff >= selected_tip_blue_work_diff {
                         return Err(PruningImportError::PruningProofInsufficientBlueWork);
                     }
@@ -602,13 +791,17 @@ impl PruningProofManager {
 
         for level in (0..=self.max_block_level).rev() {
             let level_idx = level as usize;
-            match relations_read[level_idx].get_parents(current_pp).unwrap_option() {
+            match relations_read[level_idx]
+                .get_parents(current_pp)
+                .unwrap_option()
+            {
                 Some(parents) => {
-                    if parents
-                        .iter()
-                        .copied()
-                        .any(|parent| self.ghostdag_stores[level_idx].get_blue_score(parent).unwrap() < 2 * self.pruning_proof_m)
-                    {
+                    if parents.iter().copied().any(|parent| {
+                        self.ghostdag_stores[level_idx]
+                            .get_blue_score(parent)
+                            .unwrap()
+                            < 2 * self.pruning_proof_m
+                    }) {
                         return Ok(());
                     }
                 }
@@ -641,7 +834,9 @@ impl PruningProofManager {
                         self.parents_manager
                             .parents_at_level(&pp_header.header, level)
                             .iter()
-                            .filter(|parent| self.ghostdag_stores[level as usize].has(**parent).unwrap())
+                            .filter(|parent| {
+                                self.ghostdag_stores[level as usize].has(**parent).unwrap()
+                            })
                             .cloned(),
                     )
                 }
@@ -737,9 +932,11 @@ impl PruningProofManager {
         high: Hash,
         depth: u64,
     ) -> Result<Vec<Hash>, PruningProofManagerInternalError> {
-        let high_gd = ghostdag_store
-            .get_compact_data(high)
-            .map_err(|err| PruningProofManagerInternalError::BlockAtDepth(format!("high: {high}, depth: {depth}, {err}")))?;
+        let high_gd = ghostdag_store.get_compact_data(high).map_err(|err| {
+            PruningProofManagerInternalError::BlockAtDepth(format!(
+                "high: {high}, depth: {depth}, {err}"
+            ))
+        })?;
         let mut current_gd = high_gd;
         let mut current = high;
         let mut res = vec![current];
@@ -766,9 +963,11 @@ impl PruningProofManager {
         high: Hash,
         depth: u64,
     ) -> Result<Hash, PruningProofManagerInternalError> {
-        let high_gd = ghostdag_store
-            .get_compact_data(high)
-            .map_err(|err| PruningProofManagerInternalError::BlockAtDepth(format!("high: {high}, depth: {depth}, {err}")))?;
+        let high_gd = ghostdag_store.get_compact_data(high).map_err(|err| {
+            PruningProofManagerInternalError::BlockAtDepth(format!(
+                "high: {high}, depth: {depth}, {err}"
+            ))
+        })?;
         let mut current_gd = high_gd;
         let mut current = high;
         while current_gd.blue_score + depth >= high_gd.blue_score {
@@ -793,9 +992,9 @@ impl PruningProofManager {
         a: Hash,
         b: Hash,
     ) -> Result<Hash, PruningProofManagerInternalError> {
-        let a_gd = ghostdag_store
-            .get_compact_data(a)
-            .map_err(|err| PruningProofManagerInternalError::FindCommonAncestor(format!("a: {a}, b: {b}, {err}")))?;
+        let a_gd = ghostdag_store.get_compact_data(a).map_err(|err| {
+            PruningProofManagerInternalError::FindCommonAncestor(format!("a: {a}, b: {b}, {err}"))
+        })?;
         let mut current_gd = a_gd;
         let mut current;
         let mut loop_counter = 0;
@@ -803,14 +1002,18 @@ impl PruningProofManager {
             current = current_gd.selected_parent;
             loop_counter += 1;
             if current.is_origin() {
-                break Err(PruningProofManagerInternalError::NoCommonAncestor(format!("a: {a}, b: {b} ({loop_counter} loop steps)")));
+                break Err(PruningProofManagerInternalError::NoCommonAncestor(format!(
+                    "a: {a}, b: {b} ({loop_counter} loop steps)"
+                )));
             }
             if self.reachability_service.is_dag_ancestor_of(current, b) {
                 break Ok(current);
             }
-            current_gd = ghostdag_store
-                .get_compact_data(current)
-                .map_err(|err| PruningProofManagerInternalError::FindCommonAncestor(format!("a: {a}, b: {b}, {err}")))?;
+            current_gd = ghostdag_store.get_compact_data(current).map_err(|err| {
+                PruningProofManagerInternalError::FindCommonAncestor(format!(
+                    "a: {a}, b: {b}, {err}"
+                ))
+            })?;
         }
     }
 
@@ -823,7 +1026,10 @@ impl PruningProofManager {
         let mut current = hash;
         for _ in 0..=self.ghostdag_k {
             hashes.push(current);
-            let Some(parent) = self.ghostdag_stores[0].get_selected_parent(current).unwrap_option() else {
+            let Some(parent) = self.ghostdag_stores[0]
+                .get_selected_parent(current)
+                .unwrap_option()
+            else {
                 break;
             };
             if parent == self.genesis_hash || parent == blockhash::ORIGIN {
@@ -854,7 +1060,10 @@ impl PruningProofManager {
         for anticone_block in anticone.iter().copied() {
             let window = self
                 .window_manager
-                .block_window(&self.ghostdag_stores[0].get_data(anticone_block).unwrap(), WindowType::FullDifficultyWindow)
+                .block_window(
+                    &self.ghostdag_stores[0].get_data(anticone_block).unwrap(),
+                    WindowType::FullDifficultyWindow,
+                )
                 .unwrap();
 
             for hash in window.deref().iter().map(|block| block.0.hash) {
@@ -892,9 +1101,18 @@ impl PruningProofManager {
         // claimed anticone is indeed the pp anticone and all the rest of the blocks are in the pp past.
 
         // We use the min blue-work in order to identify where the traversal can halt
-        let min_blue_work = daa_window_blocks.values().map(|th| th.header.blue_work).min().expect("non empty");
+        let min_blue_work = daa_window_blocks
+            .values()
+            .map(|th| th.header.blue_work)
+            .min()
+            .expect("non empty");
         let mut queue = VecDeque::from_iter(anticone.iter().copied());
-        let mut visited = BlockHashSet::from_iter(queue.iter().copied().chain(std::iter::once(blockhash::ORIGIN))); // Mark origin as visited to avoid processing it
+        let mut visited = BlockHashSet::from_iter(
+            queue
+                .iter()
+                .copied()
+                .chain(std::iter::once(blockhash::ORIGIN)),
+        ); // Mark origin as visited to avoid processing it
         while let Some(current) = queue.pop_front() {
             if let Entry::Vacant(e) = daa_window_blocks.entry(current) {
                 let header = self.headers_store.get_header(current).unwrap();
@@ -904,7 +1122,9 @@ impl PruningProofManager {
                 let ghostdag = (&*self.ghostdag_stores[0].get_data(current).unwrap()).into();
                 e.insert(TrustedHeader { header, ghostdag });
             }
-            let parents = self.relations_stores.read()[0].get_parents(current).unwrap();
+            let parents = self.relations_stores.read()[0]
+                .get_parents(current)
+                .unwrap();
             for parent in parents.iter().copied() {
                 if visited.insert(parent) {
                     queue.push_back(parent);
@@ -915,7 +1135,10 @@ impl PruningProofManager {
         PruningPointTrustedData {
             anticone,
             daa_window_blocks: daa_window_blocks.into_values().collect_vec(),
-            ghostdag_blocks: ghostdag_blocks.into_iter().map(|(hash, ghostdag)| TrustedGhostdagData { hash, ghostdag }).collect_vec(),
+            ghostdag_blocks: ghostdag_blocks
+                .into_iter()
+                .map(|(hash, ghostdag)| TrustedGhostdagData { hash, ghostdag })
+                .collect_vec(),
         }
     }
 
@@ -928,11 +1151,16 @@ impl PruningProofManager {
             }
         }
         let proof = Arc::new(self.build_pruning_point_proof(pp));
-        cache_lock.replace(CachedPruningPointData { pruning_point: pp, data: proof.clone() });
+        cache_lock.replace(CachedPruningPointData {
+            pruning_point: pp,
+            data: proof.clone(),
+        });
         proof
     }
 
-    pub fn get_pruning_point_anticone_and_trusted_data(&self) -> ConsensusResult<Arc<PruningPointTrustedData>> {
+    pub fn get_pruning_point_anticone_and_trusted_data(
+        &self,
+    ) -> ConsensusResult<Arc<PruningPointTrustedData>> {
         let pp = self.pruning_point_store.read().pruning_point().unwrap();
         let mut cache_lock = self.cached_anticone.lock();
         if let Some(cache) = cache_lock.clone() {
@@ -946,8 +1174,14 @@ impl PruningProofManager {
 
         // The anticone is considered final only if the pruning point is at sufficient depth from virtual
         if virtual_state.ghostdag_data.blue_score >= pp_bs + self.anticone_finalization_depth {
-            let anticone = Arc::new(self.calculate_pruning_point_anticone_and_trusted_data(pp, virtual_state.parents.iter().copied()));
-            cache_lock.replace(CachedPruningPointData { pruning_point: pp, data: anticone.clone() });
+            let anticone = Arc::new(self.calculate_pruning_point_anticone_and_trusted_data(
+                pp,
+                virtual_state.parents.iter().copied(),
+            ));
+            cache_lock.replace(CachedPruningPointData {
+                pruning_point: pp,
+                data: anticone.clone(),
+            });
             Ok(anticone)
         } else {
             Err(ConsensusError::PruningPointInsufficientDepth)

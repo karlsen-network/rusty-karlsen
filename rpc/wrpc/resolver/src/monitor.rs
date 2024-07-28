@@ -54,7 +54,10 @@ impl fmt::Debug for Monitor {
 
 impl Monitor {
     pub fn new(args: &Arc<Args>) -> Self {
-        Self { args: args.clone(), ..Default::default() }
+        Self {
+            args: args.clone(),
+            ..Default::default()
+        }
     }
 
     pub fn verbose(&self) -> bool {
@@ -70,17 +73,30 @@ impl Monitor {
         let mut connections = self.connections();
 
         for params in PathParams::iter() {
-            let nodes = nodes.iter().filter(|node| node.params() == params).collect::<Vec<_>>();
+            let nodes = nodes
+                .iter()
+                .filter(|node| node.params() == params)
+                .collect::<Vec<_>>();
 
             let list = connections.entry(params).or_default();
 
-            let create: Vec<_> = nodes.iter().filter(|node| !list.iter().any(|connection| connection.node == ***node)).collect();
+            let create: Vec<_> = nodes
+                .iter()
+                .filter(|node| !list.iter().any(|connection| connection.node == ***node))
+                .collect();
 
-            let remove: Vec<_> =
-                list.iter().filter(|connection| !nodes.iter().any(|node| connection.node == **node)).cloned().collect();
+            let remove: Vec<_> = list
+                .iter()
+                .filter(|connection| !nodes.iter().any(|node| connection.node == **node))
+                .cloned()
+                .collect();
 
             for node in create {
-                let created = Arc::new(Connection::try_new((*node).clone(), self.channel.sender.clone(), &self.args)?);
+                let created = Arc::new(Connection::try_new(
+                    (*node).clone(),
+                    self.channel.sender.clone(),
+                    &self.args,
+                )?);
                 created.start()?;
                 list.push(created);
             }
@@ -116,7 +132,10 @@ impl Monitor {
     }
 
     pub async fn stop(&self) -> Result<()> {
-        self.shutdown_ctl.signal(()).await.expect("Monitor shutdown signal error");
+        self.shutdown_ctl
+            .signal(())
+            .await
+            .expect("Monitor shutdown signal error");
         Ok(())
     }
 
@@ -200,13 +219,22 @@ impl Monitor {
     /// Get the status of all nodes as a JSON string (available via `/status` endpoint if enabled).
     pub fn get_all_json(&self) -> String {
         let connections = self.connections();
-        let nodes = connections.values().flatten().map(Status::from).collect::<Vec<_>>();
+        let nodes = connections
+            .values()
+            .flatten()
+            .map(Status::from)
+            .collect::<Vec<_>>();
         serde_json::to_string(&nodes).unwrap()
     }
 
     /// Get JSON string representing node information (id, url, provider, link)
     pub fn get_json(&self, params: &PathParams) -> Option<String> {
-        self.descriptors.read().unwrap().get(params).cloned().map(|descriptor| descriptor.json)
+        self.descriptors
+            .read()
+            .unwrap()
+            .get(params)
+            .cloned()
+            .map(|descriptor| descriptor.json)
     }
 }
 
@@ -228,14 +256,32 @@ pub struct Status<'a> {
 impl<'a> From<&'a Arc<Connection>> for Status<'a> {
     fn from(connection: &'a Arc<Connection>) -> Self {
         let url = connection.node.address.as_str();
-        let provider_name = connection.node.provider.as_ref().map(|provider| provider.name.as_str());
-        let provider_url = connection.node.provider.as_ref().map(|provider| provider.url.as_str());
+        let provider_name = connection
+            .node
+            .provider
+            .as_ref()
+            .map(|provider| provider.name.as_str());
+        let provider_url = connection
+            .node
+            .provider
+            .as_ref()
+            .map(|provider| provider.url.as_str());
         let id = connection.node.id_string.as_str();
         let transport = connection.node.transport;
         let encoding = connection.node.encoding;
         let network = connection.node.network;
         let status = connection.status();
         let online = connection.online();
-        Self { id, url, provider_name, provider_url, transport, encoding, network, status, online }
+        Self {
+            id,
+            url,
+            provider_name,
+            provider_url,
+            transport,
+            encoding,
+            network,
+            status,
+            online,
+        }
     }
 }

@@ -31,7 +31,14 @@ impl Extender {
         external_port: u16,
         local_addr: SocketAddr,
     ) -> Self {
-        Self { tick_service, fetch_interval, deadline_sec, gateway, external_port, local_addr }
+        Self {
+            tick_service,
+            fetch_interval,
+            deadline_sec,
+            gateway,
+            external_port,
+            local_addr,
+        }
     }
 }
 
@@ -81,10 +88,17 @@ impl AsyncService for Extender {
 
     fn stop(self: Arc<Self>) -> AsyncServiceFuture {
         Box::pin(async move {
-            if let Err(err) = self.gateway.remove_port(igd_next::PortMappingProtocol::TCP, self.external_port).await {
+            if let Err(err) = self
+                .gateway
+                .remove_port(igd_next::PortMappingProtocol::TCP, self.external_port)
+                .await
+            {
                 warn!("[UPnP] Remove port mapping err: {err:?}");
             } else {
-                info!("[UPnP] Successfully removed port mapping, external port: {}", self.external_port);
+                info!(
+                    "[UPnP] Successfully removed port mapping, external port: {}",
+                    self.external_port
+                );
             }
             trace!("{} stopped", SERVICE_NAME);
             Ok(())

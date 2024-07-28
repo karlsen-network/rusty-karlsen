@@ -14,7 +14,12 @@ impl Rpc {
         ctx.term().writeln(format!("{v:#?}").crlf());
     }
 
-    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, mut argv: Vec<String>, cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        mut argv: Vec<String>,
+        cmd: &str,
+    ) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         let rpc = ctx.wallet().rpc_api().clone();
         // tprintln!(ctx, "{response}");
@@ -30,7 +35,8 @@ impl Rpc {
         let op_str_uc = op_str.to_case(Case::UpperCamel).to_string();
         // tprintln!(ctx, "uc: '{op_str_uc}'");
 
-        let op = RpcApiOps::from_str(op_str_uc.as_str()).ok_or(Error::custom(format!("No such rpc method: '{op_str}'")))?;
+        let op = RpcApiOps::from_str(op_str_uc.as_str())
+            .ok_or(Error::custom(format!("No such rpc method: '{op_str}'")))?;
 
         match op {
             RpcApiOps::Ping => {
@@ -50,7 +56,9 @@ impl Rpc {
                 self.println(&ctx, result);
             }
             RpcApiOps::GetCurrentNetwork => {
-                let result = rpc.get_current_network_call(GetCurrentNetworkRequest {}).await?;
+                let result = rpc
+                    .get_current_network_call(GetCurrentNetworkRequest {})
+                    .await?;
                 self.println(&ctx, result);
             }
             // RpcApiOps::SubmitBlock => {
@@ -62,7 +70,9 @@ impl Rpc {
             //     self.println(&ctx, result);
             // }
             RpcApiOps::GetPeerAddresses => {
-                let result = rpc.get_peer_addresses_call(GetPeerAddressesRequest {}).await?;
+                let result = rpc
+                    .get_peer_addresses_call(GetPeerAddressesRequest {})
+                    .await?;
                 self.println(&ctx, result);
             }
             RpcApiOps::GetSink => {
@@ -76,21 +86,33 @@ impl Rpc {
             RpcApiOps::GetMempoolEntries => {
                 // TODO
                 let result = rpc
-                    .get_mempool_entries_call(GetMempoolEntriesRequest { include_orphan_pool: true, filter_transaction_pool: true })
+                    .get_mempool_entries_call(GetMempoolEntriesRequest {
+                        include_orphan_pool: true,
+                        filter_transaction_pool: true,
+                    })
                     .await?;
                 self.println(&ctx, result);
             }
             RpcApiOps::GetConnectedPeerInfo => {
-                let result = rpc.get_connected_peer_info_call(GetConnectedPeerInfoRequest {}).await?;
+                let result = rpc
+                    .get_connected_peer_info_call(GetConnectedPeerInfoRequest {})
+                    .await?;
                 self.println(&ctx, result);
             }
             RpcApiOps::AddPeer => {
                 if argv.is_empty() {
-                    return Err(Error::custom("Usage: rpc addpeer <ip:port> [true|false for 'is_permanent']"));
+                    return Err(Error::custom(
+                        "Usage: rpc addpeer <ip:port> [true|false for 'is_permanent']",
+                    ));
                 }
                 let peer_address = argv.remove(0).parse::<RpcContextualPeerAddress>()?;
                 let is_permanent = argv.remove(0).parse::<bool>().unwrap_or(false);
-                let result = rpc.add_peer_call(AddPeerRequest { peer_address, is_permanent }).await?;
+                let result = rpc
+                    .add_peer_call(AddPeerRequest {
+                        peer_address,
+                        is_permanent,
+                    })
+                    .await?;
                 self.println(&ctx, result);
             }
             // RpcApiOps::SubmitTransaction => {
@@ -103,7 +125,12 @@ impl Rpc {
                 }
                 let hash = argv.remove(0);
                 let hash = RpcHash::from_hex(hash.as_str())?;
-                let result = rpc.get_block_call(GetBlockRequest { hash, include_transactions: true }).await?;
+                let result = rpc
+                    .get_block_call(GetBlockRequest {
+                        hash,
+                        include_transactions: true,
+                    })
+                    .await?;
                 self.println(&ctx, result);
             }
             // RpcApiOps::GetSubnetwork => {
@@ -123,7 +150,9 @@ impl Rpc {
                 self.println(&ctx, result);
             }
             RpcApiOps::GetBlockDagInfo => {
-                let result = rpc.get_block_dag_info_call(GetBlockDagInfoRequest {}).await?;
+                let result = rpc
+                    .get_block_dag_info_call(GetBlockDagInfoRequest {})
+                    .await?;
                 self.println(&ctx, result);
             }
             // RpcApiOps::ResolveFinalityConflict => {
@@ -142,17 +171,27 @@ impl Rpc {
                 if argv.is_empty() {
                     return Err(Error::custom("Please specify at least one address"));
                 }
-                let addresses = argv.iter().map(|s| Address::try_from(s.as_str())).collect::<std::result::Result<Vec<_>, _>>()?;
-                let result = rpc.get_utxos_by_addresses_call(GetUtxosByAddressesRequest { addresses }).await?;
+                let addresses = argv
+                    .iter()
+                    .map(|s| Address::try_from(s.as_str()))
+                    .collect::<std::result::Result<Vec<_>, _>>()?;
+                let result = rpc
+                    .get_utxos_by_addresses_call(GetUtxosByAddressesRequest { addresses })
+                    .await?;
                 self.println(&ctx, result);
             }
             RpcApiOps::GetBalanceByAddress => {
                 if argv.is_empty() {
                     return Err(Error::custom("Please specify at least one address"));
                 }
-                let addresses = argv.iter().map(|s| Address::try_from(s.as_str())).collect::<std::result::Result<Vec<_>, _>>()?;
+                let addresses = argv
+                    .iter()
+                    .map(|s| Address::try_from(s.as_str()))
+                    .collect::<std::result::Result<Vec<_>, _>>()?;
                 for address in addresses {
-                    let result = rpc.get_balance_by_address_call(GetBalanceByAddressRequest { address }).await?;
+                    let result = rpc
+                        .get_balance_by_address_call(GetBalanceByAddressRequest { address })
+                        .await?;
                     self.println(&ctx, sompi_to_karlsen(result.balance));
                 }
             }
@@ -160,12 +199,19 @@ impl Rpc {
                 if argv.is_empty() {
                     return Err(Error::custom("Please specify at least one address"));
                 }
-                let addresses = argv.iter().map(|s| Address::try_from(s.as_str())).collect::<std::result::Result<Vec<_>, _>>()?;
-                let result = rpc.get_balances_by_addresses_call(GetBalancesByAddressesRequest { addresses }).await?;
+                let addresses = argv
+                    .iter()
+                    .map(|s| Address::try_from(s.as_str()))
+                    .collect::<std::result::Result<Vec<_>, _>>()?;
+                let result = rpc
+                    .get_balances_by_addresses_call(GetBalancesByAddressesRequest { addresses })
+                    .await?;
                 self.println(&ctx, result);
             }
             RpcApiOps::GetSinkBlueScore => {
-                let result = rpc.get_sink_blue_score_call(GetSinkBlueScoreRequest {}).await?;
+                let result = rpc
+                    .get_sink_blue_score_call(GetSinkBlueScoreRequest {})
+                    .await?;
                 self.println(&ctx, result);
             }
             RpcApiOps::Ban => {
@@ -196,7 +242,10 @@ impl Rpc {
                 if argv.is_empty() {
                     return Err(Error::custom("Please specify at least one address"));
                 }
-                let addresses = argv.iter().map(|s| Address::try_from(s.as_str())).collect::<std::result::Result<Vec<_>, _>>()?;
+                let addresses = argv
+                    .iter()
+                    .map(|s| Address::try_from(s.as_str()))
+                    .collect::<std::result::Result<Vec<_>, _>>()?;
                 let include_orphan_pool = true;
                 let filter_transaction_pool = true;
                 let result = rpc
@@ -216,12 +265,18 @@ impl Rpc {
                 if argv.is_empty() {
                     return Err(Error::custom("Please specify a daa_score"));
                 }
-                let daa_score_result = argv.iter().map(|s| s.parse::<u64>()).collect::<std::result::Result<Vec<_>, _>>();
+                let daa_score_result = argv
+                    .iter()
+                    .map(|s| s.parse::<u64>())
+                    .collect::<std::result::Result<Vec<_>, _>>();
 
                 match daa_score_result {
                     Ok(daa_scores) => {
-                        let result =
-                            rpc.get_daa_score_timestamp_estimate_call(GetDaaScoreTimestampEstimateRequest { daa_scores }).await?;
+                        let result = rpc
+                            .get_daa_score_timestamp_estimate_call(
+                                GetDaaScoreTimestampEstimateRequest { daa_scores },
+                            )
+                            .await?;
                         self.println(&ctx, result);
                     }
                     Err(_err) => {
@@ -230,7 +285,10 @@ impl Rpc {
                 }
             }
             _ => {
-                tprintln!(ctx, "rpc method exists but is not supported by the cli: '{op_str}'\r\n");
+                tprintln!(
+                    ctx,
+                    "rpc method exists but is not supported by the cli: '{op_str}'\r\n"
+                );
                 return Ok(());
             }
         }
@@ -245,13 +303,20 @@ impl Rpc {
         // RpcApiOps that do not contain docs are not displayed
         let help = RpcApiOps::list()
             .iter()
-            .filter_map(|op| op.doc().is_not_empty().then_some((op.as_str().to_case(Case::Kebab).to_string(), op.doc())))
+            .filter_map(|op| {
+                op.doc()
+                    .is_not_empty()
+                    .then_some((op.as_str().to_case(Case::Kebab).to_string(), op.doc()))
+            })
             .collect::<Vec<(_, _)>>();
 
         ctx.term().help(&help, None)?;
 
         tprintln!(ctx);
-        tprintln!(ctx, "Please note that not all listed RPC methods are currently implemented");
+        tprintln!(
+            ctx,
+            "Please note that not all listed RPC methods are currently implemented"
+        );
         tprintln!(ctx);
 
         Ok(())

@@ -1,4 +1,6 @@
-use karlsen_grpc_core::protowire::{karlsend_request, karlsend_response, KarlsendRequest, KarlsendResponse};
+use karlsen_grpc_core::protowire::{
+    karlsend_request, karlsend_response, KarlsendRequest, KarlsendResponse,
+};
 
 pub(crate) trait Matcher<T> {
     fn is_matching(&self, response: T) -> bool;

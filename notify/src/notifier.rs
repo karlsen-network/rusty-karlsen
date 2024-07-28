@@ -128,7 +128,16 @@ where
         broadcasters: usize,
         policies: MutationPolicies,
     ) -> Self {
-        Self::with_sync(name, enabled_events, collectors, subscribers, subscription_context, broadcasters, policies, None)
+        Self::with_sync(
+            name,
+            enabled_events,
+            collectors,
+            subscribers,
+            subscription_context,
+            broadcasters,
+            policies,
+            None,
+        )
     }
 
     pub fn with_sync(
@@ -182,8 +191,15 @@ where
         self.inner.clone().start_notify(id, scope)
     }
 
-    pub fn try_execute_subscribe_command(&self, id: ListenerId, scope: Scope, command: Command) -> Result<()> {
-        self.inner.clone().execute_subscribe_command(id, scope, command)
+    pub fn try_execute_subscribe_command(
+        &self,
+        id: ListenerId,
+        scope: Scope,
+        command: Command,
+    ) -> Result<()> {
+        self.inner
+            .clone()
+            .execute_subscribe_command(id, scope, command)
     }
 
     pub fn try_stop_notify(&self, id: ListenerId, scope: Scope) -> Result<()> {
@@ -216,13 +232,23 @@ where
     C: Connection<Notification = N>,
 {
     async fn start_notify(&self, id: ListenerId, scope: Scope) -> Result<()> {
-        trace!("[Notifier {}] start sending to listener {} notifications of scope {:?}", self.inner.name, id, scope);
+        trace!(
+            "[Notifier {}] start sending to listener {} notifications of scope {:?}",
+            self.inner.name,
+            id,
+            scope
+        );
         self.inner.start_notify(id, scope)?;
         Ok(())
     }
 
     async fn stop_notify(&self, id: ListenerId, scope: Scope) -> Result<()> {
-        trace!("[Notifier {}] stop sending to listener {} notifications of scope {:?}", self.inner.name, id, scope);
+        trace!(
+            "[Notifier {}] stop sending to listener {} notifications of scope {:?}",
+            self.inner.name,
+            id,
+            scope
+        );
         self.inner.stop_notify(id, scope)?;
         Ok(())
     }
@@ -289,7 +315,10 @@ where
         policies: MutationPolicies,
         _sync: Option<Sender<()>>,
     ) -> Self {
-        assert!(broadcasters > 0, "a notifier requires a minimum of one broadcaster");
+        assert!(
+            broadcasters > 0,
+            "a notifier requires a minimum of one broadcaster"
+        );
         let notification_channel = Channel::unbounded();
         let broadcasters = (0..broadcasters)
             .map(|idx| {
@@ -304,13 +333,21 @@ where
             .collect::<Vec<_>>();
         let enabled_subscriber = EventArray::from_fn(|index| {
             let event: EventType = index.try_into().unwrap();
-            let mut iter = subscribers.iter().filter(|&x| x.handles_event_type(event)).cloned();
+            let mut iter = subscribers
+                .iter()
+                .filter(|&x| x.handles_event_type(event))
+                .cloned();
             let subscriber = iter.next();
-            assert!(iter.next().is_none(), "A notifier is not allowed to have more than one subscriber per event type");
+            assert!(
+                iter.next().is_none(),
+                "A notifier is not allowed to have more than one subscriber per event type"
+            );
             subscriber
         });
         let utxos_changed_capacity = match policies.utxo_changed {
-            UtxosChangedMutationPolicy::AddressSet => subscription_context.address_tracker.addresses_preallocation(),
+            UtxosChangedMutationPolicy::AddressSet => subscription_context
+                .address_tracker
+                .addresses_preallocation(),
             UtxosChangedMutationPolicy::Wildcard => None,
         };
         Self {
@@ -331,18 +368,31 @@ where
     }
 
     fn start(&self, notifier: Arc<Notifier<N, C>>) {
-        if self.started.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+        if self
+            .started
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+        {
             trace!("[Notifier {}] starting", self.name);
             self.subscribers.iter().for_each(|x| x.start());
-            self.collectors.iter().for_each(|x| x.clone().start(notifier.clone()));
+            self.collectors
+                .iter()
+                .for_each(|x| x.clone().start(notifier.clone()));
             self.broadcasters.iter().for_each(|x| x.start());
             trace!("[Notifier {}] started", self.name);
         } else {
-            trace!("[Notifier {}] start ignored since already started", self.name);
+            trace!(
+                "[Notifier {}] start ignored since already started",
+                self.name
+            );
         }
     }
 
-    fn register_new_listener(self: &Arc<Self>, connection: C, lifespan: ListenerLifespan) -> ListenerId {
+    fn register_new_listener(
+        self: &Arc<Self>,
+        connection: C,
+        lifespan: ListenerLifespan,
+    ) -> ListenerId {
         let mut listeners = self.listeners.lock();
         loop {
             let id = u64::from_le_bytes(rand::random::<[u8; 8]>());
@@ -351,7 +401,9 @@ where
             if let Entry::Vacant(e) = listeners.entry(id) {
                 trace!("[Notifier {}] registering listener {id}", self.name);
                 let listener = match lifespan {
-                    ListenerLifespan::Static(policies) => Listener::new_static(id, connection, &self.subscription_context, policies),
+                    ListenerLifespan::Static(policies) => {
+                        Listener::new_static(id, connection, &self.subscription_context, policies)
+                    }
                     ListenerLifespan::Dynamic => Listener::new(id, connection),
                 };
                 e.insert(listener);
@@ -370,22 +422,41 @@ where
             let mut events = listener
                 .subscriptions
                 .iter()
-                .filter_map(|subscription| if subscription.active() { Some(subscription.event_type()) } else { None })
+                .filter_map(|subscription| {
+                    if subscription.active() {
+                        Some(subscription.event_type())
+                    } else {
+                        None
+                    }
+                })
                 .collect_vec();
             events.drain(..).for_each(|event| {
-                let _ = self.execute_subscribe_command_impl(id, &mut listener, event.into(), Command::Stop);
+                let _ = self.execute_subscribe_command_impl(
+                    id,
+                    &mut listener,
+                    event.into(),
+                    Command::Stop,
+                );
             });
 
             // Close the listener
             trace!("[Notifier {}] closing listener {id}", self.name);
             listener.close();
         } else {
-            trace!("[Notifier {}] unregistering listener {id} error: unknown listener id", self.name);
+            trace!(
+                "[Notifier {}] unregistering listener {id} error: unknown listener id",
+                self.name
+            );
         }
         Ok(())
     }
 
-    pub fn execute_subscribe_command(&self, id: ListenerId, scope: Scope, command: Command) -> Result<()> {
+    pub fn execute_subscribe_command(
+        &self,
+        id: ListenerId,
+        scope: Scope,
+        command: Command,
+    ) -> Result<()> {
         let event = scope.event_type();
         if self.enabled_events[event] {
             let mut listeners = self.listeners.lock();
@@ -411,8 +482,16 @@ where
         let mut sync_feedback: bool = false;
         let event = scope.event_type();
         let scope_trace = format!("{scope}");
-        debug!("[Notifier {}] {command} notifying about {scope_trace} to listener {id} - {}", self.name, listener.connection());
-        let outcome = listener.mutate(Mutation::new(command, scope), self.policies, &self.subscription_context)?;
+        debug!(
+            "[Notifier {}] {command} notifying about {scope_trace} to listener {id} - {}",
+            self.name,
+            listener.connection()
+        );
+        let outcome = listener.mutate(
+            Mutation::new(command, scope),
+            self.policies,
+            &self.subscription_context,
+        )?;
         if outcome.has_changes() {
             trace!(
                 "[Notifier {}] {command} notifying listener {id} about {scope_trace} involves {} mutations",
@@ -422,15 +501,17 @@ where
             // Update broadcasters
             match (listener.subscriptions[event].active(), outcome.mutated) {
                 (true, Some(subscription)) => {
-                    self.broadcasters
-                        .iter()
-                        .try_for_each(|broadcaster| broadcaster.register(subscription.clone(), id, listener.connection()))?;
+                    self.broadcasters.iter().try_for_each(|broadcaster| {
+                        broadcaster.register(subscription.clone(), id, listener.connection())
+                    })?;
                 }
                 (true, None) => {
                     sync_feedback = true;
                 }
                 (false, _) => {
-                    self.broadcasters.iter().try_for_each(|broadcaster| broadcaster.unregister(event, id))?;
+                    self.broadcasters
+                        .iter()
+                        .try_for_each(|broadcaster| broadcaster.unregister(event, id))?;
                 }
             }
             self.apply_mutations(event, outcome.mutations, &self.subscription_context)?;
@@ -448,7 +529,12 @@ where
         Ok(())
     }
 
-    fn apply_mutations(&self, event: EventType, mutations: Vec<Mutation>, context: &SubscriptionContext) -> Result<()> {
+    fn apply_mutations(
+        &self,
+        event: EventType,
+        mutations: Vec<Mutation>,
+        context: &SubscriptionContext,
+    ) -> Result<()> {
         let mut subscriptions = self.subscriptions.lock();
         // Compound mutations
         let mut compound_result = None;
@@ -481,11 +567,20 @@ where
 
     fn renew_subscriptions(&self) -> Result<()> {
         let subscriptions = self.subscriptions.lock();
-        EVENT_TYPE_ARRAY.iter().copied().filter(|x| self.enabled_events[*x] && subscriptions[*x].active()).try_for_each(|x| {
-            let mutation = Mutation::new(Command::Start, subscriptions[x].scope(&self.subscription_context));
-            self.subscribers.iter().try_for_each(|subscriber| subscriber.mutate(mutation.clone()))?;
-            Ok(())
-        })
+        EVENT_TYPE_ARRAY
+            .iter()
+            .copied()
+            .filter(|x| self.enabled_events[*x] && subscriptions[*x].active())
+            .try_for_each(|x| {
+                let mutation = Mutation::new(
+                    Command::Start,
+                    subscriptions[x].scope(&self.subscription_context),
+                );
+                self.subscribers
+                    .iter()
+                    .try_for_each(|subscriber| subscriber.mutate(mutation.clone()))?;
+                Ok(())
+            })
     }
 
     async fn join(self: Arc<Self>) -> Result<()> {
@@ -502,13 +597,19 @@ where
             self.notification_channel.sender.close();
 
             debug!("[Notifier {}] stopping broadcasters", self.name);
-            join_all(self.broadcasters.iter().map(|x| x.join())).await.into_iter().collect::<std::result::Result<Vec<()>, _>>()?;
+            join_all(self.broadcasters.iter().map(|x| x.join()))
+                .await
+                .into_iter()
+                .collect::<std::result::Result<Vec<()>, _>>()?;
 
             // Once broadcasters exit, we can close the subscribers
             self.subscribers.iter().for_each(|s| s.close());
 
             debug!("[Notifier {}] stopping subscribers", self.name);
-            join_all(self.subscribers.iter().map(|x| x.join())).await.into_iter().collect::<std::result::Result<Vec<()>, _>>()?;
+            join_all(self.subscribers.iter().map(|x| x.join()))
+                .await
+                .into_iter()
+                .collect::<std::result::Result<Vec<()>, _>>()?;
 
             // Finally, we close all listeners, propagating shutdown by closing their channel when they have one
             // Note that unregistering listeners is no longer meaningful since both broadcasters and subscribers were stopped
@@ -521,7 +622,10 @@ where
                 }
             });
         } else {
-            trace!("[Notifier {}] join ignored since it was never started", self.name);
+            trace!(
+                "[Notifier {}] join ignored since it was never started",
+                self.name
+            );
             return Err(Error::AlreadyStoppedError);
         }
         debug!("[Notifier {}] terminated", self.name);
@@ -536,7 +640,8 @@ pub mod test_helpers {
         address::test_helpers::get_3_addresses,
         connection::ChannelConnection,
         notification::test_helpers::{
-            BlockAddedNotification, Data, TestNotification, UtxosChangedNotification, VirtualChainChangedNotification,
+            BlockAddedNotification, Data, TestNotification, UtxosChangedNotification,
+            VirtualChainChangedNotification,
         },
         scope::{BlockAddedScope, UtxosChangedScope, VirtualChainChangedScope},
         subscriber::test_helpers::SubscriptionMessage,
@@ -597,16 +702,27 @@ pub mod test_helpers {
 
     pub fn overall_test_steps(listener_id: ListenerId) -> Vec<Step> {
         fn m(command: Command) -> Option<Mutation> {
-            Some(Mutation { command, scope: Scope::BlockAdded(BlockAddedScope {}) })
+            Some(Mutation {
+                command,
+                scope: Scope::BlockAdded(BlockAddedScope {}),
+            })
         }
         let s = |command: Command| -> Option<SubscriptionMessage> {
-            Some(SubscriptionMessage { listener_id, mutation: Mutation { command, scope: Scope::BlockAdded(BlockAddedScope {}) } })
+            Some(SubscriptionMessage {
+                listener_id,
+                mutation: Mutation {
+                    command,
+                    scope: Scope::BlockAdded(BlockAddedScope {}),
+                },
+            })
         };
         fn n() -> TestNotification {
             TestNotification::BlockAdded(BlockAddedNotification::default())
         }
         fn e() -> Option<TestNotification> {
-            Some(TestNotification::BlockAdded(BlockAddedNotification::default()))
+            Some(TestNotification::BlockAdded(
+                BlockAddedNotification::default(),
+            ))
         }
 
         set_steps_data(vec![
@@ -652,23 +768,37 @@ pub mod test_helpers {
         fn m(command: Command, include_accepted_transaction_ids: bool) -> Option<Mutation> {
             Some(Mutation {
                 command,
-                scope: Scope::VirtualChainChanged(VirtualChainChangedScope::new(include_accepted_transaction_ids)),
+                scope: Scope::VirtualChainChanged(VirtualChainChangedScope::new(
+                    include_accepted_transaction_ids,
+                )),
             })
         }
-        let s = |command: Command, include_accepted_transaction_ids: bool| -> Option<SubscriptionMessage> {
+        let s = |command: Command,
+                 include_accepted_transaction_ids: bool|
+         -> Option<SubscriptionMessage> {
             Some(SubscriptionMessage {
                 listener_id,
                 mutation: Mutation {
                     command,
-                    scope: Scope::VirtualChainChanged(VirtualChainChangedScope::new(include_accepted_transaction_ids)),
+                    scope: Scope::VirtualChainChanged(VirtualChainChangedScope::new(
+                        include_accepted_transaction_ids,
+                    )),
                 },
             })
         };
         fn n(accepted_transaction_ids: Option<u64>) -> TestNotification {
-            TestNotification::VirtualChainChanged(VirtualChainChangedNotification { data: 0, accepted_transaction_ids })
+            TestNotification::VirtualChainChanged(VirtualChainChangedNotification {
+                data: 0,
+                accepted_transaction_ids,
+            })
         }
         fn e(accepted_transaction_ids: Option<u64>) -> Option<TestNotification> {
-            Some(TestNotification::VirtualChainChanged(VirtualChainChangedNotification { data: 0, accepted_transaction_ids }))
+            Some(TestNotification::VirtualChainChanged(
+                VirtualChainChangedNotification {
+                    data: 0,
+                    accepted_transaction_ids,
+                },
+            ))
         }
 
         set_steps_data(vec![
@@ -720,20 +850,38 @@ pub mod test_helpers {
     pub fn utxos_changed_test_steps(listener_id: ListenerId) -> Vec<Step> {
         let a_stock = get_3_addresses(true);
 
-        let a = |indexes: &[usize]| indexes.iter().map(|idx| (a_stock[*idx]).clone()).collect::<Vec<_>>();
+        let a = |indexes: &[usize]| {
+            indexes
+                .iter()
+                .map(|idx| (a_stock[*idx]).clone())
+                .collect::<Vec<_>>()
+        };
         let m = |command: Command, indexes: &[usize]| {
-            Some(Mutation { command, scope: Scope::UtxosChanged(UtxosChangedScope::new(a(indexes))) })
+            Some(Mutation {
+                command,
+                scope: Scope::UtxosChanged(UtxosChangedScope::new(a(indexes))),
+            })
         };
         let s = |command: Command, indexes: &[usize]| {
             Some(SubscriptionMessage {
                 listener_id,
-                mutation: Mutation { command, scope: Scope::UtxosChanged(UtxosChangedScope::new(a(indexes))) },
+                mutation: Mutation {
+                    command,
+                    scope: Scope::UtxosChanged(UtxosChangedScope::new(a(indexes))),
+                },
             })
         };
-        let n =
-            |indexes: &[usize]| TestNotification::UtxosChanged(UtxosChangedNotification { data: 0, addresses: Arc::new(a(indexes)) });
+        let n = |indexes: &[usize]| {
+            TestNotification::UtxosChanged(UtxosChangedNotification {
+                data: 0,
+                addresses: Arc::new(a(indexes)),
+            })
+        };
         let e = |indexes: &[usize]| {
-            Some(TestNotification::UtxosChanged(UtxosChangedNotification { data: 0, addresses: Arc::new(a(indexes)) }))
+            Some(TestNotification::UtxosChanged(UtxosChangedNotification {
+                data: 0,
+                addresses: Arc::new(a(indexes)),
+            }))
         };
 
         set_steps_data(vec![
@@ -774,7 +922,11 @@ pub mod test_helpers {
             },
             Step {
                 name: "L0[0, 2], L1[*], L2[1, 2] <= N[0,1,2]",
-                mutations: vec![m(Command::Start, &[2]), m(Command::Start, &[]), m(Command::Start, &[1])],
+                mutations: vec![
+                    m(Command::Start, &[2]),
+                    m(Command::Start, &[]),
+                    m(Command::Start, &[1]),
+                ],
                 expected_subscriptions: vec![None, s(Command::Start, &[]), None],
                 notification: n(&[0, 1, 2]),
                 expected_notifications: vec![e(&[0, 2]), e(&[0, 1, 2]), e(&[1, 2])],
@@ -788,14 +940,26 @@ pub mod test_helpers {
             },
             Step {
                 name: "L0[2], L1[1], L2[*] <= N[0, 1]",
-                mutations: vec![m(Command::Stop, &[0]), m(Command::Start, &[1]), m(Command::Start, &[])],
-                expected_subscriptions: vec![None, s(Command::Start, &[1, 2]), s(Command::Start, &[])],
+                mutations: vec![
+                    m(Command::Stop, &[0]),
+                    m(Command::Start, &[1]),
+                    m(Command::Start, &[]),
+                ],
+                expected_subscriptions: vec![
+                    None,
+                    s(Command::Start, &[1, 2]),
+                    s(Command::Start, &[]),
+                ],
                 notification: n(&[0, 1]),
                 expected_notifications: vec![None, e(&[1]), e(&[0, 1])],
             },
             Step {
                 name: "L2[*] <= N[0, 1, 2]",
-                mutations: vec![m(Command::Stop, &[]), m(Command::Stop, &[1]), m(Command::Stop, &[1])],
+                mutations: vec![
+                    m(Command::Stop, &[]),
+                    m(Command::Stop, &[1]),
+                    m(Command::Stop, &[1]),
+                ],
                 expected_subscriptions: vec![None, None, None],
                 notification: n(&[0, 1, 2]),
                 expected_notifications: vec![None, None, e(&[0, 1, 2])],
@@ -855,11 +1019,19 @@ mod tests {
             let (sync_sender, sync_receiver) = unbounded();
             let (notification_sender, notification_receiver) = unbounded();
             let (subscription_sender, subscription_receiver) = unbounded();
-            let collector = Arc::new(TestCollector::new(IDENT, notification_receiver, Arc::new(TestConverter::new())));
+            let collector = Arc::new(TestCollector::new(
+                IDENT,
+                notification_receiver,
+                Arc::new(TestConverter::new()),
+            ));
             let subscription_manager = Arc::new(SubscriptionManagerMock::new(subscription_sender));
             let subscription_context = SubscriptionContext::new();
-            let subscriber =
-                Arc::new(Subscriber::new("test", EVENT_TYPE_ARRAY[..].into(), subscription_manager, SUBSCRIPTION_MANAGER_ID));
+            let subscriber = Arc::new(Subscriber::new(
+                "test",
+                EVENT_TYPE_ARRAY[..].into(),
+                subscription_manager,
+                SUBSCRIPTION_MANAGER_ID,
+            ));
             let notifier = Arc::new(TestNotifier::with_sync(
                 "test",
                 EVENT_TYPE_ARRAY[..].into(),
@@ -876,7 +1048,8 @@ mod tests {
             for _ in 0..listener_count {
                 let (sender, receiver) = unbounded();
                 let connection = TestConnection::new(IDENT, sender, ChannelType::Closable);
-                listeners.push(notifier.register_new_listener(connection, ListenerLifespan::Dynamic));
+                listeners
+                    .push(notifier.register_new_listener(connection, ListenerLifespan::Dynamic));
                 notification_receivers.push(receiver);
             }
             // Return the built test object
@@ -905,14 +1078,21 @@ mod tests {
                         trace!("Mutation #{idx}");
                         assert!(
                             self.notifier
-                                .execute_subscribe_command(self.listeners[idx], mutation.scope.clone(), mutation.command)
+                                .execute_subscribe_command(
+                                    self.listeners[idx],
+                                    mutation.scope.clone(),
+                                    mutation.command
+                                )
                                 .await
                                 .is_ok(),
                             "executing the subscription command {mutation:?} failed"
                         );
                         trace!("Receiving sync message #{step_idx} after subscribing");
                         assert!(
-                            timeout(SYNC_MAX_DELAY, self.sync_receiver.recv()).await.unwrap().is_ok(),
+                            timeout(SYNC_MAX_DELAY, self.sync_receiver.recv())
+                                .await
+                                .unwrap()
+                                .is_ok(),
                             "{} - {}: receiving a sync message failed",
                             self.name,
                             step.name
@@ -946,21 +1126,27 @@ mod tests {
                 // Send the notification
                 trace!("Sending notification #{step_idx}");
                 assert!(
-                    self.notification_sender.send_blocking(step.notification.clone()).is_ok(),
+                    self.notification_sender
+                        .send_blocking(step.notification.clone())
+                        .is_ok(),
                     "{} - {}: sending the notification failed",
                     self.name,
                     step.name
                 );
                 trace!("Receiving sync message #{step_idx} after notifying");
                 assert!(
-                    timeout(SYNC_MAX_DELAY, self.sync_receiver.recv()).await.unwrap().is_ok(),
+                    timeout(SYNC_MAX_DELAY, self.sync_receiver.recv())
+                        .await
+                        .unwrap()
+                        .is_ok(),
                     "{} - {}: receiving a sync message failed",
                     self.name,
                     step.name
                 );
 
                 // Check what the listeners do receive
-                for (idx, expected_notifications) in step.expected_notifications.iter().enumerate() {
+                for (idx, expected_notifications) in step.expected_notifications.iter().enumerate()
+                {
                     if let Some(ref expected_notifications) = expected_notifications {
                         let notification = self.notification_receivers[idx].recv().await.unwrap();
                         assert_eq!(
@@ -980,28 +1166,43 @@ mod tests {
                 }
             }
             self.notification_sender.close();
-            assert!(self.notifier.join().await.is_ok(), "notifier failed to stop");
+            assert!(
+                self.notifier.join().await.is_ok(),
+                "notifier failed to stop"
+            );
         }
     }
 
     #[tokio::test]
     async fn test_overall() {
         karlsen_core::log::try_init_logger("trace,karlsen_notify=trace");
-        let test = Test::new("BlockAdded broadcast (OverallSubscription type)", 2, overall_test_steps(SUBSCRIPTION_MANAGER_ID));
+        let test = Test::new(
+            "BlockAdded broadcast (OverallSubscription type)",
+            2,
+            overall_test_steps(SUBSCRIPTION_MANAGER_ID),
+        );
         test.run().await;
     }
 
     #[tokio::test]
     async fn test_virtual_chain_changed() {
         karlsen_core::log::try_init_logger("trace,karlsen_notify=trace");
-        let test = Test::new("VirtualChainChanged broadcast", 2, virtual_chain_changed_test_steps(SUBSCRIPTION_MANAGER_ID));
+        let test = Test::new(
+            "VirtualChainChanged broadcast",
+            2,
+            virtual_chain_changed_test_steps(SUBSCRIPTION_MANAGER_ID),
+        );
         test.run().await;
     }
 
     #[tokio::test]
     async fn test_utxos_changed() {
         karlsen_core::log::try_init_logger("trace,karlsen_notify=trace");
-        let test = Test::new("UtxosChanged broadcast", 3, utxos_changed_test_steps(SUBSCRIPTION_MANAGER_ID));
+        let test = Test::new(
+            "UtxosChanged broadcast",
+            3,
+            utxos_changed_test_steps(SUBSCRIPTION_MANAGER_ID),
+        );
         test.run().await;
     }
 }

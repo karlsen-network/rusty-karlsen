@@ -5,12 +5,14 @@ use subtle::{Choice, ConstantTimeEq};
 use zeroize::{Zeroize, Zeroizing};
 
 use crate::{
-    result::Result, types::*, ChildNumber, DerivationPath, ExtendedKey, ExtendedKeyAttrs, ExtendedPublicKey, Prefix, PrivateKey,
-    PublicKey,
+    result::Result, types::*, ChildNumber, DerivationPath, ExtendedKey, ExtendedKeyAttrs,
+    ExtendedPublicKey, Prefix, PrivateKey, PublicKey,
 };
 
 /// Derivation domain separator for BIP39 keys.
-const BIP39_DOMAIN_SEPARATOR: [u8; 12] = [0x42, 0x69, 0x74, 0x63, 0x6f, 0x69, 0x6e, 0x20, 0x73, 0x65, 0x65, 0x64];
+const BIP39_DOMAIN_SEPARATOR: [u8; 12] = [
+    0x42, 0x69, 0x74, 0x63, 0x6f, 0x69, 0x6e, 0x20, 0x73, 0x65, 0x65, 0x64,
+];
 
 /// Extended private keys derived using BIP32.
 ///
@@ -97,7 +99,8 @@ where
     }
 
     pub fn derive_path(self, path: &DerivationPath) -> Result<Self> {
-        path.iter().try_fold(self, |key, child_num| key.derive_child(child_num))
+        path.iter()
+            .try_fold(self, |key, child_num| key.derive_child(child_num))
     }
 
     /// Borrow the derived private key value.
@@ -127,7 +130,11 @@ where
         let mut key_bytes = [0u8; KEY_SIZE + 1];
         key_bytes[1..].copy_from_slice(&self.to_bytes());
 
-        ExtendedKey { prefix, attrs: self.attrs.clone(), key_bytes }
+        ExtendedKey {
+            prefix,
+            attrs: self.attrs.clone(),
+            key_bytes,
+        }
     }
 
     pub fn to_string(&self, prefix: Prefix) -> Zeroizing<String> {
@@ -145,7 +152,10 @@ where
 
         let result = key_a.ct_eq(&key_b)
             & self.attrs.depth.ct_eq(&other.attrs.depth)
-            & self.attrs.parent_fingerprint.ct_eq(&other.attrs.parent_fingerprint)
+            & self
+                .attrs
+                .parent_fingerprint
+                .ct_eq(&other.attrs.parent_fingerprint)
             & self.attrs.child_number.0.ct_eq(&other.attrs.child_number.0)
             & self.attrs.chain_code.ct_eq(&other.attrs.chain_code);
 
@@ -162,7 +172,10 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // TODO(tarcieri): use `finish_non_exhaustive` when stable
-        f.debug_struct("ExtendedPrivateKey").field("private_key", &"...").field("attrs", &self.attrs).finish()
+        f.debug_struct("ExtendedPrivateKey")
+            .field("private_key", &"...")
+            .field("attrs", &self.attrs)
+            .finish()
     }
 }
 

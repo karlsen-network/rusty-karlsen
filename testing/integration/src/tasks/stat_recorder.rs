@@ -18,17 +18,36 @@ pub struct StatRecorderTask {
 }
 
 impl StatRecorderTask {
-    pub fn build(tick: Duration, folder: String, file_prefix: String, timestamp: bool) -> Arc<Self> {
-        Arc::new(Self { tick, folder, file_prefix, timestamp })
+    pub fn build(
+        tick: Duration,
+        folder: String,
+        file_prefix: String,
+        timestamp: bool,
+    ) -> Arc<Self> {
+        Arc::new(Self {
+            tick,
+            folder,
+            file_prefix,
+            timestamp,
+        })
     }
 
-    pub fn optional(tick: Duration, folder: String, file_prefix: Option<String>, timestamp: bool) -> Option<DynTask> {
+    pub fn optional(
+        tick: Duration,
+        folder: String,
+        file_prefix: Option<String>,
+        timestamp: bool,
+    ) -> Option<DynTask> {
         file_prefix.map(|file_prefix| Self::build(tick, folder, file_prefix, timestamp) as DynTask)
     }
 
     pub fn file_name(&self) -> String {
         match self.timestamp {
-            true => format!("{}-{}.csv", self.file_prefix, chrono::Local::now().format("%Y-%m-%d %H-%M-%S")),
+            true => format!(
+                "{}-{}.csv",
+                self.file_prefix,
+                chrono::Local::now().format("%Y-%m-%d %H-%M-%S")
+            ),
             false => format!("{}.csv", self.file_prefix),
         }
     }
@@ -45,7 +64,10 @@ impl Task for StatRecorderTask {
             std::fs::create_dir_all(PathBuf::from(&folder)).unwrap();
             {
                 let file_path = PathBuf::from(&folder).join(file_name).into_os_string();
-                karlsen_core::warn!("Recording memory metrics into file {}", file_path.to_str().unwrap());
+                karlsen_core::warn!(
+                    "Recording memory metrics into file {}",
+                    file_path.to_str().unwrap()
+                );
                 let f = std::fs::File::create(file_path).unwrap();
                 let mut f = BufWriter::new(f);
                 let start_time = Instant::now();
@@ -60,8 +82,16 @@ impl Task for StatRecorderTask {
                         _ = sleep(stopwatch + tick - Instant::now()) => {}
                     }
                     stopwatch = Instant::now();
-                    let ProcessMemoryInfo { resident_set_size, .. } = get_process_memory_info().unwrap();
-                    writeln!(f, "{}, {}", (stopwatch - start_time).as_millis() as f64 / 1000.0 / 60.0, resident_set_size).unwrap();
+                    let ProcessMemoryInfo {
+                        resident_set_size, ..
+                    } = get_process_memory_info().unwrap();
+                    writeln!(
+                        f,
+                        "{}, {}",
+                        (stopwatch - start_time).as_millis() as f64 / 1000.0 / 60.0,
+                        resident_set_size
+                    )
+                    .unwrap();
                     f.flush().unwrap();
                 }
             }

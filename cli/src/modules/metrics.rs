@@ -25,7 +25,8 @@ pub struct Metrics {
 impl Default for Metrics {
     fn default() -> Self {
         Metrics {
-            settings: SettingsStore::try_new("metrics").expect("Failed to create miner settings store"),
+            settings: SettingsStore::try_new("metrics")
+                .expect("Failed to create miner settings store"),
             mute: Arc::new(AtomicBool::new(true)),
             metrics: Arc::new(MetricsProcessor::default()),
         }
@@ -56,11 +57,19 @@ impl Handler for Metrics {
     }
 
     async fn stop(self: Arc<Self>, _ctx: &Arc<dyn Context>) -> cli::Result<()> {
-        self.metrics.stop_task().await.map_err(|err| err.to_string())?;
+        self.metrics
+            .stop_task()
+            .await
+            .map_err(|err| err.to_string())?;
         Ok(())
     }
 
-    async fn handle(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, cmd: &str) -> cli::Result<()> {
+    async fn handle(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        argv: Vec<String>,
+        cmd: &str,
+    ) -> cli::Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         self.main(ctx, argv, cmd).await.map_err(|e| e.into())
     }
@@ -79,7 +88,12 @@ impl Metrics {
         self.metrics.sink()
     }
 
-    async fn main(self: Arc<Self>, ctx: Arc<KarlsenCli>, mut argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: Arc<KarlsenCli>,
+        mut argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         if argv.is_empty() {
             return self.display_help(ctx, argv).await;
         }
@@ -95,13 +109,23 @@ impl Metrics {
         Ok(())
     }
 
-    pub async fn display_help(self: &Arc<Self>, ctx: Arc<KarlsenCli>, _argv: Vec<String>) -> Result<()> {
+    pub async fn display_help(
+        self: &Arc<Self>,
+        ctx: Arc<KarlsenCli>,
+        _argv: Vec<String>,
+    ) -> Result<()> {
         // disable help in non-nw environments
         if !is_nw() {
             return Ok(());
         }
 
-        ctx.term().help(&[("open", "Open metrics window"), ("close", "Close metrics window")], None)?;
+        ctx.term().help(
+            &[
+                ("open", "Open metrics window"),
+                ("close", "Close metrics window"),
+            ],
+            None,
+        )?;
 
         Ok(())
     }

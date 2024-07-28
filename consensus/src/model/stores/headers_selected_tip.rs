@@ -24,7 +24,10 @@ pub struct DbHeadersSelectedTipStore {
 
 impl DbHeadersSelectedTipStore {
     pub fn new(db: Arc<DB>) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbItem::new(db, DatabaseStorePrefixes::HeadersSelectedTip.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbItem::new(db, DatabaseStorePrefixes::HeadersSelectedTip.into()),
+        }
     }
 
     pub fn clone_with_new_cache(&self) -> Self {

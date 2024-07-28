@@ -9,7 +9,9 @@ use std::sync::Arc;
 
 impl From<&Vec<Arc<Header>>> for protowire::PruningPointProofHeaderArray {
     fn from(v: &Vec<Arc<Header>>) -> Self {
-        Self { headers: v.iter().map(|header| header.as_ref().into()).collect() }
+        Self {
+            headers: v.iter().map(|header| header.as_ref().into()).collect(),
+        }
     }
 }
 
@@ -21,6 +23,9 @@ impl TryFrom<protowire::PruningPointProofHeaderArray> for Vec<Arc<Header>> {
     type Error = ConversionError;
 
     fn try_from(v: protowire::PruningPointProofHeaderArray) -> Result<Self, Self::Error> {
-        v.headers.into_iter().map(|x| x.try_into().map(Arc::new)).collect()
+        v.headers
+            .into_iter()
+            .map(|x| x.try_into().map(Arc::new))
+            .collect()
     }
 }

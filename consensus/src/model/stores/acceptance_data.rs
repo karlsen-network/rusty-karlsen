@@ -30,7 +30,11 @@ struct AcceptanceDataEntry(Arc<AcceptanceData>);
 
 impl MemSizeEstimator for AcceptanceDataEntry {
     fn estimate_mem_bytes(&self) -> usize {
-        self.0.iter().map(|l| l.accepted_transactions.len()).sum::<usize>() * size_of::<AcceptedTxEntry>()
+        self.0
+            .iter()
+            .map(|l| l.accepted_transactions.len())
+            .sum::<usize>()
+            * size_of::<AcceptedTxEntry>()
             + self.0.len() * size_of::<MergesetBlockAcceptanceData>()
             + size_of::<AcceptanceData>()
             + size_of::<Self>()
@@ -46,18 +50,34 @@ pub struct DbAcceptanceDataStore {
 
 impl DbAcceptanceDataStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::AcceptanceData.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbAccess::new(
+                db,
+                cache_policy,
+                DatabaseStorePrefixes::AcceptanceData.into(),
+            ),
+        }
     }
 
     pub fn clone_with_new_cache(&self, cache_policy: CachePolicy) -> Self {
         Self::new(Arc::clone(&self.db), cache_policy)
     }
 
-    pub fn insert_batch(&self, batch: &mut WriteBatch, hash: Hash, acceptance_data: Arc<AcceptanceData>) -> Result<(), StoreError> {
+    pub fn insert_batch(
+        &self,
+        batch: &mut WriteBatch,
+        hash: Hash,
+        acceptance_data: Arc<AcceptanceData>,
+    ) -> Result<(), StoreError> {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access.write(BatchDbWriter::new(batch), hash, AcceptanceDataEntry(acceptance_data))?;
+        self.access.write(
+            BatchDbWriter::new(batch),
+            hash,
+            AcceptanceDataEntry(acceptance_data),
+        )?;
         Ok(())
     }
 
@@ -77,7 +97,11 @@ impl AcceptanceDataStore for DbAcceptanceDataStore {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access.write(DirectDbWriter::new(&self.db), hash, AcceptanceDataEntry(acceptance_data))?;
+        self.access.write(
+            DirectDbWriter::new(&self.db),
+            hash,
+            AcceptanceDataEntry(acceptance_data),
+        )?;
         Ok(())
     }
 

@@ -31,13 +31,21 @@ pub struct UtxoIndex {
 
 impl UtxoIndex {
     /// Creates a new [`UtxoIndex`] within a [`RwLock`]
-    pub fn new(consensus_manager: Arc<ConsensusManager>, db: Arc<DB>) -> UtxoIndexResult<Arc<RwLock<Self>>> {
-        let mut utxoindex = Self { consensus_manager: consensus_manager.clone(), store: Store::new(db) };
+    pub fn new(
+        consensus_manager: Arc<ConsensusManager>,
+        db: Arc<DB>,
+    ) -> UtxoIndexResult<Arc<RwLock<Self>>> {
+        let mut utxoindex = Self {
+            consensus_manager: consensus_manager.clone(),
+            store: Store::new(db),
+        };
         if !utxoindex.is_synced()? {
             utxoindex.resync()?;
         }
         let utxoindex = Arc::new(RwLock::new(utxoindex));
-        consensus_manager.register_consensus_reset_handler(Arc::new(UtxoIndexConsensusResetHandler::new(Arc::downgrade(&utxoindex))));
+        consensus_manager.register_consensus_reset_handler(Arc::new(
+            UtxoIndexConsensusResetHandler::new(Arc::downgrade(&utxoindex)),
+        ));
         Ok(utxoindex)
     }
 }
@@ -51,17 +59,33 @@ impl UtxoIndexApi for UtxoIndex {
     }
 
     /// Retrieve utxos by script public keys from the utxoindex db.
-    fn get_utxos_by_script_public_keys(&self, script_public_keys: ScriptPublicKeys) -> StoreResult<UtxoSetByScriptPublicKey> {
-        trace!("[{0}] retrieving utxos from {1} script public keys", IDENT, script_public_keys.len());
+    fn get_utxos_by_script_public_keys(
+        &self,
+        script_public_keys: ScriptPublicKeys,
+    ) -> StoreResult<UtxoSetByScriptPublicKey> {
+        trace!(
+            "[{0}] retrieving utxos from {1} script public keys",
+            IDENT,
+            script_public_keys.len()
+        );
 
-        self.store.get_utxos_by_script_public_key(script_public_keys)
+        self.store
+            .get_utxos_by_script_public_key(script_public_keys)
     }
 
     /// Retrieve utxos by script public keys from the utxoindex db.
-    fn get_balance_by_script_public_keys(&self, script_public_keys: ScriptPublicKeys) -> StoreResult<BalanceByScriptPublicKey> {
-        trace!("[{0}] retrieving utxos from {1} script public keys", IDENT, script_public_keys.len());
+    fn get_balance_by_script_public_keys(
+        &self,
+        script_public_keys: ScriptPublicKeys,
+    ) -> StoreResult<BalanceByScriptPublicKey> {
+        trace!(
+            "[{0}] retrieving utxos from {1} script public keys",
+            IDENT,
+            script_public_keys.len()
+        );
 
-        self.store.get_balance_by_script_public_key(script_public_keys)
+        self.store
+            .get_balance_by_script_public_key(script_public_keys)
     }
 
     /// Retrieve the stored tips of the utxoindex.
@@ -74,7 +98,11 @@ impl UtxoIndexApi for UtxoIndex {
     /// Updates the [UtxoIndex] via the virtual state supplied:
     /// 1) Saves updated utxo differences, virtual parent hashes and circulating supply to the database.
     /// 2) returns an event about utxoindex changes.
-    fn update(&mut self, utxo_diff: Arc<UtxoDiff>, tips: Arc<Vec<Hash>>) -> UtxoIndexResult<UtxoChanges> {
+    fn update(
+        &mut self,
+        utxo_diff: Arc<UtxoDiff>,
+        tips: Arc<Vec<Hash>>,
+    ) -> UtxoIndexResult<UtxoChanges> {
         trace!("[{0}] updating...", IDENT);
         trace!("[{0}] adding {1} utxos", IDENT, utxo_diff.add.len());
         trace!("[{0}] removing {1} utxos", IDENT, utxo_diff.remove.len());
@@ -85,13 +113,19 @@ impl UtxoIndexApi for UtxoIndex {
         utxoindex_changes.set_tips(tips.unwrap_or_clone().to_vec());
 
         // Commit changed utxo state to db
-        self.store.update_utxo_state(&utxoindex_changes.utxo_changes.added, &utxoindex_changes.utxo_changes.removed, false)?;
+        self.store.update_utxo_state(
+            &utxoindex_changes.utxo_changes.added,
+            &utxoindex_changes.utxo_changes.removed,
+            false,
+        )?;
 
         // Commit circulating supply change (if monotonic) to db.
         if utxoindex_changes.supply_change > 0 {
             //we force monotonic here
-            let _circulating_supply =
-                self.store.update_circulating_supply(utxoindex_changes.supply_change as CirculatingSupply, false)?;
+            let _circulating_supply = self.store.update_circulating_supply(
+                utxoindex_changes.supply_change as CirculatingSupply,
+                false,
+            )?;
         }
 
         // Commit new consensus virtual tips.
@@ -146,7 +180,11 @@ impl UtxoIndexApi for UtxoIndex {
         //Initial batch is without specified seek and none-skipping.
         let mut virtual_utxo_batch = session.get_virtual_utxos(None, RESYNC_CHUNK_SIZE, false);
         let mut current_chunk_size = virtual_utxo_batch.len();
-        trace!("[{0}] resyncing with batch of {1} utxos from consensus db", IDENT, current_chunk_size);
+        trace!(
+            "[{0}] resyncing with batch of {1} utxos from consensus db",
+            IDENT,
+            current_chunk_size
+        );
         // While loop stops resync attempts from an empty utxo db, and unneeded processing when the utxo state size happens to be a multiple of [`RESYNC_CHUNK_SIZE`]
         while current_chunk_size > 0 {
             // Potential optimization TODO: iterating virtual utxos into an [UtxoIndexChanges] struct is a bit of overhead (i.e. a potentially unneeded loop),
@@ -154,35 +192,60 @@ impl UtxoIndexApi for UtxoIndex {
 
             let mut utxoindex_changes = UtxoIndexChanges::new(); //reset changes.
 
-            let next_outpoint_from = Some(virtual_utxo_batch.last().expect("expected a last outpoint").0);
+            let next_outpoint_from = Some(
+                virtual_utxo_batch
+                    .last()
+                    .expect("expected a last outpoint")
+                    .0,
+            );
             utxoindex_changes.add_utxos_from_vector(virtual_utxo_batch);
 
             circulating_supply += utxoindex_changes.supply_change as CirculatingSupply;
 
-            self.store.update_utxo_state(&utxoindex_changes.utxo_changes.added, &utxoindex_changes.utxo_changes.removed, true)?;
+            self.store.update_utxo_state(
+                &utxoindex_changes.utxo_changes.added,
+                &utxoindex_changes.utxo_changes.removed,
+                true,
+            )?;
 
             if current_chunk_size < RESYNC_CHUNK_SIZE {
                 break;
             };
 
-            virtual_utxo_batch = session.get_virtual_utxos(next_outpoint_from, RESYNC_CHUNK_SIZE, true);
+            virtual_utxo_batch =
+                session.get_virtual_utxos(next_outpoint_from, RESYNC_CHUNK_SIZE, true);
             current_chunk_size = virtual_utxo_batch.len();
-            trace!("[{0}] resyncing with batch of {1} utxos from consensus db", IDENT, current_chunk_size);
+            trace!(
+                "[{0}] resyncing with batch of {1} utxos from consensus db",
+                IDENT,
+                current_chunk_size
+            );
         }
 
         // Commit to the remaining stores.
 
-        trace!("[{0}] committing circulating supply {1} from consensus db", IDENT, circulating_supply);
-        self.store.insert_circulating_supply(circulating_supply, true)?;
+        trace!(
+            "[{0}] committing circulating supply {1} from consensus db",
+            IDENT,
+            circulating_supply
+        );
+        self.store
+            .insert_circulating_supply(circulating_supply, true)?;
 
-        trace!("[{0}] committing consensus tips {consensus_tips:?} from consensus db", IDENT);
+        trace!(
+            "[{0}] committing consensus tips {consensus_tips:?} from consensus db",
+            IDENT
+        );
         self.store.set_tips(consensus_tips, true)?;
 
         Ok(())
     }
 
     // This can have a big memory footprint, so it should be used only for tests.
-    fn get_all_outpoints(&self) -> StoreResult<std::collections::HashSet<karlsen_consensus_core::tx::TransactionOutpoint>> {
+    fn get_all_outpoints(
+        &self,
+    ) -> StoreResult<std::collections::HashSet<karlsen_consensus_core::tx::TransactionOutpoint>>
+    {
         self.store.get_all_outpoints()
     }
 }
@@ -213,7 +276,10 @@ impl ConsensusResetHandler for UtxoIndexConsensusResetHandler {
 
 #[cfg(test)]
 mod tests {
-    use crate::{api::UtxoIndexApi, model::CirculatingSupply, testutils::virtual_change_emulator::VirtualChangeEmulator, UtxoIndex};
+    use crate::{
+        api::UtxoIndexApi, model::CirculatingSupply,
+        testutils::virtual_change_emulator::VirtualChangeEmulator, UtxoIndex,
+    };
     use karlsen_consensus::{
         config::Config,
         consensus::test_consensus::TestConsensus,
@@ -244,25 +310,38 @@ mod tests {
 
         // Initialize all components, and virtual change emulator proxy.
         let mut virtual_change_emulator = VirtualChangeEmulator::new();
-        let (_utxoindex_db_lifetime, utxoindex_db) = create_temp_db!(ConnBuilder::default().with_files_limit(10));
+        let (_utxoindex_db_lifetime, utxoindex_db) =
+            create_temp_db!(ConnBuilder::default().with_files_limit(10));
         let config = Config::new(DEVNET_PARAMS);
         let tc = Arc::new(TestConsensus::new(&config));
         let consensus_manager = Arc::new(ConsensusManager::from_consensus(tc.consensus_clone()));
         let utxoindex = UtxoIndex::new(consensus_manager, utxoindex_db).unwrap();
 
         // Fill initial utxo collection in emulator.
-        virtual_change_emulator.fill_utxo_collection(resync_utxo_collection_size, script_public_key_pool_size); //10_000 utxos belonging to 100 script public keys
+        virtual_change_emulator
+            .fill_utxo_collection(resync_utxo_collection_size, script_public_key_pool_size); //10_000 utxos belonging to 100 script public keys
 
         // Create a virtual state for the test consensus from emulator variables.
         let test_consensus_virtual_state = Arc::new(VirtualState {
             daa_score: 0,
             parents: Vec::from_iter(virtual_change_emulator.tips.clone()),
-            utxo_diff: UtxoDiff::new(virtual_change_emulator.utxo_collection.clone(), UtxoCollection::new()),
+            utxo_diff: UtxoDiff::new(
+                virtual_change_emulator.utxo_collection.clone(),
+                UtxoCollection::new(),
+            ),
             ..Default::default()
         });
         // Write virtual state from emulator to test_consensus db.
-        tc.virtual_stores.write().utxo_set.write_diff(&test_consensus_virtual_state.utxo_diff).expect("expected write diff");
-        tc.virtual_stores.write().state.set(test_consensus_virtual_state).expect("setting of state");
+        tc.virtual_stores
+            .write()
+            .utxo_set
+            .write_diff(&test_consensus_virtual_state.utxo_diff)
+            .expect("expected write diff");
+        tc.virtual_stores
+            .write()
+            .state
+            .set(test_consensus_virtual_state)
+            .expect("setting of state");
 
         // Sync utxoindex from scratch.
         assert!(!utxoindex.read().is_synced().expect("expected bool"));
@@ -284,10 +363,16 @@ mod tests {
             consensus_supply += utxo_entry.amount;
             let indexed_utxos = utxoindex
                 .read()
-                .get_utxos_by_script_public_keys(HashSet::from_iter(vec![utxo_entry.script_public_key.clone()]))
+                .get_utxos_by_script_public_keys(HashSet::from_iter(vec![utxo_entry
+                    .script_public_key
+                    .clone()]))
                 .expect("expected script public key to be in database");
-            for (indexed_script_public_key, indexed_compact_utxo_collection) in indexed_utxos.into_iter() {
-                let compact_utxo = indexed_compact_utxo_collection.get(&tx_outpoint).expect("expected outpoint as key");
+            for (indexed_script_public_key, indexed_compact_utxo_collection) in
+                indexed_utxos.into_iter()
+            {
+                let compact_utxo = indexed_compact_utxo_collection
+                    .get(&tx_outpoint)
+                    .expect("expected outpoint as key");
                 assert_eq!(indexed_script_public_key, utxo_entry.script_public_key);
                 assert_eq!(utxo_entry.amount, compact_utxo.amount);
                 assert_eq!(utxo_entry.block_daa_score, compact_utxo.block_daa_score);
@@ -297,17 +382,36 @@ mod tests {
         }
 
         assert_eq!(i, consensus_utxo_set_size);
-        assert_eq!(utxoindex.read().get_circulating_supply().expect("expected circulating supply"), consensus_supply);
-        assert_eq!(*utxoindex.read().get_utxo_index_tips().expect("expected circulating supply"), tc.get_virtual_parents());
+        assert_eq!(
+            utxoindex
+                .read()
+                .get_circulating_supply()
+                .expect("expected circulating supply"),
+            consensus_supply
+        );
+        assert_eq!(
+            *utxoindex
+                .read()
+                .get_utxo_index_tips()
+                .expect("expected circulating supply"),
+            tc.get_virtual_parents()
+        );
 
         // Test update: Change and signal new virtual state.
         virtual_change_emulator.clear_virtual_state();
-        virtual_change_emulator.change_virtual_state(update_utxo_collection_size, update_utxo_collection_size, 1);
+        virtual_change_emulator.change_virtual_state(
+            update_utxo_collection_size,
+            update_utxo_collection_size,
+            1,
+        );
 
         let now = Instant::now();
         let utxo_changes = utxoindex
             .write()
-            .update(virtual_change_emulator.accumulated_utxo_diff.clone(), virtual_change_emulator.virtual_parents)
+            .update(
+                virtual_change_emulator.accumulated_utxo_diff.clone(),
+                virtual_change_emulator.virtual_parents,
+            )
             .expect("expected utxoindex utxo changes");
         let bench_time = now.elapsed().as_millis();
         // TODO: move over to proper benching eventually.
@@ -319,10 +423,17 @@ mod tests {
         let mut i = 0;
         for (script_public_key, compact_utxo_collection) in utxo_changes.added.iter() {
             for (tx_outpoint, compact_utxo_entry) in compact_utxo_collection.iter() {
-                let utxo_entry = virtual_change_emulator.accumulated_utxo_diff.add.get(tx_outpoint).expect("expected utxo_entry");
+                let utxo_entry = virtual_change_emulator
+                    .accumulated_utxo_diff
+                    .add
+                    .get(tx_outpoint)
+                    .expect("expected utxo_entry");
                 assert_eq!(*script_public_key, utxo_entry.script_public_key);
                 assert_eq!(compact_utxo_entry.amount, utxo_entry.amount);
-                assert_eq!(compact_utxo_entry.block_daa_score, utxo_entry.block_daa_score);
+                assert_eq!(
+                    compact_utxo_entry.block_daa_score,
+                    utxo_entry.block_daa_score
+                );
                 assert_eq!(compact_utxo_entry.is_coinbase, utxo_entry.is_coinbase);
                 i += 1;
             }
@@ -333,22 +444,44 @@ mod tests {
 
         for (script_public_key, compact_utxo_collection) in utxo_changes.removed.iter() {
             for (tx_outpoint, compact_utxo_entry) in compact_utxo_collection.iter() {
-                assert!(virtual_change_emulator.accumulated_utxo_diff.remove.contains_key(tx_outpoint));
-                let utxo_entry = virtual_change_emulator.accumulated_utxo_diff.remove.get(tx_outpoint).expect("expected utxo_entry");
+                assert!(virtual_change_emulator
+                    .accumulated_utxo_diff
+                    .remove
+                    .contains_key(tx_outpoint));
+                let utxo_entry = virtual_change_emulator
+                    .accumulated_utxo_diff
+                    .remove
+                    .get(tx_outpoint)
+                    .expect("expected utxo_entry");
                 assert_eq!(*script_public_key, utxo_entry.script_public_key);
                 assert_eq!(compact_utxo_entry.amount, utxo_entry.amount);
-                assert_eq!(compact_utxo_entry.block_daa_score, utxo_entry.block_daa_score);
+                assert_eq!(
+                    compact_utxo_entry.block_daa_score,
+                    utxo_entry.block_daa_score
+                );
                 assert_eq!(compact_utxo_entry.is_coinbase, utxo_entry.is_coinbase);
                 i += 1;
             }
         }
-        assert_eq!(i, virtual_change_emulator.accumulated_utxo_diff.remove.len());
+        assert_eq!(
+            i,
+            virtual_change_emulator.accumulated_utxo_diff.remove.len()
+        );
 
         assert_eq!(
-            utxoindex.read().get_circulating_supply().expect("expected circulating supply"),
+            utxoindex
+                .read()
+                .get_circulating_supply()
+                .expect("expected circulating supply"),
             virtual_change_emulator.circulating_supply
         );
-        assert_eq!(*utxoindex.read().get_utxo_index_tips().expect("expected circulating supply"), virtual_change_emulator.tips);
+        assert_eq!(
+            *utxoindex
+                .read()
+                .get_utxo_index_tips()
+                .expect("expected circulating supply"),
+            virtual_change_emulator.tips
+        );
 
         //test if resync clears db.
 
@@ -363,10 +496,16 @@ mod tests {
         for (tx_outpoint, utxo_entry) in consensus_utxos.into_iter() {
             let indexed_utxos = utxoindex
                 .read()
-                .get_utxos_by_script_public_keys(HashSet::from_iter(vec![utxo_entry.script_public_key.clone()]))
+                .get_utxos_by_script_public_keys(HashSet::from_iter(vec![utxo_entry
+                    .script_public_key
+                    .clone()]))
                 .expect("expected script public key to be in database");
-            for (indexed_script_public_key, indexed_compact_utxo_collection) in indexed_utxos.into_iter() {
-                let compact_utxo = indexed_compact_utxo_collection.get(&tx_outpoint).expect("expected outpoint as key");
+            for (indexed_script_public_key, indexed_compact_utxo_collection) in
+                indexed_utxos.into_iter()
+            {
+                let compact_utxo = indexed_compact_utxo_collection
+                    .get(&tx_outpoint)
+                    .expect("expected outpoint as key");
                 assert_eq!(indexed_script_public_key, utxo_entry.script_public_key);
                 assert_eq!(utxo_entry.amount, compact_utxo.amount);
                 assert_eq!(utxo_entry.block_daa_score, compact_utxo.block_daa_score);
@@ -375,7 +514,13 @@ mod tests {
             }
         }
         assert_eq!(i, consensus_utxo_set_size);
-        assert_eq!(*utxoindex.read().get_utxo_index_tips().expect("expected circulating supply"), tc.get_virtual_parents());
+        assert_eq!(
+            *utxoindex
+                .read()
+                .get_utxo_index_tips()
+                .expect("expected circulating supply"),
+            tc.get_virtual_parents()
+        );
 
         // Deconstruct
         drop(utxoindex);

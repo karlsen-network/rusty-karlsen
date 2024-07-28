@@ -42,7 +42,9 @@ impl From<GrpcServerError> for karlsen_rpc_core::error::RpcError {
 impl From<GrpcServerError> for karlsen_notify::error::Error {
     fn from(err: GrpcServerError) -> Self {
         match err {
-            GrpcServerError::RpcApiError(err) => karlsen_notify::error::Error::General(err.to_string()),
+            GrpcServerError::RpcApiError(err) => {
+                karlsen_notify::error::Error::General(err.to_string())
+            }
             GrpcServerError::NotificationError(err) => err,
             _ => karlsen_notify::error::Error::General(err.to_string()),
         }

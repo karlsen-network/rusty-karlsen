@@ -26,17 +26,27 @@ impl SubscriptionContextInner {
 
     pub fn with_options(max_addresses: Option<usize>) -> Self {
         let address_tracker = Tracker::new(max_addresses);
-        let utxos_changed_subscription_all =
-            Arc::new(UtxosChangedSubscription::new(UtxosChangedState::All, Self::CONTEXT_LISTENER_ID));
-        Self { address_tracker, utxos_changed_subscription_to_all: utxos_changed_subscription_all }
+        let utxos_changed_subscription_all = Arc::new(UtxosChangedSubscription::new(
+            UtxosChangedState::All,
+            Self::CONTEXT_LISTENER_ID,
+        ));
+        Self {
+            address_tracker,
+            utxos_changed_subscription_to_all: utxos_changed_subscription_all,
+        }
     }
 
     #[cfg(test)]
     pub fn with_addresses(addresses: &[Address]) -> Self {
         let address_tracker = Tracker::with_addresses(addresses);
-        let utxos_changed_subscription_all =
-            Arc::new(UtxosChangedSubscription::new(UtxosChangedState::All, Self::CONTEXT_LISTENER_ID));
-        Self { address_tracker, utxos_changed_subscription_to_all: utxos_changed_subscription_all }
+        let utxos_changed_subscription_all = Arc::new(UtxosChangedSubscription::new(
+            UtxosChangedState::All,
+            Self::CONTEXT_LISTENER_ID,
+        ));
+        Self {
+            address_tracker,
+            utxos_changed_subscription_to_all: utxos_changed_subscription_all,
+        }
     }
 }
 
@@ -92,7 +102,13 @@ mod tests {
 
     fn create_addresses(count: usize) -> Vec<Address> {
         (0..count)
-            .map(|i| Address::new(Prefix::Mainnet, karlsen_addresses::Version::PubKey, &Uint256::from_u64(i as u64).to_le_bytes()))
+            .map(|i| {
+                Address::new(
+                    Prefix::Mainnet,
+                    karlsen_addresses::Version::PubKey,
+                    &Uint256::from_u64(i as u64).to_le_bytes(),
+                )
+            })
             .collect()
     }
 
@@ -110,10 +126,18 @@ mod tests {
         let after = get_process_memory_info().unwrap();
 
         trace!("Required item length: {}", item_len);
-        trace!("Memory consumed: {}", (after.resident_set_size - before.resident_set_size) / num_items as u64);
+        trace!(
+            "Memory consumed: {}",
+            (after.resident_set_size - before.resident_set_size) / num_items as u64
+        );
         trace!(
             "Memory/idx: {}",
-            ((after.resident_set_size - before.resident_set_size) as f64 / num_items as f64 / item_len as f64 * 10.0).round() / 10.0
+            ((after.resident_set_size - before.resident_set_size) as f64
+                / num_items as f64
+                / item_len as f64
+                * 10.0)
+                .round()
+                / 10.0
         );
 
         let (len, capacity) = length_and_capacity(&items[0]);
@@ -130,7 +154,11 @@ mod tests {
         items
     }
 
-    fn init_and_measure_consumed_memory<T, F: FnOnce() -> Vec<T>, F2: FnOnce(&T) -> (usize, usize)>(
+    fn init_and_measure_consumed_memory<
+        T,
+        F: FnOnce() -> Vec<T>,
+        F2: FnOnce(&T) -> (usize, usize),
+    >(
         item_len: usize,
         num_items: usize,
         ctor: F,
@@ -169,7 +197,11 @@ mod tests {
         let _ = measure_consumed_memory(
             ITEM_LEN,
             NUM_ITEMS,
-            || (0..NUM_ITEMS).map(|_| SubscriptionContext::with_addresses(&addresses)).collect_vec(),
+            || {
+                (0..NUM_ITEMS)
+                    .map(|_| SubscriptionContext::with_addresses(&addresses))
+                    .collect_vec()
+            },
             |x| (x.address_tracker.len(), x.address_tracker.capacity()),
         );
     }
@@ -197,7 +229,12 @@ mod tests {
             NUM_ITEMS,
             || {
                 (0..NUM_ITEMS)
-                    .map(|_| (0..ITEM_LEN as Index).map(|i| (i, (ITEM_LEN as Index - i) as RefCount)).rev().collect::<HashMap<_, _>>())
+                    .map(|_| {
+                        (0..ITEM_LEN as Index)
+                            .map(|i| (i, (ITEM_LEN as Index - i) as RefCount))
+                            .rev()
+                            .collect::<HashMap<_, _>>()
+                    })
                     .collect_vec()
             },
             |x| (x.len(), x.capacity()),
@@ -265,7 +302,11 @@ mod tests {
         let _ = init_and_measure_consumed_memory(
             ITEM_LEN,
             NUM_ITEMS,
-            || (0..NUM_ITEMS).map(|_| (0..ITEM_LEN as Index).rev().collect::<HashSet<_>>()).collect_vec(),
+            || {
+                (0..NUM_ITEMS)
+                    .map(|_| (0..ITEM_LEN as Index).rev().collect::<HashSet<_>>())
+                    .collect_vec()
+            },
             |x| (x.len(), x.capacity()),
         );
     }
@@ -368,7 +409,11 @@ mod tests {
         let _ = init_and_measure_consumed_memory(
             ITEM_LEN,
             NUM_ITEMS,
-            || (0..NUM_ITEMS).map(|_| (0..ITEM_LEN as Index).collect::<Vec<_>>()).collect_vec(),
+            || {
+                (0..NUM_ITEMS)
+                    .map(|_| (0..ITEM_LEN as Index).collect::<Vec<_>>())
+                    .collect_vec()
+            },
             |x| (x.len(), x.capacity()),
         );
     }

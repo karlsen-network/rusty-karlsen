@@ -9,7 +9,12 @@ pub mod xoshiro;
 use std::cmp::max;
 
 use crate::matrix::Matrix;
-use karlsen_consensus_core::{constants, hashing::{self, header}, header::Header, BlockLevel};
+use karlsen_consensus_core::{
+    constants,
+    hashing::{self, header},
+    header::Header,
+    BlockLevel,
+};
 //use karlsen_consensus_core::errors::block::RuleError;
 //use karlsen_hashes::Pow;
 use karlsen_hashes::{PowB3Hash, PowFishHash};
@@ -38,9 +43,13 @@ impl State {
         //let fishhasher = PowFishHash::new();
         let header_version = header.version;
 
-        Self { matrix, target, hasher, /*fishhasher,*/ header_version}
+        Self {
+            matrix,
+            target,
+            hasher,
+            /*fishhasher,*/ header_version,
+        }
     }
-
 
     fn calculate_pow_khashv1(&self, nonce: u64) -> Uint256 {
         // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing

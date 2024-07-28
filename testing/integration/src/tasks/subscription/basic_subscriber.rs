@@ -22,7 +22,12 @@ impl BasicSubscriberTask {
         command_sender: Sender<SubscribeCommand>,
         initial_secs_delay: u64,
     ) -> Self {
-        Self { clients, subscriptions, command_sender, initial_secs_delay }
+        Self {
+            clients,
+            subscriptions,
+            command_sender,
+            initial_secs_delay,
+        }
     }
 
     pub fn build(
@@ -31,7 +36,12 @@ impl BasicSubscriberTask {
         command_sender: Sender<SubscribeCommand>,
         initial_secs_delay: u64,
     ) -> Arc<Self> {
-        Arc::new(Self::new(clients, subscriptions, command_sender, initial_secs_delay))
+        Arc::new(Self::new(
+            clients,
+            subscriptions,
+            command_sender,
+            initial_secs_delay,
+        ))
     }
 
     pub fn clients(&self) -> &[Arc<GrpcClient>] {
@@ -57,13 +67,23 @@ impl Task for BasicSubscriberTask {
             warn!("Basic subscriber task starting...");
             'outer: for scope in subscriptions {
                 let (tx, rx) = channel();
-                sender.send(SubscribeCommand::RegisterJob((clients.len(), tx))).await.unwrap();
+                sender
+                    .send(SubscribeCommand::RegisterJob((clients.len(), tx)))
+                    .await
+                    .unwrap();
                 let registration = rx.await.unwrap();
                 for client in clients.iter().cloned() {
                     if stop_signal.listener.is_triggered() {
                         break 'outer;
                     }
-                    sender.send(SubscribeCommand::Start((registration.id, client, scope.clone()))).await.unwrap();
+                    sender
+                        .send(SubscribeCommand::Start((
+                            registration.id,
+                            client,
+                            scope.clone(),
+                        )))
+                        .await
+                        .unwrap();
                 }
                 tokio::select! {
                     biased;

@@ -54,11 +54,16 @@ impl Matrix {
         // SAFETY: An uninitialized MaybeUninit is always safe.
         let mut out: [[MaybeUninit<f64>; 64]; 64] = unsafe { MaybeUninit::uninit().assume_init() };
 
-        out.iter_mut().zip(self.0.iter()).for_each(|(out_row, mat_row)| {
-            out_row.iter_mut().zip(mat_row).for_each(|(out_element, &element)| {
-                out_element.write(f64::from(element));
-            })
-        });
+        out.iter_mut()
+            .zip(self.0.iter())
+            .for_each(|(out_row, mat_row)| {
+                out_row
+                    .iter_mut()
+                    .zip(mat_row)
+                    .for_each(|(out_element, &element)| {
+                        out_element.write(f64::from(element));
+                    })
+            });
         // SAFETY: The loop above wrote into all indexes.
         unsafe { std::mem::transmute(out) }
     }
@@ -120,7 +125,10 @@ impl Matrix {
         });
 
         // Concatenate 4 LSBs back to 8 bit xor with sum1
-        product.iter_mut().zip(hash.as_bytes()).for_each(|(p, h)| *p ^= h);
+        product
+            .iter_mut()
+            .zip(hash.as_bytes())
+            .for_each(|(p, h)| *p ^= h);
         KHeavyHash::hash(Hash::from_bytes(product))
     }
 }
@@ -163,8 +171,8 @@ mod tests {
     #[test]
     fn test_heavy_hash() {
         let expected_hash = Hash::from_bytes([
-            135, 104, 159, 55, 153, 67, 234, 249, 183, 71, 92, 169, 83, 37, 104, 119, 114, 191, 204, 104, 252, 120, 153, 202, 235, 68,
-            9, 236, 69, 144, 195, 37,
+            135, 104, 159, 55, 153, 67, 234, 249, 183, 71, 92, 169, 83, 37, 104, 119, 114, 191,
+            204, 104, 252, 120, 153, 202, 235, 68, 9, 236, 69, 144, 195, 37,
         ]);
         #[rustfmt::skip]
             let test_matrix = Matrix([
@@ -234,8 +242,8 @@ mod tests {
             [0, 3, 3, 4, 6, 5, 5, 1, 3, 2, 14, 5, 10, 7, 15, 11, 7, 13, 15, 4, 0, 12, 9, 15, 12, 0, 3, 1, 14, 1, 12, 9, 13, 8, 9, 15, 12, 3, 5, 11, 3, 11, 4, 1, 9, 4, 13, 7, 4, 10, 6, 14, 13, 0, 9, 11, 15, 15, 3, 3, 13, 15, 10, 15],
         ]);
         let hash = Hash::from_bytes([
-            82, 46, 212, 218, 28, 192, 143, 92, 213, 66, 86, 63, 245, 241, 155, 189, 73, 159, 229, 180, 202, 105, 159, 166, 109, 172,
-            128, 136, 169, 195, 97, 41,
+            82, 46, 212, 218, 28, 192, 143, 92, 213, 66, 86, 63, 245, 241, 155, 189, 73, 159, 229,
+            180, 202, 105, 159, 166, 109, 172, 128, 136, 169, 195, 97, 41,
         ]);
         assert_eq!(test_matrix.heavy_hash(hash), expected_hash);
     }

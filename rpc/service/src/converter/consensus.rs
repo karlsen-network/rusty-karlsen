@@ -8,14 +8,17 @@ use karlsen_consensus_core::{
     tx::{MutableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutput},
     ChainPath,
 };
-use karlsen_consensus_notify::notification::{self as consensus_notify, Notification as ConsensusNotification};
+use karlsen_consensus_notify::notification::{
+    self as consensus_notify, Notification as ConsensusNotification,
+};
 use karlsen_consensusmanager::{ConsensusManager, ConsensusProxy};
 use karlsen_math::Uint256;
 use karlsen_mining::model::{owner_txs::OwnerTransactions, TransactionIdSet};
 use karlsen_notify::converter::Converter;
 use karlsen_rpc_core::{
-    BlockAddedNotification, Notification, RpcAcceptedTransactionIds, RpcBlock, RpcBlockVerboseData, RpcHash, RpcMempoolEntry,
-    RpcMempoolEntryByAddress, RpcResult, RpcTransaction, RpcTransactionInput, RpcTransactionOutput, RpcTransactionOutputVerboseData,
+    BlockAddedNotification, Notification, RpcAcceptedTransactionIds, RpcBlock, RpcBlockVerboseData,
+    RpcHash, RpcMempoolEntry, RpcMempoolEntryByAddress, RpcResult, RpcTransaction,
+    RpcTransactionInput, RpcTransactionOutput, RpcTransactionOutputVerboseData,
     RpcTransactionVerboseData,
 };
 use karlsen_txscript::{extract_script_pub_key_address, script_class::ScriptClass};
@@ -29,7 +32,10 @@ pub struct ConsensusConverter {
 
 impl ConsensusConverter {
     pub fn new(consensus_manager: Arc<ConsensusManager>, config: Arc<Config>) -> Self {
-        Self { consensus_manager, config }
+        Self {
+            consensus_manager,
+            config,
+        }
     }
 
     /// Returns the proof-of-work difficulty as a multiple of the minimum difficulty using
@@ -56,7 +62,10 @@ impl ConsensusConverter {
         let hash = block.hash();
         let ghostdag_data = consensus.async_get_ghostdag_data(hash).await?;
         let block_status = consensus.async_get_block_status(hash).await.unwrap();
-        let children = consensus.async_get_block_children(hash).await.unwrap_or_default();
+        let children = consensus
+            .async_get_block_children(hash)
+            .await
+            .unwrap_or_default();
         let is_chain_block = consensus.async_is_chain_block(hash).await?;
         let verbose_data = Some(RpcBlockVerboseData {
             hash,
@@ -75,19 +84,38 @@ impl ConsensusConverter {
             block
                 .transactions
                 .iter()
-                .map(|x| self.get_transaction(consensus, x, Some(&block.header), include_transaction_verbose_data))
+                .map(|x| {
+                    self.get_transaction(
+                        consensus,
+                        x,
+                        Some(&block.header),
+                        include_transaction_verbose_data,
+                    )
+                })
                 .collect::<Vec<_>>()
         } else {
             vec![]
         };
 
-        Ok(RpcBlock { header: (*block.header).clone(), transactions, verbose_data })
+        Ok(RpcBlock {
+            header: (*block.header).clone(),
+            transactions,
+            verbose_data,
+        })
     }
 
-    pub fn get_mempool_entry(&self, consensus: &ConsensusProxy, transaction: &MutableTransaction) -> RpcMempoolEntry {
+    pub fn get_mempool_entry(
+        &self,
+        consensus: &ConsensusProxy,
+        transaction: &MutableTransaction,
+    ) -> RpcMempoolEntry {
         let is_orphan = !transaction.is_fully_populated();
         let rpc_transaction = self.get_transaction(consensus, &transaction.tx, None, true);
-        RpcMempoolEntry::new(transaction.calculated_fee.unwrap_or_default(), rpc_transaction, is_orphan)
+        RpcMempoolEntry::new(
+            transaction.calculated_fee.unwrap_or_default(),
+            rpc_transaction,
+            is_orphan,
+        )
     }
 
     pub fn get_mempool_entries_by_address(
@@ -97,8 +125,10 @@ impl ConsensusConverter {
         owner_transactions: &OwnerTransactions,
         transactions: &HashMap<TransactionId, MutableTransaction>,
     ) -> RpcMempoolEntryByAddress {
-        let sending = self.get_owner_entries(consensus, &owner_transactions.sending_txs, transactions);
-        let receiving = self.get_owner_entries(consensus, &owner_transactions.receiving_txs, transactions);
+        let sending =
+            self.get_owner_entries(consensus, &owner_transactions.sending_txs, transactions);
+        let receiving =
+            self.get_owner_entries(consensus, &owner_transactions.receiving_txs, transactions);
         RpcMempoolEntryByAddress::new(address, sending, receiving)
     }
 
@@ -108,7 +138,12 @@ impl ConsensusConverter {
         transaction_ids: &TransactionIdSet,
         transactions: &HashMap<TransactionId, MutableTransaction>,
     ) -> Vec<RpcMempoolEntry> {
-        transaction_ids.iter().map(|x| self.get_mempool_entry(consensus, transactions.get(x).expect("transaction exists"))).collect()
+        transaction_ids
+            .iter()
+            .map(|x| {
+                self.get_mempool_entry(consensus, transactions.get(x).expect("transaction exists"))
+            })
+            .collect()
     }
 
     /// Converts a consensus [`Transaction`] into an [`RpcTransaction`], optionally including verbose data.
@@ -132,8 +167,16 @@ impl ConsensusConverter {
             });
             RpcTransaction {
                 version: transaction.version,
-                inputs: transaction.inputs.iter().map(|x| self.get_transaction_input(x)).collect(),
-                outputs: transaction.outputs.iter().map(|x| self.get_transaction_output(x)).collect(),
+                inputs: transaction
+                    .inputs
+                    .iter()
+                    .map(|x| self.get_transaction_input(x))
+                    .collect(),
+                outputs: transaction
+                    .outputs
+                    .iter()
+                    .map(|x| self.get_transaction_output(x))
+                    .collect(),
                 lock_time: transaction.lock_time,
                 subnetwork_id: transaction.subnetwork_id.clone(),
                 gas: transaction.gas,
@@ -152,10 +195,17 @@ impl ConsensusConverter {
 
     fn get_transaction_output(&self, output: &TransactionOutput) -> RpcTransactionOutput {
         let script_public_key_type = ScriptClass::from_script(&output.script_public_key);
-        let address = extract_script_pub_key_address(&output.script_public_key, self.config.prefix()).ok();
-        let verbose_data =
-            address.map(|address| RpcTransactionOutputVerboseData { script_public_key_type, script_public_key_address: address });
-        RpcTransactionOutput { value: output.value, script_public_key: output.script_public_key.clone(), verbose_data }
+        let address =
+            extract_script_pub_key_address(&output.script_public_key, self.config.prefix()).ok();
+        let verbose_data = address.map(|address| RpcTransactionOutputVerboseData {
+            script_public_key_type,
+            script_public_key_address: address,
+        });
+        RpcTransactionOutput {
+            value: output.value,
+            script_public_key: output.script_public_key.clone(),
+            verbose_data,
+        }
     }
 
     pub async fn get_virtual_chain_accepted_transaction_ids(
@@ -163,7 +213,10 @@ impl ConsensusConverter {
         consensus: &ConsensusProxy,
         chain_path: &ChainPath,
     ) -> RpcResult<Vec<RpcAcceptedTransactionIds>> {
-        let acceptance_data = consensus.async_get_blocks_acceptance_data(chain_path.added.clone()).await.unwrap();
+        let acceptance_data = consensus
+            .async_get_blocks_acceptance_data(chain_path.added.clone())
+            .await
+            .unwrap();
         Ok(chain_path
             .added
             .iter()
@@ -189,7 +242,11 @@ impl Converter for ConsensusConverter {
             consensus_notify::Notification::BlockAdded(msg) => {
                 let session = self.consensus_manager.consensus().unguarded_session();
                 // If get_block fails, rely on the infallible From implementation which will lack verbose data
-                let block = Arc::new(self.get_block(&session, &msg.block, true, true).await.unwrap_or_else(|_| (&msg.block).into()));
+                let block = Arc::new(
+                    self.get_block(&session, &msg.block, true, true)
+                        .await
+                        .unwrap_or_else(|_| (&msg.block).into()),
+                );
                 Notification::BlockAdded(BlockAddedNotification { block })
             }
             _ => (&incoming).into(),
@@ -199,6 +256,9 @@ impl Converter for ConsensusConverter {
 
 impl Debug for ConsensusConverter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ConsensusConverter").field("consensus_manager", &"").field("config", &self.config).finish()
+        f.debug_struct("ConsensusConverter")
+            .field("consensus_manager", &"")
+            .field("config", &self.config)
+            .finish()
     }
 }

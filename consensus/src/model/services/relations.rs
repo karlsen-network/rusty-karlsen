@@ -14,12 +14,18 @@ pub struct MTRelationsService<T: RelationsStoreReader> {
 
 impl<T: RelationsStoreReader> MTRelationsService<T> {
     pub fn new(store: Arc<RwLock<Vec<T>>>, level: u8) -> Self {
-        Self { store, level: level as usize }
+        Self {
+            store,
+            level: level as usize,
+        }
     }
 }
 
 impl<T: RelationsStoreReader> RelationsStoreReader for MTRelationsService<T> {
-    fn get_parents(&self, hash: Hash) -> Result<karlsen_consensus_core::blockhash::BlockHashes, StoreError> {
+    fn get_parents(
+        &self,
+        hash: Hash,
+    ) -> Result<karlsen_consensus_core::blockhash::BlockHashes, StoreError> {
         self.store.read()[self.level].get_parents(hash)
     }
 

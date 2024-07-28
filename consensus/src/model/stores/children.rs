@@ -19,8 +19,18 @@ pub trait ChildrenStoreReader {
 }
 
 pub trait ChildrenStore {
-    fn insert_child(&mut self, writer: impl DbWriter, parent: Hash, child: Hash) -> Result<(), StoreError>;
-    fn delete_child(&mut self, writer: impl DbWriter, parent: Hash, child: Hash) -> Result<(), StoreError>;
+    fn insert_child(
+        &mut self,
+        writer: impl DbWriter,
+        parent: Hash,
+        child: Hash,
+    ) -> Result<(), StoreError>;
+    fn delete_child(
+        &mut self,
+        writer: impl DbWriter,
+        parent: Hash,
+        child: Hash,
+    ) -> Result<(), StoreError>;
 }
 
 /// A DB + cache implementation of `DbChildrenStore` trait, with concurrency support.
@@ -38,22 +48,42 @@ impl DbChildrenStore {
             access: CachedDbSetAccess::new(
                 db,
                 cache_policy,
-                DatabaseStorePrefixes::RelationsChildren.into_iter().chain(lvl_bytes).collect(),
+                DatabaseStorePrefixes::RelationsChildren
+                    .into_iter()
+                    .chain(lvl_bytes)
+                    .collect(),
             ),
         }
     }
 
     pub fn with_prefix(db: Arc<DB>, prefix: &[u8], cache_policy: CachePolicy) -> Self {
-        let db_prefix = prefix.iter().copied().chain(DatabaseStorePrefixes::RelationsChildren).collect();
-        Self { db: Arc::clone(&db), access: CachedDbSetAccess::new(db, cache_policy, db_prefix) }
+        let db_prefix = prefix
+            .iter()
+            .copied()
+            .chain(DatabaseStorePrefixes::RelationsChildren)
+            .collect();
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbSetAccess::new(db, cache_policy, db_prefix),
+        }
     }
 
-    pub fn insert_batch(&self, batch: &mut WriteBatch, parent: Hash, child: Hash) -> Result<(), StoreError> {
-        self.access.write(BatchDbWriter::new(batch), parent, child)?;
+    pub fn insert_batch(
+        &self,
+        batch: &mut WriteBatch,
+        parent: Hash,
+        child: Hash,
+    ) -> Result<(), StoreError> {
+        self.access
+            .write(BatchDbWriter::new(batch), parent, child)?;
         Ok(())
     }
 
-    pub(crate) fn delete_children(&self, mut writer: impl DbWriter, parent: Hash) -> Result<(), StoreError> {
+    pub(crate) fn delete_children(
+        &self,
+        mut writer: impl DbWriter,
+        parent: Hash,
+    ) -> Result<(), StoreError> {
         self.access.delete_bucket(&mut writer, parent)
     }
 
@@ -69,12 +99,22 @@ impl ChildrenStoreReader for DbChildrenStore {
 }
 
 impl ChildrenStore for DbChildrenStore {
-    fn insert_child(&mut self, writer: impl DbWriter, parent: Hash, child: Hash) -> Result<(), StoreError> {
+    fn insert_child(
+        &mut self,
+        writer: impl DbWriter,
+        parent: Hash,
+        child: Hash,
+    ) -> Result<(), StoreError> {
         self.access.write(writer, parent, child)?;
         Ok(())
     }
 
-    fn delete_child(&mut self, writer: impl DbWriter, parent: Hash, child: Hash) -> Result<(), StoreError> {
+    fn delete_child(
+        &mut self,
+        writer: impl DbWriter,
+        parent: Hash,
+        child: Hash,
+    ) -> Result<(), StoreError> {
         self.access.delete(writer, parent, child)
     }
 }

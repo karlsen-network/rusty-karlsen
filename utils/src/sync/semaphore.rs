@@ -21,7 +21,10 @@ impl Semaphore {
     pub const MAX_PERMITS: usize = usize::MAX;
 
     pub const fn new(available_permits: usize) -> Semaphore {
-        Semaphore { counter: AtomicUsize::new(available_permits), signal: Event::new() }
+        Semaphore {
+            counter: AtomicUsize::new(available_permits),
+            signal: Event::new(),
+        }
     }
 
     /// Tries to acquire `permits` slots from the semaphore. Upon success, returns the acquired slot
@@ -32,7 +35,12 @@ impl Semaphore {
                 return None;
             }
 
-            match self.counter.compare_exchange_weak(count, count - permits, Ordering::AcqRel, Ordering::Acquire) {
+            match self.counter.compare_exchange_weak(
+                count,
+                count - permits,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
                 Ok(_) => return Some(count),
                 Err(c) => count = c,
             }

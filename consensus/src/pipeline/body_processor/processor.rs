@@ -8,16 +8,24 @@ use crate::{
             ghostdag::DbGhostdagStore,
             headers::DbHeadersStore,
             reachability::DbReachabilityStore,
-            statuses::{DbStatusesStore, StatusesStore, StatusesStoreBatchExtensions, StatusesStoreReader},
+            statuses::{
+                DbStatusesStore, StatusesStore, StatusesStoreBatchExtensions, StatusesStoreReader,
+            },
             tips::{DbTipsStore, TipsStore},
             DB,
         },
     },
     pipeline::{
-        deps_manager::{BlockProcessingMessage, BlockTaskDependencyManager, TaskId, VirtualStateProcessingMessage},
+        deps_manager::{
+            BlockProcessingMessage, BlockTaskDependencyManager, TaskId,
+            VirtualStateProcessingMessage,
+        },
         ProcessingCounters,
     },
-    processes::{coinbase::CoinbaseManager, mass::MassCalculator, transaction_validator::TransactionValidator},
+    processes::{
+        coinbase::CoinbaseManager, mass::MassCalculator,
+        transaction_validator::TransactionValidator,
+    },
 };
 use crossbeam_channel::{Receiver, Sender};
 use karlsen_consensus_core::{
@@ -138,8 +146,16 @@ impl BlockBodyProcessor {
         while let Ok(msg) = self.receiver.recv() {
             match msg {
                 BlockProcessingMessage::Exit => break,
-                BlockProcessingMessage::Process(task, block_result_transmitter, virtual_result_transmitter) => {
-                    if let Some(task_id) = self.task_manager.register(task, block_result_transmitter, virtual_result_transmitter) {
+                BlockProcessingMessage::Process(
+                    task,
+                    block_result_transmitter,
+                    virtual_result_transmitter,
+                ) => {
+                    if let Some(task_id) = self.task_manager.register(
+                        task,
+                        block_result_transmitter,
+                        virtual_result_transmitter,
+                    ) {
                         let processor = self.clone();
                         self.thread_pool.spawn(move || {
                             processor.queue_block(task_id);
@@ -153,22 +169,32 @@ impl BlockBodyProcessor {
         self.task_manager.wait_for_idle();
 
         // Pass the exit signal on to the following processor
-        self.sender.send(VirtualStateProcessingMessage::Exit).unwrap();
+        self.sender
+            .send(VirtualStateProcessingMessage::Exit)
+            .unwrap();
     }
 
     fn queue_block(self: &Arc<BlockBodyProcessor>, task_id: TaskId) {
         if let Some(task) = self.task_manager.try_begin(task_id) {
             let res = self.process_body(task.block(), task.is_trusted());
 
-            let dependent_tasks = self.task_manager.end(task, |task, block_result_transmitter, virtual_state_result_transmitter| {
-                let _ = block_result_transmitter.send(res.clone());
-                if res.is_err() || !task.requires_virtual_processing() {
-                    // We don't care if receivers were dropped
-                    let _ = virtual_state_result_transmitter.send(res.clone());
-                } else {
-                    self.sender.send(VirtualStateProcessingMessage::Process(task, virtual_state_result_transmitter)).unwrap();
-                }
-            });
+            let dependent_tasks = self.task_manager.end(
+                task,
+                |task, block_result_transmitter, virtual_state_result_transmitter| {
+                    let _ = block_result_transmitter.send(res.clone());
+                    if res.is_err() || !task.requires_virtual_processing() {
+                        // We don't care if receivers were dropped
+                        let _ = virtual_state_result_transmitter.send(res.clone());
+                    } else {
+                        self.sender
+                            .send(VirtualStateProcessingMessage::Process(
+                                task,
+                                virtual_state_result_transmitter,
+                            ))
+                            .unwrap();
+                    }
+                },
+            );
 
             for dep in dependent_tasks {
                 let processor = self.clone();
@@ -177,7 +203,11 @@ impl BlockBodyProcessor {
         }
     }
 
-    fn process_body(self: &Arc<BlockBodyProcessor>, block: &Block, is_trusted: bool) -> BlockProcessResult<BlockStatus> {
+    fn process_body(
+        self: &Arc<BlockBodyProcessor>,
+        block: &Block,
+        is_trusted: bool,
+    ) -> BlockProcessResult<BlockStatus> {
         let _prune_guard = self.pruning_lock.blocking_read();
         let status = self.statuses_store.read().get(block.hash()).unwrap();
         match status {
@@ -201,28 +231,46 @@ impl BlockBodyProcessor {
                 // PrunedBlock - PrunedBlock is an error that rejects a block body and
                 // not the block as a whole, so we shouldn't mark it as invalid.
                 // TODO: implement the last part.
-                if !matches!(e, RuleError::BadMerkleRoot(_, _) | RuleError::MissingParents(_)) {
-                    self.statuses_store.write().set(block.hash(), BlockStatus::StatusInvalid).unwrap();
+                if !matches!(
+                    e,
+                    RuleError::BadMerkleRoot(_, _) | RuleError::MissingParents(_)
+                ) {
+                    self.statuses_store
+                        .write()
+                        .set(block.hash(), BlockStatus::StatusInvalid)
+                        .unwrap();
                 }
                 return Err(e);
             }
         };
 
-        self.commit_body(block.hash(), block.header.direct_parents(), block.transactions.clone());
+        self.commit_body(
+            block.hash(),
+            block.header.direct_parents(),
+            block.transactions.clone(),
+        );
 
         // Send a BlockAdded notification
         self.notification_root
-            .notify(Notification::BlockAdded(BlockAddedNotification::new(block.to_owned())))
+            .notify(Notification::BlockAdded(BlockAddedNotification::new(
+                block.to_owned(),
+            )))
             .expect("expecting an open unbounded channel");
 
         // Report counters
         self.counters.body_counts.fetch_add(1, Ordering::Relaxed);
-        self.counters.txs_counts.fetch_add(block.transactions.len() as u64, Ordering::Relaxed);
+        self.counters
+            .txs_counts
+            .fetch_add(block.transactions.len() as u64, Ordering::Relaxed);
         self.counters.mass_counts.fetch_add(mass, Ordering::Relaxed);
         Ok(BlockStatus::StatusUTXOPendingVerification)
     }
 
-    fn validate_body(self: &Arc<BlockBodyProcessor>, block: &Block, is_trusted: bool) -> BlockProcessResult<u64> {
+    fn validate_body(
+        self: &Arc<BlockBodyProcessor>,
+        block: &Block,
+        is_trusted: bool,
+    ) -> BlockProcessResult<u64> {
         let mass = self.validate_body_in_isolation(block)?;
         if !is_trusted {
             // TODO: Check that it's safe to skip this check if the block is trusted.
@@ -231,16 +279,27 @@ impl BlockBodyProcessor {
         Ok(mass)
     }
 
-    fn commit_body(self: &Arc<BlockBodyProcessor>, hash: Hash, parents: &[Hash], transactions: Arc<Vec<Transaction>>) {
+    fn commit_body(
+        self: &Arc<BlockBodyProcessor>,
+        hash: Hash,
+        parents: &[Hash],
+        transactions: Arc<Vec<Transaction>>,
+    ) {
         let mut batch = WriteBatch::default();
 
         // This is an append only store so it requires no lock.
-        self.block_transactions_store.insert_batch(&mut batch, hash, transactions).unwrap();
+        self.block_transactions_store
+            .insert_batch(&mut batch, hash, transactions)
+            .unwrap();
 
         let mut body_tips_write_guard = self.body_tips_store.write();
-        body_tips_write_guard.add_tip_batch(&mut batch, hash, parents).unwrap();
-        let statuses_write_guard =
-            self.statuses_store.set_batch(&mut batch, hash, BlockStatus::StatusUTXOPendingVerification).unwrap();
+        body_tips_write_guard
+            .add_tip_batch(&mut batch, hash, parents)
+            .unwrap();
+        let statuses_write_guard = self
+            .statuses_store
+            .set_batch(&mut batch, hash, BlockStatus::StatusUTXOPendingVerification)
+            .unwrap();
 
         self.db.write(batch).unwrap();
 
@@ -258,6 +317,10 @@ impl BlockBodyProcessor {
         drop(body_tips_write_guard);
 
         // Write the genesis body
-        self.commit_body(self.genesis.hash, &[], Arc::new(self.genesis.build_genesis_transactions()))
+        self.commit_body(
+            self.genesis.hash,
+            &[],
+            Arc::new(self.genesis.build_genesis_transactions()),
+        )
     }
 }

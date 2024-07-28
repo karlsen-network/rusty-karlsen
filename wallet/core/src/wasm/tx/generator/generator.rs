@@ -158,11 +158,17 @@ impl Generator {
 
         let settings = match source {
             GeneratorSource::UtxoEntries(utxo_entries) => {
-                let change_address = change_address
-                    .ok_or_else(|| Error::custom("changeAddress is required for Generator constructor with UTXO entries"))?;
+                let change_address = change_address.ok_or_else(|| {
+                    Error::custom(
+                        "changeAddress is required for Generator constructor with UTXO entries",
+                    )
+                })?;
 
-                let network_id =
-                    network_id.ok_or_else(|| Error::custom("networkId is required for Generator constructor with UTXO entries"))?;
+                let network_id = network_id.ok_or_else(|| {
+                    Error::custom(
+                        "networkId is required for Generator constructor with UTXO entries",
+                    )
+                })?;
 
                 native::GeneratorSettings::try_new_with_iterator(
                     network_id,
@@ -177,8 +183,11 @@ impl Generator {
                 )?
             }
             GeneratorSource::UtxoContext(utxo_context) => {
-                let change_address = change_address
-                    .ok_or_else(|| Error::custom("changeAddress is required for Generator constructor with UTXO entries"))?;
+                let change_address = change_address.ok_or_else(|| {
+                    Error::custom(
+                        "changeAddress is required for Generator constructor with UTXO entries",
+                    )
+                })?;
 
                 native::GeneratorSettings::try_new_with_context(
                     utxo_context.into(),
@@ -199,7 +208,9 @@ impl Generator {
         let abortable = Abortable::default();
         let generator = native::Generator::try_new(settings, None, Some(&abortable))?;
 
-        Ok(Self { inner: Arc::new(generator) })
+        Ok(Self {
+            inner: Arc::new(generator),
+        })
     }
 
     /// Generate next transaction
@@ -260,28 +271,43 @@ impl TryFrom<IGeneratorSettingsObject> for GeneratorSettings {
 
         // lack of outputs results in a sweep transaction compounding utxos into the change address
         let outputs = args.get_value("outputs")?;
-        let final_transaction_destination: PaymentDestination =
-            if outputs.is_undefined() { PaymentDestination::Change } else { PaymentOutputs::try_owned_from(outputs)?.into() };
+        let final_transaction_destination: PaymentDestination = if outputs.is_undefined() {
+            PaymentDestination::Change
+        } else {
+            PaymentOutputs::try_owned_from(outputs)?.into()
+        };
 
-        let change_address = args.try_get_cast::<Address>("changeAddress")?.map(Cast::into_owned);
+        let change_address = args
+            .try_get_cast::<Address>("changeAddress")?
+            .map(Cast::into_owned);
 
         let final_priority_fee = args.get::<IFees>("priorityFee")?.try_into()?;
 
-        let generator_source = if let Ok(Some(context)) = args.try_get_cast::<UtxoContext>("entries") {
-            GeneratorSource::UtxoContext(context.into_owned())
-        } else if let Some(utxo_entries) = args.try_get_value("entries")? {
-            GeneratorSource::UtxoEntries(utxo_entries.try_into_utxo_entry_references()?)
-        } else {
-            return Err(Error::custom("'entries', 'context' or 'account' property is required for Generator"));
-        };
+        let generator_source =
+            if let Ok(Some(context)) = args.try_get_cast::<UtxoContext>("entries") {
+                GeneratorSource::UtxoContext(context.into_owned())
+            } else if let Some(utxo_entries) = args.try_get_value("entries")? {
+                GeneratorSource::UtxoEntries(utxo_entries.try_into_utxo_entry_references()?)
+            } else {
+                return Err(Error::custom(
+                    "'entries', 'context' or 'account' property is required for Generator",
+                ));
+            };
 
         let sig_op_count = args.get_value("sigOpCount")?;
-        let sig_op_count =
-            if !sig_op_count.is_undefined() { sig_op_count.as_f64().expect("sigOpCount should be a number") as u8 } else { 1 };
+        let sig_op_count = if !sig_op_count.is_undefined() {
+            sig_op_count
+                .as_f64()
+                .expect("sigOpCount should be a number") as u8
+        } else {
+            1
+        };
 
         let minimum_signatures = args.get_value("minimumSignatures")?;
         let minimum_signatures = if !minimum_signatures.is_undefined() {
-            minimum_signatures.as_f64().expect("minimumSignatures should be a number") as u16
+            minimum_signatures
+                .as_f64()
+                .expect("minimumSignatures should be a number") as u16
         } else {
             1
         };

@@ -21,7 +21,8 @@ impl Parse for RpcTable {
         if parsed.len() != 2 {
             return Err(Error::new_spanned(
                 parsed,
-                "usage: build_wrpc_client_interface!(interface, RpcApiOps,[getInfo, ..])".to_string(),
+                "usage: build_wrpc_client_interface!(interface, RpcApiOps,[getInfo, ..])"
+                    .to_string(),
             ));
         }
 
@@ -31,7 +32,10 @@ impl Parse for RpcTable {
         // Intake enum variants as an array
         let handlers = get_handlers(iter.next().unwrap().clone())?;
 
-        Ok(RpcTable { rpc_api_ops, handlers })
+        Ok(RpcTable {
+            rpc_api_ops,
+            handlers,
+        })
     }
 }
 
@@ -41,7 +45,12 @@ impl ToTokens for RpcTable {
         let rpc_api_ops = &self.rpc_api_ops;
 
         for handler in self.handlers.elems.iter() {
-            let Handler { fn_call, request_type, response_type, .. } = Handler::new(handler);
+            let Handler {
+                fn_call,
+                request_type,
+                response_type,
+                ..
+            } = Handler::new(handler);
 
             // async fn #fn_call(&self, request : #request_type) -> RpcResult<#response_type> {
             //     let response: ClientResult<#response_type> = self.inner.rpc.call(#rpc_api_ops::#handler, request).await;

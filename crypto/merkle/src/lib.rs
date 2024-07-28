@@ -15,7 +15,10 @@ pub fn calc_merkle_root(hashes: impl ExactSizeIterator<Item = Hash>) -> Hash {
         if merkles[i].is_none() {
             merkles[offset] = None;
         } else {
-            merkles[offset] = Some(merkle_hash(merkles[i].unwrap(), merkles[i + 1].unwrap_or(ZERO_HASH)));
+            merkles[offset] = Some(merkle_hash(
+                merkles[i].unwrap(),
+                merkles[i + 1].unwrap_or(ZERO_HASH),
+            ));
         }
         offset += 1
     }

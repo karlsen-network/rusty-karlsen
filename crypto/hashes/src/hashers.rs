@@ -19,7 +19,7 @@ pub trait Hasher: HasherBase + Clone + Default {
 // Implemented manually in pow_hashers:
 //  struct PowHash => `cSHAKE256("ProofOfWorkHash")
 //  struct KHeavyHash => `cSHAKE256("HeavyHash")
-pub use crate::pow_hashers::{KHeavyHash, PowHash, PowB3Hash, PowFishHash};
+pub use crate::pow_hashers::{KHeavyHash, PowB3Hash, PowFishHash, PowHash};
 blake2b_hasher! {
     struct TransactionHash => b"TransactionHash",
     struct TransactionID => b"TransactionID",
@@ -145,20 +145,29 @@ mod tests {
             &[],
             &[1][..],
             &[
-                5, 199, 126, 44, 71, 32, 82, 139, 122, 217, 43, 48, 52, 112, 40, 209, 180, 83, 139, 231, 72, 48, 136, 48, 168, 226,
-                133, 7, 60, 4, 160, 205,
+                5, 199, 126, 44, 71, 32, 82, 139, 122, 217, 43, 48, 52, 112, 40, 209, 180, 83, 139,
+                231, 72, 48, 136, 48, 168, 226, 133, 7, 60, 4, 160, 205,
             ][..],
             &[42; 64],
             &[0; 8][..],
         ];
 
-        fn run_test_vector<H: Hasher>(input_data: &[&[u8]], hasher_new: impl FnOnce() -> H, expected: &[&str]) {
+        fn run_test_vector<H: Hasher>(
+            input_data: &[&[u8]],
+            hasher_new: impl FnOnce() -> H,
+            expected: &[&str],
+        ) {
             let mut hasher = hasher_new();
             // We do not reset the hasher each time on purpose, this also tests incremental hashing.
             for (data, expected) in input_data.iter().zip(expected) {
                 println!("data: {data:?}");
                 let hash = hasher.update(data).clone().finalize();
-                assert_eq!(hash.to_string(), *expected, "Type: {}", std::any::type_name::<H>());
+                assert_eq!(
+                    hash.to_string(),
+                    *expected,
+                    "Type: {}",
+                    std::any::type_name::<H>()
+                );
             }
         }
 

@@ -3,13 +3,23 @@ macro_rules! opcode_serde {
         #[allow(dead_code)]
         fn serialize(&self) -> Vec<u8> {
             let length = self.data.len() as $type;
-            [[self.value()].as_slice(), length.to_le_bytes().as_slice(), self.data.as_slice()].concat()
+            [
+                [self.value()].as_slice(),
+                length.to_le_bytes().as_slice(),
+                self.data.as_slice(),
+            ]
+            .concat()
         }
 
         fn deserialize<'i, I: Iterator<Item = &'i u8>, T: VerifiableTransaction>(
             it: &mut I,
         ) -> Result<Box<dyn OpCodeImplementation<T>>, TxScriptError> {
-            match it.take(size_of::<$type>()).copied().collect::<Vec<u8>>().try_into() {
+            match it
+                .take(size_of::<$type>())
+                .copied()
+                .collect::<Vec<u8>>()
+                .try_into()
+            {
                 Ok(bytes) => {
                     let length = <$type>::from_le_bytes(bytes) as usize;
                     let data: Vec<u8> = it.take(length).copied().collect();
@@ -46,7 +56,10 @@ macro_rules! opcode_init {
     ($type:ty) => {
         fn new(data: Vec<u8>) -> Result<Box<dyn OpCodeImplementation<T>>, TxScriptError> {
             if data.len() > <$type>::MAX as usize {
-                return Err(TxScriptError::MalformedPush(<$type>::MAX as usize, data.len()));
+                return Err(TxScriptError::MalformedPush(
+                    <$type>::MAX as usize,
+                    data.len(),
+                ));
             }
             Ok(Box::new(Self { data }))
         }

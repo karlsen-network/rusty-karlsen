@@ -42,9 +42,19 @@ impl Scan {
         window_size: Option<usize>,
         extent: Option<ScanExtent>,
     ) -> Scan {
-        Scan { provider: Provider::AddressManager(address_manager), window_size, extent, balance: balance.clone(), current_daa_score }
+        Scan {
+            provider: Provider::AddressManager(address_manager),
+            window_size,
+            extent,
+            balance: balance.clone(),
+            current_daa_score,
+        }
     }
-    pub fn new_with_address_set(addresses: HashSet<Address>, balance: &Arc<AtomicBalance>, current_daa_score: u64) -> Scan {
+    pub fn new_with_address_set(
+        addresses: HashSet<Address>,
+        balance: &Arc<AtomicBalance>,
+        current_daa_score: u64,
+    ) -> Scan {
         Scan {
             provider: Provider::AddressSet(addresses),
             window_size: None,
@@ -56,12 +66,21 @@ impl Scan {
 
     pub async fn scan(&self, utxo_context: &UtxoContext) -> Result<()> {
         match &self.provider {
-            Provider::AddressManager(address_manager) => self.scan_with_address_manager(address_manager, utxo_context).await,
-            Provider::AddressSet(addresses) => self.scan_with_address_set(addresses, utxo_context).await,
+            Provider::AddressManager(address_manager) => {
+                self.scan_with_address_manager(address_manager, utxo_context)
+                    .await
+            }
+            Provider::AddressSet(addresses) => {
+                self.scan_with_address_set(addresses, utxo_context).await
+            }
         }
     }
 
-    pub async fn scan_with_address_manager(&self, address_manager: &Arc<AddressManager>, utxo_context: &UtxoContext) -> Result<()> {
+    pub async fn scan_with_address_manager(
+        &self,
+        address_manager: &Arc<AddressManager>,
+        utxo_context: &UtxoContext,
+    ) -> Result<()> {
         let params = utxo_context.processor().network_params()?;
 
         let window_size = self.window_size.unwrap_or(DEFAULT_WINDOW_SIZE) as u32;
@@ -73,7 +92,11 @@ impl Scan {
         'scan: loop {
             // scan first up to address index, then in window chunks
             let first = cursor;
-            let last = if cursor == 0 { max(last_address_index + 1, window_size) } else { cursor + window_size };
+            let last = if cursor == 0 {
+                max(last_address_index + 1, window_size)
+            } else {
+                cursor + window_size
+            };
             cursor = last;
 
             // generate address derivations
@@ -85,18 +108,29 @@ impl Scan {
             utxo_context.register_addresses(&addresses).await?;
 
             let ts = Instant::now();
-            let resp = utxo_context.processor().rpc_api().get_utxos_by_addresses(addresses).await?;
+            let resp = utxo_context
+                .processor()
+                .rpc_api()
+                .get_utxos_by_addresses(addresses)
+                .await?;
             let elapsed_msec = ts.elapsed().as_secs_f32();
             if elapsed_msec > 1.0 {
-                log_warn!("get_utxos_by_address() fetched {} entries in: {} msec", resp.len(), elapsed_msec);
+                log_warn!(
+                    "get_utxos_by_address() fetched {} entries in: {} msec",
+                    resp.len(),
+                    elapsed_msec
+                );
             }
             yield_executor().await;
 
             if !resp.is_empty() {
-                let refs: Vec<UtxoEntryReference> = resp.into_iter().map(UtxoEntryReference::from).collect();
+                let refs: Vec<UtxoEntryReference> =
+                    resp.into_iter().map(UtxoEntryReference::from).collect();
                 for utxo_ref in refs.iter() {
                     if let Some(address) = utxo_ref.utxo.address.as_ref() {
-                        if let Some(utxo_address_index) = address_manager.inner().address_to_index_map.get(address) {
+                        if let Some(utxo_address_index) =
+                            address_manager.inner().address_to_index_map.get(address)
+                        {
                             if last_address_index < *utxo_address_index {
                                 last_address_index = *utxo_address_index;
                             }
@@ -116,7 +150,9 @@ impl Scan {
                     balance
                 });
 
-                utxo_context.extend_from_scan(refs, self.current_daa_score).await?;
+                utxo_context
+                    .extend_from_scan(refs, self.current_daa_score)
+                    .await?;
 
                 self.balance.add(balance);
             } else {
@@ -142,13 +178,22 @@ impl Scan {
         Ok(())
     }
 
-    pub async fn scan_with_address_set(&self, address_set: &HashSet<Address>, utxo_context: &UtxoContext) -> Result<()> {
+    pub async fn scan_with_address_set(
+        &self,
+        address_set: &HashSet<Address>,
+        utxo_context: &UtxoContext,
+    ) -> Result<()> {
         let params = utxo_context.processor().network_params()?;
         let address_vec = address_set.iter().cloned().collect::<Vec<_>>();
 
         utxo_context.register_addresses(&address_vec).await?;
-        let resp = utxo_context.processor().rpc_api().get_utxos_by_addresses(address_vec).await?;
-        let refs: Vec<UtxoEntryReference> = resp.into_iter().map(UtxoEntryReference::from).collect();
+        let resp = utxo_context
+            .processor()
+            .rpc_api()
+            .get_utxos_by_addresses(address_vec)
+            .await?;
+        let refs: Vec<UtxoEntryReference> =
+            resp.into_iter().map(UtxoEntryReference::from).collect();
 
         let balance: Balance = refs.iter().fold(Balance::default(), |mut balance, r| {
             let entry_balance = r.balance(params, self.current_daa_score);
@@ -161,7 +206,9 @@ impl Scan {
         });
         yield_executor().await;
 
-        utxo_context.extend_from_scan(refs, self.current_daa_score).await?;
+        utxo_context
+            .extend_from_scan(refs, self.current_daa_score)
+            .await?;
 
         if !balance.is_empty() {
             self.balance.add(balance);

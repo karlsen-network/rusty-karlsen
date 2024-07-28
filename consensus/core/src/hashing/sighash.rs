@@ -1,8 +1,12 @@
-use karlsen_hashes::{Hash, Hasher, HasherBase, TransactionSigningHash, TransactionSigningHashECDSA, ZERO_HASH};
+use karlsen_hashes::{
+    Hash, Hasher, HasherBase, TransactionSigningHash, TransactionSigningHashECDSA, ZERO_HASH,
+};
 
 use crate::{
     subnets::SUBNETWORK_ID_NATIVE,
-    tx::{ScriptPublicKey, Transaction, TransactionOutpoint, TransactionOutput, VerifiableTransaction},
+    tx::{
+        ScriptPublicKey, Transaction, TransactionOutpoint, TransactionOutput, VerifiableTransaction,
+    },
 };
 
 use super::{sighash_type::SigHashType, HasherExtensions};
@@ -20,11 +24,20 @@ pub struct SigHashReusedValues {
 
 impl SigHashReusedValues {
     pub fn new() -> Self {
-        Self { previous_outputs_hash: None, sequences_hash: None, sig_op_counts_hash: None, outputs_hash: None }
+        Self {
+            previous_outputs_hash: None,
+            sequences_hash: None,
+            sig_op_counts_hash: None,
+            outputs_hash: None,
+        }
     }
 }
 
-pub fn previous_outputs_hash(tx: &Transaction, hash_type: SigHashType, reused_values: &mut SigHashReusedValues) -> Hash {
+pub fn previous_outputs_hash(
+    tx: &Transaction,
+    hash_type: SigHashType,
+    reused_values: &mut SigHashReusedValues,
+) -> Hash {
     if hash_type.is_sighash_anyone_can_pay() {
         return ZERO_HASH;
     }
@@ -43,8 +56,15 @@ pub fn previous_outputs_hash(tx: &Transaction, hash_type: SigHashType, reused_va
     }
 }
 
-pub fn sequences_hash(tx: &Transaction, hash_type: SigHashType, reused_values: &mut SigHashReusedValues) -> Hash {
-    if hash_type.is_sighash_single() || hash_type.is_sighash_anyone_can_pay() || hash_type.is_sighash_none() {
+pub fn sequences_hash(
+    tx: &Transaction,
+    hash_type: SigHashType,
+    reused_values: &mut SigHashReusedValues,
+) -> Hash {
+    if hash_type.is_sighash_single()
+        || hash_type.is_sighash_anyone_can_pay()
+        || hash_type.is_sighash_none()
+    {
         return ZERO_HASH;
     }
 
@@ -61,7 +81,11 @@ pub fn sequences_hash(tx: &Transaction, hash_type: SigHashType, reused_values: &
     }
 }
 
-pub fn sig_op_counts_hash(tx: &Transaction, hash_type: SigHashType, reused_values: &mut SigHashReusedValues) -> Hash {
+pub fn sig_op_counts_hash(
+    tx: &Transaction,
+    hash_type: SigHashType,
+    reused_values: &mut SigHashReusedValues,
+) -> Hash {
     if hash_type.is_sighash_anyone_can_pay() {
         return ZERO_HASH;
     }
@@ -92,7 +116,12 @@ pub fn payload_hash(tx: &Transaction) -> Hash {
     hasher.finalize()
 }
 
-pub fn outputs_hash(tx: &Transaction, hash_type: SigHashType, reused_values: &mut SigHashReusedValues, input_index: usize) -> Hash {
+pub fn outputs_hash(
+    tx: &Transaction,
+    hash_type: SigHashType,
+    reused_values: &mut SigHashReusedValues,
+    input_index: usize,
+) -> Hash {
     if hash_type.is_sighash_none() {
         return ZERO_HASH;
     }
@@ -185,7 +214,9 @@ mod tests {
     use smallvec::SmallVec;
 
     use crate::{
-        hashing::sighash_type::{SIG_HASH_ALL, SIG_HASH_ANY_ONE_CAN_PAY, SIG_HASH_NONE, SIG_HASH_SINGLE},
+        hashing::sighash_type::{
+            SIG_HASH_ALL, SIG_HASH_ANY_ONE_CAN_PAY, SIG_HASH_NONE, SIG_HASH_SINGLE,
+        },
         subnets::SubnetworkId,
         tx::{PopulatedTransaction, Transaction, TransactionId, TransactionInput, UtxoEntry},
     };
@@ -195,40 +226,66 @@ mod tests {
     #[test]
     fn test_signature_hash() {
         // TODO: Copy all sighash tests from go karlsend.
-        let prev_tx_id = TransactionId::from_str("880eb9819a31821d9d2399e2f35e2433b72637e393d71ecc9b8d0250f49153c3").unwrap();
+        let prev_tx_id = TransactionId::from_str(
+            "880eb9819a31821d9d2399e2f35e2433b72637e393d71ecc9b8d0250f49153c3",
+        )
+        .unwrap();
         let mut bytes = [0u8; 34];
-        faster_hex::hex_decode("208325613d2eeaf7176ac6c670b13c0043156c427438ed72d74b7800862ad884e8ac".as_bytes(), &mut bytes).unwrap();
+        faster_hex::hex_decode(
+            "208325613d2eeaf7176ac6c670b13c0043156c427438ed72d74b7800862ad884e8ac".as_bytes(),
+            &mut bytes,
+        )
+        .unwrap();
         let script_pub_key_1 = SmallVec::from(bytes.to_vec());
 
         let mut bytes = [0u8; 34];
-        faster_hex::hex_decode("20fcef4c106cf11135bbd70f02a726a92162d2fb8b22f0469126f800862ad884e8ac".as_bytes(), &mut bytes).unwrap();
+        faster_hex::hex_decode(
+            "20fcef4c106cf11135bbd70f02a726a92162d2fb8b22f0469126f800862ad884e8ac".as_bytes(),
+            &mut bytes,
+        )
+        .unwrap();
         let script_pub_key_2 = SmallVec::from_vec(bytes.to_vec());
 
         let native_tx = Transaction::new(
             0,
             vec![
                 TransactionInput {
-                    previous_outpoint: TransactionOutpoint { transaction_id: prev_tx_id, index: 0 },
+                    previous_outpoint: TransactionOutpoint {
+                        transaction_id: prev_tx_id,
+                        index: 0,
+                    },
                     signature_script: vec![],
                     sequence: 0,
                     sig_op_count: 0,
                 },
                 TransactionInput {
-                    previous_outpoint: TransactionOutpoint { transaction_id: prev_tx_id, index: 1 },
+                    previous_outpoint: TransactionOutpoint {
+                        transaction_id: prev_tx_id,
+                        index: 1,
+                    },
                     signature_script: vec![],
                     sequence: 1,
                     sig_op_count: 0,
                 },
                 TransactionInput {
-                    previous_outpoint: TransactionOutpoint { transaction_id: prev_tx_id, index: 2 },
+                    previous_outpoint: TransactionOutpoint {
+                        transaction_id: prev_tx_id,
+                        index: 2,
+                    },
                     signature_script: vec![],
                     sequence: 2,
                     sig_op_count: 0,
                 },
             ],
             vec![
-                TransactionOutput { value: 300, script_public_key: ScriptPublicKey::new(0, script_pub_key_2.clone()) },
-                TransactionOutput { value: 300, script_public_key: ScriptPublicKey::new(0, script_pub_key_1.clone()) },
+                TransactionOutput {
+                    value: 300,
+                    script_public_key: ScriptPublicKey::new(0, script_pub_key_2.clone()),
+                },
+                TransactionOutput {
+                    value: 300,
+                    script_public_key: ScriptPublicKey::new(0, script_pub_key_1.clone()),
+                },
             ],
             1615462089000,
             SUBNETWORK_ID_NATIVE,
@@ -261,7 +318,8 @@ mod tests {
         );
 
         let mut subnetwork_tx = native_tx.clone();
-        subnetwork_tx.subnetwork_id = SubnetworkId::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        subnetwork_tx.subnetwork_id =
+            SubnetworkId::from_bytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
         subnetwork_tx.gas = 250;
         subnetwork_tx.payload = vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
         let subnetwork_populated_tx = PopulatedTransaction::new(
@@ -309,9 +367,12 @@ mod tests {
             expected_hash: &'static str,
         }
 
-        const SIG_HASH_ALL_ANYONE_CAN_PAY: SigHashType = SigHashType(SIG_HASH_ALL.0 | SIG_HASH_ANY_ONE_CAN_PAY.0);
-        const SIG_HASH_NONE_ANYONE_CAN_PAY: SigHashType = SigHashType(SIG_HASH_NONE.0 | SIG_HASH_ANY_ONE_CAN_PAY.0);
-        const SIG_HASH_SINGLE_ANYONE_CAN_PAY: SigHashType = SigHashType(SIG_HASH_SINGLE.0 | SIG_HASH_ANY_ONE_CAN_PAY.0);
+        const SIG_HASH_ALL_ANYONE_CAN_PAY: SigHashType =
+            SigHashType(SIG_HASH_ALL.0 | SIG_HASH_ANY_ONE_CAN_PAY.0);
+        const SIG_HASH_NONE_ANYONE_CAN_PAY: SigHashType =
+            SigHashType(SIG_HASH_NONE.0 | SIG_HASH_ANY_ONE_CAN_PAY.0);
+        const SIG_HASH_SINGLE_ANYONE_CAN_PAY: SigHashType =
+            SigHashType(SIG_HASH_SINGLE.0 | SIG_HASH_ANY_ONE_CAN_PAY.0);
 
         let tests = [
             // SIG_HASH_ALL
@@ -561,7 +622,10 @@ mod tests {
                 ModifyAction::PrevScriptPublicKey(i) => {
                     let mut script_vec = entries[i].script_public_key.script().to_vec();
                     script_vec.append(&mut vec![1, 2, 3]);
-                    entries[i].script_public_key = ScriptPublicKey::new(entries[i].script_public_key.version(), script_vec.into());
+                    entries[i].script_public_key = ScriptPublicKey::new(
+                        entries[i].script_public_key.version(),
+                        script_vec.into(),
+                    );
                 }
                 ModifyAction::Sequence(i) => {
                     tx.inputs[i].sequence = 12345;
@@ -569,13 +633,21 @@ mod tests {
                 ModifyAction::Payload => tx.payload = vec![6, 6, 6, 4, 2, 0, 1, 3, 3, 7],
                 ModifyAction::Gas => tx.gas = 1234,
                 ModifyAction::SubnetworkId => {
-                    tx.subnetwork_id = SubnetworkId::from_bytes([6, 6, 6, 4, 2, 0, 1, 3, 3, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                    tx.subnetwork_id = SubnetworkId::from_bytes([
+                        6, 6, 6, 4, 2, 0, 1, 3, 3, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    ])
                 }
             }
             let populated_tx = PopulatedTransaction::new(&tx, entries);
             let mut reused_values = SigHashReusedValues::new();
             assert_eq!(
-                calc_schnorr_signature_hash(&populated_tx, test.input_index, test.hash_type, &mut reused_values).to_string(),
+                calc_schnorr_signature_hash(
+                    &populated_tx,
+                    test.input_index,
+                    test.hash_type,
+                    &mut reused_values
+                )
+                .to_string(),
                 test.expected_hash,
                 "test {} failed",
                 test.name

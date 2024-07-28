@@ -18,11 +18,18 @@ pub(crate) struct AcceptedTransactions {
 
 impl AcceptedTransactions {
     pub(crate) fn new(config: Arc<Config>) -> Self {
-        Self { config, transactions: Default::default(), last_expire_scan_daa_score: 0, last_expire_scan_time: unix_now() }
+        Self {
+            config,
+            transactions: Default::default(),
+            last_expire_scan_daa_score: 0,
+            last_expire_scan_time: unix_now(),
+        }
     }
 
     pub(crate) fn add(&mut self, transaction_id: TransactionId, daa_score: u64) -> bool {
-        self.transactions.insert(transaction_id, daa_score).is_none()
+        self.transactions
+            .insert(transaction_id, daa_score)
+            .is_none()
     }
 
     pub(crate) fn remove(&mut self, transaction_id: &TransactionId) -> bool {
@@ -37,14 +44,27 @@ impl AcceptedTransactions {
         self.transactions.len()
     }
 
-    pub(crate) fn unaccepted(&self, transactions: &mut impl Iterator<Item = TransactionId>) -> Vec<TransactionId> {
-        transactions.filter(|transaction_id| !self.has(transaction_id)).collect()
+    pub(crate) fn unaccepted(
+        &self,
+        transactions: &mut impl Iterator<Item = TransactionId>,
+    ) -> Vec<TransactionId> {
+        transactions
+            .filter(|transaction_id| !self.has(transaction_id))
+            .collect()
     }
 
     pub(crate) fn expire(&mut self, virtual_daa_score: u64) {
         let now = unix_now();
-        if virtual_daa_score < self.last_expire_scan_daa_score + self.config.accepted_transaction_expire_scan_interval_daa_score
-            || now < self.last_expire_scan_time + self.config.accepted_transaction_expire_scan_interval_milliseconds
+        if virtual_daa_score
+            < self.last_expire_scan_daa_score
+                + self
+                    .config
+                    .accepted_transaction_expire_scan_interval_daa_score
+            || now
+                < self.last_expire_scan_time
+                    + self
+                        .config
+                        .accepted_transaction_expire_scan_interval_milliseconds
         {
             return;
         }
@@ -53,7 +73,9 @@ impl AcceptedTransactions {
             .transactions
             .iter()
             .filter_map(|(transaction_id, daa_score)| {
-                if virtual_daa_score > daa_score + self.config.accepted_transaction_expire_interval_daa_score {
+                if virtual_daa_score
+                    > daa_score + self.config.accepted_transaction_expire_interval_daa_score
+                {
                     Some(*transaction_id)
                 } else {
                     None

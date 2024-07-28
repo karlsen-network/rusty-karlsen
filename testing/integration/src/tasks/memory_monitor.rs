@@ -18,17 +18,34 @@ pub struct MemoryMonitorTask {
 }
 
 impl MemoryMonitorTask {
-    pub fn new(tick_service: Arc<TickService>, name: &str, fetch_interval: Duration, max_memory: u64) -> Self {
-        Self { tick_service, name: name.to_owned(), fetch_interval, max_memory }
+    pub fn new(
+        tick_service: Arc<TickService>,
+        name: &str,
+        fetch_interval: Duration,
+        max_memory: u64,
+    ) -> Self {
+        Self {
+            tick_service,
+            name: name.to_owned(),
+            fetch_interval,
+            max_memory,
+        }
     }
 
-    pub fn build(tick_service: Arc<TickService>, name: &str, fetch_interval: Duration, max_memory: u64) -> Arc<Self> {
+    pub fn build(
+        tick_service: Arc<TickService>,
+        name: &str,
+        fetch_interval: Duration,
+        max_memory: u64,
+    ) -> Arc<Self> {
         Arc::new(Self::new(tick_service, name, fetch_interval, max_memory))
     }
 
     async fn worker(&self) {
         #[cfg(feature = "heap")]
-        let _profiler = dhat::Profiler::builder().file_name("karlsend-heap.json").build();
+        let _profiler = dhat::Profiler::builder()
+            .file_name("karlsend-heap.json")
+            .build();
 
         warn!(
             "Starting Memory monitor {} with fetch interval of {} and maximum memory of {}",
@@ -37,15 +54,25 @@ impl MemoryMonitorTask {
             self.max_memory
         );
         while let TickReason::Wakeup = self.tick_service.as_ref().tick(self.fetch_interval).await {
-            let ProcessMemoryInfo { resident_set_size, virtual_memory_size, .. } = get_process_memory_info().unwrap();
+            let ProcessMemoryInfo {
+                resident_set_size,
+                virtual_memory_size,
+                ..
+            } = get_process_memory_info().unwrap();
 
             if resident_set_size > self.max_memory {
-                warn!(">>> Resident set memory {} exceeded threshold of {}", resident_set_size, self.max_memory);
+                warn!(
+                    ">>> Resident set memory {} exceeded threshold of {}",
+                    resident_set_size, self.max_memory
+                );
                 #[cfg(feature = "heap")]
                 {
                     warn!(">>> Dumping heap profiling data...");
                     drop(_profiler);
-                    panic!("Resident set memory {} exceeded threshold of {}", resident_set_size, self.max_memory);
+                    panic!(
+                        "Resident set memory {} exceeded threshold of {}",
+                        resident_set_size, self.max_memory
+                    );
                 }
             } else {
                 info!(
@@ -54,7 +81,11 @@ impl MemoryMonitorTask {
                 );
             }
         }
-        warn!("Memory monitor {} with fetch interval of {} exited", self.name, self.fetch_interval.as_secs());
+        warn!(
+            "Memory monitor {} with fetch interval of {} exited",
+            self.name,
+            self.fetch_interval.as_secs()
+        );
 
         // Let the system print final logs before exiting
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -76,7 +107,9 @@ impl Task for MemoryMonitorTask {
         let max_memory = self.max_memory;
         let task = tokio::spawn(async move {
             #[cfg(feature = "heap")]
-            let _profiler = dhat::Profiler::builder().file_name("karlsend-heap.json").build();
+            let _profiler = dhat::Profiler::builder()
+                .file_name("karlsend-heap.json")
+                .build();
 
             warn!(
                 "Starting Memory monitor task {} with fetch interval of {} and maximum memory of {}",
@@ -85,15 +118,25 @@ impl Task for MemoryMonitorTask {
                 max_memory
             );
             while let TickReason::Wakeup = tick_service.as_ref().tick(fetch_interval).await {
-                let ProcessMemoryInfo { resident_set_size, virtual_memory_size, .. } = get_process_memory_info().unwrap();
+                let ProcessMemoryInfo {
+                    resident_set_size,
+                    virtual_memory_size,
+                    ..
+                } = get_process_memory_info().unwrap();
 
                 if resident_set_size > max_memory {
-                    warn!(">>> Resident set memory {} exceeded threshold of {}", resident_set_size, max_memory);
+                    warn!(
+                        ">>> Resident set memory {} exceeded threshold of {}",
+                        resident_set_size, max_memory
+                    );
                     #[cfg(feature = "heap")]
                     {
                         warn!(">>> Dumping heap profiling data...");
                         drop(_profiler);
-                        panic!("Resident set memory {} exceeded threshold of {}", resident_set_size, max_memory);
+                        panic!(
+                            "Resident set memory {} exceeded threshold of {}",
+                            resident_set_size, max_memory
+                        );
                     }
                 } else {
                     info!(

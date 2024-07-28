@@ -8,13 +8,17 @@ use karlsen_hashes::Hash;
 
 impl From<Hash> for protowire::Hash {
     fn from(hash: Hash) -> Self {
-        Self { bytes: Vec::from(hash.as_bytes()) }
+        Self {
+            bytes: Vec::from(hash.as_bytes()),
+        }
     }
 }
 
 impl From<&Hash> for protowire::Hash {
     fn from(hash: &Hash) -> Self {
-        Self { bytes: Vec::from(hash.as_bytes()) }
+        Self {
+            bytes: Vec::from(hash.as_bytes()),
+        }
     }
 }
 

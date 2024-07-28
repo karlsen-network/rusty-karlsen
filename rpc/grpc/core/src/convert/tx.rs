@@ -66,7 +66,10 @@ from!(item: &karlsen_rpc_core::RpcTransactionVerboseData, protowire::RpcTransact
     }
 });
 
-from!(&karlsen_rpc_core::RpcTransactionInputVerboseData, protowire::RpcTransactionInputVerboseData);
+from!(
+    &karlsen_rpc_core::RpcTransactionInputVerboseData,
+    protowire::RpcTransactionInputVerboseData
+);
 
 from!(item: &karlsen_rpc_core::RpcTransactionOutputVerboseData, protowire::RpcTransactionOutputVerboseData, {
     Self {
@@ -173,7 +176,10 @@ try_from!(item: &protowire::RpcTransactionVerboseData, karlsen_rpc_core::RpcTran
     }
 });
 
-try_from!(&protowire::RpcTransactionInputVerboseData, karlsen_rpc_core::RpcTransactionInputVerboseData);
+try_from!(
+    &protowire::RpcTransactionInputVerboseData,
+    karlsen_rpc_core::RpcTransactionInputVerboseData
+);
 
 try_from!(item: &protowire::RpcTransactionOutputVerboseData, karlsen_rpc_core::RpcTransactionOutputVerboseData, {
     Self {

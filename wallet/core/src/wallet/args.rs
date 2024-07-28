@@ -27,13 +27,25 @@ impl WalletCreateArgs {
         user_hint: Option<Hint>,
         overwrite_wallet_storage: bool,
     ) -> Self {
-        Self { title, filename, encryption_kind, user_hint, overwrite_wallet_storage }
+        Self {
+            title,
+            filename,
+            encryption_kind,
+            user_hint,
+            overwrite_wallet_storage,
+        }
     }
 }
 
 impl From<WalletCreateArgs> for CreateArgs {
     fn from(args: WalletCreateArgs) -> Self {
-        CreateArgs::new(args.title, args.filename, args.encryption_kind, args.user_hint, args.overwrite_wallet_storage)
+        CreateArgs::new(
+            args.title,
+            args.filename,
+            args.encryption_kind,
+            args.user_hint,
+            args.overwrite_wallet_storage,
+        )
     }
 }
 
@@ -47,7 +59,10 @@ pub struct WalletOpenArgs {
 
 impl WalletOpenArgs {
     pub fn default_with_legacy_accounts() -> Self {
-        Self { legacy_accounts: true, ..Default::default() }
+        Self {
+            legacy_accounts: true,
+            ..Default::default()
+        }
     }
 
     pub fn load_account_descriptors(&self) -> bool {
@@ -68,7 +83,11 @@ pub struct PrvKeyDataCreateArgs {
 
 impl PrvKeyDataCreateArgs {
     pub fn new(name: Option<String>, payment_secret: Option<Secret>, mnemonic: Secret) -> Self {
-        Self { name, payment_secret, mnemonic }
+        Self {
+            name,
+            payment_secret,
+            mnemonic,
+        }
     }
 }
 
@@ -109,7 +128,10 @@ pub struct AccountCreateArgsBip32 {
 
 impl AccountCreateArgsBip32 {
     pub fn new(account_name: Option<String>, account_index: Option<u64>) -> Self {
-        Self { account_name, account_index }
+        Self {
+            account_name,
+            account_index,
+        }
     }
 }
 
@@ -121,7 +143,10 @@ pub struct PrvKeyDataArgs {
 
 impl PrvKeyDataArgs {
     pub fn new(prv_key_data_id: PrvKeyDataId, payment_secret: Option<Secret>) -> Self {
-        Self { prv_key_data_id, payment_secret }
+        Self {
+            prv_key_data_id,
+            payment_secret,
+        }
     }
 }
 
@@ -151,13 +176,25 @@ impl AccountCreateArgs {
         account_name: Option<String>,
         account_index: Option<u64>,
     ) -> Self {
-        let prv_key_data_args = PrvKeyDataArgs { prv_key_data_id, payment_secret };
-        let account_args = AccountCreateArgsBip32 { account_name, account_index };
-        AccountCreateArgs::Bip32 { prv_key_data_args, account_args }
+        let prv_key_data_args = PrvKeyDataArgs {
+            prv_key_data_id,
+            payment_secret,
+        };
+        let account_args = AccountCreateArgsBip32 {
+            account_name,
+            account_index,
+        };
+        AccountCreateArgs::Bip32 {
+            prv_key_data_args,
+            account_args,
+        }
     }
 
     pub fn new_legacy(prv_key_data_id: PrvKeyDataId, account_name: Option<String>) -> Self {
-        AccountCreateArgs::Legacy { prv_key_data_id, account_name }
+        AccountCreateArgs::Legacy {
+            prv_key_data_id,
+            account_name,
+        }
     }
 
     pub fn new_multisig(
@@ -166,6 +203,11 @@ impl AccountCreateArgs {
         name: Option<String>,
         minimum_signatures: u16,
     ) -> Self {
-        AccountCreateArgs::Multisig { prv_key_data_args, additional_xpub_keys, name, minimum_signatures }
+        AccountCreateArgs::Multisig {
+            prv_key_data_args,
+            additional_xpub_keys,
+            name,
+            minimum_signatures,
+        }
     }
 }

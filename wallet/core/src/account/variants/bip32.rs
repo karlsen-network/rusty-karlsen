@@ -26,7 +26,9 @@ impl Factory for Ctor {
         storage: &AccountStorage,
         meta: Option<Arc<AccountMetadata>>,
     ) -> Result<Arc<dyn Account>> {
-        Ok(Arc::new(bip32::Bip32::try_load(wallet, storage, meta).await?))
+        Ok(Arc::new(
+            bip32::Bip32::try_load(wallet, storage, meta).await?,
+        ))
     }
 }
 
@@ -39,8 +41,16 @@ pub struct Payload {
 }
 
 impl Payload {
-    pub fn new(account_index: u64, xpub_keys: Arc<Vec<ExtendedPublicKeySecp256k1>>, ecdsa: bool) -> Self {
-        Self { account_index, xpub_keys, ecdsa }
+    pub fn new(
+        account_index: u64,
+        xpub_keys: Arc<Vec<ExtendedPublicKeySecp256k1>>,
+        ecdsa: bool,
+    ) -> Self {
+        Self {
+            account_index,
+            xpub_keys,
+            ecdsa,
+        }
     }
 
     pub fn try_load(storage: &AccountStorage) -> Result<Self> {
@@ -71,14 +81,19 @@ impl BorshSerialize for Payload {
 
 impl BorshDeserialize for Payload {
     fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
-        let StorageHeader { version: _, .. } =
-            StorageHeader::deserialize(buf)?.try_magic(Self::STORAGE_MAGIC)?.try_version(Self::STORAGE_VERSION)?;
+        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?
+            .try_magic(Self::STORAGE_MAGIC)?
+            .try_version(Self::STORAGE_VERSION)?;
 
         let xpub_keys = BorshDeserialize::deserialize(buf)?;
         let account_index = BorshDeserialize::deserialize(buf)?;
         let ecdsa = BorshDeserialize::deserialize(buf)?;
 
-        Ok(Self { xpub_keys, account_index, ecdsa })
+        Ok(Self {
+            xpub_keys,
+            account_index,
+            ecdsa,
+        })
     }
 }
 
@@ -101,7 +116,10 @@ impl Bip32 {
         ecdsa: bool,
     ) -> Result<Self> {
         let storable = Payload::new(account_index, xpub_keys.clone(), ecdsa);
-        let settings = AccountSettings { name, ..Default::default() };
+        let settings = AccountSettings {
+            name,
+            ..Default::default()
+        };
         let (id, storage_key) = make_account_hashes(from_bip32(&prv_key_data_id, &storable));
         let inner = Arc::new(Inner::new(wallet, id, storage_key, settings));
 
@@ -117,17 +135,35 @@ impl Bip32 {
         )
         .await?;
 
-        Ok(Self { inner, prv_key_data_id, account_index, xpub_keys, ecdsa, derivation })
+        Ok(Self {
+            inner,
+            prv_key_data_id,
+            account_index,
+            xpub_keys,
+            ecdsa,
+            derivation,
+        })
     }
 
-    pub async fn try_load(wallet: &Arc<Wallet>, storage: &AccountStorage, meta: Option<Arc<AccountMetadata>>) -> Result<Self> {
+    pub async fn try_load(
+        wallet: &Arc<Wallet>,
+        storage: &AccountStorage,
+        meta: Option<Arc<AccountMetadata>>,
+    ) -> Result<Self> {
         let storable = Payload::try_load(storage)?;
         let prv_key_data_id: PrvKeyDataId = storage.prv_key_data_ids.clone().try_into()?;
         let inner = Arc::new(Inner::from_storage(wallet, storage));
 
-        let Payload { account_index, xpub_keys, ecdsa, .. } = storable;
+        let Payload {
+            account_index,
+            xpub_keys,
+            ecdsa,
+            ..
+        } = storable;
 
-        let address_derivation_indexes = meta.and_then(|meta| meta.address_derivation_indexes()).unwrap_or_default();
+        let address_derivation_indexes = meta
+            .and_then(|meta| meta.address_derivation_indexes())
+            .unwrap_or_default();
 
         let derivation = AddressDerivationManager::new(
             wallet,
@@ -149,13 +185,29 @@ impl Bip32 {
             .await?
             .ok_or_else(|| Error::PrivateKeyNotFound(prv_key_data_id))?;
 
-        Ok(Self { inner, prv_key_data_id, account_index, xpub_keys, ecdsa, derivation })
+        Ok(Self {
+            inner,
+            prv_key_data_id,
+            account_index,
+            xpub_keys,
+            ecdsa,
+            derivation,
+        })
     }
 
     pub fn get_address_range_for_scan(&self, range: std::ops::Range<u32>) -> Result<Vec<Address>> {
-        let receive_addresses = self.derivation.receive_address_manager().get_range_with_args(range.clone(), false)?;
-        let change_addresses = self.derivation.change_address_manager().get_range_with_args(range, false)?;
-        Ok(receive_addresses.into_iter().chain(change_addresses).collect::<Vec<_>>())
+        let receive_addresses = self
+            .derivation
+            .receive_address_manager()
+            .get_range_with_args(range.clone(), false)?;
+        let change_addresses = self
+            .derivation
+            .change_address_manager()
+            .get_range_with_args(range, false)?;
+        Ok(receive_addresses
+            .into_iter()
+            .chain(change_addresses)
+            .collect::<Vec<_>>())
     }
 }
 
@@ -208,7 +260,8 @@ impl Account for Bip32 {
     }
 
     fn metadata(&self) -> Result<Option<AccountMetadata>> {
-        let metadata = AccountMetadata::new(self.inner.id, self.derivation.address_derivation_meta());
+        let metadata =
+            AccountMetadata::new(self.inner.id, self.derivation.address_derivation_meta());
         Ok(Some(metadata))
     }
 
@@ -221,10 +274,19 @@ impl Account for Bip32 {
             self.receive_address().ok(),
             self.change_address().ok(),
         )
-        .with_property(AccountDescriptorProperty::AccountIndex, self.account_index.into())
-        .with_property(AccountDescriptorProperty::XpubKeys, self.xpub_keys.clone().into())
+        .with_property(
+            AccountDescriptorProperty::AccountIndex,
+            self.account_index.into(),
+        )
+        .with_property(
+            AccountDescriptorProperty::XpubKeys,
+            self.xpub_keys.clone().into(),
+        )
         .with_property(AccountDescriptorProperty::Ecdsa, self.ecdsa.into())
-        .with_property(AccountDescriptorProperty::DerivationMeta, self.derivation.address_derivation_meta().into());
+        .with_property(
+            AccountDescriptorProperty::DerivationMeta,
+            self.derivation.address_derivation_meta().into(),
+        );
 
         Ok(descriptor)
     }

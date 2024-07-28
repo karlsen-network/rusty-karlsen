@@ -3,14 +3,19 @@ use crate::{
     flow_trait::Flow,
     flowcontext::orphans::OrphanOutput,
 };
-use karlsen_consensus_core::{api::BlockValidationFutures, block::Block, blockstatus::BlockStatus, errors::block::RuleError};
+use karlsen_consensus_core::{
+    api::BlockValidationFutures, block::Block, blockstatus::BlockStatus, errors::block::RuleError,
+};
 use karlsen_consensusmanager::{BlockProcessingBatch, ConsensusProxy};
 use karlsen_core::debug;
 use karlsen_hashes::Hash;
 use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, dequeue_with_timeout, make_message, make_request,
-    pb::{karlsend_message::Payload, InvRelayBlockMessage, RequestBlockLocatorMessage, RequestRelayBlocksMessage},
+    pb::{
+        karlsend_message::Payload, InvRelayBlockMessage, RequestBlockLocatorMessage,
+        RequestRelayBlocksMessage,
+    },
     IncomingRoute, Router, SharedIncomingRoute,
 };
 use karlsen_utils::channel::{JobSender, JobTrySendError as TrySendError};
@@ -35,12 +40,24 @@ pub struct TwoWayIncomingRoute {
 
 impl TwoWayIncomingRoute {
     pub fn new(incoming_route: SharedIncomingRoute) -> Self {
-        Self { incoming_route, indirect_invs: VecDeque::new() }
+        Self {
+            incoming_route,
+            indirect_invs: VecDeque::new(),
+        }
     }
 
-    pub fn enqueue_indirect_invs<I: IntoIterator<Item = Hash>>(&mut self, iter: I, known_within_range: bool) {
+    pub fn enqueue_indirect_invs<I: IntoIterator<Item = Hash>>(
+        &mut self,
+        iter: I,
+        known_within_range: bool,
+    ) {
         // All indirect invs are orphan roots; not all are known to be within orphan resolution range
-        self.indirect_invs.extend(iter.into_iter().map(|h| RelayInvMessage { hash: h, is_orphan_root: true, known_within_range }))
+        self.indirect_invs
+            .extend(iter.into_iter().map(|h| RelayInvMessage {
+                hash: h,
+                is_orphan_root: true,
+                known_within_range,
+            }))
     }
 
     pub async fn dequeue(&mut self) -> Result<RelayInvMessage, ProtocolError> {
@@ -49,7 +66,11 @@ impl TwoWayIncomingRoute {
         } else {
             let msg = dequeue!(self.incoming_route, Payload::InvRelayBlock)?;
             let inv = msg.try_into()?;
-            Ok(RelayInvMessage { hash: inv, is_orphan_root: false, known_within_range: false })
+            Ok(RelayInvMessage {
+                hash: inv,
+                is_orphan_root: false,
+                known_within_range: false,
+            })
         }
     }
 }
@@ -84,7 +105,13 @@ impl HandleRelayInvsFlow {
         msg_route: IncomingRoute,
         ibd_sender: JobSender<Block>,
     ) -> Self {
-        Self { ctx, router, invs_route: TwoWayIncomingRoute::new(invs_route), msg_route, ibd_sender }
+        Self {
+            ctx,
+            router,
+            invs_route: TwoWayIncomingRoute::new(invs_route),
+            msg_route,
+            ibd_sender,
+        }
     }
 
     async fn start_impl(&mut self) -> Result<(), ProtocolError> {
@@ -97,7 +124,10 @@ impl HandleRelayInvsFlow {
                 None | Some(BlockStatus::StatusHeaderOnly) => {} // Continue processing this missing inv
                 Some(BlockStatus::StatusInvalid) => {
                     // Report a protocol error
-                    return Err(ProtocolError::OtherOwned(format!("sent inv of an invalid block {}", inv.hash)));
+                    return Err(ProtocolError::OtherOwned(format!(
+                        "sent inv of an invalid block {}",
+                        inv.hash
+                    )));
                 }
                 _ => {
                     // Block is already known, skip to next inv
@@ -119,22 +149,35 @@ impl HandleRelayInvsFlow {
             if self.ctx.is_ibd_running() && !session.async_is_nearly_synced().await {
                 // Note: If the node is considered nearly synced we continue processing relay blocks even though an IBD is in progress.
                 // For instance this means that downloading a side-chain from a delayed node does not interop the normal flow of live blocks.
-                debug!("Got relay block {} while in IBD and the node is out of sync, continuing...", inv.hash);
+                debug!(
+                    "Got relay block {} while in IBD and the node is out of sync, continuing...",
+                    inv.hash
+                );
                 continue;
             }
 
             // We keep the request scope alive until consensus processes the block
-            let Some((block, request_scope)) = self.request_block(inv.hash, self.msg_route.id()).await? else {
-                debug!("Relay block {} was already requested from another peer, continuing...", inv.hash);
+            let Some((block, request_scope)) =
+                self.request_block(inv.hash, self.msg_route.id()).await?
+            else {
+                debug!(
+                    "Relay block {} was already requested from another peer, continuing...",
+                    inv.hash
+                );
                 continue;
             };
             request_scope.report_obtained();
 
             if block.is_header_only() {
-                return Err(ProtocolError::OtherOwned(format!("sent header of {} where expected block with body", block.hash())));
+                return Err(ProtocolError::OtherOwned(format!(
+                    "sent header of {} where expected block with body",
+                    block.hash()
+                )));
             }
 
-            let blue_work_threshold = session.async_get_virtual_merge_depth_blue_work_threshold().await;
+            let blue_work_threshold = session
+                .async_get_virtual_merge_depth_blue_work_threshold()
+                .await;
             // Since `blue_work` respects topology, the negation of this condition means that the relay
             // block is not in the future of virtual's merge depth root, and thus cannot be merged unless
             // other valid blocks Kosherize it (in which case it will be obtained once the merger is relayed)
@@ -150,16 +193,28 @@ impl HandleRelayInvsFlow {
                 continue;
             }
 
-            let BlockValidationFutures { block_task, mut virtual_state_task } = session.validate_and_insert_block(block.clone());
+            let BlockValidationFutures {
+                block_task,
+                mut virtual_state_task,
+            } = session.validate_and_insert_block(block.clone());
 
             let ancestor_batch = match block_task.await {
                 Ok(_) => Default::default(),
                 Err(RuleError::MissingParents(missing_parents)) => {
-                    debug!("Block {} is orphan and has missing parents: {:?}", block.hash(), missing_parents);
-                    if let Some(mut ancestor_batch) = self.process_orphan(&session, block.clone(), inv.known_within_range).await? {
+                    debug!(
+                        "Block {} is orphan and has missing parents: {:?}",
+                        block.hash(),
+                        missing_parents
+                    );
+                    if let Some(mut ancestor_batch) = self
+                        .process_orphan(&session, block.clone(), inv.known_within_range)
+                        .await?
+                    {
                         // Block is not an orphan, retrying
-                        let BlockValidationFutures { block_task: block_task_inner, virtual_state_task: virtual_state_task_inner } =
-                            session.validate_and_insert_block(block.clone());
+                        let BlockValidationFutures {
+                            block_task: block_task_inner,
+                            virtual_state_task: virtual_state_task_inner,
+                        } = session.validate_and_insert_block(block.clone());
                         virtual_state_task = virtual_state_task_inner;
                         for block_task in ancestor_batch.block_tasks.take().unwrap() {
                             match block_task.await {
@@ -174,7 +229,10 @@ impl HandleRelayInvsFlow {
                             Ok(_) => match ancestor_batch.blocks.len() {
                                 0 => debug!("Retried orphan block {} successfully", block.hash()),
                                 n => {
-                                    self.ctx.log_block_event(BlockLogEvent::Unorphaned(ancestor_batch.blocks[0].hash(), n));
+                                    self.ctx.log_block_event(BlockLogEvent::Unorphaned(
+                                        ancestor_batch.blocks[0].hash(),
+                                        n,
+                                    ));
                                     debug!("Unorphaned {} ancestors and retried orphan block {} successfully", n, block.hash())
                                 }
                             },
@@ -195,13 +253,25 @@ impl HandleRelayInvsFlow {
                 let msgs = ancestor_batch
                     .blocks
                     .iter()
-                    .map(|b| make_message!(Payload::InvRelayBlock, InvRelayBlockMessage { hash: Some(b.hash().into()) }))
+                    .map(|b| {
+                        make_message!(
+                            Payload::InvRelayBlock,
+                            InvRelayBlockMessage {
+                                hash: Some(b.hash().into())
+                            }
+                        )
+                    })
                     .collect();
                 self.ctx.hub().broadcast_many(msgs).await;
 
                 self.ctx
                     .hub()
-                    .broadcast(make_message!(Payload::InvRelayBlock, InvRelayBlockMessage { hash: Some(inv.hash.into()) }))
+                    .broadcast(make_message!(
+                        Payload::InvRelayBlock,
+                        InvRelayBlockMessage {
+                            hash: Some(inv.hash.into())
+                        }
+                    ))
                     .await;
             }
 
@@ -209,14 +279,16 @@ impl HandleRelayInvsFlow {
             // can continue processing the following relay blocks
             let ctx = self.ctx.clone();
             tokio::spawn(async move {
-                ctx.on_new_block(&session, ancestor_batch, block, virtual_state_task).await;
+                ctx.on_new_block(&session, ancestor_batch, block, virtual_state_task)
+                    .await;
                 ctx.log_block_event(BlockLogEvent::Relay(inv.hash));
             });
         }
     }
 
     fn enqueue_orphan_roots(&mut self, _orphan: Hash, roots: Vec<Hash>, known_within_range: bool) {
-        self.invs_route.enqueue_indirect_invs(roots, known_within_range)
+        self.invs_route
+            .enqueue_indirect_invs(roots, known_within_range)
     }
 
     async fn request_block(
@@ -231,14 +303,20 @@ impl HandleRelayInvsFlow {
         self.router
             .enqueue(make_request!(
                 Payload::RequestRelayBlocks,
-                RequestRelayBlocksMessage { hashes: vec![requested_hash.into()] },
+                RequestRelayBlocksMessage {
+                    hashes: vec![requested_hash.into()]
+                },
                 request_id
             ))
             .await?;
         let msg = dequeue_with_timeout!(self.msg_route, Payload::Block)?;
         let block: Block = msg.try_into()?;
         if block.hash() != requested_hash {
-            Err(ProtocolError::OtherOwned(format!("requested block hash {} but got block {}", requested_hash, block.hash())))
+            Err(ProtocolError::OtherOwned(format!(
+                "requested block hash {} but got block {}",
+                requested_hash,
+                block.hash()
+            )))
         } else {
             Ok(Some((block, request_scope)))
         }
@@ -264,11 +342,14 @@ impl HandleRelayInvsFlow {
 
             Note that we check the conditions by the order of their cost and avoid making expensive calls if not needed.
         */
-        let should_orphan = known_within_range || self.check_orphan_ibd_conditions(block.header.daa_score) || {
-            // Inner scope to evaluate orphan resolution range and reassign the `known_within_range` variable
-            known_within_range = self.check_orphan_resolution_range(consensus, block.hash(), self.msg_route.id()).await?;
-            known_within_range
-        };
+        let should_orphan =
+            known_within_range || self.check_orphan_ibd_conditions(block.header.daa_score) || {
+                // Inner scope to evaluate orphan resolution range and reassign the `known_within_range` variable
+                known_within_range = self
+                    .check_orphan_resolution_range(consensus, block.hash(), self.msg_route.id())
+                    .await?;
+                known_within_range
+            };
 
         if should_orphan {
             let hash = block.hash();
@@ -283,7 +364,8 @@ impl HandleRelayInvsFlow {
                     return Ok(Some(ancestor_batch));
                 }
                 Some(OrphanOutput::Roots(roots)) => {
-                    self.ctx.log_block_event(BlockLogEvent::Orphaned(hash, roots.len()));
+                    self.ctx
+                        .log_block_event(BlockLogEvent::Orphaned(hash, roots.len()));
                     self.enqueue_orphan_roots(hash, roots, known_within_range)
                 }
                 None | Some(OrphanOutput::Unknown) => {}
@@ -291,7 +373,13 @@ impl HandleRelayInvsFlow {
         } else {
             // Send the block to IBD flow via the dedicated job channel. If the channel has a pending job, we prefer
             // the block with higher blue work, since it is usually more recent
-            match self.ibd_sender.try_send(block, |b, c| if b.header.blue_work > c.header.blue_work { b } else { c }) {
+            match self.ibd_sender.try_send(block, |b, c| {
+                if b.header.blue_work > c.header.blue_work {
+                    b
+                } else {
+                    c
+                }
+            }) {
                 Ok(_) | Err(TrySendError::Full(_)) => {}
                 Err(TrySendError::Closed(_)) => return Err(ProtocolError::ConnectionClosed), // This indicates that IBD flow has exited
             }
@@ -317,7 +405,8 @@ impl HandleRelayInvsFlow {
     fn check_orphan_ibd_conditions(&self, orphan_daa_score: u64) -> bool {
         if let Some(ibd_daa_score) = self.ctx.ibd_relay_daa_score() {
             let max_orphans = self.ctx.max_orphans() as u64;
-            orphan_daa_score + max_orphans / 10 > ibd_daa_score && orphan_daa_score < ibd_daa_score + max_orphans / 2
+            orphan_daa_score + max_orphans / 10 > ibd_daa_score
+                && orphan_daa_score < ibd_daa_score + max_orphans / 2
         } else {
             false
         }
@@ -335,7 +424,10 @@ impl HandleRelayInvsFlow {
         self.router
             .enqueue(make_request!(
                 Payload::RequestBlockLocator,
-                RequestBlockLocatorMessage { high_hash: Some(hash.into()), limit: self.ctx.orphan_resolution_range() },
+                RequestBlockLocatorMessage {
+                    high_hash: Some(hash.into()),
+                    limit: self.ctx.orphan_resolution_range()
+                },
                 request_id
             ))
             .await?;
@@ -349,7 +441,11 @@ impl HandleRelayInvsFlow {
         // most early block. We keep it this way in order to allow future syncee-side implementations to do more
         // with the full incremental info and because it is only a small set of hashes.
         for h in locator_hashes.into_iter().rev() {
-            if consensus.async_get_block_status(h).await.is_some_and(|s| s.has_block_body()) {
+            if consensus
+                .async_get_block_status(h)
+                .await
+                .is_some_and(|s| s.has_block_body())
+            {
                 return Ok(true);
             }
         }

@@ -1,13 +1,18 @@
 use crate::protowire::{
-    karlsend_response::Payload, BlockAddedNotificationMessage, KarlsendResponse, NewBlockTemplateNotificationMessage, RpcNotifyCommand,
+    karlsend_response::Payload, BlockAddedNotificationMessage, KarlsendResponse,
+    NewBlockTemplateNotificationMessage, RpcNotifyCommand,
 };
 use crate::protowire::{
-    FinalityConflictNotificationMessage, FinalityConflictResolvedNotificationMessage, NotifyPruningPointUtxoSetOverrideRequestMessage,
-    NotifyPruningPointUtxoSetOverrideResponseMessage, NotifyUtxosChangedRequestMessage, NotifyUtxosChangedResponseMessage,
-    PruningPointUtxoSetOverrideNotificationMessage, SinkBlueScoreChangedNotificationMessage,
-    StopNotifyingPruningPointUtxoSetOverrideRequestMessage, StopNotifyingPruningPointUtxoSetOverrideResponseMessage,
-    StopNotifyingUtxosChangedRequestMessage, StopNotifyingUtxosChangedResponseMessage, UtxosChangedNotificationMessage,
-    VirtualChainChangedNotificationMessage, VirtualDaaScoreChangedNotificationMessage,
+    FinalityConflictNotificationMessage, FinalityConflictResolvedNotificationMessage,
+    NotifyPruningPointUtxoSetOverrideRequestMessage,
+    NotifyPruningPointUtxoSetOverrideResponseMessage, NotifyUtxosChangedRequestMessage,
+    NotifyUtxosChangedResponseMessage, PruningPointUtxoSetOverrideNotificationMessage,
+    SinkBlueScoreChangedNotificationMessage,
+    StopNotifyingPruningPointUtxoSetOverrideRequestMessage,
+    StopNotifyingPruningPointUtxoSetOverrideResponseMessage,
+    StopNotifyingUtxosChangedRequestMessage, StopNotifyingUtxosChangedResponseMessage,
+    UtxosChangedNotificationMessage, VirtualChainChangedNotificationMessage,
+    VirtualDaaScoreChangedNotificationMessage,
 };
 use crate::{from, try_from};
 use karlsen_notify::subscription::Command;
@@ -39,7 +44,10 @@ from!(item: &karlsen_rpc_core::Notification, Payload, {
 
 from!(item: &karlsen_rpc_core::BlockAddedNotification, BlockAddedNotificationMessage, { Self { block: Some((&*item.block).into()) } });
 
-from!(&karlsen_rpc_core::NewBlockTemplateNotification, NewBlockTemplateNotificationMessage);
+from!(
+    &karlsen_rpc_core::NewBlockTemplateNotification,
+    NewBlockTemplateNotificationMessage
+);
 
 from!(item: &karlsen_rpc_core::VirtualChainChangedNotification, VirtualChainChangedNotificationMessage, {
     Self {
@@ -72,7 +80,10 @@ from!(item: &karlsen_rpc_core::VirtualDaaScoreChangedNotification, VirtualDaaSco
     Self { virtual_daa_score: item.virtual_daa_score }
 });
 
-from!(&karlsen_rpc_core::PruningPointUtxoSetOverrideNotification, PruningPointUtxoSetOverrideNotificationMessage);
+from!(
+    &karlsen_rpc_core::PruningPointUtxoSetOverrideNotification,
+    PruningPointUtxoSetOverrideNotificationMessage
+);
 
 from!(item: Command, RpcNotifyCommand, {
     match item {
@@ -132,7 +143,10 @@ try_from!(item: &BlockAddedNotificationMessage, karlsen_rpc_core::BlockAddedNoti
     }
 });
 
-try_from!(&NewBlockTemplateNotificationMessage, karlsen_rpc_core::NewBlockTemplateNotification);
+try_from!(
+    &NewBlockTemplateNotificationMessage,
+    karlsen_rpc_core::NewBlockTemplateNotification
+);
 
 try_from!(item: &VirtualChainChangedNotificationMessage, karlsen_rpc_core::VirtualChainChangedNotification, {
     Self {
@@ -169,7 +183,10 @@ try_from!(item: &VirtualDaaScoreChangedNotificationMessage, karlsen_rpc_core::Vi
     Self { virtual_daa_score: item.virtual_daa_score }
 });
 
-try_from!(&PruningPointUtxoSetOverrideNotificationMessage, karlsen_rpc_core::PruningPointUtxoSetOverrideNotification);
+try_from!(
+    &PruningPointUtxoSetOverrideNotificationMessage,
+    karlsen_rpc_core::PruningPointUtxoSetOverrideNotification
+);
 
 from!(item: RpcNotifyCommand, Command, {
     match item {

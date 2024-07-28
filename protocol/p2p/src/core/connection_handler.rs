@@ -1,7 +1,8 @@
 use crate::common::ProtocolError;
 use crate::core::hub::HubEvent;
 use crate::pb::{
-    p2p_client::P2pClient as ProtoP2pClient, p2p_server::P2p as ProtoP2p, p2p_server::P2pServer as ProtoP2pServer, KarlsendMessage,
+    p2p_client::P2pClient as ProtoP2pClient, p2p_server::P2p as ProtoP2p,
+    p2p_server::P2pServer as ProtoP2pServer, KarlsendMessage,
 };
 use crate::{ConnectionInitializer, Router};
 use futures::FutureExt;
@@ -9,7 +10,9 @@ use karlsen_core::{debug, info};
 use karlsen_utils::networking::NetAddress;
 use karlsen_utils_tower::{
     counters::TowerConnectionCounters,
-    middleware::{measure_request_body_size_layer, CountBytesBody, MapResponseBodyLayer, ServiceBuilder},
+    middleware::{
+        measure_request_body_size_layer, CountBytesBody, MapResponseBodyLayer, ServiceBuilder,
+    },
 };
 use std::net::ToSocketAddrs;
 use std::pin::Pin;
@@ -60,11 +63,18 @@ impl ConnectionHandler {
         initializer: Arc<dyn ConnectionInitializer>,
         counters: Arc<TowerConnectionCounters>,
     ) -> Self {
-        Self { hub_sender, initializer, counters }
+        Self {
+            hub_sender,
+            initializer,
+            counters,
+        }
     }
 
     /// Launches a P2P server listener loop
-    pub(crate) fn serve(&self, serve_address: NetAddress) -> Result<OneshotSender<()>, ConnectionError> {
+    pub(crate) fn serve(
+        &self,
+        serve_address: NetAddress,
+    ) -> Result<OneshotSender<()>, ConnectionError> {
         let (termination_sender, termination_receiver) = oneshot_channel::<()>();
         let connection_handler = self.clone();
         info!("P2P Server starting on: {}", serve_address);
@@ -81,7 +91,9 @@ impl ConnectionHandler {
             // TODO: check whether we should set tcp_keepalive
             let serve_result = TonicServer::builder()
                 .layer(measure_request_body_size_layer(bytes_rx, |b| b))
-                .layer(MapResponseBodyLayer::new(move |body| CountBytesBody::new(body, bytes_tx.clone())))
+                .layer(MapResponseBodyLayer::new(move |body| {
+                    CountBytesBody::new(body, bytes_tx.clone())
+                }))
                 .add_service(proto_server)
                 .serve_with_shutdown(serve_address.into(), termination_receiver.map(drop))
                 .await;
@@ -95,7 +107,10 @@ impl ConnectionHandler {
     }
 
     /// Connect to a new peer
-    pub(crate) async fn connect(&self, peer_address: String) -> Result<Arc<Router>, ConnectionError> {
+    pub(crate) async fn connect(
+        &self,
+        peer_address: String,
+    ) -> Result<Arc<Router>, ConnectionError> {
         let Some(socket_address) = peer_address.to_socket_addrs()?.next() else {
             return Err(ConnectionError::NoAddress);
         };
@@ -109,10 +124,16 @@ impl ConnectionHandler {
             .await?;
 
         let channel = ServiceBuilder::new()
-            .layer(MapResponseBodyLayer::new(move |body| CountBytesBody::new(body, self.counters.bytes_rx.clone())))
-            .layer(measure_request_body_size_layer(self.counters.bytes_tx.clone(), |body| {
-                body.map_err(|e| tonic::Status::from_error(Box::new(e))).boxed_unsync()
+            .layer(MapResponseBodyLayer::new(move |body| {
+                CountBytesBody::new(body, self.counters.bytes_rx.clone())
             }))
+            .layer(measure_request_body_size_layer(
+                self.counters.bytes_tx.clone(),
+                |body| {
+                    body.map_err(|e| tonic::Status::from_error(Box::new(e)))
+                        .boxed_unsync()
+                },
+            ))
             .service(channel);
 
         let mut client = ProtoP2pClient::new(channel)
@@ -120,23 +141,40 @@ impl ConnectionHandler {
             .accept_compressed(tonic::codec::CompressionEncoding::Gzip)
             .max_decoding_message_size(P2P_MAX_MESSAGE_SIZE);
 
-        let (outgoing_route, outgoing_receiver) = mpsc_channel(Self::outgoing_network_channel_size());
-        let incoming_stream = client.message_stream(ReceiverStream::new(outgoing_receiver)).await?.into_inner();
+        let (outgoing_route, outgoing_receiver) =
+            mpsc_channel(Self::outgoing_network_channel_size());
+        let incoming_stream = client
+            .message_stream(ReceiverStream::new(outgoing_receiver))
+            .await?
+            .into_inner();
 
-        let router = Router::new(socket_address, true, self.hub_sender.clone(), incoming_stream, outgoing_route).await;
+        let router = Router::new(
+            socket_address,
+            true,
+            self.hub_sender.clone(),
+            incoming_stream,
+            outgoing_route,
+        )
+        .await;
 
         // For outbound peers, we perform the initialization as part of the connect logic
         match self.initializer.initialize_connection(router.clone()).await {
             Ok(()) => {
                 // Notify the central Hub about the new peer
-                self.hub_sender.send(HubEvent::NewPeer(router.clone())).await.expect("hub receiver should never drop before senders");
+                self.hub_sender
+                    .send(HubEvent::NewPeer(router.clone()))
+                    .await
+                    .expect("hub receiver should never drop before senders");
             }
 
             Err(err) => {
                 router.try_sending_reject_message(&err).await;
                 // Ignoring the new router
                 router.close().await;
-                debug!("P2P, handshake failed for outbound peer {}: {}", router, err);
+                debug!(
+                    "P2P, handshake failed for outbound peer {}: {}",
+                    router, err
+                );
                 return Err(ConnectionError::ProtocolError(err));
             }
         }
@@ -165,12 +203,18 @@ impl ConnectionHandler {
                     return Err(ConnectionError::ProtocolError(err));
                 }
                 Err(err) => {
-                    debug!("P2P, connect retry #{} failed with error {:?}, peer: {:?}", counter, err, address);
+                    debug!(
+                        "P2P, connect retry #{} failed with error {:?}, peer: {:?}",
+                        counter, err, address
+                    );
                     if counter < retry_attempts {
                         // Await `retry_interval` time before retrying
                         tokio::time::sleep(retry_interval).await;
                     } else {
-                        debug!("P2P, Client connection retry #{} - all failed", retry_attempts);
+                        debug!(
+                            "P2P, Client connection retry #{} - all failed",
+                            retry_attempts
+                        );
                         return Err(err);
                     }
                 }
@@ -199,7 +243,8 @@ impl ConnectionHandler {
 
 #[tonic::async_trait]
 impl ProtoP2p for ConnectionHandler {
-    type MessageStreamStream = Pin<Box<dyn futures::Stream<Item = Result<KarlsendMessage, TonicStatus>> + Send + 'static>>;
+    type MessageStreamStream =
+        Pin<Box<dyn futures::Stream<Item = Result<KarlsendMessage, TonicStatus>> + Send + 'static>>;
 
     /// Handle the new arriving **server** connections
     async fn message_stream(
@@ -207,20 +252,36 @@ impl ProtoP2p for ConnectionHandler {
         request: Request<Streaming<KarlsendMessage>>,
     ) -> Result<Response<Self::MessageStreamStream>, TonicStatus> {
         let Some(remote_address) = request.remote_addr() else {
-            return Err(TonicStatus::new(tonic::Code::InvalidArgument, "Incoming connection opening request has no remote address"));
+            return Err(TonicStatus::new(
+                tonic::Code::InvalidArgument,
+                "Incoming connection opening request has no remote address",
+            ));
         };
 
         // Build the in/out pipes
-        let (outgoing_route, outgoing_receiver) = mpsc_channel(Self::outgoing_network_channel_size());
+        let (outgoing_route, outgoing_receiver) =
+            mpsc_channel(Self::outgoing_network_channel_size());
         let incoming_stream = request.into_inner();
 
         // Build the router object
-        let router = Router::new(remote_address, false, self.hub_sender.clone(), incoming_stream, outgoing_route).await;
+        let router = Router::new(
+            remote_address,
+            false,
+            self.hub_sender.clone(),
+            incoming_stream,
+            outgoing_route,
+        )
+        .await;
 
         // Notify the central Hub about the new peer
-        self.hub_sender.send(HubEvent::NewPeer(router)).await.expect("hub receiver should never drop before senders");
+        self.hub_sender
+            .send(HubEvent::NewPeer(router))
+            .await
+            .expect("hub receiver should never drop before senders");
 
         // Give tonic a receiver stream (messages sent to it will be forwarded to the network peer)
-        Ok(Response::new(Box::pin(ReceiverStream::new(outgoing_receiver).map(Ok)) as Self::MessageStreamStream))
+        Ok(Response::new(
+            Box::pin(ReceiverStream::new(outgoing_receiver).map(Ok)) as Self::MessageStreamStream,
+        ))
     }
 }

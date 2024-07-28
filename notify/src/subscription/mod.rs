@@ -1,4 +1,7 @@
-use crate::{error::Result, events::EventType, notification::Notification, scope::Scope, subscription::context::SubscriptionContext};
+use crate::{
+    error::Result, events::EventType, notification::Notification, scope::Scope,
+    subscription::context::SubscriptionContext,
+};
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -15,7 +18,9 @@ pub mod compounded;
 pub mod context;
 pub mod single;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
+)]
 pub enum Command {
     Start = 0,
     Stop = 1,
@@ -124,15 +129,24 @@ pub struct MutationOutcome {
 
 impl MutationOutcome {
     pub fn new() -> Self {
-        Self { mutated: None, mutations: vec![] }
+        Self {
+            mutated: None,
+            mutations: vec![],
+        }
     }
 
     pub fn with_mutations(mutations: Vec<Mutation>) -> Self {
-        Self { mutated: None, mutations }
+        Self {
+            mutated: None,
+            mutations,
+        }
     }
 
     pub fn with_mutated(mutated: DynSubscription, mutations: Vec<Mutation>) -> Self {
-        Self { mutated: Some(mutated), mutations }
+        Self {
+            mutated: Some(mutated),
+            mutations,
+        }
     }
 
     /// Updates `target` to the mutated state if any, otherwise leave `target` as is.
@@ -186,12 +200,24 @@ pub trait MutateSingle: Deref<Target = dyn Single> {
     ///
     /// On success, updates `self` to the new state if any and returns both the optional new state and the mutations
     /// resulting of the process as a [`MutationOutcome`].
-    fn mutate(&mut self, mutation: Mutation, policies: MutationPolicies, context: &SubscriptionContext) -> Result<MutationOutcome>;
+    fn mutate(
+        &mut self,
+        mutation: Mutation,
+        policies: MutationPolicies,
+        context: &SubscriptionContext,
+    ) -> Result<MutationOutcome>;
 }
 
 impl MutateSingle for Arc<dyn Single> {
-    fn mutate(&mut self, mutation: Mutation, policies: MutationPolicies, context: &SubscriptionContext) -> Result<MutationOutcome> {
-        let outcome = self.apply_mutation(self, mutation, policies, context)?.apply_to(self);
+    fn mutate(
+        &mut self,
+        mutation: Mutation,
+        policies: MutationPolicies,
+        context: &SubscriptionContext,
+    ) -> Result<MutationOutcome> {
+        let outcome = self
+            .apply_mutation(self, mutation, policies, context)?
+            .apply_to(self);
         Ok(outcome)
     }
 }

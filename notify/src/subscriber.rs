@@ -22,7 +22,12 @@ pub trait SubscriptionManager: Send + Sync + Debug {
     async fn start_notify(&self, id: ListenerId, scope: Scope) -> Result<()>;
     async fn stop_notify(&self, id: ListenerId, scope: Scope) -> Result<()>;
 
-    async fn execute_subscribe_command(&self, id: ListenerId, scope: Scope, command: Command) -> Result<()> {
+    async fn execute_subscribe_command(
+        &self,
+        id: ListenerId,
+        scope: Scope,
+        command: Command,
+    ) -> Result<()> {
         match command {
             Command::Start => self.start_notify(id, scope).await,
             Command::Stop => self.stop_notify(id, scope).await,
@@ -88,20 +93,35 @@ impl Subscriber {
     /// Launch the subscription receiver
     fn spawn_subscription_receiver_task(self: Arc<Self>) {
         // The task can only be spawned once
-        if self.started.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
+        if self
+            .started
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
             return;
         }
-        trace!("[Subscriber {}] starting subscription receiving task", self.name);
+        trace!(
+            "[Subscriber {}] starting subscription receiving task",
+            self.name
+        );
         workflow_core::task::spawn(async move {
             while let Ok(mutation) = self.incoming.recv().await {
                 if self.handles_event_type(mutation.event_type()) {
                     if let Err(err) = self
                         .subscription_manager
                         .clone()
-                        .execute_subscribe_command(self.listener_id, mutation.scope, mutation.command)
+                        .execute_subscribe_command(
+                            self.listener_id,
+                            mutation.scope,
+                            mutation.command,
+                        )
                         .await
                     {
-                        trace!("[Subscriber {}] the subscription command returned an error: {:?}", self.name, err);
+                        trace!(
+                            "[Subscriber {}] the subscription command returned an error: {:?}",
+                            self.name,
+                            err
+                        );
                     }
                 }
             }
@@ -146,7 +166,10 @@ pub mod test_helpers {
 
     impl SubscriptionMessage {
         pub fn new(listener_id: ListenerId, command: Command, scope: Scope) -> Self {
-            Self { listener_id, mutation: Mutation::new(command, scope) }
+            Self {
+                listener_id,
+                mutation: Mutation::new(command, scope),
+            }
         }
     }
 
@@ -164,11 +187,17 @@ pub mod test_helpers {
     #[async_trait]
     impl SubscriptionManager for SubscriptionManagerMock {
         async fn start_notify(&self, id: ListenerId, scope: Scope) -> Result<()> {
-            Ok(self.sender.send(SubscriptionMessage::new(id, Command::Start, scope)).await?)
+            Ok(self
+                .sender
+                .send(SubscriptionMessage::new(id, Command::Start, scope))
+                .await?)
         }
 
         async fn stop_notify(&self, id: ListenerId, scope: Scope) -> Result<()> {
-            Ok(self.sender.send(SubscriptionMessage::new(id, Command::Stop, scope)).await?)
+            Ok(self
+                .sender
+                .send(SubscriptionMessage::new(id, Command::Stop, scope))
+                .await?)
         }
     }
 }

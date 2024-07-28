@@ -44,11 +44,18 @@ pub struct TransactionOutput {
 
 impl TransactionOutput {
     pub fn new(value: u64, script_public_key: ScriptPublicKey) -> TransactionOutput {
-        Self { inner: Arc::new(Mutex::new(TransactionOutputInner { value, script_public_key })) }
+        Self {
+            inner: Arc::new(Mutex::new(TransactionOutputInner {
+                value,
+                script_public_key,
+            })),
+        }
     }
 
     pub fn new_with_inner(inner: TransactionOutputInner) -> Self {
-        Self { inner: Arc::new(Mutex::new(inner)) }
+        Self {
+            inner: Arc::new(Mutex::new(inner)),
+        }
     }
 
     pub fn inner(&self) -> MutexGuard<'_, TransactionOutputInner> {
@@ -65,7 +72,12 @@ impl TransactionOutput {
     #[wasm_bindgen(constructor)]
     /// TransactionOutput constructor
     pub fn ctor(value: u64, script_public_key: &ScriptPublicKey) -> TransactionOutput {
-        Self { inner: Arc::new(Mutex::new(TransactionOutputInner { value, script_public_key: script_public_key.clone() })) }
+        Self {
+            inner: Arc::new(Mutex::new(TransactionOutputInner {
+                value,
+                script_public_key: script_public_key.clone(),
+            })),
+        }
     }
 
     #[wasm_bindgen(getter, js_name = value)]
@@ -122,8 +134,12 @@ impl TryFrom<&JsValue> for TransactionOutput {
             let has_address = Object::has_own(object, &JsValue::from("address"));
             workflow_log::log_trace!("js_value->TransactionOutput: has_address:{has_address:?}");
             let value = object.get_u64("value")?;
-            let script_public_key = ScriptPublicKey::try_cast_from(object.get_value("scriptPublicKey")?)?;
-            Ok(TransactionOutput::new(value, script_public_key.into_owned()))
+            let script_public_key =
+                ScriptPublicKey::try_cast_from(object.get_value("scriptPublicKey")?)?;
+            Ok(TransactionOutput::new(
+                value,
+                script_public_key.into_owned(),
+            ))
         } else {
             Err("TransactionInput must be an object".into())
         }

@@ -8,8 +8,12 @@ const ITERS: usize = 1024;
 
 fn bench_pow(c: &mut Criterion) {
     let mut gen = XoShiRo256PlusPlus::new(Hash::from_bytes([42; 32]));
-    let gen_hash = |gen: &mut XoShiRo256PlusPlus| Hash::from_le_u64([gen.u64(), gen.u64(), gen.u64(), gen.u64()]);
-    let matrices: Vec<_> = (0..ITERS).map(|_| Matrix::generate(gen_hash(&mut gen))).collect();
+    let gen_hash = |gen: &mut XoShiRo256PlusPlus| {
+        Hash::from_le_u64([gen.u64(), gen.u64(), gen.u64(), gen.u64()])
+    };
+    let matrices: Vec<_> = (0..ITERS)
+        .map(|_| Matrix::generate(gen_hash(&mut gen)))
+        .collect();
     let hashes: Vec<_> = (0..ITERS).map(|_| gen_hash(&mut gen)).collect();
 
     c.bench_function("Compute Rank", |b| {

@@ -22,7 +22,9 @@ use crate::{
         virtual_state::{LkgVirtualState, VirtualStores},
         DB,
     },
-    processes::{ghostdag::ordering::SortableBlock, reachability::inquirer as reachability, relations},
+    processes::{
+        ghostdag::ordering::SortableBlock, reachability::inquirer as reachability, relations,
+    },
 };
 
 use super::cache_policy_builder::CachePolicyBuilder as PolicyBuilder;
@@ -109,13 +111,20 @@ impl ConsensusStorage {
         let ghostdag_compact_bytes = size_of::<Hash>() + size_of::<CompactGhostdagData>();
         let headers_compact_bytes = size_of::<Hash>() + size_of::<CompactHeaderData>();
         let difficulty_window_bytes = params.difficulty_window_size(0) * size_of::<SortableBlock>();
-        let median_window_bytes = params.past_median_time_window_size(0) * size_of::<SortableBlock>();
+        let median_window_bytes =
+            params.past_median_time_window_size(0) * size_of::<SortableBlock>();
 
         // Cache policy builders
-        let daa_excluded_builder =
-            PolicyBuilder::new().max_items(pruning_depth).bytes_budget(daa_excluded_budget).unit_bytes(daa_excluded_bytes).untracked(); // Required only above the pruning point
-        let statuses_builder =
-            PolicyBuilder::new().max_items(pruning_size_for_caches).bytes_budget(statuses_budget).unit_bytes(status_bytes).untracked();
+        let daa_excluded_builder = PolicyBuilder::new()
+            .max_items(pruning_depth)
+            .bytes_budget(daa_excluded_budget)
+            .unit_bytes(daa_excluded_bytes)
+            .untracked(); // Required only above the pruning point
+        let statuses_builder = PolicyBuilder::new()
+            .max_items(pruning_size_for_caches)
+            .bytes_budget(statuses_budget)
+            .unit_bytes(status_bytes)
+            .untracked();
         let reachability_data_builder = PolicyBuilder::new()
             .max_items(pruning_size_for_caches)
             .bytes_budget(reachability_data_budget)
@@ -142,8 +151,10 @@ impl ConsensusStorage {
             .unit_bytes(size_of::<Hash>())
             .min_items(level_lower_bound)
             .tracked_units();
-        let reachability_sets_builder =
-            PolicyBuilder::new().bytes_budget(reachability_sets_budget).unit_bytes(size_of::<Hash>()).tracked_units();
+        let reachability_sets_builder = PolicyBuilder::new()
+            .bytes_budget(reachability_sets_budget)
+            .unit_bytes(size_of::<Hash>())
+            .tracked_units();
         let difficulty_window_builder = PolicyBuilder::new()
             .max_items(perf_params.block_window_cache_size)
             .bytes_budget(block_window_budget)
@@ -154,20 +165,40 @@ impl ConsensusStorage {
             .bytes_budget(block_window_budget)
             .unit_bytes(median_window_bytes)
             .untracked();
-        let ghostdag_builder = PolicyBuilder::new().bytes_budget(ghostdag_budget).min_items(level_lower_bound).tracked_bytes();
-        let headers_builder = PolicyBuilder::new().bytes_budget(headers_budget).tracked_bytes();
-        let utxo_diffs_builder = PolicyBuilder::new().bytes_budget(utxo_diffs_budget).tracked_bytes();
-        let block_data_builder = PolicyBuilder::new().max_items(perf_params.block_data_cache_size).untracked();
-        let header_data_builder = PolicyBuilder::new().max_items(perf_params.header_data_cache_size).untracked();
-        let utxo_set_builder = PolicyBuilder::new().max_items(perf_params.utxo_set_cache_size).untracked();
-        let transactions_builder = PolicyBuilder::new().bytes_budget(transactions_budget).tracked_bytes();
-        let acceptance_data_builder = PolicyBuilder::new().bytes_budget(acceptance_data_budget).tracked_bytes();
+        let ghostdag_builder = PolicyBuilder::new()
+            .bytes_budget(ghostdag_budget)
+            .min_items(level_lower_bound)
+            .tracked_bytes();
+        let headers_builder = PolicyBuilder::new()
+            .bytes_budget(headers_budget)
+            .tracked_bytes();
+        let utxo_diffs_builder = PolicyBuilder::new()
+            .bytes_budget(utxo_diffs_budget)
+            .tracked_bytes();
+        let block_data_builder = PolicyBuilder::new()
+            .max_items(perf_params.block_data_cache_size)
+            .untracked();
+        let header_data_builder = PolicyBuilder::new()
+            .max_items(perf_params.header_data_cache_size)
+            .untracked();
+        let utxo_set_builder = PolicyBuilder::new()
+            .max_items(perf_params.utxo_set_cache_size)
+            .untracked();
+        let transactions_builder = PolicyBuilder::new()
+            .bytes_budget(transactions_budget)
+            .tracked_bytes();
+        let acceptance_data_builder = PolicyBuilder::new()
+            .bytes_budget(acceptance_data_budget)
+            .tracked_bytes();
         let past_pruning_points_builder = PolicyBuilder::new().max_items(1024).untracked();
 
         // TODO: consider tracking UtxoDiff byte sizes more accurately including the exact size of ScriptPublicKey
 
         // Headers
-        let statuses_store = Arc::new(RwLock::new(DbStatusesStore::new(db.clone(), statuses_builder.build())));
+        let statuses_store = Arc::new(RwLock::new(DbStatusesStore::new(
+            db.clone(),
+            statuses_builder.build(),
+        )));
         let relations_stores = Arc::new(RwLock::new(
             (0..=params.max_block_level)
                 .map(|level| {
@@ -206,34 +237,67 @@ impl ConsensusStorage {
                 .collect_vec(),
         );
         let ghostdag_primary_store = ghostdag_stores[0].clone();
-        let daa_excluded_store = Arc::new(DbDaaStore::new(db.clone(), daa_excluded_builder.build()));
-        let headers_store = Arc::new(DbHeadersStore::new(db.clone(), headers_builder.build(), headers_compact_builder.build()));
+        let daa_excluded_store =
+            Arc::new(DbDaaStore::new(db.clone(), daa_excluded_builder.build()));
+        let headers_store = Arc::new(DbHeadersStore::new(
+            db.clone(),
+            headers_builder.build(),
+            headers_compact_builder.build(),
+        ));
         let depth_store = Arc::new(DbDepthStore::new(db.clone(), header_data_builder.build()));
-        let selected_chain_store = Arc::new(RwLock::new(DbSelectedChainStore::new(db.clone(), header_data_builder.build())));
+        let selected_chain_store = Arc::new(RwLock::new(DbSelectedChainStore::new(
+            db.clone(),
+            header_data_builder.build(),
+        )));
 
         // Pruning
         let pruning_point_store = Arc::new(RwLock::new(DbPruningStore::new(db.clone())));
-        let past_pruning_points_store = Arc::new(DbPastPruningPointsStore::new(db.clone(), past_pruning_points_builder.build()));
-        let pruning_utxoset_stores = Arc::new(RwLock::new(PruningUtxosetStores::new(db.clone(), utxo_set_builder.build())));
+        let past_pruning_points_store = Arc::new(DbPastPruningPointsStore::new(
+            db.clone(),
+            past_pruning_points_builder.build(),
+        ));
+        let pruning_utxoset_stores = Arc::new(RwLock::new(PruningUtxosetStores::new(
+            db.clone(),
+            utxo_set_builder.build(),
+        )));
 
         // Txs
-        let block_transactions_store = Arc::new(DbBlockTransactionsStore::new(db.clone(), transactions_builder.build()));
-        let utxo_diffs_store = Arc::new(DbUtxoDiffsStore::new(db.clone(), utxo_diffs_builder.build()));
-        let utxo_multisets_store = Arc::new(DbUtxoMultisetsStore::new(db.clone(), block_data_builder.build()));
-        let acceptance_data_store = Arc::new(DbAcceptanceDataStore::new(db.clone(), acceptance_data_builder.build()));
+        let block_transactions_store = Arc::new(DbBlockTransactionsStore::new(
+            db.clone(),
+            transactions_builder.build(),
+        ));
+        let utxo_diffs_store = Arc::new(DbUtxoDiffsStore::new(
+            db.clone(),
+            utxo_diffs_builder.build(),
+        ));
+        let utxo_multisets_store = Arc::new(DbUtxoMultisetsStore::new(
+            db.clone(),
+            block_data_builder.build(),
+        ));
+        let acceptance_data_store = Arc::new(DbAcceptanceDataStore::new(
+            db.clone(),
+            acceptance_data_builder.build(),
+        ));
 
         // Tips
-        let headers_selected_tip_store = Arc::new(RwLock::new(DbHeadersSelectedTipStore::new(db.clone())));
+        let headers_selected_tip_store =
+            Arc::new(RwLock::new(DbHeadersSelectedTipStore::new(db.clone())));
         let body_tips_store = Arc::new(RwLock::new(DbTipsStore::new(db.clone())));
 
         // Block windows
-        let block_window_cache_for_difficulty = Arc::new(BlockWindowCacheStore::new(difficulty_window_builder.build()));
-        let block_window_cache_for_past_median_time = Arc::new(BlockWindowCacheStore::new(median_window_builder.build()));
+        let block_window_cache_for_difficulty = Arc::new(BlockWindowCacheStore::new(
+            difficulty_window_builder.build(),
+        ));
+        let block_window_cache_for_past_median_time =
+            Arc::new(BlockWindowCacheStore::new(median_window_builder.build()));
 
         // Virtual stores
         let lkg_virtual_state = LkgVirtualState::default();
-        let virtual_stores =
-            Arc::new(RwLock::new(VirtualStores::new(db.clone(), lkg_virtual_state.clone(), utxo_set_builder.build())));
+        let virtual_stores = Arc::new(RwLock::new(VirtualStores::new(
+            db.clone(),
+            lkg_virtual_state.clone(),
+            utxo_set_builder.build(),
+        )));
 
         // Ensure that reachability stores are initialized
         reachability::init(reachability_store.write().deref_mut()).unwrap();
