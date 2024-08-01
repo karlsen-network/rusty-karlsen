@@ -1,6 +1,7 @@
 use crate::{
-    NotifyBlockAddedRequest, NotifyFinalityConflictRequest, NotifyNewBlockTemplateRequest, NotifyPruningPointUtxoSetOverrideRequest,
-    NotifySinkBlueScoreChangedRequest, NotifyUtxosChangedRequest, NotifyVirtualChainChangedRequest,
+    NotifyBlockAddedRequest, NotifyFinalityConflictRequest, NotifyNewBlockTemplateRequest,
+    NotifyPruningPointUtxoSetOverrideRequest, NotifySinkBlueScoreChangedRequest,
+    NotifyUtxosChangedRequest, NotifyVirtualChainChangedRequest,
     NotifyVirtualDaaScoreChangedRequest,
 };
 use karlsen_notify::scope::*;

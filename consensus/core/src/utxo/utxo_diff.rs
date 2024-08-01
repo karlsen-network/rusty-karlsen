@@ -20,7 +20,9 @@ pub struct UtxoDiff {
 
 impl MemSizeEstimator for UtxoDiff {
     fn estimate_mem_bytes(&self) -> usize {
-        size_of::<Self>() + (self.add.len() + self.remove.len()) * (size_of::<TransactionOutpoint>() + size_of::<UtxoEntry>())
+        size_of::<Self>()
+            + (self.add.len() + self.remove.len())
+                * (size_of::<TransactionOutpoint>() + size_of::<UtxoEntry>())
     }
 }
 
@@ -86,31 +88,49 @@ impl UtxoDiff {
     /// first diff, and then the second diff were applied to the same base UTXO set
     pub fn with_diff_in_place(&mut self, other: &impl ImmutableUtxoDiff) -> UtxoResult<()> {
         // TODO: should we apply the sanity checks below only in Debug mode?
-        if let Some(offending_outpoint) =
-            other.removed().intersects_with_rule(&self.remove, |outpoint, entry_to_add, _existing_entry| {
-                !self.add.contains_with_daa_score(outpoint, entry_to_add.block_daa_score)
-            })
-        {
+        if let Some(offending_outpoint) = other.removed().intersects_with_rule(
+            &self.remove,
+            |outpoint, entry_to_add, _existing_entry| {
+                !self
+                    .add
+                    .contains_with_daa_score(outpoint, entry_to_add.block_daa_score)
+            },
+        ) {
             return Err(UtxoAlgebraError::DuplicateRemovePoint(offending_outpoint));
         }
 
-        if let Some(offending_outpoint) = other.added().intersects_with_rule(&self.add, |outpoint, _entry_to_add, existing_entry| {
-            !other.removed().contains_with_daa_score(outpoint, existing_entry.block_daa_score)
-        }) {
+        if let Some(offending_outpoint) = other.added().intersects_with_rule(
+            &self.add,
+            |outpoint, _entry_to_add, existing_entry| {
+                !other
+                    .removed()
+                    .contains_with_daa_score(outpoint, existing_entry.block_daa_score)
+            },
+        ) {
             return Err(UtxoAlgebraError::DuplicateAddPoint(offending_outpoint));
         }
 
         let mut intersection = UtxoCollection::new();
 
         // If does not exist neither in `add` nor in `remove` - add to `remove`
-        intersection_with_remainder_having_daa_score_in_place(other.removed(), &self.add, &mut intersection, &mut self.remove);
+        intersection_with_remainder_having_daa_score_in_place(
+            other.removed(),
+            &self.add,
+            &mut intersection,
+            &mut self.remove,
+        );
         // If already exists in `add` with the same DAA score - remove from `add`
         self.add.remove_collection(&intersection);
 
         intersection.clear();
 
         // If does not exist neither in `add` nor in `remove`, or exists in `remove' with different DAA score - add to 'add'
-        intersection_with_remainder_having_daa_score_in_place(other.added(), &self.remove, &mut intersection, &mut self.add);
+        intersection_with_remainder_having_daa_score_in_place(
+            other.added(),
+            &self.remove,
+            &mut intersection,
+            &mut self.add,
+        );
         // If already exists in `remove` with the same DAA score - remove from `remove`
         self.remove.remove_collection(&intersection);
 
@@ -160,33 +180,54 @@ impl UtxoDiff {
         let rule_not_added_output_removed_with_daa_score =
             |outpoint: &TransactionOutpoint, this_entry: &UtxoEntry, other_entry: &UtxoEntry| {
                 !(other_entry.block_daa_score != this_entry.block_daa_score
-                    && (self.add.contains_with_daa_score(outpoint, other_entry.block_daa_score)
-                        || other.removed().contains_with_daa_score(outpoint, this_entry.block_daa_score)))
+                    && (self
+                        .add
+                        .contains_with_daa_score(outpoint, other_entry.block_daa_score)
+                        || other
+                            .removed()
+                            .contains_with_daa_score(outpoint, this_entry.block_daa_score)))
             };
 
-        if let Some(offending_outpoint) = self.remove.intersects_with_rule(other.added(), rule_not_added_output_removed_with_daa_score)
+        if let Some(offending_outpoint) = self
+            .remove
+            .intersects_with_rule(other.added(), rule_not_added_output_removed_with_daa_score)
         {
-            return Err(UtxoAlgebraError::DiffIntersectionPoint(offending_outpoint, "both in self.add and in other.remove"));
+            return Err(UtxoAlgebraError::DiffIntersectionPoint(
+                offending_outpoint,
+                "both in self.add and in other.remove",
+            ));
         }
 
         // Check that NOT(entries with unequal DAA score AND utxo is in self.remove and/or other.add) -> Error
         let rule_not_removed_output_added_with_daa_score =
             |outpoint: &TransactionOutpoint, this_entry: &UtxoEntry, other_entry: &UtxoEntry| {
                 !(other_entry.block_daa_score != this_entry.block_daa_score
-                    && (self.remove.contains_with_daa_score(outpoint, other_entry.block_daa_score)
-                        || other.added().contains_with_daa_score(outpoint, this_entry.block_daa_score)))
+                    && (self
+                        .remove
+                        .contains_with_daa_score(outpoint, other_entry.block_daa_score)
+                        || other
+                            .added()
+                            .contains_with_daa_score(outpoint, this_entry.block_daa_score)))
             };
 
-        if let Some(offending_outpoint) = self.add.intersects_with_rule(other.removed(), rule_not_removed_output_added_with_daa_score)
-        {
-            return Err(UtxoAlgebraError::DiffIntersectionPoint(offending_outpoint, "both in self.remove and in other.add"));
+        if let Some(offending_outpoint) = self.add.intersects_with_rule(
+            other.removed(),
+            rule_not_removed_output_added_with_daa_score,
+        ) {
+            return Err(UtxoAlgebraError::DiffIntersectionPoint(
+                offending_outpoint,
+                "both in self.remove and in other.add",
+            ));
         }
 
         // If we have the same entry in self.remove and other.remove
         // and existing entry is with different DAA score -> Error
-        if let Some(offending_outpoint) = self.remove.intersects_with_rule(other.removed(), |_outpoint, this_entry, other_entry| {
-            other_entry.block_daa_score != this_entry.block_daa_score
-        }) {
+        if let Some(offending_outpoint) = self.remove.intersects_with_rule(
+            other.removed(),
+            |_outpoint, this_entry, other_entry| {
+                other_entry.block_daa_score != this_entry.block_daa_score
+            },
+        ) {
             return Err(UtxoAlgebraError::DiffIntersectionPoint(
                 offending_outpoint,
                 "both in self.remove and other.remove with different DAA scores, with no corresponding entry in self.add",
@@ -198,7 +239,12 @@ impl UtxoDiff {
         // All utxos in self.add:
         // If they are not in other.add - should be added in result.remove
         let mut in_both_to_add = UtxoCollection::new();
-        subtraction_with_remainder_having_daa_score_in_place(&self.add, other.added(), &mut result.remove, &mut in_both_to_add);
+        subtraction_with_remainder_having_daa_score_in_place(
+            &self.add,
+            other.added(),
+            &mut result.remove,
+            &mut in_both_to_add,
+        );
         // If they are in other.remove - base utxo-set is not the same
         if in_both_to_add.intersects(&self.remove) != in_both_to_add.intersects(other.removed()) {
             return Err(UtxoAlgebraError::General(
@@ -221,7 +267,11 @@ impl UtxoDiff {
         Ok(result)
     }
 
-    pub fn add_transaction(&mut self, transaction: &impl VerifiableTransaction, block_daa_score: u64) -> UtxoResult<()> {
+    pub fn add_transaction(
+        &mut self,
+        transaction: &impl VerifiableTransaction,
+        block_daa_score: u64,
+    ) -> UtxoResult<()> {
         for (input, entry) in transaction.populated_inputs() {
             self.remove_entry(&input.previous_outpoint, entry)?;
         }
@@ -231,14 +281,26 @@ impl UtxoDiff {
 
         for (i, output) in transaction.outputs().iter().enumerate() {
             let outpoint = TransactionOutpoint::new(tx_id, i as u32);
-            let entry = UtxoEntry::new(output.value, output.script_public_key.clone(), block_daa_score, is_coinbase);
+            let entry = UtxoEntry::new(
+                output.value,
+                output.script_public_key.clone(),
+                block_daa_score,
+                is_coinbase,
+            );
             self.add_entry(outpoint, entry)?;
         }
         Ok(())
     }
 
-    fn remove_entry(&mut self, outpoint: &TransactionOutpoint, entry: &UtxoEntry) -> UtxoResult<()> {
-        if self.add.contains_with_daa_score(outpoint, entry.block_daa_score) {
+    fn remove_entry(
+        &mut self,
+        outpoint: &TransactionOutpoint,
+        entry: &UtxoEntry,
+    ) -> UtxoResult<()> {
+        if self
+            .add
+            .contains_with_daa_score(outpoint, entry.block_daa_score)
+        {
             self.add.remove(outpoint);
         } else if let Vacant(e) = self.remove.entry(*outpoint) {
             e.insert(entry.clone());
@@ -249,7 +311,10 @@ impl UtxoDiff {
     }
 
     fn add_entry(&mut self, outpoint: TransactionOutpoint, entry: UtxoEntry) -> UtxoResult<()> {
-        if self.remove.contains_with_daa_score(&outpoint, entry.block_daa_score) {
+        if self
+            .remove
+            .contains_with_daa_score(&outpoint, entry.block_daa_score)
+        {
             self.remove.remove(&outpoint);
         } else if let Vacant(e) = self.add.entry(outpoint) {
             e.insert(entry);
@@ -287,7 +352,9 @@ mod tests {
 
         impl UtxoDiffBuilder {
             fn new() -> Self {
-                Self { diff: UtxoDiff::default() }
+                Self {
+                    diff: UtxoDiff::default(),
+                }
             }
 
             fn insert_add_point(mut self, outpoint: TransactionOutpoint, entry: UtxoEntry) -> Self {
@@ -295,7 +362,11 @@ mod tests {
                 self
             }
 
-            fn insert_remove_point(mut self, outpoint: TransactionOutpoint, entry: UtxoEntry) -> Self {
+            fn insert_remove_point(
+                mut self,
+                outpoint: TransactionOutpoint,
+                entry: UtxoEntry,
+            ) -> Self {
                 assert!(self.diff.remove.insert(outpoint, entry).is_none());
                 self
             }
@@ -308,15 +379,23 @@ mod tests {
         let tests = [
             Test {
                 name: "first add in this, first add in other",
-                this: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
-                other: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
+                this: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                other: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
                 expected_diff_from_result: Ok(UtxoDiffBuilder::new().build()),
                 expected_with_diff_result: Err(UtxoAlgebraError::DuplicateAddPoint(outpoint0)),
             },
             Test {
                 name: "first add in this, second add in other",
-                this: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
-                other: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry2.clone()).build(),
+                this: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                other: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry2.clone())
+                    .build(),
                 expected_diff_from_result: Ok(UtxoDiffBuilder::new()
                     .insert_add_point(outpoint0, utxo_entry2.clone())
                     .insert_remove_point(outpoint0, utxo_entry1.clone())
@@ -325,14 +404,22 @@ mod tests {
             },
             Test {
                 name: "first add in this, second remove in other",
-                this: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
-                other: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
-                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(outpoint0, "")),
+                this: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                other: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(
+                    outpoint0, "",
+                )),
                 expected_with_diff_result: Ok(UtxoDiffBuilder::new().build()),
             },
             Test {
                 name: "first add in this and other, second remove in other",
-                this: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
+                this: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
                 other: UtxoDiffBuilder::new()
                     .insert_add_point(outpoint0, utxo_entry1.clone())
                     .insert_remove_point(outpoint0, utxo_entry2.clone())
@@ -342,33 +429,57 @@ mod tests {
             },
             Test {
                 name: "first add in this and remove in other, second add in other",
-                this: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
+                this: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
                 other: UtxoDiffBuilder::new()
                     .insert_add_point(outpoint0, utxo_entry2.clone())
                     .insert_remove_point(outpoint0, utxo_entry1.clone())
                     .build(),
-                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(outpoint0, "")),
-                expected_with_diff_result: Ok(UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry2.clone()).build()),
+                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(
+                    outpoint0, "",
+                )),
+                expected_with_diff_result: Ok(UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry2.clone())
+                    .build()),
             },
             Test {
                 name: "first add in this, empty other",
-                this: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
+                this: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
                 other: UtxoDiffBuilder::new().build(),
-                expected_diff_from_result: Ok(UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build()),
-                expected_with_diff_result: Ok(UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build()),
+                expected_diff_from_result: Ok(UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build()),
+                expected_with_diff_result: Ok(UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build()),
             },
             Test {
                 name: "first remove in this and add in other",
-                this: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
-                other: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
-                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(outpoint0, "")),
+                this: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                other: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(
+                    outpoint0, "",
+                )),
                 expected_with_diff_result: Ok(UtxoDiffBuilder::new().build()),
             },
             Test {
                 name: "first remove in this, second add in other",
-                this: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
-                other: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry2.clone()).build(),
-                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(outpoint0, "")),
+                this: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                other: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry2.clone())
+                    .build(),
+                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(
+                    outpoint0, "",
+                )),
                 expected_with_diff_result: Ok(UtxoDiffBuilder::new()
                     .insert_add_point(outpoint0, utxo_entry2.clone())
                     .insert_remove_point(outpoint0, utxo_entry1.clone())
@@ -376,44 +487,68 @@ mod tests {
             },
             Test {
                 name: "first remove in this and other",
-                this: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
-                other: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
+                this: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                other: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
                 expected_diff_from_result: Ok(UtxoDiffBuilder::new().build()),
                 expected_with_diff_result: Err(UtxoAlgebraError::DuplicateRemovePoint(outpoint0)),
             },
             Test {
                 name: "first remove in this, second remove in other",
-                this: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
-                other: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry2.clone()).build(),
-                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(outpoint0, "")),
+                this: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                other: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry2.clone())
+                    .build(),
+                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(
+                    outpoint0, "",
+                )),
                 expected_with_diff_result: Err(UtxoAlgebraError::DuplicateRemovePoint(outpoint0)),
             },
             Test {
                 name: "first remove in this and add in other, second remove in other",
-                this: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
+                this: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
                 other: UtxoDiffBuilder::new()
                     .insert_add_point(outpoint0, utxo_entry1.clone())
                     .insert_remove_point(outpoint0, utxo_entry2.clone())
                     .build(),
-                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(outpoint0, "")),
+                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(
+                    outpoint0, "",
+                )),
                 expected_with_diff_result: Err(UtxoAlgebraError::DuplicateRemovePoint(outpoint0)),
             },
             Test {
                 name: "first remove in this and other, second add in other",
-                this: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
+                this: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
                 other: UtxoDiffBuilder::new()
                     .insert_add_point(outpoint0, utxo_entry2.clone())
                     .insert_remove_point(outpoint0, utxo_entry1.clone())
                     .build(),
-                expected_diff_from_result: Ok(UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry2.clone()).build()),
+                expected_diff_from_result: Ok(UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry2.clone())
+                    .build()),
                 expected_with_diff_result: Err(UtxoAlgebraError::DuplicateRemovePoint(outpoint0)),
             },
             Test {
                 name: "first remove in this, empty other",
-                this: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
+                this: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
                 other: UtxoDiffBuilder::new().build(),
-                expected_diff_from_result: Ok(UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build()),
-                expected_with_diff_result: Ok(UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build()),
+                expected_diff_from_result: Ok(UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build()),
+                expected_with_diff_result: Ok(UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build()),
             },
             Test {
                 name: "first add in this and other, second remove in this",
@@ -421,7 +556,9 @@ mod tests {
                     .insert_add_point(outpoint0, utxo_entry1.clone())
                     .insert_remove_point(outpoint0, utxo_entry2.clone())
                     .build(),
-                other: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
+                other: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
                 expected_diff_from_result: Err(UtxoAlgebraError::General("")),
                 expected_with_diff_result: Err(UtxoAlgebraError::DuplicateAddPoint(outpoint0)),
             },
@@ -431,8 +568,12 @@ mod tests {
                     .insert_add_point(outpoint0, utxo_entry1.clone())
                     .insert_remove_point(outpoint0, utxo_entry2.clone())
                     .build(),
-                other: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry2.clone()).build(),
-                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(outpoint0, "")),
+                other: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry2.clone())
+                    .build(),
+                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(
+                    outpoint0, "",
+                )),
                 expected_with_diff_result: Err(UtxoAlgebraError::DuplicateAddPoint(outpoint0)),
             },
             Test {
@@ -441,9 +582,15 @@ mod tests {
                     .insert_add_point(outpoint0, utxo_entry1.clone())
                     .insert_remove_point(outpoint0, utxo_entry2.clone())
                     .build(),
-                other: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
-                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(outpoint0, "")),
-                expected_with_diff_result: Ok(UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry2.clone()).build()),
+                other: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(
+                    outpoint0, "",
+                )),
+                expected_with_diff_result: Ok(UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry2.clone())
+                    .build()),
             },
             Test {
                 name: "first add in this, second remove in this and in other",
@@ -451,8 +598,12 @@ mod tests {
                     .insert_add_point(outpoint0, utxo_entry1.clone())
                     .insert_remove_point(outpoint0, utxo_entry2.clone())
                     .build(),
-                other: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry2.clone()).build(),
-                expected_diff_from_result: Ok(UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build()),
+                other: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry2.clone())
+                    .build(),
+                expected_diff_from_result: Ok(UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build()),
                 expected_with_diff_result: Err(UtxoAlgebraError::DuplicateRemovePoint(outpoint0)),
             },
             Test {
@@ -469,7 +620,8 @@ mod tests {
                 expected_with_diff_result: Err(UtxoAlgebraError::DuplicateRemovePoint(outpoint0)),
             },
             Test {
-                name: "first add in this and remove in other, second remove in this and add in other",
+                name:
+                    "first add in this and remove in other, second remove in this and add in other",
                 this: UtxoDiffBuilder::new()
                     .insert_add_point(outpoint0, utxo_entry1.clone())
                     .insert_remove_point(outpoint0, utxo_entry2.clone())
@@ -478,7 +630,9 @@ mod tests {
                     .insert_add_point(outpoint0, utxo_entry2.clone())
                     .insert_remove_point(outpoint0, utxo_entry1.clone())
                     .build(),
-                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(outpoint0, "")),
+                expected_diff_from_result: Err(UtxoAlgebraError::DiffIntersectionPoint(
+                    outpoint0, "",
+                )),
                 expected_with_diff_result: Ok(UtxoDiffBuilder::new().build()),
             },
             Test {
@@ -500,16 +654,28 @@ mod tests {
             Test {
                 name: "empty this, first add in other",
                 this: UtxoDiffBuilder::new().build(),
-                other: UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build(),
-                expected_diff_from_result: Ok(UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build()),
-                expected_with_diff_result: Ok(UtxoDiffBuilder::new().insert_add_point(outpoint0, utxo_entry1.clone()).build()),
+                other: UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                expected_diff_from_result: Ok(UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build()),
+                expected_with_diff_result: Ok(UtxoDiffBuilder::new()
+                    .insert_add_point(outpoint0, utxo_entry1.clone())
+                    .build()),
             },
             Test {
                 name: "empty this, first remove in other",
                 this: UtxoDiffBuilder::new().build(),
-                other: UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build(),
-                expected_diff_from_result: Ok(UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build()),
-                expected_with_diff_result: Ok(UtxoDiffBuilder::new().insert_remove_point(outpoint0, utxo_entry1.clone()).build()),
+                other: UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build(),
+                expected_diff_from_result: Ok(UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build()),
+                expected_with_diff_result: Ok(UtxoDiffBuilder::new()
+                    .insert_remove_point(outpoint0, utxo_entry1.clone())
+                    .build()),
             },
             Test {
                 name: "empty this, first add and second remove in other",
@@ -539,7 +705,11 @@ mod tests {
         // Run the tests
         for test in tests {
             let diff_from_result = test.this.diff_from(&test.other);
-            assert_eq!(diff_from_result, test.expected_diff_from_result, "diff_from failed for test \"{}\"", test.name);
+            assert_eq!(
+                diff_from_result, test.expected_diff_from_result,
+                "diff_from failed for test \"{}\"",
+                test.name
+            );
 
             if let Ok(diff_from_inner) = diff_from_result {
                 assert_eq!(
@@ -551,7 +721,11 @@ mod tests {
             }
 
             let with_diff_result = test.this.with_diff(&test.other);
-            assert_eq!(with_diff_result, test.expected_with_diff_result, "with_diff failed for test \"{}\"", test.name);
+            assert_eq!(
+                with_diff_result, test.expected_with_diff_result,
+                "with_diff failed for test \"{}\"",
+                test.name
+            );
 
             if let Ok(with_diff_inner) = with_diff_result {
                 assert_eq!(

@@ -21,7 +21,12 @@ impl MassCalculator {
     pub fn new(cp: ConsensusParams) -> Self {
         let consensus_params = Params::from(cp);
         let network_params = NetworkParams::from(consensus_params.net);
-        Self { mc: Arc::new(mass::MassCalculator::new(&consensus_params, &network_params)) }
+        Self {
+            mc: Arc::new(mass::MassCalculator::new(
+                &consensus_params,
+                &network_params,
+            )),
+        }
     }
 
     #[wasm_bindgen(js_name=isDust)]
@@ -99,7 +104,10 @@ impl MassCalculator {
             .iter()
             .map(TransactionOutput::try_from)
             .collect::<std::result::Result<Vec<_>, karlsen_consensus_client::error::Error>>()?;
-        let outputs = outputs.iter().map(|output| self.calc_mass_for_output(output)).collect::<Result<Vec<_>>>()?;
+        let outputs = outputs
+            .iter()
+            .map(|output| self.calc_mass_for_output(output))
+            .collect::<Result<Vec<_>>>()?;
         Ok(outputs.iter().sum())
     }
 
@@ -110,7 +118,10 @@ impl MassCalculator {
             .iter()
             .map(TransactionInput::try_owned_from)
             .collect::<std::result::Result<Vec<_>, karlsen_consensus_client::error::Error>>()?;
-        let inputs = inputs.iter().map(|input| self.calc_mass_for_input(input)).collect::<Result<Vec<_>>>()?;
+        let inputs = inputs
+            .iter()
+            .map(|input| self.calc_mass_for_input(input))
+            .collect::<Result<Vec<_>>>()?;
         Ok(inputs.iter().sum())
     }
 
@@ -134,8 +145,13 @@ impl MassCalculator {
     }
 
     #[wasm_bindgen(js_name=calcSignatureMassForInputs)]
-    pub fn calc_signature_mass_for_inputs(&self, number_of_inputs: usize, minimum_signatures: u16) -> u32 {
-        self.mc.calc_signature_mass_for_inputs(number_of_inputs, minimum_signatures) as u32
+    pub fn calc_signature_mass_for_inputs(
+        &self,
+        number_of_inputs: usize,
+        minimum_signatures: u16,
+    ) -> u32 {
+        self.mc
+            .calc_signature_mass_for_inputs(number_of_inputs, minimum_signatures) as u32
     }
 
     #[wasm_bindgen(js_name=calcMinimumTransactionRelayFeeFromMass)]
@@ -144,8 +160,14 @@ impl MassCalculator {
     }
 
     #[wasm_bindgen(js_name=calcMiniumTxRelayFee)]
-    pub fn calc_minimum_transaction_relay_fee(&self, transaction: &Transaction, minimum_signatures: u16) -> Result<u32> {
+    pub fn calc_minimum_transaction_relay_fee(
+        &self,
+        transaction: &Transaction,
+        minimum_signatures: u16,
+    ) -> Result<u32> {
         let tx = cctx::Transaction::from(transaction);
-        Ok(self.mc.calc_minium_transaction_relay_fee(&tx, minimum_signatures) as u32)
+        Ok(self
+            .mc
+            .calc_minium_transaction_relay_fee(&tx, minimum_signatures) as u32)
     }
 }

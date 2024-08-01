@@ -20,7 +20,9 @@ impl Default for RfRwLock {
 
 impl RfRwLock {
     pub fn new() -> Self {
-        Self { ll_sem: Semaphore::new(Semaphore::MAX_PERMITS) }
+        Self {
+            ll_sem: Semaphore::new(Semaphore::MAX_PERMITS),
+        }
     }
 
     pub async fn read(&self) -> RfRwLockReadGuard<'_> {
@@ -137,9 +139,18 @@ mod tests {
             rx.await.unwrap();
             // Make sure the reader acquires the lock during writer yields. We give the test a few chances to acquire
             // in order to make sure it passes also in slow CI environments where the OS thread-scheduler might take its time
-            let read = timeout(Duration::from_millis(18), l.read()).await.unwrap_or_else(|_| panic!("failed at iteration {i}"));
+            let read = timeout(Duration::from_millis(18), l.read())
+                .await
+                .unwrap_or_else(|_| panic!("failed at iteration {i}"));
             drop(read);
-            timeout(Duration::from_millis(100), tokio::task::spawn_blocking(move || h.join())).await.unwrap().unwrap().unwrap();
+            timeout(
+                Duration::from_millis(100),
+                tokio::task::spawn_blocking(move || h.join()),
+            )
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
         }
     }
 
@@ -180,7 +191,10 @@ mod tests {
         let l_clone = l.clone();
         tokio::spawn(async move {
             let _read = l_clone.read().await;
-            assert!(f_clone.load(SeqCst), "reader acquired before writer release");
+            assert!(
+                f_clone.load(SeqCst),
+                "reader acquired before writer release"
+            );
             println!("late reader acquired");
         });
 

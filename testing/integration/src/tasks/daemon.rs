@@ -46,7 +46,14 @@ impl DaemonArgs {
         max_tracked_addresses: usize,
         utxoindex: bool,
     ) -> Self {
-        Self { rpc, p2p, private_key, stat_file_prefix, max_tracked_addresses, utxoindex }
+        Self {
+            rpc,
+            p2p,
+            private_key,
+            stat_file_prefix,
+            max_tracked_addresses,
+            utxoindex,
+        }
     }
 
     pub fn from_env_args() -> Self {
@@ -98,7 +105,9 @@ impl DaemonArgs {
     pub fn prealloc_address(&self) -> Address {
         let mut private_key_bytes = [0u8; 32];
         faster_hex::hex_decode(self.private_key.as_bytes(), &mut private_key_bytes).unwrap();
-        let schnorr_key = secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, &private_key_bytes).unwrap();
+        let schnorr_key =
+            secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, &private_key_bytes)
+                .unwrap();
         Address::new(
             NetworkType::Simnet.into(),
             karlsen_addresses::Version::PubKey,
@@ -131,7 +140,10 @@ pub struct DaemonTask {
 
 impl DaemonTask {
     pub fn build(client_manager: Arc<ClientManager>) -> Arc<Self> {
-        Arc::new(Self { client_manager, ready_signal: SingleTrigger::new() })
+        Arc::new(Self {
+            client_manager,
+            ready_signal: SingleTrigger::new(),
+        })
     }
 
     pub fn with_args(args: Args) -> Arc<Self> {

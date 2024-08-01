@@ -18,7 +18,8 @@ impl<const N: usize, T: AsRef<[u8; N]>> Serialize<N> for T {
     {
         if serializer.is_human_readable() {
             let mut hex = vec![0u8; self.as_ref().len() * 2];
-            faster_hex::hex_encode(self.as_ref(), &mut hex[..]).map_err(serde::ser::Error::custom)?;
+            faster_hex::hex_encode(self.as_ref(), &mut hex[..])
+                .map_err(serde::ser::Error::custom)?;
             serializer.serialize_str(unsafe { str::from_utf8_unchecked(&hex) })
         } else {
             let mut t = serializer.serialize_tuple(self.as_ref().len())?;
@@ -44,8 +45,11 @@ macro_rules! serde_impl_ser_fixed_bytes_ref {
                 let len = std::convert::AsRef::<[u8; $size]>::as_ref(self).len();
                 if serializer.is_human_readable() {
                     let mut hex = vec![0u8; len * 2];
-                    faster_hex::hex_encode(&std::convert::AsRef::<[u8; $size]>::as_ref(self)[..], &mut hex[..])
-                        .map_err(serde::ser::Error::custom)?;
+                    faster_hex::hex_encode(
+                        &std::convert::AsRef::<[u8; $size]>::as_ref(self)[..],
+                        &mut hex[..],
+                    )
+                    .map_err(serde::ser::Error::custom)?;
                     serializer.serialize_str(unsafe { std::str::from_utf8_unchecked(&hex) })
                 } else {
                     let mut t = serializer.serialize_tuple(len)?;

@@ -94,13 +94,18 @@ impl PaymentOutput {
 
 impl From<PaymentOutput> for TransactionOutput {
     fn from(value: PaymentOutput) -> Self {
-        Self::new_with_inner(TransactionOutputInner { script_public_key: pay_to_address_script(&value.address), value: value.amount })
+        Self::new_with_inner(TransactionOutputInner {
+            script_public_key: pay_to_address_script(&value.address),
+            value: value.amount,
+        })
     }
 }
 
 impl From<PaymentOutput> for PaymentDestination {
     fn from(output: PaymentOutput) -> Self {
-        Self::PaymentOutputs(PaymentOutputs { outputs: vec![output] })
+        Self::PaymentOutputs(PaymentOutputs {
+            outputs: vec![output],
+        })
     }
 }
 
@@ -114,7 +119,10 @@ pub struct PaymentOutputs {
 
 impl PaymentOutputs {
     pub fn amount(&self) -> u64 {
-        self.outputs.iter().map(|payment_output| payment_output.amount).sum()
+        self.outputs
+            .iter()
+            .map(|payment_output| payment_output.amount)
+            .sum()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &PaymentOutput> {
@@ -133,7 +141,8 @@ impl PaymentOutputs {
     #[wasm_bindgen(constructor)]
     pub fn constructor(output_array: IPaymentOutputArray) -> crate::result::Result<PaymentOutputs> {
         let mut outputs = vec![];
-        let iterator = js_sys::try_iter(&output_array)?.ok_or("need to pass iterable JS values!")?;
+        let iterator =
+            js_sys::try_iter(&output_array)?.ok_or("need to pass iterable JS values!")?;
         for x in iterator {
             // outputs.push((x?).try_into_cast()?);
             outputs.push(PaymentOutput::try_owned_from(x?)?);
@@ -149,13 +158,23 @@ impl TryCastFromJs for PaymentOutputs {
         Self::resolve(&value, || {
             let outputs = if let Some(output_array) = value.as_ref().dyn_ref::<js_sys::Array>() {
                 let vec = output_array.to_vec();
-                vec.into_iter().map(PaymentOutput::try_owned_from).collect::<Result<Vec<_>, _>>()?
+                vec.into_iter()
+                    .map(PaymentOutput::try_owned_from)
+                    .collect::<Result<Vec<_>, _>>()?
             } else if let Some(object) = value.as_ref().dyn_ref::<js_sys::Object>() {
-                Object::entries(object).iter().map(PaymentOutput::try_owned_from).collect::<Result<Vec<_>, _>>()?
+                Object::entries(object)
+                    .iter()
+                    .map(PaymentOutput::try_owned_from)
+                    .collect::<Result<Vec<_>, _>>()?
             } else if let Some(map) = value.as_ref().dyn_ref::<js_sys::Map>() {
-                map.entries().into_iter().flat_map(|v| v.map(PaymentOutput::try_owned_from)).collect::<Result<Vec<_>, _>>()?
+                map.entries()
+                    .into_iter()
+                    .flat_map(|v| v.map(PaymentOutput::try_owned_from))
+                    .collect::<Result<Vec<_>, _>>()?
             } else {
-                return Err(Error::Custom("payment outputs must be an array or an object".to_string()));
+                return Err(Error::Custom(
+                    "payment outputs must be an array or an object".to_string(),
+                ));
             };
 
             Ok(Self { outputs })
@@ -165,32 +184,46 @@ impl TryCastFromJs for PaymentOutputs {
 
 impl From<PaymentOutputs> for Vec<TransactionOutput> {
     fn from(value: PaymentOutputs) -> Self {
-        value.outputs.into_iter().map(TransactionOutput::from).collect()
+        value
+            .outputs
+            .into_iter()
+            .map(TransactionOutput::from)
+            .collect()
     }
 }
 
 impl From<(Address, u64)> for PaymentOutputs {
     fn from((address, amount): (Address, u64)) -> Self {
-        PaymentOutputs { outputs: vec![PaymentOutput::new(address, amount)] }
+        PaymentOutputs {
+            outputs: vec![PaymentOutput::new(address, amount)],
+        }
     }
 }
 
 impl From<(&Address, u64)> for PaymentOutputs {
     fn from((address, amount): (&Address, u64)) -> Self {
-        PaymentOutputs { outputs: vec![PaymentOutput::new(address.clone(), amount)] }
+        PaymentOutputs {
+            outputs: vec![PaymentOutput::new(address.clone(), amount)],
+        }
     }
 }
 
 impl From<&[(Address, u64)]> for PaymentOutputs {
     fn from(outputs: &[(Address, u64)]) -> Self {
-        let outputs = outputs.iter().map(|(address, amount)| PaymentOutput::new(address.clone(), *amount)).collect();
+        let outputs = outputs
+            .iter()
+            .map(|(address, amount)| PaymentOutput::new(address.clone(), *amount))
+            .collect();
         PaymentOutputs { outputs }
     }
 }
 
 impl From<&[(&Address, u64)]> for PaymentOutputs {
     fn from(outputs: &[(&Address, u64)]) -> Self {
-        let outputs = outputs.iter().map(|(address, amount)| PaymentOutput::new((*address).clone(), *amount)).collect();
+        let outputs = outputs
+            .iter()
+            .map(|(address, amount)| PaymentOutput::new((*address).clone(), *amount))
+            .collect();
         PaymentOutputs { outputs }
     }
 }

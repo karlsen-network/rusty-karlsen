@@ -48,11 +48,19 @@ impl TryFrom<protowire::VersionMessage> for Version {
             protocol_version: msg.protocol_version,
             services: msg.services,
             timestamp: msg.timestamp as u64,
-            address: if msg.address.is_none() { None } else { Some(msg.address.unwrap().try_into()?) },
+            address: if msg.address.is_none() {
+                None
+            } else {
+                Some(msg.address.unwrap().try_into()?)
+            },
             id: PeerId::from_slice(&msg.id)?,
             user_agent: msg.user_agent.clone(),
             disable_relay_tx: msg.disable_relay_tx,
-            subnetwork_id: if msg.subnetwork_id.is_none() { None } else { Some(msg.subnetwork_id.unwrap().try_into()?) },
+            subnetwork_id: if msg.subnetwork_id.is_none() {
+                None
+            } else {
+                Some(msg.subnetwork_id.unwrap().try_into()?)
+            },
             network: msg.network.clone(),
         })
     }
@@ -92,7 +100,10 @@ impl TryFrom<protowire::PruningPointProofMessage> for PruningPointProof {
 impl TryFrom<protowire::PruningPointsMessage> for PruningPointsList {
     type Error = ConversionError;
     fn try_from(msg: protowire::PruningPointsMessage) -> Result<Self, Self::Error> {
-        msg.headers.into_iter().map(|x| x.try_into().map(Arc::new)).collect()
+        msg.headers
+            .into_iter()
+            .map(|x| x.try_into().map(Arc::new))
+            .collect()
     }
 }
 
@@ -100,8 +111,14 @@ impl TryFrom<protowire::TrustedDataMessage> for TrustedDataPackage {
     type Error = ConversionError;
     fn try_from(msg: protowire::TrustedDataMessage) -> Result<Self, Self::Error> {
         Ok(Self::new(
-            msg.daa_window.into_iter().map(|x| x.try_into()).collect::<Result<Vec<_>, Self::Error>>()?,
-            msg.ghostdag_data.into_iter().map(|x| x.try_into()).collect::<Result<Vec<_>, Self::Error>>()?,
+            msg.daa_window
+                .into_iter()
+                .map(|x| x.try_into())
+                .collect::<Result<Vec<_>, Self::Error>>()?,
+            msg.ghostdag_data
+                .into_iter()
+                .map(|x| x.try_into())
+                .collect::<Result<Vec<_>, Self::Error>>()?,
         ))
     }
 }
@@ -109,21 +126,31 @@ impl TryFrom<protowire::TrustedDataMessage> for TrustedDataPackage {
 impl TryFrom<protowire::BlockWithTrustedDataV4Message> for TrustedDataEntry {
     type Error = ConversionError;
     fn try_from(msg: protowire::BlockWithTrustedDataV4Message) -> Result<Self, Self::Error> {
-        Ok(Self::new(msg.block.try_into_ex()?, msg.daa_window_indices, msg.ghostdag_data_indices))
+        Ok(Self::new(
+            msg.block.try_into_ex()?,
+            msg.daa_window_indices,
+            msg.ghostdag_data_indices,
+        ))
     }
 }
 
 impl TryFrom<protowire::IbdChainBlockLocatorMessage> for Vec<Hash> {
     type Error = ConversionError;
     fn try_from(msg: protowire::IbdChainBlockLocatorMessage) -> Result<Self, Self::Error> {
-        msg.block_locator_hashes.into_iter().map(|v| v.try_into()).collect()
+        msg.block_locator_hashes
+            .into_iter()
+            .map(|v| v.try_into())
+            .collect()
     }
 }
 
 impl TryFrom<protowire::BlockHeadersMessage> for Vec<Arc<Header>> {
     type Error = ConversionError;
     fn try_from(msg: protowire::BlockHeadersMessage) -> Result<Self, Self::Error> {
-        msg.block_headers.into_iter().map(|v| v.try_into().map(Arc::new)).collect()
+        msg.block_headers
+            .into_iter()
+            .map(|v| v.try_into().map(Arc::new))
+            .collect()
     }
 }
 
@@ -131,7 +158,10 @@ impl TryFrom<protowire::PruningPointUtxoSetChunkMessage> for Vec<(TransactionOut
     type Error = ConversionError;
 
     fn try_from(msg: protowire::PruningPointUtxoSetChunkMessage) -> Result<Self, Self::Error> {
-        msg.outpoint_and_utxo_entry_pairs.into_iter().map(|p| p.try_into()).collect()
+        msg.outpoint_and_utxo_entry_pairs
+            .into_iter()
+            .map(|p| p.try_into())
+            .collect()
     }
 }
 
@@ -179,7 +209,10 @@ impl TryFrom<protowire::AddressesMessage> for Vec<(IpAddress, u16)> {
     type Error = ConversionError;
 
     fn try_from(msg: protowire::AddressesMessage) -> Result<Self, Self::Error> {
-        msg.address_list.into_iter().map(|addr| addr.try_into()).collect::<Result<_, _>>()
+        msg.address_list
+            .into_iter()
+            .map(|addr| addr.try_into())
+            .collect::<Result<_, _>>()
     }
 }
 
@@ -217,6 +250,9 @@ impl TryFrom<protowire::RequestBlockLocatorMessage> for (Hash, u32) {
 impl TryFrom<protowire::RequestAntipastMessage> for (Hash, Hash) {
     type Error = ConversionError;
     fn try_from(msg: protowire::RequestAntipastMessage) -> Result<Self, Self::Error> {
-        Ok((msg.block_hash.try_into_ex()?, msg.context_hash.try_into_ex()?))
+        Ok((
+            msg.block_hash.try_into_ex()?,
+            msg.context_hash.try_into_ex()?,
+        ))
     }
 }

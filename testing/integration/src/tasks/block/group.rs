@@ -1,7 +1,10 @@
 use crate::{
     common::daemon::ClientManager,
     tasks::{
-        block::{miner::BlockMinerTask, submitter::BlockSubmitterTask, template_receiver::BlockTemplateReceiverTask},
+        block::{
+            miner::BlockMinerTask, submitter::BlockSubmitterTask,
+            template_receiver::BlockTemplateReceiverTask,
+        },
         Stopper, Task,
     },
 };
@@ -22,8 +25,16 @@ pub struct MinerGroupTask {
 }
 
 impl MinerGroupTask {
-    pub fn new(submitter: Arc<BlockSubmitterTask>, receiver: Arc<BlockTemplateReceiverTask>, miner: Arc<BlockMinerTask>) -> Self {
-        Self { submitter, receiver, miner }
+    pub fn new(
+        submitter: Arc<BlockSubmitterTask>,
+        receiver: Arc<BlockTemplateReceiverTask>,
+        miner: Arc<BlockMinerTask>,
+    ) -> Self {
+        Self {
+            submitter,
+            receiver,
+            miner,
+        }
     }
 
     pub async fn build(
@@ -35,21 +46,38 @@ impl MinerGroupTask {
         stopper: Stopper,
     ) -> Arc<Self> {
         // Block submitter
-        let submitter = BlockSubmitterTask::build(client_manager.clone(), submitter_pool_size, stopper).await;
+        let submitter =
+            BlockSubmitterTask::build(client_manager.clone(), submitter_pool_size, stopper).await;
 
         // Mining key and address
         let (sk, pk) = &secp256k1::generate_keypair(&mut thread_rng());
-        let pay_address =
-            Address::new(network.network_type().into(), karlsen_addresses::Version::PubKey, &pk.x_only_public_key().0.serialize());
-        debug!("Generated private key {} and address {}", sk.display_secret(), pay_address);
+        let pay_address = Address::new(
+            network.network_type().into(),
+            karlsen_addresses::Version::PubKey,
+            &pk.x_only_public_key().0.serialize(),
+        );
+        debug!(
+            "Generated private key {} and address {}",
+            sk.display_secret(),
+            pay_address
+        );
 
         // Block template receiver
         let client = Arc::new(client_manager.new_client().await);
-        let receiver = BlockTemplateReceiverTask::build(client.clone(), pay_address.clone(), stopper).await;
+        let receiver =
+            BlockTemplateReceiverTask::build(client.clone(), pay_address.clone(), stopper).await;
 
         // Miner
-        let miner =
-            BlockMinerTask::build(client, bps, block_count, submitter.sender(), receiver.template(), pay_address, stopper).await;
+        let miner = BlockMinerTask::build(
+            client,
+            bps,
+            block_count,
+            submitter.sender(),
+            receiver.template(),
+            pay_address,
+            stopper,
+        )
+        .await;
 
         Arc::new(Self::new(submitter, receiver, miner))
     }

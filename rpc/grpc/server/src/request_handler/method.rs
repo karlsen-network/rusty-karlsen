@@ -18,9 +18,15 @@ impl<Request, Response> Clone for RoutingPolicy<Request, Response> {
 }
 
 #[async_trait]
-pub trait MethodTrait<ServerContext, ConnectionContext, Request, Response>: Send + Sync + 'static {
-    async fn call(&self, server_ctx: ServerContext, connection_ctx: ConnectionContext, request: Request)
-        -> GrpcServerResult<Response>;
+pub trait MethodTrait<ServerContext, ConnectionContext, Request, Response>:
+    Send + Sync + 'static
+{
+    async fn call(
+        &self,
+        server_ctx: ServerContext,
+        connection_ctx: ConnectionContext,
+        request: Request,
+    ) -> GrpcServerResult<Response>;
 
     fn method_fn(&self) -> MethodFn<ServerContext, ConnectionContext, Request, Response>;
     fn tasks(&self) -> usize;
@@ -29,14 +35,21 @@ pub trait MethodTrait<ServerContext, ConnectionContext, Request, Response>: Send
 }
 
 /// RPC method function type
-pub type MethodFn<ServerContext, ConnectionContext, Request, Response> =
-    Arc<Box<dyn Send + Sync + Fn(ServerContext, ConnectionContext, Request) -> MethodFnReturn<Response> + 'static>>;
+pub type MethodFn<ServerContext, ConnectionContext, Request, Response> = Arc<
+    Box<
+        dyn Send
+            + Sync
+            + Fn(ServerContext, ConnectionContext, Request) -> MethodFnReturn<Response>
+            + 'static,
+    >,
+>;
 
 /// RPC method function return type
 pub type MethodFnReturn<T> = Pin<Box<(dyn Send + 'static + Future<Output = GrpcServerResult<T>>)>>;
 
 /// RPC drop function type
-pub type DropFn<Request, Response> = Arc<Box<dyn Send + Sync + Fn(&Request) -> GrpcServerResult<Response>>>;
+pub type DropFn<Request, Response> =
+    Arc<Box<dyn Send + Sync + Fn(&Request) -> GrpcServerResult<Response>>>;
 
 /// RPC method wrapper. Contains the method closure function.
 pub struct Method<ServerContext, ConnectionContext, Request, Response>
@@ -59,7 +72,8 @@ where
     routing_policy: RoutingPolicy<Request, Response>,
 }
 
-impl<ServerContext, ConnectionContext, Request, Response> Method<ServerContext, ConnectionContext, Request, Response>
+impl<ServerContext, ConnectionContext, Request, Response>
+    Method<ServerContext, ConnectionContext, Request, Response>
 where
     ServerContext: Send + Sync + 'static,
     ConnectionContext: Send + Sync + 'static,
@@ -68,7 +82,10 @@ where
 {
     pub fn new<FN>(method_fn: FN) -> Method<ServerContext, ConnectionContext, Request, Response>
     where
-        FN: Send + Sync + Fn(ServerContext, ConnectionContext, Request) -> MethodFnReturn<Response> + 'static,
+        FN: Send
+            + Sync
+            + Fn(ServerContext, ConnectionContext, Request) -> MethodFnReturn<Response>
+            + 'static,
     {
         Method {
             method_fn: Arc::new(Box::new(method_fn)),
@@ -84,7 +101,12 @@ where
         queue_size: usize,
         routing_policy: RoutingPolicy<Request, Response>,
     ) -> Method<ServerContext, ConnectionContext, Request, Response> {
-        Method { method_fn, tasks, queue_size, routing_policy }
+        Method {
+            method_fn,
+            tasks,
+            queue_size,
+            routing_policy,
+        }
     }
 
     pub fn default_queue_size() -> usize {
@@ -93,7 +115,8 @@ where
 }
 
 #[async_trait]
-impl<ServerContext, ConnectionContext, Request, Response> MethodTrait<ServerContext, ConnectionContext, Request, Response>
+impl<ServerContext, ConnectionContext, Request, Response>
+    MethodTrait<ServerContext, ConnectionContext, Request, Response>
     for Method<ServerContext, ConnectionContext, Request, Response>
 where
     ServerContext: Clone + Send + Sync + 'static,

@@ -20,8 +20,10 @@ impl TryFrom<PrivateKeyArrayT> for Vec<PrivateKey> {
     fn try_from(keys: PrivateKeyArrayT) -> std::result::Result<Self, Self::Error> {
         let mut private_keys: Vec<PrivateKey> = vec![];
         for key in keys.iter() {
-            private_keys
-                .push(PrivateKey::try_owned_from(key).map_err(|_| Self::Error::Custom("Unable to cast PrivateKey".to_string()))?);
+            private_keys.push(
+                PrivateKey::try_owned_from(key)
+                    .map_err(|_| Self::Error::Custom("Unable to cast PrivateKey".to_string()))?,
+            );
         }
 
         Ok(private_keys)
@@ -31,23 +33,35 @@ impl TryFrom<PrivateKeyArrayT> for Vec<PrivateKey> {
 /// `signTransaction()` is a helper function to sign a transaction using a private key array or a signer array.
 /// @category Wallet SDK
 #[wasm_bindgen(js_name = "signTransaction")]
-pub fn js_sign_transaction(tx: Transaction, signer: PrivateKeyArrayT, verify_sig: bool) -> Result<Transaction> {
+pub fn js_sign_transaction(
+    tx: Transaction,
+    signer: PrivateKeyArrayT,
+    verify_sig: bool,
+) -> Result<Transaction> {
     if signer.is_array() {
         let mut private_keys: Vec<[u8; 32]> = vec![];
         for key in Array::from(&signer).iter() {
-            let key = PrivateKey::try_cast_from(key).map_err(|_| Error::Custom("Unable to cast PrivateKey".to_string()))?;
+            let key = PrivateKey::try_cast_from(key)
+                .map_err(|_| Error::Custom("Unable to cast PrivateKey".to_string()))?;
             private_keys.push(key.as_ref().secret_bytes());
         }
 
-        let tx = sign_transaction(tx, &private_keys, verify_sig).map_err(|err| Error::Custom(format!("Unable to sign: {err:?}")))?;
+        let tx = sign_transaction(tx, &private_keys, verify_sig)
+            .map_err(|err| Error::Custom(format!("Unable to sign: {err:?}")))?;
         private_keys.zeroize();
         Ok(tx)
     } else {
-        Err(Error::custom("signTransaction() requires an array of signatures"))
+        Err(Error::custom(
+            "signTransaction() requires an array of signatures",
+        ))
     }
 }
 
-pub fn sign_transaction(tx: Transaction, private_keys: &[[u8; 32]], verify_sig: bool) -> Result<Transaction> {
+pub fn sign_transaction(
+    tx: Transaction,
+    private_keys: &[[u8; 32]],
+    verify_sig: bool,
+) -> Result<Transaction> {
     let tx = sign(tx, private_keys)?;
     if verify_sig {
         let (cctx, utxos) = tx.tx_and_utxos();
@@ -76,6 +90,9 @@ pub fn sign_hash(sig_hash: Hash, privkey: &[u8; 32]) -> Result<Vec<u8>> {
     let msg = secp256k1::Message::from_digest_slice(sig_hash.as_bytes().as_slice())?;
     let schnorr_key = secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, privkey)?;
     let sig: [u8; 64] = *schnorr_key.sign_schnorr(msg).as_ref();
-    let signature = std::iter::once(65u8).chain(sig).chain([SIG_HASH_ALL.to_u8()]).collect();
+    let signature = std::iter::once(65u8)
+        .chain(sig)
+        .chain([SIG_HASH_ALL.to_u8()])
+        .collect();
     Ok(signature)
 }

@@ -111,7 +111,6 @@ impl Indexer for CounterMap {
 
 #[cfg(test)]
 #[derive(Debug, Clone)]
-#[cfg(test)]
 pub struct Counter {
     pub index: Index,
     pub count: RefCount,
@@ -121,7 +120,11 @@ pub struct Counter {
 #[cfg(test)]
 impl Counter {
     pub fn new(index: Index, count: RefCount) -> Self {
-        Self { index, count, locked: false }
+        Self {
+            index,
+            count,
+            locked: false,
+        }
     }
 
     pub fn active(&self) -> bool {
@@ -276,13 +279,24 @@ impl Inner {
             Self::MAX_ADDRESS_UPPER_BOUND
         );
         let max_addresses = max_addresses.unwrap_or(Self::DEFAULT_MAX_ADDRESSES);
-        debug!("Memory configuration: UTXO changed events wil be tracked for at most {} addresses", max_addresses);
+        debug!(
+            "Memory configuration: UTXO changed events wil be tracked for at most {} addresses",
+            max_addresses
+        );
 
         let script_pub_keys = IndexMap::with_capacity(capacity);
-        debug!("Creating an address tracker with a capacity of {}", script_pub_keys.capacity());
+        debug!(
+            "Creating an address tracker with a capacity of {}",
+            script_pub_keys.capacity()
+        );
 
         let empty_entries = HashSet::with_capacity(capacity);
-        Self { script_pub_keys, max_addresses, addresses_preallocation, empty_entries }
+        Self {
+            script_pub_keys,
+            max_addresses,
+            addresses_preallocation,
+            empty_entries,
+        }
     }
 
     fn is_full(&self) -> bool {
@@ -290,17 +304,23 @@ impl Inner {
     }
 
     fn get(&self, spk: &ScriptPublicKey) -> Option<(Index, RefCount)> {
-        self.script_pub_keys.get_full(spk).map(|(index, _, count)| (index as Index, *count))
+        self.script_pub_keys
+            .get_full(spk)
+            .map(|(index, _, count)| (index as Index, *count))
     }
 
     fn get_index(&self, index: Index) -> Option<&ScriptPublicKey> {
-        self.script_pub_keys.get_index(index as usize).map(|(spk, _)| spk)
+        self.script_pub_keys
+            .get_index(index as usize)
+            .map(|(spk, _)| spk)
     }
 
     fn get_index_address(&self, index: Index, prefix: Prefix) -> Option<Address> {
         self.script_pub_keys
             .get_index(index as usize)
-            .map(|(spk, _)| extract_script_pub_key_address(spk, prefix).expect("is retro-convertible"))
+            .map(|(spk, _)| {
+                extract_script_pub_key_address(spk, prefix).expect("is retro-convertible")
+            })
     }
 
     fn get_or_insert(&mut self, spk: ScriptPublicKey) -> Result<Index> {
@@ -318,7 +338,9 @@ impl Inner {
 
                     // Try to recycle an empty entry if there is some
                     let mut recycled = false;
-                    if (index + 1) as usize == self.script_pub_keys.len() && !self.empty_entries.is_empty() {
+                    if (index + 1) as usize == self.script_pub_keys.len()
+                        && !self.empty_entries.is_empty()
+                    {
                         // Takes the first empty entry index
                         let empty_index = self.empty_entries.iter().cloned().next();
                         if let Some(empty_index) = empty_index {
@@ -376,7 +398,10 @@ impl Inner {
     }
 
     fn len(&self) -> usize {
-        assert!(self.script_pub_keys.len() >= self.empty_entries.len(), "entries marked empty are never removed from script_pub_keys");
+        assert!(
+            self.script_pub_keys.len() >= self.empty_entries.len(),
+            "entries marked empty are never removed from script_pub_keys"
+        );
         self.script_pub_keys.len() - self.empty_entries.len()
     }
 
@@ -423,12 +448,16 @@ impl Tracker {
     /// the internal index as well as for bounding the index size. Otherwise, performs no
     /// prealloc while bounding the index size by `Tracker::DEFAULT_MAX_ADDRESSES`
     pub fn new(max_addresses: Option<usize>) -> Self {
-        Self { inner: RwLock::new(Inner::new(max_addresses)) }
+        Self {
+            inner: RwLock::new(Inner::new(max_addresses)),
+        }
     }
 
     #[cfg(test)]
     pub fn with_addresses(addresses: &[Address]) -> Self {
-        let tracker = Self { inner: RwLock::new(Inner::new(None)) };
+        let tracker = Self {
+            inner: RwLock::new(Inner::new(None)),
+        };
         for chunk in addresses.chunks(Self::ADDRESS_CHUNK_SIZE) {
             let mut inner = tracker.inner.write();
             for address in chunk {
@@ -440,7 +469,9 @@ impl Tracker {
     }
 
     pub fn data(&self) -> TrackerReadGuard<'_> {
-        TrackerReadGuard { guard: self.inner.read() }
+        TrackerReadGuard {
+            guard: self.inner.read(),
+        }
     }
 
     pub fn get(&self, spk: &ScriptPublicKey) -> Option<(Index, RefCount)> {
@@ -456,7 +487,8 @@ impl Tracker {
     }
 
     pub fn contains<T: Indexer>(&self, indexes: &T, spk: &ScriptPublicKey) -> bool {
-        self.get(spk).is_some_and(|(index, _)| indexes.contains(index))
+        self.get(spk)
+            .is_some_and(|(index, _)| indexes.contains(index))
     }
 
     pub fn contains_address<T: Indexer>(&self, indexes: &T, address: &Address) -> bool {
@@ -469,7 +501,8 @@ impl Tracker {
             addresses
                 .iter()
                 .filter_map(|address| {
-                    self.get(&pay_to_address_script(address)).and_then(|(index, _)| indexes.contains(index).then_some(index))
+                    self.get(&pay_to_address_script(address))
+                        .and_then(|(index, _)| indexes.contains(index).then_some(index))
                 })
                 .collect(),
         )
@@ -481,7 +514,11 @@ impl Tracker {
     /// On success, returns the addresses that were actually inserted in the `Indexer`.
     ///
     /// Fails if the maximum capacity gets reached, leaving the tracker unchanged.
-    pub fn register<T: Indexer>(&self, indexes: &mut T, mut addresses: Vec<Address>) -> Result<Vec<Address>> {
+    pub fn register<T: Indexer>(
+        &self,
+        indexes: &mut T,
+        mut addresses: Vec<Address>,
+    ) -> Result<Vec<Address>> {
         let mut rollback: bool = false;
         {
             let mut counter: usize = 0;
@@ -523,7 +560,11 @@ impl Tracker {
     /// decreased.
     ///
     /// Returns the addresses that where successfully unregistered from the `Indexer`.
-    pub fn unregister<T: Indexer>(&self, indexes: &mut T, mut addresses: Vec<Address>) -> Vec<Address> {
+    pub fn unregister<T: Indexer>(
+        &self,
+        indexes: &mut T,
+        mut addresses: Vec<Address>,
+    ) -> Vec<Address> {
         if indexes.is_empty() {
             vec![]
         } else {
@@ -603,7 +644,10 @@ impl<'a> TrackerReadGuard<'a> {
         self.guard.get_index(index)
     }
 
-    pub fn iter_keys(&'a self, indexes: &'a Indexes) -> impl Iterator<Item = Option<&'a ScriptPublicKey>> {
+    pub fn iter_keys(
+        &'a self,
+        indexes: &'a Indexes,
+    ) -> impl Iterator<Item = Option<&'a ScriptPublicKey>> {
         indexes.0.iter().cloned().map(|index| self.get_index(index))
     }
 }
@@ -615,14 +659,21 @@ mod tests {
 
     fn create_addresses(start: usize, count: usize) -> Vec<Address> {
         (start..start + count)
-            .map(|i| Address::new(Prefix::Mainnet, karlsen_addresses::Version::PubKey, &Uint256::from_u64(i as u64).to_le_bytes()))
+            .map(|i| {
+                Address::new(
+                    Prefix::Mainnet,
+                    karlsen_addresses::Version::PubKey,
+                    &Uint256::from_u64(i as u64).to_le_bytes(),
+                )
+            })
             .collect()
     }
 
     #[test]
     fn test_tracker_capacity_and_entry_recycling() {
         const INIT_MAX_ADDRESSES: usize = 6;
-        const MAX_ADDRESSES: usize = ((INIT_MAX_ADDRESSES + 1) * 8 / 7).next_power_of_two() * 7 / 8 - 1;
+        const MAX_ADDRESSES: usize =
+            ((INIT_MAX_ADDRESSES + 1) * 8 / 7).next_power_of_two() * 7 / 8 - 1;
         const CAPACITY: usize = MAX_ADDRESSES + 1;
 
         let tracker = Tracker::new(Some(MAX_ADDRESSES));
@@ -642,46 +693,97 @@ mod tests {
         // Register addresses 0..MAX_ADDRESSES
         let mut idx_a = Indexes::new(vec![]);
         let aa = tracker.register(&mut idx_a, aa).unwrap();
-        let aai = aa.iter().map(|x| tracker.get_address(x).unwrap().0).collect_vec();
-        assert_eq!(aa.len(), MAX_ADDRESSES, "all addresses should be registered");
-        assert_eq!(idx_a.len(), MAX_ADDRESSES, "all addresses should be registered");
+        let aai = aa
+            .iter()
+            .map(|x| tracker.get_address(x).unwrap().0)
+            .collect_vec();
+        assert_eq!(
+            aa.len(),
+            MAX_ADDRESSES,
+            "all addresses should be registered"
+        );
+        assert_eq!(
+            idx_a.len(),
+            MAX_ADDRESSES,
+            "all addresses should be registered"
+        );
         for i in 0..aa.len() {
-            assert!(tracker.contains_address(&idx_a, &aa[i]), "tracker should contain the registered address");
-            assert!(idx_a.contains(aai[i]), "index set should contain the registered address index");
+            assert!(
+                tracker.contains_address(&idx_a, &aa[i]),
+                "tracker should contain the registered address"
+            );
+            assert!(
+                idx_a.contains(aai[i]),
+                "index set should contain the registered address index"
+            );
         }
         assert_eq!(tracker.capacity(), CAPACITY);
 
         // Try to re-register addresses 0..MAX_ADDRESSES
         let a = tracker.register(&mut idx_a, aa).unwrap();
         assert_eq!(a.len(), 0, "all addresses should already be registered");
-        assert_eq!(idx_a.len(), MAX_ADDRESSES, "all addresses should still be registered");
+        assert_eq!(
+            idx_a.len(),
+            MAX_ADDRESSES,
+            "all addresses should still be registered"
+        );
 
         // Try to register an additional address while the tracker is full
         assert!(
-            tracker.register(&mut idx_a, create_addresses(MAX_ADDRESSES, 1)).is_err(),
+            tracker
+                .register(&mut idx_a, create_addresses(MAX_ADDRESSES, 1))
+                .is_err(),
             "the tracker is full and should refuse a new address"
         );
 
         // Register address set 1..MAX_ADDRESSES, already fully covered by the tracker address set
         const AB_COUNT: usize = MAX_ADDRESSES - 1;
         let mut idx_b = Indexes::new(vec![]);
-        let ab = tracker.register(&mut idx_b, create_addresses(1, AB_COUNT)).unwrap();
+        let ab = tracker
+            .register(&mut idx_b, create_addresses(1, AB_COUNT))
+            .unwrap();
         assert_eq!(ab.len(), AB_COUNT, "all addresses should be registered");
         assert_eq!(idx_b.len(), AB_COUNT, "all addresses should be registered");
 
         // Empty the tracker entry containing A0
-        assert_eq!(tracker.unregister(&mut idx_a, create_addresses(0, 1)).len(), 1);
-        assert_eq!(idx_a.len(), MAX_ADDRESSES - 1, "entry #0 with address A0 should now be marked empty");
+        assert_eq!(
+            tracker.unregister(&mut idx_a, create_addresses(0, 1)).len(),
+            1
+        );
+        assert_eq!(
+            idx_a.len(),
+            MAX_ADDRESSES - 1,
+            "entry #0 with address A0 should now be marked empty"
+        );
 
         // Fill the empty entry with a single new address A8
         const AC_COUNT: usize = 1;
-        let ac = tracker.register(&mut idx_a, create_addresses(MAX_ADDRESSES, AC_COUNT)).unwrap();
-        let aci = ac.iter().map(|x| tracker.get_address(x).unwrap().0).collect_vec();
+        let ac = tracker
+            .register(&mut idx_a, create_addresses(MAX_ADDRESSES, AC_COUNT))
+            .unwrap();
+        let aci = ac
+            .iter()
+            .map(|x| tracker.get_address(x).unwrap().0)
+            .collect_vec();
         assert_eq!(ac.len(), AC_COUNT, "a new address should be registered");
-        assert_eq!(idx_a.len(), MAX_ADDRESSES, "a new address should be registered");
-        assert_eq!(ac[0], create_addresses(MAX_ADDRESSES, AC_COUNT)[0], "the new address A8 should be registered");
-        assert!(tracker.contains_address(&idx_a, &ac[0]), "the new address A8 should be registered");
-        assert_eq!(aai[0], aci[0], "the newly registered address A8 should occupy the previously emptied entry");
+        assert_eq!(
+            idx_a.len(),
+            MAX_ADDRESSES,
+            "a new address should be registered"
+        );
+        assert_eq!(
+            ac[0],
+            create_addresses(MAX_ADDRESSES, AC_COUNT)[0],
+            "the new address A8 should be registered"
+        );
+        assert!(
+            tracker.contains_address(&idx_a, &ac[0]),
+            "the new address A8 should be registered"
+        );
+        assert_eq!(
+            aai[0], aci[0],
+            "the newly registered address A8 should occupy the previously emptied entry"
+        );
 
         assert_eq!(
             tracker.capacity(),
@@ -736,6 +838,9 @@ mod tests {
             assert_eq!(m.capacity(), CAPACITY);
         }
         m.insert(CAPACITY as u64 + 1, 0);
-        assert_eq!(m.capacity(), ((CAPACITY + 1) * 8 / 7).next_power_of_two() * 7 / 8);
+        assert_eq!(
+            m.capacity(),
+            ((CAPACITY + 1) * 8 / 7).next_power_of_two() * 7 / 8
+        );
     }
 }

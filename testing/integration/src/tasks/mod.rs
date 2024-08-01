@@ -78,7 +78,8 @@ impl TasksRunner {
     async fn run_main(&mut self) {
         if let Some(ref main) = self.main {
             if self.main_handles.is_none() {
-                self.tasks.push(StopTask::build(self.main_stop_signal.clone()));
+                self.tasks
+                    .push(StopTask::build(self.main_stop_signal.clone()));
                 self.main_handles = Some(main.start(self.main_stop_signal.clone()));
                 main.ready().await;
             }
@@ -86,7 +87,12 @@ impl TasksRunner {
     }
     pub async fn run(&mut self) {
         self.run_main().await;
-        let handles = self.tasks.iter().cloned().flat_map(|x| x.start(self.stop_signal.clone())).collect_vec();
+        let handles = self
+            .tasks
+            .iter()
+            .cloned()
+            .flat_map(|x| x.start(self.stop_signal.clone()))
+            .collect_vec();
         self.handles = Some(handles);
     }
 

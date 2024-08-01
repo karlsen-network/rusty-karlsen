@@ -9,7 +9,12 @@ use std::{collections::HashMap, sync::Arc};
 
 #[async_trait]
 pub trait WalletDerivationManagerTrait: Send + Sync {
-    fn from_master_xprv(xprv: &str, is_multisig: bool, account_index: u64, cosigner_index: Option<u32>) -> Result<Self>
+    fn from_master_xprv(
+        xprv: &str,
+        is_multisig: bool,
+        account_index: u64,
+        cosigner_index: Option<u32>,
+    ) -> Result<Self>
     where
         Self: Sized;
 

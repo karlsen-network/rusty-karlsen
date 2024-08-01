@@ -99,7 +99,9 @@ impl Config {
     }
 
     pub fn to_builder(&self) -> ConfigBuilder {
-        ConfigBuilder { config: self.clone() }
+        ConfigBuilder {
+            config: self.clone(),
+        }
     }
 }
 
@@ -123,7 +125,9 @@ pub struct ConfigBuilder {
 
 impl ConfigBuilder {
     pub fn new(params: Params) -> Self {
-        Self { config: Config::new(params) }
+        Self {
+            config: Config::new(params),
+        }
     }
 
     pub fn set_perf_params(mut self, perf: PerfParams) -> Self {
@@ -132,7 +136,9 @@ impl ConfigBuilder {
     }
 
     pub fn adjust_perf_params_to_consensus_params(mut self) -> Self {
-        self.config.perf.adjust_to_consensus_params(&self.config.params);
+        self.config
+            .perf
+            .adjust_to_consensus_params(&self.config.params);
         self
     }
 

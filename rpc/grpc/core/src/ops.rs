@@ -1,4 +1,6 @@
-use crate::protowire::{karlsend_request::Payload as RequestPayload, karlsend_response::Payload as ResponsePayload, *};
+use crate::protowire::{
+    karlsend_request::Payload as RequestPayload, karlsend_response::Payload as ResponsePayload, *,
+};
 use karlsen_rpc_core::RpcError;
 use workflow_core::enums::Describe;
 

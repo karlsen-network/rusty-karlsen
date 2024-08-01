@@ -27,7 +27,11 @@ impl Flow for HandleRelayBlockRequests {
 
 impl HandleRelayBlockRequests {
     pub fn new(ctx: FlowContext, router: Arc<Router>, incoming_route: IncomingRoute) -> Self {
-        Self { ctx, router, incoming_route }
+        Self {
+            ctx,
+            router,
+            incoming_route,
+        }
     }
 
     async fn start_impl(&mut self) -> Result<(), ProtocolError> {
@@ -36,25 +40,40 @@ impl HandleRelayBlockRequests {
         // Note: in go-karlsend this was done via a dedicated one-time flow.
         self.send_sink().await?;
         loop {
-            let (msg, request_id) = dequeue_with_request_id!(self.incoming_route, Payload::RequestRelayBlocks)?;
+            let (msg, request_id) =
+                dequeue_with_request_id!(self.incoming_route, Payload::RequestRelayBlocks)?;
             let hashes: Vec<_> = msg.try_into()?;
 
             let session = self.ctx.consensus().unguarded_session();
 
             for hash in hashes {
                 let block = session.async_get_block(hash).await?;
-                self.router.enqueue(make_response!(Payload::Block, (&block).into(), request_id)).await?;
+                self.router
+                    .enqueue(make_response!(Payload::Block, (&block).into(), request_id))
+                    .await?;
                 debug!("relayed block with hash {} to peer {}", hash, self.router);
             }
         }
     }
 
     async fn send_sink(&mut self) -> Result<(), ProtocolError> {
-        let sink = self.ctx.consensus().unguarded_session().async_get_sink().await;
+        let sink = self
+            .ctx
+            .consensus()
+            .unguarded_session()
+            .async_get_sink()
+            .await;
         if sink == self.ctx.config.genesis.hash {
             return Ok(());
         }
-        self.router.enqueue(make_message!(Payload::InvRelayBlock, InvRelayBlockMessage { hash: Some(sink.into()) })).await?;
+        self.router
+            .enqueue(make_message!(
+                Payload::InvRelayBlock,
+                InvRelayBlockMessage {
+                    hash: Some(sink.into())
+                }
+            ))
+            .await?;
         Ok(())
     }
 }

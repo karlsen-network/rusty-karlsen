@@ -9,7 +9,9 @@ use super::error::ConversionError;
 
 impl From<SubnetworkId> for protowire::SubnetworkId {
     fn from(item: SubnetworkId) -> Self {
-        Self { bytes: <SubnetworkId as AsRef<[u8]>>::as_ref(&item).to_vec() }
+        Self {
+            bytes: <SubnetworkId as AsRef<[u8]>>::as_ref(&item).to_vec(),
+        }
     }
 }
 

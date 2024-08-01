@@ -18,11 +18,17 @@ pub(super) struct LoggerSpec {
 
 impl LoggerSpec {
     pub fn new(name: String, level: LevelFilter, appenders: Vec<&'static str>) -> Self {
-        Self { name, level, appenders }
+        Self {
+            name,
+            level,
+            appenders,
+        }
     }
 
     pub fn logger(&self) -> Logger {
-        Logger::builder().appenders(self.appenders.iter().map(|x| x.to_string())).build(self.name.clone(), self.level)
+        Logger::builder()
+            .appenders(self.appenders.iter().map(|x| x.to_string()))
+            .build(self.name.clone(), self.level)
     }
 }
 
@@ -49,7 +55,11 @@ pub(super) struct Builder {
 
 impl Builder {
     pub fn new() -> Builder {
-        Builder { appenders: vec![], loggers: HashMap::new(), root_level: None }
+        Builder {
+            appenders: vec![],
+            loggers: HashMap::new(),
+            root_level: None,
+        }
     }
 
     /// Initializes the builder from an environment variable.
@@ -82,28 +92,35 @@ impl Builder {
                 continue;
             }
             let mut parts = spec.split('=');
-            let (log_level, name) = match (parts.next(), parts.next().map(|x| x.trim()), parts.next()) {
-                (Some(part0), None, None) => {
-                    // if the single argument is a log-level string or number,
-                    // it defines the root level
-                    match part0.parse() {
-                        Ok(lvl) => (lvl, None),
-                        Err(_) => (LevelFilter::max(), Some(part0)),
+            let (log_level, name) =
+                match (parts.next(), parts.next().map(|x| x.trim()), parts.next()) {
+                    (Some(part0), None, None) => {
+                        // if the single argument is a log-level string or number,
+                        // it defines the root level
+                        match part0.parse() {
+                            Ok(lvl) => (lvl, None),
+                            Err(_) => (LevelFilter::max(), Some(part0)),
+                        }
                     }
-                }
-                (Some(part0), Some(""), None) => (LevelFilter::max(), Some(part0)),
-                (Some(part0), Some(part1), None) => match part1.parse() {
-                    Ok(lvl) => (lvl, Some(part0)),
+                    (Some(part0), Some(""), None) => (LevelFilter::max(), Some(part0)),
+                    (Some(part0), Some(part1), None) => match part1.parse() {
+                        Ok(lvl) => (lvl, Some(part0)),
+                        _ => {
+                            println!(
+                                "Ignoring invalid logging spec '{}'",
+                                LogError::ParseLoggerSpecError(part1.to_string())
+                            );
+                            continue;
+                        }
+                    },
                     _ => {
-                        println!("Ignoring invalid logging spec '{}'", LogError::ParseLoggerSpecError(part1.to_string()));
+                        println!(
+                            "Ignoring invalid logging spec '{}'",
+                            LogError::ParseLoggerSpecError(spec.to_string())
+                        );
                         continue;
                     }
-                },
-                _ => {
-                    println!("Ignoring invalid logging spec '{}'", LogError::ParseLoggerSpecError(spec.to_string()));
-                    continue;
-                }
-            };
+                };
             match name {
                 Some(name) => {
                     self.logger(name.to_string(), log_level);
@@ -134,9 +151,14 @@ impl Builder {
 
     pub fn build(&mut self) -> Loggers {
         let loggers_map = mem::take(&mut self.loggers);
-        let loggers =
-            loggers_map.into_iter().map(|(name, (appenders, level))| LoggerSpec::new(name, level, appenders)).collect::<Vec<_>>();
-        Loggers { loggers, root_level: self.root_level.take().unwrap_or(LevelFilter::Error) }
+        let loggers = loggers_map
+            .into_iter()
+            .map(|(name, (appenders, level))| LoggerSpec::new(name, level, appenders))
+            .collect::<Vec<_>>();
+        Loggers {
+            loggers,
+            root_level: self.root_level.take().unwrap_or(LevelFilter::Error),
+        }
     }
 }
 

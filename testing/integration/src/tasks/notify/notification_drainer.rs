@@ -34,7 +34,9 @@ impl Task for NotificationDrainerTask {
                     }
                     _ = sleep(Duration::from_secs(1)) => {}
                 }
-                clients.iter().for_each(|client| while client.notification_channel_receiver().try_recv().is_ok() {});
+                clients.iter().for_each(|client| {
+                    while client.notification_channel_receiver().try_recv().is_ok() {}
+                });
             }
             warn!("Notification drainer task exited");
         });

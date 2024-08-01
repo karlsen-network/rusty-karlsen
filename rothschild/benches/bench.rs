@@ -10,13 +10,27 @@ use karlsen_consensus_core::{
 
 fn constuct_tx() -> Transaction {
     let inputs = vec![TransactionInput {
-        previous_outpoint: TransactionOutpoint { transaction_id: Hash::from_bytes([0xFF; 32]), index: 0 },
+        previous_outpoint: TransactionOutpoint {
+            transaction_id: Hash::from_bytes([0xFF; 32]),
+            index: 0,
+        },
         signature_script: vec![],
         sequence: 0,
         sig_op_count: 1,
     }];
-    let outputs = vec![TransactionOutput { value: 10000, script_public_key: ScriptPublicKey::from_vec(0, vec![0xff; 35]) }];
-    Transaction::new(TX_VERSION, inputs, outputs, 0, SUBNETWORK_ID_NATIVE, 0, vec![])
+    let outputs = vec![TransactionOutput {
+        value: 10000,
+        script_public_key: ScriptPublicKey::from_vec(0, vec![0xff; 35]),
+    }];
+    Transaction::new(
+        TX_VERSION,
+        inputs,
+        outputs,
+        0,
+        SUBNETWORK_ID_NATIVE,
+        0,
+        vec![],
+    )
 }
 
 fn construct_txs_serially() {
@@ -38,8 +52,12 @@ fn construct_txs_parallel() {
 
 pub fn bench_compare_tx_generation(c: &mut Criterion) {
     let mut group = c.benchmark_group("compare txs");
-    group.bench_function("Transaction::SerialCreation", |b| b.iter(construct_txs_serially));
-    group.bench_function("Transaction::ParallelCreation", |b| b.iter(construct_txs_parallel));
+    group.bench_function("Transaction::SerialCreation", |b| {
+        b.iter(construct_txs_serially)
+    });
+    group.bench_function("Transaction::ParallelCreation", |b| {
+        b.iter(construct_txs_parallel)
+    });
     group.finish();
 }
 

@@ -32,15 +32,21 @@ pub(crate) struct Counters {
 
 impl Counters {
     pub(crate) fn update(&self, snapshot: CountersSnapshot) {
-        self.resident_set_size.store(snapshot.resident_set_size, Ordering::Release);
-        self.virtual_memory_size.store(snapshot.virtual_memory_size, Ordering::Release);
+        self.resident_set_size
+            .store(snapshot.resident_set_size, Ordering::Release);
+        self.virtual_memory_size
+            .store(snapshot.virtual_memory_size, Ordering::Release);
         self.core_num.store(snapshot.core_num, Ordering::Release);
         self.cpu_usage.store(snapshot.cpu_usage, Ordering::Release);
         self.fd_num.store(snapshot.fd_num, Ordering::Release);
-        self.disk_io_read_bytes.store(snapshot.disk_io_read_bytes, Ordering::Release);
-        self.disk_io_write_bytes.store(snapshot.disk_io_write_bytes, Ordering::Release);
-        self.disk_io_read_per_sec.store(snapshot.disk_io_read_per_sec, Ordering::Release);
-        self.disk_io_write_per_sec.store(snapshot.disk_io_write_per_sec, Ordering::Release);
+        self.disk_io_read_bytes
+            .store(snapshot.disk_io_read_bytes, Ordering::Release);
+        self.disk_io_write_bytes
+            .store(snapshot.disk_io_write_bytes, Ordering::Release);
+        self.disk_io_read_per_sec
+            .store(snapshot.disk_io_read_per_sec, Ordering::Release);
+        self.disk_io_write_per_sec
+            .store(snapshot.disk_io_write_per_sec, Ordering::Release);
     }
     pub(crate) fn snapshot(&self) -> CountersSnapshot {
         CountersSnapshot {
@@ -95,8 +101,15 @@ impl CountersSnapshot {
 
 fn to_human_readable(mut number_to_format: f64, precision: usize, suffix: &str) -> String {
     const UNITS: [&str; 7] = ["", "K", "M", "G", "T", "P", "E"];
-    const DIV: [f64; 7] =
-        [1.0, 1_000.0, 1_000_000.0, 1_000_000_000.0, 1_000_000_000_000.0, 1_000_000_000_000_000.0, 1_000_000_000_000_000_000.0];
+    const DIV: [f64; 7] = [
+        1.0,
+        1_000.0,
+        1_000_000.0,
+        1_000_000_000.0,
+        1_000_000_000_000.0,
+        1_000_000_000_000_000.0,
+        1_000_000_000_000_000_000.0,
+    ];
     let i = (number_to_format.log(1000.0) as usize).min(UNITS.len() - 1);
     number_to_format /= DIV[i];
     format!("{number_to_format:.precision$}{}{}", UNITS[i], suffix)

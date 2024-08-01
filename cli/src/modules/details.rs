@@ -5,7 +5,12 @@ use crate::imports::*;
 pub struct Details;
 
 impl Details {
-    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, _argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        _argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         let account = ctx.select_account().await?.as_derivation_capable()?;
 

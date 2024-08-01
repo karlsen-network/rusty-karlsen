@@ -19,7 +19,9 @@ use crate::result::Result;
 use crate::wallet::Wallet;
 use async_trait::async_trait;
 use borsh::{BorshDeserialize, BorshSerialize};
-use karlsen_wallet_macros::{build_wallet_client_transport_interface, build_wallet_server_transport_interface};
+use karlsen_wallet_macros::{
+    build_wallet_client_transport_interface, build_wallet_server_transport_interface,
+};
 use workflow_core::task::spawn;
 
 /// Transport interface supporting Borsh serialization
@@ -57,7 +59,10 @@ impl WalletClient {
 use workflow_core::channel::{DuplexChannel, Receiver};
 #[async_trait]
 impl WalletApi for WalletClient {
-    async fn register_notifications(self: Arc<Self>, _channel: Receiver<WalletNotification>) -> Result<u64> {
+    async fn register_notifications(
+        self: Arc<Self>,
+        _channel: Receiver<WalletNotification>,
+    ) -> Result<u64> {
         todo!()
     }
     async fn unregister_notifications(self: Arc<Self>, _channel_id: u64) -> Result<()> {
@@ -131,7 +136,11 @@ impl WalletServer {
     // pub fn new(wallet_api: Arc<dyn WalletApi>, event_handler : Arc<dyn EventHandler>) -> Self {
     //     Self { wallet_api, event_handler }
     pub fn new(wallet: Arc<Wallet>, event_handler: Arc<dyn EventHandler>) -> Self {
-        Self { wallet, event_handler, task_ctl: DuplexChannel::unbounded() }
+        Self {
+            wallet,
+            event_handler,
+            task_ctl: DuplexChannel::unbounded(),
+        }
     }
 
     pub fn wallet_api(&self) -> Arc<dyn WalletApi> {
@@ -218,7 +227,10 @@ impl WalletServer {
     }
 
     pub async fn stop_task(&self) -> Result<()> {
-        self.task_ctl.signal(()).await.expect("Wallet::stop_task() `signal` error");
+        self.task_ctl
+            .signal(())
+            .await
+            .expect("Wallet::stop_task() `signal` error");
         Ok(())
     }
 }

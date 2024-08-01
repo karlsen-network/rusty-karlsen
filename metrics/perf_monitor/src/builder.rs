@@ -18,19 +18,31 @@ impl Builder<Unspecified, Unspecified, Unspecified> {
 
 impl Default for Builder<Unspecified, Unspecified, Unspecified> {
     fn default() -> Self {
-        Self { tick_service: Unspecified {}, fetch_interval: Unspecified {}, fetch_callback: Unspecified {} }
+        Self {
+            tick_service: Unspecified {},
+            fetch_interval: Unspecified {},
+            fetch_callback: Unspecified {},
+        }
     }
 }
 
 impl<D, CB> Builder<Unspecified, D, CB> {
     pub fn with_tick_service<TS: AsRef<TickService>>(self, tick_service: TS) -> Builder<TS, D, CB> {
-        Builder { tick_service, fetch_interval: self.fetch_interval, fetch_callback: self.fetch_callback }
+        Builder {
+            tick_service,
+            fetch_interval: self.fetch_interval,
+            fetch_callback: self.fetch_callback,
+        }
     }
 }
 
 impl<TS, CB> Builder<TS, Unspecified, CB> {
     pub fn with_fetch_interval(self, fetch_interval: Duration) -> Builder<TS, Duration, CB> {
-        Builder { tick_service: self.tick_service, fetch_interval, fetch_callback: self.fetch_callback }
+        Builder {
+            tick_service: self.tick_service,
+            fetch_interval,
+            fetch_callback: self.fetch_callback,
+        }
     }
 }
 
@@ -39,7 +51,11 @@ impl<TS, D> Builder<TS, D, Unspecified> {
         self,
         fetch_callback: CB,
     ) -> Builder<TS, D, Box<dyn Fn(CountersSnapshot) + Sync + Send>> {
-        Builder { tick_service: self.tick_service, fetch_interval: self.fetch_interval, fetch_callback: Box::new(fetch_callback) as _ }
+        Builder {
+            tick_service: self.tick_service,
+            fetch_interval: self.fetch_interval,
+            fetch_callback: Box::new(fetch_callback) as _,
+        }
     }
 }
 

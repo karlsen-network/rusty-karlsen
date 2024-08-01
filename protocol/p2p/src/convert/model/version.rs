@@ -42,7 +42,11 @@ impl Version {
     }
 
     pub fn add_user_agent(&mut self, name: &str, version: &str, comments: &[String]) {
-        let comments = if !comments.is_empty() { format!("({})", comments.join("; ")) } else { "".to_string() };
+        let comments = if !comments.is_empty() {
+            format!("({})", comments.join("; "))
+        } else {
+            "".to_string()
+        };
         let new_user_agent = format!("{}:{}{}", name, version, comments);
         self.user_agent = format!("{}{}/", self.user_agent, new_user_agent);
         self.user_agent.truncate(MAX_USER_AGENT_LEN);

@@ -13,11 +13,17 @@ use karlsen_hashes::Hash;
 use rocksdb::WriteBatch;
 use std::{error::Error, fmt::Display, sync::Arc};
 
-type UtxoCollectionIterator<'a> = Box<dyn Iterator<Item = Result<(TransactionOutpoint, UtxoEntry), Box<dyn Error>>> + 'a>;
+type UtxoCollectionIterator<'a> =
+    Box<dyn Iterator<Item = Result<(TransactionOutpoint, UtxoEntry), Box<dyn Error>>> + 'a>;
 
 pub trait UtxoSetStoreReader {
     fn get(&self, outpoint: &TransactionOutpoint) -> Result<Arc<UtxoEntry>, StoreError>;
-    fn seek_iterator(&self, from_outpoint: Option<TransactionOutpoint>, limit: usize, skip_first: bool) -> UtxoCollectionIterator;
+    fn seek_iterator(
+        &self,
+        from_outpoint: Option<TransactionOutpoint>,
+        limit: usize,
+        skip_first: bool,
+    ) -> UtxoCollectionIterator;
 }
 
 pub trait UtxoSetStore: UtxoSetStoreReader {
@@ -28,7 +34,8 @@ pub trait UtxoSetStore: UtxoSetStoreReader {
     fn write_many(&mut self, utxos: &[(TransactionOutpoint, UtxoEntry)]) -> Result<(), StoreError>;
 }
 
-pub const UTXO_KEY_SIZE: usize = karlsen_hashes::HASH_SIZE + std::mem::size_of::<TransactionIndexType>();
+pub const UTXO_KEY_SIZE: usize =
+    karlsen_hashes::HASH_SIZE + std::mem::size_of::<TransactionIndexType>();
 
 #[derive(Eq, Hash, PartialEq, Debug, Copy, Clone)]
 struct UtxoKey([u8; UTXO_KEY_SIZE]);
@@ -38,7 +45,10 @@ impl AsRef<[u8]> for UtxoKey {
         // In every practical case a transaction output index needs at most 2 bytes, so the overall
         // DB key structure will be { prefix byte || TX ID (32 bytes) || TX INDEX (2) } = 35 bytes
         // which fit on the smallvec without requiring heap allocation (see key.rs)
-        let rposition = self.0[karlsen_hashes::HASH_SIZE..].iter().rposition(|&v| v != 0).unwrap_or(0);
+        let rposition = self.0[karlsen_hashes::HASH_SIZE..]
+            .iter()
+            .rposition(|&v| v != 0)
+            .unwrap_or(0);
         &self.0[..=karlsen_hashes::HASH_SIZE + rposition]
     }
 }
@@ -81,8 +91,10 @@ impl From<UtxoKey> for TransactionOutpoint {
     fn from(k: UtxoKey) -> Self {
         let transaction_id = Hash::from_slice(&k.0[..karlsen_hashes::HASH_SIZE]);
         let index = TransactionIndexType::from_le_bytes(
-            <[u8; std::mem::size_of::<TransactionIndexType>()]>::try_from(&k.0[karlsen_hashes::HASH_SIZE..])
-                .expect("expecting index size"),
+            <[u8; std::mem::size_of::<TransactionIndexType>()]>::try_from(
+                &k.0[karlsen_hashes::HASH_SIZE..],
+            )
+            .expect("expecting index size"),
         );
         Self::new(transaction_id, index)
     }
@@ -97,7 +109,11 @@ pub struct DbUtxoSetStore {
 
 impl DbUtxoSetStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy, prefix: Vec<u8>) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, prefix.clone()), prefix }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbAccess::new(db, cache_policy, prefix.clone()),
+            prefix,
+        }
     }
 
     pub fn clone_with_new_cache(&self, cache_policy: CachePolicy) -> Self {
@@ -105,14 +121,30 @@ impl DbUtxoSetStore {
     }
 
     /// See comment at [`UtxoSetStore::write_diff`]
-    pub fn write_diff_batch(&mut self, batch: &mut WriteBatch, utxo_diff: &impl ImmutableUtxoDiff) -> Result<(), StoreError> {
+    pub fn write_diff_batch(
+        &mut self,
+        batch: &mut WriteBatch,
+        utxo_diff: &impl ImmutableUtxoDiff,
+    ) -> Result<(), StoreError> {
         let mut writer = BatchDbWriter::new(batch);
-        self.access.delete_many(&mut writer, &mut utxo_diff.removed().keys().map(|o| (*o).into()))?;
-        self.access.write_many(&mut writer, &mut utxo_diff.added().iter().map(|(o, e)| ((*o).into(), Arc::new(e.clone()))))?;
+        self.access.delete_many(
+            &mut writer,
+            &mut utxo_diff.removed().keys().map(|o| (*o).into()),
+        )?;
+        self.access.write_many(
+            &mut writer,
+            &mut utxo_diff
+                .added()
+                .iter()
+                .map(|(o, e)| ((*o).into(), Arc::new(e.clone()))),
+        )?;
         Ok(())
     }
 
-    pub fn iterator(&self) -> impl Iterator<Item = Result<(TransactionOutpoint, Arc<UtxoEntry>), Box<dyn Error>>> + '_ {
+    pub fn iterator(
+        &self,
+    ) -> impl Iterator<Item = Result<(TransactionOutpoint, Arc<UtxoEntry>), Box<dyn Error>>> + '_
+    {
         self.access.iterator().map(|iter_result| match iter_result {
             Ok((key_bytes, utxo_entry)) => match UtxoKey::try_from(key_bytes.as_ref()) {
                 Ok(utxo_key) => {
@@ -136,14 +168,19 @@ impl DbUtxoSetStore {
         utxos: impl IntoIterator<Item = (TransactionOutpoint, Arc<UtxoEntry>)>,
     ) -> Result<(), StoreError> {
         let mut writer = DirectDbWriter::new(&self.db);
-        self.access.write_many_without_cache(&mut writer, &mut utxos.into_iter().map(|(o, e)| (o.into(), e)))?;
+        self.access.write_many_without_cache(
+            &mut writer,
+            &mut utxos.into_iter().map(|(o, e)| (o.into(), e)),
+        )?;
         Ok(())
     }
 }
 
 impl UtxoView for DbUtxoSetStore {
     fn get(&self, outpoint: &TransactionOutpoint) -> Option<UtxoEntry> {
-        UtxoSetStoreReader::get(self, outpoint).map(|v| v.as_ref().clone()).unwrap_option()
+        UtxoSetStoreReader::get(self, outpoint)
+            .map(|v| v.as_ref().clone())
+            .unwrap_option()
     }
 }
 
@@ -152,27 +189,51 @@ impl UtxoSetStoreReader for DbUtxoSetStore {
         self.access.read((*outpoint).into())
     }
 
-    fn seek_iterator(&self, from_outpoint: Option<TransactionOutpoint>, limit: usize, skip_first: bool) -> UtxoCollectionIterator {
+    fn seek_iterator(
+        &self,
+        from_outpoint: Option<TransactionOutpoint>,
+        limit: usize,
+        skip_first: bool,
+    ) -> UtxoCollectionIterator {
         let seek_key = from_outpoint.map(UtxoKey::from);
-        Box::new(self.access.seek_iterator(None, seek_key, limit, skip_first).map(|res| {
-            let (key, entry) = res?;
-            let outpoint: TransactionOutpoint = UtxoKey::try_from(key.as_ref()).unwrap().into();
-            Ok((outpoint, UtxoEntry::clone(&entry)))
-        }))
+        Box::new(
+            self.access
+                .seek_iterator(None, seek_key, limit, skip_first)
+                .map(|res| {
+                    let (key, entry) = res?;
+                    let outpoint: TransactionOutpoint =
+                        UtxoKey::try_from(key.as_ref()).unwrap().into();
+                    Ok((outpoint, UtxoEntry::clone(&entry)))
+                }),
+        )
     }
 }
 
 impl UtxoSetStore for DbUtxoSetStore {
     fn write_diff(&mut self, utxo_diff: &UtxoDiff) -> Result<(), StoreError> {
         let mut writer = DirectDbWriter::new(&self.db);
-        self.access.delete_many(&mut writer, &mut utxo_diff.removed().keys().map(|o| (*o).into()))?;
-        self.access.write_many(&mut writer, &mut utxo_diff.added().iter().map(|(o, e)| ((*o).into(), Arc::new(e.clone()))))?;
+        self.access.delete_many(
+            &mut writer,
+            &mut utxo_diff.removed().keys().map(|o| (*o).into()),
+        )?;
+        self.access.write_many(
+            &mut writer,
+            &mut utxo_diff
+                .added()
+                .iter()
+                .map(|(o, e)| ((*o).into(), Arc::new(e.clone()))),
+        )?;
         Ok(())
     }
 
     fn write_many(&mut self, utxos: &[(TransactionOutpoint, UtxoEntry)]) -> Result<(), StoreError> {
         let mut writer = DirectDbWriter::new(&self.db);
-        self.access.write_many(&mut writer, &mut utxos.iter().map(|(o, e)| ((*o).into(), Arc::new(e.clone()))))?;
+        self.access.write_many(
+            &mut writer,
+            &mut utxos
+                .iter()
+                .map(|(o, e)| ((*o).into(), Arc::new(e.clone()))),
+        )?;
         Ok(())
     }
 }
@@ -185,13 +246,23 @@ mod tests {
     #[test]
     fn test_utxo_key_conversion() {
         let tx_id = 2345.into();
-        [300u32, 1, u8::MAX as u32, u16::MAX as u32, u32::MAX - 10].into_iter().for_each(|index| {
-            let outpoint = TransactionOutpoint::new(tx_id, index);
-            let key: UtxoKey = outpoint.into();
-            let bytes = key.as_ref().to_vec();
-            assert_eq!(key, bytes.as_slice().try_into().unwrap());
-            assert_eq!(outpoint, key.into());
-            assert_eq!(key.0.to_vec(), tx_id.as_bytes().iter().copied().chain(index.to_le_bytes().iter().copied()).collect_vec());
-        });
+        [300u32, 1, u8::MAX as u32, u16::MAX as u32, u32::MAX - 10]
+            .into_iter()
+            .for_each(|index| {
+                let outpoint = TransactionOutpoint::new(tx_id, index);
+                let key: UtxoKey = outpoint.into();
+                let bytes = key.as_ref().to_vec();
+                assert_eq!(key, bytes.as_slice().try_into().unwrap());
+                assert_eq!(outpoint, key.into());
+                assert_eq!(
+                    key.0.to_vec(),
+                    tx_id
+                        .as_bytes()
+                        .iter()
+                        .copied()
+                        .chain(index.to_le_bytes().iter().copied())
+                        .collect_vec()
+                );
+            });
     }
 }

@@ -38,21 +38,39 @@ pub(crate) trait Pool {
     /// in turn be topologically ordered.
     #[allow(dead_code)]
     fn index(&self, priority: Priority) -> PoolIndex {
-        let transactions: TransactionIdSet =
-            self.all().iter().filter_map(|(id, tx)| if tx.priority == priority { Some(*id) } else { None }).collect();
+        let transactions: TransactionIdSet = self
+            .all()
+            .iter()
+            .filter_map(|(id, tx)| {
+                if tx.priority == priority {
+                    Some(*id)
+                } else {
+                    None
+                }
+            })
+            .collect();
         let chained_transactions = transactions
             .iter()
             .filter_map(|id| {
-                self.chained()
-                    .get(id)
-                    .map(|chains| (*id, chains.iter().filter_map(|chain| transactions.get(chain).copied()).collect()))
+                self.chained().get(id).map(|chains| {
+                    (
+                        *id,
+                        chains
+                            .iter()
+                            .filter_map(|chain| transactions.get(chain).copied())
+                            .collect(),
+                    )
+                })
             })
             .collect();
         PoolIndex::new(transactions, chained_transactions)
     }
 
     /// Returns the ids of all transactions being parents of `transaction` and existing in the pool.
-    fn get_parent_transaction_ids_in_pool(&self, transaction: &MutableTransaction) -> TransactionIdSet {
+    fn get_parent_transaction_ids_in_pool(
+        &self,
+        transaction: &MutableTransaction,
+    ) -> TransactionIdSet {
         let mut parents = HashSet::with_capacity(transaction.tx.inputs.len());
         for input in transaction.tx.inputs.iter() {
             if self.has(&input.previous_outpoint.transaction_id) {
@@ -105,24 +123,45 @@ pub(crate) trait Pool {
     }
 
     /// Fills owner transactions for a set of script public keys.
-    fn fill_owner_set_transactions(&self, script_public_keys: &ScriptPublicKeySet, owner_set: &mut GroupedOwnerTransactions) {
+    fn fill_owner_set_transactions(
+        &self,
+        script_public_keys: &ScriptPublicKeySet,
+        owner_set: &mut GroupedOwnerTransactions,
+    ) {
         script_public_keys.iter().for_each(|script_public_key| {
-            let owner = owner_set.owners.entry(script_public_key.clone()).or_default();
+            let owner = owner_set
+                .owners
+                .entry(script_public_key.clone())
+                .or_default();
 
             self.all().iter().for_each(|(id, transaction)| {
                 // Sending transactions
-                if transaction.mtx.entries.iter().any(|x| x.is_some() && x.as_ref().unwrap().script_public_key == *script_public_key) {
+                if transaction.mtx.entries.iter().any(|x| {
+                    x.is_some() && x.as_ref().unwrap().script_public_key == *script_public_key
+                }) {
                     // Insert the mutable transaction in the owners object if not already present.
                     // Clone since the transaction leaves the mempool.
-                    owner_set.transactions.entry(*id).or_insert_with(|| transaction.mtx.clone());
+                    owner_set
+                        .transactions
+                        .entry(*id)
+                        .or_insert_with(|| transaction.mtx.clone());
                     owner.sending_txs.insert(*id);
                 }
 
                 // Receiving transactions
-                if transaction.mtx.tx.outputs.iter().any(|x| x.script_public_key == *script_public_key) {
+                if transaction
+                    .mtx
+                    .tx
+                    .outputs
+                    .iter()
+                    .any(|x| x.script_public_key == *script_public_key)
+                {
                     // Insert the mutable transaction in the owners object if not already present.
                     // Clone since the transaction leaves the mempool.
-                    owner_set.transactions.entry(*id).or_insert_with(|| transaction.mtx.clone());
+                    owner_set
+                        .transactions
+                        .entry(*id)
+                        .or_insert_with(|| transaction.mtx.clone());
                     owner.receiving_txs.insert(*id);
                 }
             });
@@ -137,8 +176,14 @@ pub(crate) struct PoolIndex {
 
 impl PoolIndex {
     #[allow(dead_code)]
-    pub(crate) fn new(transactions: TransactionIdSet, chained_transactions: TransactionsEdges) -> Self {
-        Self { transactions, chained_transactions }
+    pub(crate) fn new(
+        transactions: TransactionIdSet,
+        chained_transactions: TransactionsEdges,
+    ) -> Self {
+        Self {
+            transactions,
+            chained_transactions,
+        }
     }
 }
 

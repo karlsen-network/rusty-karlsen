@@ -53,7 +53,10 @@ impl SyncMonitor {
                     log_trace!("sync monitor: stopping sync monitor task");
                     self.stop_task().await?;
                 }
-                self.notify(Events::SyncState { sync_state: SyncState::Synced }).await?;
+                self.notify(Events::SyncState {
+                    sync_state: SyncState::Synced,
+                })
+                .await?;
             } else {
                 self.inner.is_synced.store(false, Ordering::SeqCst);
                 // log_trace!("sync monitor: node is not synced");
@@ -61,7 +64,10 @@ impl SyncMonitor {
                     log_trace!("sync monitor: starting sync monitor task");
                     self.start_task().await?;
                 }
-                self.notify(Events::SyncState { sync_state: SyncState::NotSynced }).await?;
+                self.notify(Events::SyncState {
+                    sync_state: SyncState::NotSynced,
+                })
+                .await?;
             }
         }
 
@@ -77,7 +83,14 @@ impl SyncMonitor {
     }
 
     pub fn rpc_api(&self) -> Arc<DynRpcApi> {
-        self.inner.rpc.lock().unwrap().as_ref().expect("SyncMonitor RPC not initialized").rpc_api().clone()
+        self.inner
+            .rpc
+            .lock()
+            .unwrap()
+            .as_ref()
+            .expect("SyncMonitor RPC not initialized")
+            .rpc_api()
+            .clone()
     }
 
     pub async fn bind_rpc(&self, rpc: Option<Rpc>) -> Result<()> {
@@ -92,7 +105,9 @@ impl SyncMonitor {
     pub async fn notify(&self, event: Events) -> Result<()> {
         self.multiplexer()
             .try_broadcast(Box::new(event))
-            .map_err(|_| Error::Custom("multiplexer channel error during update_balance".to_string()))?;
+            .map_err(|_| {
+                Error::Custom("multiplexer channel error during update_balance".to_string())
+            })?;
         Ok(())
     }
 
@@ -170,7 +185,11 @@ impl SyncMonitor {
     }
 
     pub async fn stop_task(&self) -> Result<()> {
-        self.inner.task_ctl.signal(()).await.expect("SyncProc::stop_task() `signal` error");
+        self.inner
+            .task_ctl
+            .signal(())
+            .await
+            .expect("SyncProc::stop_task() `signal` error");
         Ok(())
     }
 
@@ -212,8 +231,12 @@ impl Default for StateObserver {
             ibd_headers: Regex::new(r"IBD: Processed (\d+) block headers \((\d+)%\)").unwrap(),
             ibd_blocks: Regex::new(r"IBD: Processed (\d+) blocks \((\d+)%\)").unwrap(),
             utxo_resync: Regex::new(r"Resyncing the utxoindex...").unwrap(),
-            utxo_sync: Regex::new(r"Received (\d+) UTXO set chunks so far, totaling in (\d+) UTXOs").unwrap(),
-            trust_blocks: Regex::new(r"Processed (\d) trusted blocks in the last .* (total (\d))").unwrap(),
+            utxo_sync: Regex::new(
+                r"Received (\d+) UTXO set chunks so far, totaling in (\d+) UTXOs",
+            )
+            .unwrap(),
+            trust_blocks: Regex::new(r"Processed (\d) trusted blocks in the last .* (total (\d))")
+                .unwrap(),
             // accepted_block: Regex::new(r"Accepted block .* via").unwrap(),
         }
     }
@@ -225,25 +248,37 @@ impl StateObserver {
 
         if let Some(captures) = self.ibd_headers.captures(line) {
             if let (Some(headers), Some(progress)) = (captures.get(1), captures.get(2)) {
-                if let (Ok(headers), Ok(progress)) = (headers.as_str().parse::<u64>(), progress.as_str().parse::<u64>()) {
+                if let (Ok(headers), Ok(progress)) = (
+                    headers.as_str().parse::<u64>(),
+                    progress.as_str().parse::<u64>(),
+                ) {
                     state = Some(SyncState::Headers { headers, progress });
                 }
             }
         } else if let Some(captures) = self.ibd_blocks.captures(line) {
             if let (Some(blocks), Some(progress)) = (captures.get(1), captures.get(2)) {
-                if let (Ok(blocks), Ok(progress)) = (blocks.as_str().parse::<u64>(), progress.as_str().parse::<u64>()) {
+                if let (Ok(blocks), Ok(progress)) = (
+                    blocks.as_str().parse::<u64>(),
+                    progress.as_str().parse::<u64>(),
+                ) {
                     state = Some(SyncState::Blocks { blocks, progress });
                 }
             }
         } else if let Some(captures) = self.utxo_sync.captures(line) {
             if let (Some(chunks), Some(total)) = (captures.get(1), captures.get(2)) {
-                if let (Ok(chunks), Ok(total)) = (chunks.as_str().parse::<u64>(), total.as_str().parse::<u64>()) {
+                if let (Ok(chunks), Ok(total)) = (
+                    chunks.as_str().parse::<u64>(),
+                    total.as_str().parse::<u64>(),
+                ) {
                     state = Some(SyncState::UtxoSync { chunks, total });
                 }
             }
         } else if let Some(captures) = self.trust_blocks.captures(line) {
             if let (Some(processed), Some(total)) = (captures.get(1), captures.get(2)) {
-                if let (Ok(processed), Ok(total)) = (processed.as_str().parse::<u64>(), total.as_str().parse::<u64>()) {
+                if let (Ok(processed), Ok(total)) = (
+                    processed.as_str().parse::<u64>(),
+                    total.as_str().parse::<u64>(),
+                ) {
                     state = Some(SyncState::TrustSync { processed, total });
                 }
             }

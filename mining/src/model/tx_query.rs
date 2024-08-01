@@ -10,7 +10,10 @@ pub enum TransactionQuery {
 
 impl TransactionQuery {
     pub fn include_transaction_pool(&self) -> bool {
-        matches!(self, TransactionQuery::TransactionsOnly | TransactionQuery::All)
+        matches!(
+            self,
+            TransactionQuery::TransactionsOnly | TransactionQuery::All
+        )
     }
 
     pub fn include_orphan_pool(&self) -> bool {

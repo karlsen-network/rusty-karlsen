@@ -10,7 +10,8 @@ use karlsen_consensus_core::coinbase::MinerData;
 use karlsen_consensus_core::sign::sign;
 use karlsen_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
 use karlsen_consensus_core::tx::{
-    MutableTransaction, ScriptPublicKey, ScriptVec, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry,
+    MutableTransaction, ScriptPublicKey, ScriptVec, Transaction, TransactionInput,
+    TransactionOutpoint, TransactionOutput, UtxoEntry,
 };
 use karlsen_consensus_core::utxo::utxo_view::UtxoView;
 use karlsen_core::trace;
@@ -92,13 +93,19 @@ impl Miner {
         target_blocks: Option<u64>,
     ) -> Self {
         let (schnorr_public_key, _) = pk.x_only_public_key();
-        let script_pub_key_script = once(0x20).chain(schnorr_public_key.serialize()).chain(once(0xac)).collect_vec(); // TODO: Use script builder when available to create p2pk properly
+        let script_pub_key_script = once(0x20)
+            .chain(schnorr_public_key.serialize())
+            .chain(once(0xac))
+            .collect_vec(); // TODO: Use script builder when available to create p2pk properly
         let script_pub_key_script_vec = ScriptVec::from_slice(&script_pub_key_script);
         Self {
             id,
             consensus,
             params: params.clone(),
-            miner_data: MinerData::new(ScriptPublicKey::new(0, ScriptVec::from_slice(&script_pub_key_script_vec)), Vec::new()),
+            miner_data: MinerData::new(
+                ScriptPublicKey::new(0, ScriptVec::from_slice(&script_pub_key_script_vec)),
+                Vec::new(),
+            ),
             secret_key: sk,
             possible_unspent_outpoints: IndexSet::new(),
             dist: Exp::new(bps * hashrate).unwrap(),
@@ -137,12 +144,17 @@ impl Miner {
         let virtual_state = virtual_read.state.get().unwrap();
         let virtual_utxo_view = &virtual_read.utxo_set;
         let multiple_outputs = self.possible_unspent_outpoints.len() < 5_000;
-        let schnorr_key = secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, &self.secret_key.secret_bytes()).unwrap();
+        let schnorr_key = secp256k1::Keypair::from_seckey_slice(
+            secp256k1::SECP256K1,
+            &self.secret_key.secret_bytes(),
+        )
+        .unwrap();
         let txs = self
             .possible_unspent_outpoints
             .iter()
             .filter_map(|&outpoint| {
-                let entry = self.get_spendable_entry(virtual_utxo_view, outpoint, virtual_state.daa_score)?;
+                let entry =
+                    self.get_spendable_entry(virtual_utxo_view, outpoint, virtual_state.daa_score)?;
                 let unsigned_tx = self.create_unsigned_tx(outpoint, entry.amount, multiple_outputs);
                 Some(MutableTransaction::with_entries(unsigned_tx, vec![entry]))
             })
@@ -153,7 +165,11 @@ impl Miner {
                 let signed_tx = sign(mutable_tx, schnorr_key);
                 let mass = self
                     .mass_calculator
-                    .calc_tx_overall_mass(&signed_tx.as_verifiable(), None, karlsen_consensus::processes::mass::Kip9Version::Alpha)
+                    .calc_tx_overall_mass(
+                        &signed_tx.as_verifiable(),
+                        None,
+                        karlsen_consensus::processes::mass::Kip9Version::Alpha,
+                    )
                     .unwrap();
                 signed_tx.tx.set_mass(mass);
                 let mut signed_tx = signed_tx.tx;
@@ -162,7 +178,10 @@ impl Miner {
             })
             .collect::<Vec<_>>();
 
-        for outpoint in txs.iter().flat_map(|t| t.inputs.iter().map(|i| i.previous_outpoint)) {
+        for outpoint in txs
+            .iter()
+            .flat_map(|t| t.inputs.iter().map(|i| i.previous_outpoint))
+        {
             self.possible_unspent_outpoints.swap_remove(&outpoint);
         }
         txs
@@ -176,24 +195,40 @@ impl Miner {
     ) -> Option<UtxoEntry> {
         let entry = utxo_view.get(&outpoint)?;
         if entry.amount < 2
-            || (entry.is_coinbase && (virtual_daa_score as i64 - entry.block_daa_score as i64) <= self.params.coinbase_maturity as i64)
+            || (entry.is_coinbase
+                && (virtual_daa_score as i64 - entry.block_daa_score as i64)
+                    <= self.params.coinbase_maturity as i64)
         {
             return None;
         }
         Some(entry)
     }
 
-    fn create_unsigned_tx(&self, outpoint: TransactionOutpoint, input_amount: u64, multiple_outputs: bool) -> Transaction {
+    fn create_unsigned_tx(
+        &self,
+        outpoint: TransactionOutpoint,
+        input_amount: u64,
+        multiple_outputs: bool,
+    ) -> Transaction {
         Transaction::new_non_finalized(
             0,
             vec![TransactionInput::new(outpoint, vec![], 0, 0)],
             if multiple_outputs && input_amount > 4 {
                 vec![
-                    TransactionOutput::new(input_amount / 2, self.miner_data.script_public_key.clone()),
-                    TransactionOutput::new(input_amount / 2 - 1, self.miner_data.script_public_key.clone()),
+                    TransactionOutput::new(
+                        input_amount / 2,
+                        self.miner_data.script_public_key.clone(),
+                    ),
+                    TransactionOutput::new(
+                        input_amount / 2 - 1,
+                        self.miner_data.script_public_key.clone(),
+                    ),
                 ]
             } else {
-                vec![TransactionOutput::new(input_amount - 1, self.miner_data.script_public_key.clone())]
+                vec![TransactionOutput::new(
+                    input_amount - 1,
+                    self.miner_data.script_public_key.clone(),
+                )]
             },
             0,
             SUBNETWORK_ID_NATIVE,
@@ -215,11 +250,16 @@ impl Miner {
     fn process_block(&mut self, block: Block, env: &mut Environment<Block>) -> Suspension {
         for tx in block.transactions.iter() {
             for (i, output) in tx.outputs.iter().enumerate() {
-                if output.script_public_key.eq(&self.miner_data.script_public_key) {
+                if output
+                    .script_public_key
+                    .eq(&self.miner_data.script_public_key)
+                {
                     if self.possible_unspent_outpoints.len() == self.max_cached_outpoints {
-                        self.possible_unspent_outpoints.swap_remove_index(self.rng.gen_range(0..self.max_cached_outpoints));
+                        self.possible_unspent_outpoints
+                            .swap_remove_index(self.rng.gen_range(0..self.max_cached_outpoints));
                     }
-                    self.possible_unspent_outpoints.insert(TransactionOutpoint::new(tx.id(), i as u32));
+                    self.possible_unspent_outpoints
+                        .insert(TransactionOutpoint::new(tx.id(), i as u32));
                 }
             }
         }
@@ -227,7 +267,12 @@ impl Miner {
             Suspension::Halt
         } else {
             let session = self.consensus.acquire_session();
-            let status = futures::executor::block_on(self.consensus.validate_and_insert_block(block).virtual_state_task).unwrap();
+            let status = futures::executor::block_on(
+                self.consensus
+                    .validate_and_insert_block(block)
+                    .virtual_state_task,
+            )
+            .unwrap();
             assert!(status.is_utxo_valid_or_pending());
             drop(session);
             Suspension::Idle
@@ -245,7 +290,11 @@ impl Miner {
             return false;
         }
         if self.num_blocks % 50 == 0 || self.sim_time / 5000 != env.now() / 5000 {
-            trace!("Simulation time: {}\tGenerated {} blocks", env.now() as f64 / 1000.0, self.num_blocks);
+            trace!(
+                "Simulation time: {}\tGenerated {} blocks",
+                env.now() as f64 / 1000.0,
+                self.num_blocks
+            );
         }
         self.sim_time = env.now();
         false
@@ -253,7 +302,11 @@ impl Miner {
 }
 
 impl Process<Block> for Miner {
-    fn resume(&mut self, resumption: Resumption<Block>, env: &mut Environment<Block>) -> Suspension {
+    fn resume(
+        &mut self,
+        resumption: Resumption<Block>,
+        env: &mut Environment<Block>,
+    ) -> Suspension {
         match resumption {
             Resumption::Initial => self.sample_mining_interval(),
             Resumption::Scheduled => self.mine(env),

@@ -12,7 +12,10 @@ impl Sink {
     where
         F: AsRef<Function>,
     {
-        Self { context: None, callback: callback.as_ref().clone() }
+        Self {
+            context: None,
+            callback: callback.as_ref().clone(),
+        }
     }
 
     pub fn with_context(mut self, context: Option<Object>) -> Self {
@@ -46,7 +49,10 @@ impl Sink {
                 .map_err(|_| JsValue::from("'handleEvent()' is not a function"))?;
             Ok(Sink::new(callback).with_context(Some(context.clone())))
         } else {
-            Err(JsValue::from(format!("Invalid event listener callback: {:?}", value)))
+            Err(JsValue::from(format!(
+                "Invalid event listener callback: {:?}",
+                value
+            )))
         }
     }
 }

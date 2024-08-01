@@ -14,7 +14,10 @@ use tokio::join;
 #[tokio::test]
 async fn test_concurrent_pipeline() {
     init_allocator_with_default_settings();
-    let config = ConfigBuilder::new(MAINNET_PARAMS).skip_proof_of_work().edit_consensus_params(|p| p.genesis.hash = 1.into()).build();
+    let config = ConfigBuilder::new(MAINNET_PARAMS)
+        .skip_proof_of_work()
+        .edit_consensus_params(|p| p.genesis.hash = 1.into())
+        .build();
     let consensus = TestConsensus::new(&config);
     let wait_handles = consensus.init();
 
@@ -34,9 +37,13 @@ async fn test_concurrent_pipeline() {
 
     for (hash, parents) in blocks {
         // Submit to consensus twice to make sure duplicates are handled
-        let b: karlsen_consensus_core::block::Block = consensus.build_block_with_parents(hash, parents).to_immutable();
+        let b: karlsen_consensus_core::block::Block = consensus
+            .build_block_with_parents(hash, parents)
+            .to_immutable();
         let results = join!(
-            consensus.validate_and_insert_block(b.clone()).virtual_state_task,
+            consensus
+                .validate_and_insert_block(b.clone())
+                .virtual_state_task,
             consensus.validate_and_insert_block(b).virtual_state_task
         );
         results.0.unwrap();
@@ -44,7 +51,10 @@ async fn test_concurrent_pipeline() {
     }
 
     // Clone with a new cache in order to verify correct writes to the DB itself
-    let store = consensus.reachability_store().read().clone_with_new_cache(CachePolicy::Count(10_000), CachePolicy::Count(10_000));
+    let store = consensus
+        .reachability_store()
+        .read()
+        .clone_with_new_cache(CachePolicy::Count(10_000), CachePolicy::Count(10_000));
 
     // Assert intervals
     store.validate_intervals(blockhash::ORIGIN).unwrap();
@@ -87,14 +97,20 @@ async fn test_concurrent_pipeline_random() {
     let poi = Poisson::new((bps * delay) as f64).unwrap();
     let mut thread_rng = rand::thread_rng();
 
-    let config = ConfigBuilder::new(MAINNET_PARAMS).skip_proof_of_work().edit_consensus_params(|p| p.genesis.hash = genesis).build();
+    let config = ConfigBuilder::new(MAINNET_PARAMS)
+        .skip_proof_of_work()
+        .edit_consensus_params(|p| p.genesis.hash = genesis)
+        .build();
     let consensus = TestConsensus::new(&config);
     let wait_handles = consensus.init();
 
     let mut tips = vec![genesis];
     let mut total = 1000i64;
     while total > 0 {
-        let v = min(config.max_block_parents as i64, poi.sample(&mut thread_rng) as i64);
+        let v = min(
+            config.max_block_parents as i64,
+            poi.sample(&mut thread_rng) as i64,
+        );
         if v == 0 {
             continue;
         }
@@ -106,7 +122,9 @@ async fn test_concurrent_pipeline_random() {
             let hash = blockhash::new_unique();
             new_tips.push(hash);
 
-            let b = consensus.build_block_with_parents_and_transactions(hash, tips.clone(), vec![]).to_immutable();
+            let b = consensus
+                .build_block_with_parents_and_transactions(hash, tips.clone(), vec![])
+                .to_immutable();
 
             // Submit to consensus
             let f = consensus.validate_and_insert_block(b).virtual_state_task;
@@ -117,7 +135,10 @@ async fn test_concurrent_pipeline_random() {
     }
 
     // Clone with a new cache in order to verify correct writes to the DB itself
-    let store = consensus.reachability_store().read().clone_with_new_cache(CachePolicy::Count(10_000), CachePolicy::Count(10_000));
+    let store = consensus
+        .reachability_store()
+        .read()
+        .clone_with_new_cache(CachePolicy::Count(10_000), CachePolicy::Count(10_000));
 
     // Assert intervals
     store.validate_intervals(blockhash::ORIGIN).unwrap();

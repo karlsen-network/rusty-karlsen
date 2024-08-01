@@ -80,10 +80,12 @@ impl MiningCounters {
     pub fn increase_tx_counts(&self, value: u64, priority: Priority) {
         match priority {
             Priority::Low => {
-                self.low_priority_tx_counts.fetch_add(value, Ordering::Relaxed);
+                self.low_priority_tx_counts
+                    .fetch_add(value, Ordering::Relaxed);
             }
             Priority::High => {
-                self.high_priority_tx_counts.fetch_add(value, Ordering::Relaxed);
+                self.high_priority_tx_counts
+                    .fetch_add(value, Ordering::Relaxed);
             }
         }
     }
@@ -111,7 +113,10 @@ impl MempoolCountersSnapshot {
 
     /// Indicates whether this snapshot has any TPS activity which is worth logging
     pub fn has_tps_activity(&self) -> bool {
-        self.tx_accepted_counts > 0 || self.block_tx_counts > 0 || self.low_priority_tx_counts > 0 || self.high_priority_tx_counts > 0
+        self.tx_accepted_counts > 0
+            || self.block_tx_counts > 0
+            || self.low_priority_tx_counts > 0
+            || self.high_priority_tx_counts > 0
     }
 
     /// Returns an estimate of _Unique-TPS_, i.e. the number of unique transactions per second on average
@@ -146,13 +151,34 @@ impl core::ops::Sub for &MempoolCountersSnapshot {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self::Output {
-            elapsed_time: self.elapsed_time.checked_sub(rhs.elapsed_time).unwrap_or_default(),
-            high_priority_tx_counts: self.high_priority_tx_counts.checked_sub(rhs.high_priority_tx_counts).unwrap_or_default(),
-            low_priority_tx_counts: self.low_priority_tx_counts.checked_sub(rhs.low_priority_tx_counts).unwrap_or_default(),
-            block_tx_counts: self.block_tx_counts.checked_sub(rhs.block_tx_counts).unwrap_or_default(),
-            tx_accepted_counts: self.tx_accepted_counts.checked_sub(rhs.tx_accepted_counts).unwrap_or_default(),
-            input_counts: self.input_counts.checked_sub(rhs.input_counts).unwrap_or_default(),
-            output_counts: self.output_counts.checked_sub(rhs.output_counts).unwrap_or_default(),
+            elapsed_time: self
+                .elapsed_time
+                .checked_sub(rhs.elapsed_time)
+                .unwrap_or_default(),
+            high_priority_tx_counts: self
+                .high_priority_tx_counts
+                .checked_sub(rhs.high_priority_tx_counts)
+                .unwrap_or_default(),
+            low_priority_tx_counts: self
+                .low_priority_tx_counts
+                .checked_sub(rhs.low_priority_tx_counts)
+                .unwrap_or_default(),
+            block_tx_counts: self
+                .block_tx_counts
+                .checked_sub(rhs.block_tx_counts)
+                .unwrap_or_default(),
+            tx_accepted_counts: self
+                .tx_accepted_counts
+                .checked_sub(rhs.tx_accepted_counts)
+                .unwrap_or_default(),
+            input_counts: self
+                .input_counts
+                .checked_sub(rhs.input_counts)
+                .unwrap_or_default(),
+            output_counts: self
+                .output_counts
+                .checked_sub(rhs.output_counts)
+                .unwrap_or_default(),
             ready_txs_sample: (self.ready_txs_sample + rhs.ready_txs_sample) / 2,
             txs_sample: (self.txs_sample + rhs.txs_sample) / 2,
             orphans_sample: (self.orphans_sample + rhs.orphans_sample) / 2,
@@ -172,8 +198,14 @@ impl core::ops::Sub for &P2pTxCountSample {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self::Output {
-            elapsed_time: self.elapsed_time.checked_sub(rhs.elapsed_time).unwrap_or_default(),
-            low_priority_tx_counts: self.low_priority_tx_counts.checked_sub(rhs.low_priority_tx_counts).unwrap_or_default(),
+            elapsed_time: self
+                .elapsed_time
+                .checked_sub(rhs.elapsed_time)
+                .unwrap_or_default(),
+            low_priority_tx_counts: self
+                .low_priority_tx_counts
+                .checked_sub(rhs.low_priority_tx_counts)
+                .unwrap_or_default(),
         }
     }
 }

@@ -57,7 +57,10 @@ impl fmt::Display for GeneratorSummary {
         let transactions = if self.number_of_generated_transactions == 1 {
             "".to_string()
         } else {
-            format!("Batch Transactions: {}", self.number_of_generated_transactions)
+            format!(
+                "Batch Transactions: {}",
+                self.number_of_generated_transactions
+            )
         };
 
         if let Some(final_transaction_amount) = self.final_transaction_amount {

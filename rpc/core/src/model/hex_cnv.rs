@@ -22,7 +22,8 @@ impl ToRpcHex for &[u8] {
         }
 
         let mut hex = vec![0u8; self.len() * 2];
-        faster_hex::hex_encode(self, hex.as_mut_slice()).expect("The output is exactly twice the size of the input");
+        faster_hex::hex_encode(self, hex.as_mut_slice())
+            .expect("The output is exactly twice the size of the input");
         let result = unsafe { str::from_utf8_unchecked(&hex) };
         result.to_string()
     }
@@ -144,7 +145,8 @@ mod tests {
         // odd lengths are accepted
         // leading '0' are ignored
         // empty str is supported
-        const TEST_STR: &str = "000fedcba987654321000000a9876543210fedcba9876543210fedcba9876543210";
+        const TEST_STR: &str =
+            "000fedcba987654321000000a9876543210fedcba9876543210fedcba9876543210";
         for i in 0..TEST_STR.len() {
             assert!(BlueWorkType::from_rpc_hex(&TEST_STR[0..i]).is_ok() == (i <= 48));
             if 0 < i && i < 33 {

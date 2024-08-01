@@ -23,7 +23,12 @@ fn try_parse_resolvers(toml: &str) -> Result<Vec<Arc<String>>> {
     Ok(toml::from_str::<ResolverConfig>(toml)?
         .resolver
         .into_iter()
-        .filter_map(|resolver| resolver.enable.unwrap_or(true).then_some(Arc::new(resolver.url)))
+        .filter_map(|resolver| {
+            resolver
+                .enable
+                .unwrap_or(true)
+                .then_some(Arc::new(resolver.url))
+        })
         .collect::<Vec<_>>())
 }
 
@@ -50,7 +55,9 @@ impl Default for Resolver {
     fn default() -> Self {
         let toml = include_str!("../Resolvers.toml");
         let urls = try_parse_resolvers(toml).expect("TOML: Unable to parse RPC Resolver list");
-        Self { inner: Arc::new(Inner::new(urls)) }
+        Self {
+            inner: Arc::new(Inner::new(urls)),
+        }
     }
 }
 
@@ -60,17 +67,28 @@ impl Resolver {
             panic!("Resolver: Empty URL list supplied to the constructor.");
         }
 
-        Self { inner: Arc::new(Inner::new(urls)) }
+        Self {
+            inner: Arc::new(Inner::new(urls)),
+        }
     }
 
     pub fn urls(&self) -> Vec<Arc<String>> {
         self.inner.urls.clone()
     }
 
-    async fn fetch_node_info(&self, url: &str, encoding: Encoding, network_id: NetworkId) -> Result<NodeDescriptor> {
-        let url = format!("{}/v{}/wrpc/{}/{}", url, DEFAULT_VERSION, encoding, network_id);
-        let node =
-            get_json::<NodeDescriptor>(&url).await.map_err(|error| Error::custom(format!("Unable to connect to {url}: {error}")))?;
+    async fn fetch_node_info(
+        &self,
+        url: &str,
+        encoding: Encoding,
+        network_id: NetworkId,
+    ) -> Result<NodeDescriptor> {
+        let url = format!(
+            "{}/v{}/wrpc/{}/{}",
+            url, DEFAULT_VERSION, encoding, network_id
+        );
+        let node = get_json::<NodeDescriptor>(&url)
+            .await
+            .map_err(|error| Error::custom(format!("Unable to connect to {url}: {error}")))?;
         Ok(node)
     }
 
@@ -88,8 +106,17 @@ impl Resolver {
         Err(Error::Custom(format!("Failed to connect: {:?}", errors)))
     }
 
-    pub async fn fetch_all(&self, encoding: Encoding, network_id: NetworkId) -> Result<Vec<NodeDescriptor>> {
-        let futures = self.inner.urls.iter().map(|url| self.fetch_node_info(url, encoding, network_id)).collect::<Vec<_>>();
+    pub async fn fetch_all(
+        &self,
+        encoding: Encoding,
+        network_id: NetworkId,
+    ) -> Result<Vec<NodeDescriptor>> {
+        let futures = self
+            .inner
+            .urls
+            .iter()
+            .map(|url| self.fetch_node_info(url, encoding, network_id))
+            .collect::<Vec<_>>();
         let mut errors = Vec::default();
         let result = join_all(futures)
             .await
@@ -109,7 +136,11 @@ impl Resolver {
         }
     }
 
-    pub async fn get_node(&self, encoding: Encoding, network_id: NetworkId) -> Result<NodeDescriptor> {
+    pub async fn get_node(
+        &self,
+        encoding: Encoding,
+        network_id: NetworkId,
+    ) -> Result<NodeDescriptor> {
         self.fetch(encoding, network_id).await
     }
 

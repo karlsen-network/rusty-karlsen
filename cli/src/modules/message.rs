@@ -20,14 +20,24 @@ impl Handler for Message {
         "Sign a message or verify a message signature"
     }
 
-    async fn handle(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, cmd: &str) -> cli::Result<()> {
+    async fn handle(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        argv: Vec<String>,
+        cmd: &str,
+    ) -> cli::Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         self.main(ctx, argv, cmd).await.map_err(|e| e.into())
     }
 }
 
 impl Message {
-    async fn main(self: Arc<Self>, ctx: Arc<KarlsenCli>, argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: Arc<KarlsenCli>,
+        argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         if argv.is_empty() {
             return self.display_help(ctx, argv).await;
         }
@@ -53,7 +63,8 @@ impl Message {
                 let asked_message = ctx.term().ask(false, "Message: ").await?;
                 let message = asked_message.as_str();
 
-                self.verify(ctx, karlsen_address, signature, message).await?;
+                self.verify(ctx, karlsen_address, signature, message)
+                    .await?;
             }
             v => {
                 tprintln!(ctx, "unknown command: '{v}'\r\n");
@@ -79,10 +90,17 @@ impl Message {
         Ok(())
     }
 
-    async fn sign(self: Arc<Self>, ctx: Arc<KarlsenCli>, karlsen_address: &str, message: &str) -> Result<()> {
+    async fn sign(
+        self: Arc<Self>,
+        ctx: Arc<KarlsenCli>,
+        karlsen_address: &str,
+        message: &str,
+    ) -> Result<()> {
         let karlsen_address = Address::try_from(karlsen_address)?;
         if karlsen_address.version != Version::PubKey {
-            return Err(Error::custom("Address not supported for message signing. Only supports PubKey addresses"));
+            return Err(Error::custom(
+                "Address not supported for message signing. Only supports PubKey addresses",
+            ));
         }
 
         let pm = PersonalMessage(message);
@@ -100,10 +118,18 @@ impl Message {
         }
     }
 
-    async fn verify(self: Arc<Self>, ctx: Arc<KarlsenCli>, karlsen_address: &str, signature: &str, message: &str) -> Result<()> {
+    async fn verify(
+        self: Arc<Self>,
+        ctx: Arc<KarlsenCli>,
+        karlsen_address: &str,
+        signature: &str,
+        message: &str,
+    ) -> Result<()> {
         let karlsen_address = Address::try_from(karlsen_address)?;
         if karlsen_address.version != Version::PubKey {
-            return Err(Error::custom("Address not supported for message signing. Only supports PubKey addresses"));
+            return Err(Error::custom(
+                "Address not supported for message signing. Only supports PubKey addresses",
+            ));
         }
 
         let pubkey = XOnlyPublicKey::from_slice(&karlsen_address.payload[0..32]).unwrap();
@@ -126,24 +152,36 @@ impl Message {
         Ok(())
     }
 
-    async fn get_address_private_key(self: Arc<Self>, ctx: &Arc<KarlsenCli>, karlsen_address: Address) -> Result<[u8; 32]> {
+    async fn get_address_private_key(
+        self: Arc<Self>,
+        ctx: &Arc<KarlsenCli>,
+        karlsen_address: Address,
+    ) -> Result<[u8; 32]> {
         let account = ctx.wallet().account()?;
 
         match account.account_kind().as_ref() {
             BIP32_ACCOUNT_KIND => {
                 let (wallet_secret, payment_secret) = ctx.ask_wallet_secret(Some(&account)).await?;
                 let keydata = account.prv_key_data(wallet_secret).await?;
-                let account = account.clone().as_derivation_capable().expect("expecting derivation capable");
+                let account = account
+                    .clone()
+                    .as_derivation_capable()
+                    .expect("expecting derivation capable");
 
-                let (receive, change) = account.derivation().addresses_indexes(&[&karlsen_address])?;
-                let private_keys = account.create_private_keys(&keydata, &payment_secret, &receive, &change)?;
+                let (receive, change) = account
+                    .derivation()
+                    .addresses_indexes(&[&karlsen_address])?;
+                let private_keys =
+                    account.create_private_keys(&keydata, &payment_secret, &receive, &change)?;
                 for (address, private_key) in private_keys {
                     if karlsen_address == *address {
                         return Ok(private_key.secret_bytes());
                     }
                 }
 
-                Err(Error::custom("Could not find address in any derivation path in account"))
+                Err(Error::custom(
+                    "Could not find address in any derivation path in account",
+                ))
             }
             KEYPAIR_ACCOUNT_KIND => {
                 let (wallet_secret, payment_secret) = ctx.ask_wallet_secret(Some(&account)).await?;

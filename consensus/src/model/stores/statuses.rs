@@ -32,14 +32,22 @@ pub struct DbStatusesStore {
 
 impl DbStatusesStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::Statuses.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::Statuses.into()),
+        }
     }
 
     pub fn clone_with_new_cache(&self, cache_policy: CachePolicy) -> Self {
         Self::new(Arc::clone(&self.db), cache_policy)
     }
 
-    pub fn set_batch(&mut self, batch: &mut WriteBatch, hash: Hash, status: BlockStatus) -> StoreResult<()> {
+    pub fn set_batch(
+        &mut self,
+        batch: &mut WriteBatch,
+        hash: Hash,
+        status: BlockStatus,
+    ) -> StoreResult<()> {
         self.access.write(BatchDbWriter::new(batch), hash, status)
     }
 
@@ -65,7 +73,9 @@ impl StatusesStoreBatchExtensions for Arc<RwLock<DbStatusesStore>> {
         status: BlockStatus,
     ) -> Result<RwLockWriteGuard<DbStatusesStore>, StoreError> {
         let write_guard = self.write();
-        write_guard.access.write(BatchDbWriter::new(batch), hash, status)?;
+        write_guard
+            .access
+            .write(BatchDbWriter::new(batch), hash, status)?;
         Ok(write_guard)
     }
 }
@@ -82,7 +92,8 @@ impl StatusesStoreReader for DbStatusesStore {
 
 impl StatusesStore for DbStatusesStore {
     fn set(&mut self, hash: Hash, status: BlockStatus) -> StoreResult<()> {
-        self.access.write(DirectDbWriter::new(&self.db), hash, status)
+        self.access
+            .write(DirectDbWriter::new(&self.db), hash, status)
     }
 
     fn delete(&self, hash: Hash) -> Result<(), StoreError> {

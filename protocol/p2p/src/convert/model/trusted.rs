@@ -21,13 +21,19 @@ pub struct TrustedDataPackage {
 
 impl TrustedDataPackage {
     pub fn new(daa_window: Vec<TrustedHeader>, ghostdag_window: Vec<TrustedGhostdagData>) -> Self {
-        Self { daa_window, ghostdag_window }
+        Self {
+            daa_window,
+            ghostdag_window,
+        }
     }
 
     /// Returns the trusted set -- a sub-DAG in the anti-future of the pruning point which contains
     /// all the blocks and ghostdag data needed in order to validate the headers in the future of
     /// the pruning point
-    pub fn build_trusted_subdag(self, entries: Vec<TrustedDataEntry>) -> Result<Vec<TrustedBlock>, ProtocolError> {
+    pub fn build_trusted_subdag(
+        self,
+        entries: Vec<TrustedDataEntry>,
+    ) -> Result<Vec<TrustedBlock>, ProtocolError> {
         let mut blocks = Vec::with_capacity(entries.len());
         let mut set = BlockHashSet::new();
         let mut map = BlockHashMap::new();
@@ -46,14 +52,19 @@ impl TrustedDataPackage {
                 if let Some(ghostdag) = map.get(&block.hash()) {
                     blocks.push(TrustedBlock::new(block, ghostdag.clone()));
                 } else {
-                    return Err(ProtocolError::Other("missing ghostdag data for some trusted entries"));
+                    return Err(ProtocolError::Other(
+                        "missing ghostdag data for some trusted entries",
+                    ));
                 }
             }
         }
 
         for th in self.daa_window.iter() {
             if set.insert(th.header.hash) {
-                blocks.push(TrustedBlock::new(Block::from_header_arc(th.header.clone()), th.ghostdag.clone()));
+                blocks.push(TrustedBlock::new(
+                    Block::from_header_arc(th.header.clone()),
+                    th.ghostdag.clone(),
+                ));
             }
         }
 
@@ -62,7 +73,9 @@ impl TrustedDataPackage {
         for tb in blocks.iter_mut() {
             tb.ghostdag.mergeset_blues.retain(|h| set.contains(h));
             tb.ghostdag.mergeset_reds.retain(|h| set.contains(h));
-            tb.ghostdag.blues_anticone_sizes.retain(|k, _| set.contains(k));
+            tb.ghostdag
+                .blues_anticone_sizes
+                .retain(|k, _| set.contains(k));
             if !set.contains(&tb.ghostdag.selected_parent) {
                 tb.ghostdag.selected_parent = ORIGIN;
             }
@@ -88,7 +101,15 @@ pub struct TrustedDataEntry {
 }
 
 impl TrustedDataEntry {
-    pub fn new(block: Block, daa_window_indices: Vec<u64>, ghostdag_window_indices: Vec<u64>) -> Self {
-        Self { block, daa_window_indices, ghostdag_window_indices }
+    pub fn new(
+        block: Block,
+        daa_window_indices: Vec<u64>,
+        ghostdag_window_indices: Vec<u64>,
+    ) -> Self {
+        Self {
+            block,
+            daa_window_indices,
+            ghostdag_window_indices,
+        }
     }
 }

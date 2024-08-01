@@ -10,13 +10,19 @@ pub struct SignedInteger<T> {
 impl<T> From<T> for SignedInteger<T> {
     #[inline]
     fn from(u: T) -> Self {
-        Self { abs: u, negative: false }
+        Self {
+            abs: u,
+            negative: false,
+        }
     }
 }
 impl<T: From<u64>> SignedInteger<T> {
     #[inline]
     pub fn positive_u64(u: u64) -> Self {
-        Self { abs: T::from(u), negative: false }
+        Self {
+            abs: T::from(u),
+            negative: false,
+        }
     }
 }
 
@@ -50,12 +56,21 @@ impl<T: Sub<Output = T> + Add<Output = T> + Ord> Sub for SignedInteger<T> {
         match (self.negative, other.negative) {
             (false, false) | (true, true) => {
                 if self.abs < other.abs {
-                    Self { negative: !self.negative, abs: other.abs - self.abs }
+                    Self {
+                        negative: !self.negative,
+                        abs: other.abs - self.abs,
+                    }
                 } else {
-                    Self { negative: self.negative, abs: self.abs - other.abs }
+                    Self {
+                        negative: self.negative,
+                        abs: self.abs - other.abs,
+                    }
                 }
             }
-            (false, true) | (true, false) => Self { negative: self.negative, abs: self.abs + other.abs },
+            (false, true) | (true, false) => Self {
+                negative: self.negative,
+                abs: self.abs + other.abs,
+            },
         }
     }
 }
@@ -65,7 +80,10 @@ impl<T: Mul<Output = T>> Mul for SignedInteger<T> {
     #[inline]
     #[track_caller]
     fn mul(self, rhs: Self) -> Self::Output {
-        Self { negative: self.negative ^ rhs.negative, abs: self.abs * rhs.abs }
+        Self {
+            negative: self.negative ^ rhs.negative,
+            abs: self.abs * rhs.abs,
+        }
     }
 }
 
@@ -74,7 +92,10 @@ impl<T: Div<Output = T>> Div for SignedInteger<T> {
     #[inline]
     #[track_caller]
     fn div(self, rhs: Self) -> Self::Output {
-        Self { negative: self.negative ^ rhs.negative, abs: self.abs / rhs.abs }
+        Self {
+            negative: self.negative ^ rhs.negative,
+            abs: self.abs / rhs.abs,
+        }
     }
 }
 
@@ -117,7 +138,10 @@ mod tests {
     fn test_partial_eq() {
         assert_eq!(from_u64(0), SignedInteger::from(Uint192::ZERO));
         assert_eq!(from_u64(0), from_u64(10) - from_u64(10));
-        assert_eq!(from_u64(0), from_u64(10) - from_u64(20) - from_u64(10) * (from_u64(0) - from_u64(1))); // 0 == 10 - 20 -(-10)
+        assert_eq!(
+            from_u64(0),
+            from_u64(10) - from_u64(20) - from_u64(10) * (from_u64(0) - from_u64(1))
+        ); // 0 == 10 - 20 -(-10)
         assert_eq!(from_u64(0) - from_u64(1000), from_u64(0) - from_u64(1000)); // -1000 = -1000
         assert_eq!(from_u64(1000), from_u64(1000));
     }
@@ -125,8 +149,12 @@ mod tests {
     #[test]
     fn test_partial_cmp() {
         // Test cases related to 0 and equality
-        assert!(from_u64(0) >= from_u64(10) - from_u64(20) - from_u64(10) * (from_u64(0) - from_u64(1))); // pos 0 >= neg 0
-        assert!(from_u64(0) <= from_u64(10) - from_u64(20) - from_u64(10) * (from_u64(0) - from_u64(1))); // pos 0 <= neg 0
+        assert!(
+            from_u64(0) >= from_u64(10) - from_u64(20) - from_u64(10) * (from_u64(0) - from_u64(1))
+        ); // pos 0 >= neg 0
+        assert!(
+            from_u64(0) <= from_u64(10) - from_u64(20) - from_u64(10) * (from_u64(0) - from_u64(1))
+        ); // pos 0 <= neg 0
 
         // Test all possible neg/pos combinations
         assert!(from_u64(100) > from_u64(0) - from_u64(1000)); // pos > neg

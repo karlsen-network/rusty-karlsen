@@ -22,7 +22,10 @@ struct Pending {
 
 impl Pending {
     fn new(sender: KarlsendResponseSender) -> Self {
-        Self { timestamp: Instant::now(), sender }
+        Self {
+            timestamp: Instant::now(),
+            sender,
+        }
     }
 }
 
@@ -33,12 +36,18 @@ pub(crate) struct IdResolver {
 
 impl IdResolver {
     pub(crate) fn new() -> Self {
-        Self { pending_calls: Arc::new(Mutex::new(HashMap::new())) }
+        Self {
+            pending_calls: Arc::new(Mutex::new(HashMap::new())),
+        }
     }
 }
 
 impl Resolver for IdResolver {
-    fn register_request(&self, _: KarlsendPayloadOps, request: &KarlsendRequest) -> KarlsendResponseReceiver {
+    fn register_request(
+        &self,
+        _: KarlsendPayloadOps,
+        request: &KarlsendRequest,
+    ) -> KarlsendResponseReceiver {
         let (sender, receiver) = oneshot::channel::<Result<KarlsendResponse>>();
         {
             let mut pending_calls = self.pending_calls.lock().unwrap();
@@ -51,7 +60,10 @@ impl Resolver for IdResolver {
     fn handle_response(&self, response: KarlsendResponse) {
         match self.pending_calls.lock().unwrap().remove(&response.id) {
             Some(pending) => {
-                trace!("[Resolver] handle_response has matching request with id {}", response.id);
+                trace!(
+                    "[Resolver] handle_response has matching request with id {}",
+                    response.id
+                );
                 match pending.sender.send(Ok(response)) {
                     Ok(_) => {}
                     Err(err) => {
@@ -60,7 +72,10 @@ impl Resolver for IdResolver {
                 }
             }
             None => {
-                trace!("[Resolver] handle_response: response id {} has no pending request", response.id);
+                trace!(
+                    "[Resolver] handle_response: response id {} has no pending request",
+                    response.id
+                );
             }
         }
     }
@@ -74,11 +89,16 @@ impl Resolver for IdResolver {
             }
         }
         for id in purge.iter() {
-            let pending = pending_calls.remove(id).expect("the pending request to remove does exist in the map");
+            let pending = pending_calls
+                .remove(id)
+                .expect("the pending request to remove does exist in the map");
             match pending.sender.send(Err(Error::Timeout)) {
                 Ok(_) => {}
                 Err(err) => {
-                    trace!("[Resolver] the timeout monitor failed to send a timeout error: {:?}", err);
+                    trace!(
+                        "[Resolver] the timeout monitor failed to send a timeout error: {:?}",
+                        err
+                    );
                 }
             }
         }

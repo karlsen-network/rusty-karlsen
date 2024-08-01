@@ -101,7 +101,11 @@ impl BitWriter {
             bytes += 1;
         }
 
-        Self { offset: 0, remainder: 0, inner: Vec::with_capacity(bytes) }
+        Self {
+            offset: 0,
+            remainder: 0,
+            inner: Vec::with_capacity(bytes),
+        }
     }
 
     pub fn push<B: Bits>(&mut self, source: B) {
@@ -140,7 +144,12 @@ where
     I: Iterator<Item = In>,
 {
     fn new(source: I) -> Self {
-        BitIter { _phantom: PhantomData, source, read: 0, buffer: 0 }
+        BitIter {
+            _phantom: PhantomData,
+            source,
+            read: 0,
+            buffer: 0,
+        }
     }
 }
 
@@ -170,6 +179,9 @@ where
     fn size_hint(&self) -> (usize, Option<usize>) {
         let (lower, upper) = self.source.size_hint();
 
-        ((lower * In::SIZE) / Out::SIZE, upper.map(|n| (n * In::SIZE) / Out::SIZE))
+        (
+            (lower * In::SIZE) / Out::SIZE,
+            upper.map(|n| (n * In::SIZE) / Out::SIZE),
+        )
     }
 }

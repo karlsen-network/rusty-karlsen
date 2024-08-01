@@ -11,7 +11,11 @@ use std::fmt::{Debug, Display};
 
 /// A notification, usable throughout the full notification system via types implementing this trait
 pub trait Notification: Clone + Debug + Display + Send + Sync + 'static {
-    fn apply_overall_subscription(&self, subscription: &OverallSubscription, context: &SubscriptionContext) -> Option<Self>;
+    fn apply_overall_subscription(
+        &self,
+        subscription: &OverallSubscription,
+        context: &SubscriptionContext,
+    ) -> Option<Self>;
 
     fn apply_virtual_chain_changed_subscription(
         &self,
@@ -19,18 +23,39 @@ pub trait Notification: Clone + Debug + Display + Send + Sync + 'static {
         context: &SubscriptionContext,
     ) -> Option<Self>;
 
-    fn apply_utxos_changed_subscription(&self, subscription: &UtxosChangedSubscription, context: &SubscriptionContext)
-        -> Option<Self>;
+    fn apply_utxos_changed_subscription(
+        &self,
+        subscription: &UtxosChangedSubscription,
+        context: &SubscriptionContext,
+    ) -> Option<Self>;
 
-    fn apply_subscription(&self, subscription: &dyn Single, context: &SubscriptionContext) -> Option<Self> {
+    fn apply_subscription(
+        &self,
+        subscription: &dyn Single,
+        context: &SubscriptionContext,
+    ) -> Option<Self> {
         match subscription.event_type() {
             EventType::VirtualChainChanged => self.apply_virtual_chain_changed_subscription(
-                subscription.as_any().downcast_ref::<VirtualChainChangedSubscription>().unwrap(),
+                subscription
+                    .as_any()
+                    .downcast_ref::<VirtualChainChangedSubscription>()
+                    .unwrap(),
                 context,
             ),
-            EventType::UtxosChanged => self
-                .apply_utxos_changed_subscription(subscription.as_any().downcast_ref::<UtxosChangedSubscription>().unwrap(), context),
-            _ => self.apply_overall_subscription(subscription.as_any().downcast_ref::<OverallSubscription>().unwrap(), context),
+            EventType::UtxosChanged => self.apply_utxos_changed_subscription(
+                subscription
+                    .as_any()
+                    .downcast_ref::<UtxosChangedSubscription>()
+                    .unwrap(),
+                context,
+            ),
+            _ => self.apply_overall_subscription(
+                subscription
+                    .as_any()
+                    .downcast_ref::<OverallSubscription>()
+                    .unwrap(),
+                context,
+            ),
         }
     }
 
@@ -114,7 +139,11 @@ pub mod test_helpers {
     }
 
     impl Notification for TestNotification {
-        fn apply_overall_subscription(&self, subscription: &OverallSubscription, _: &SubscriptionContext) -> Option<Self> {
+        fn apply_overall_subscription(
+            &self,
+            subscription: &OverallSubscription,
+            _: &SubscriptionContext,
+        ) -> Option<Self> {
             trace!("apply_overall_subscription: {self:?}, {subscription:?}");
             match subscription.active() {
                 true => Some(self.clone()),
@@ -130,11 +159,15 @@ pub mod test_helpers {
             match subscription.active() {
                 true => {
                     if let TestNotification::VirtualChainChanged(ref payload) = self {
-                        if !subscription.include_accepted_transaction_ids() && payload.accepted_transaction_ids.is_some() {
-                            return Some(TestNotification::VirtualChainChanged(VirtualChainChangedNotification {
-                                data: payload.data,
-                                accepted_transaction_ids: None,
-                            }));
+                        if !subscription.include_accepted_transaction_ids()
+                            && payload.accepted_transaction_ids.is_some()
+                        {
+                            return Some(TestNotification::VirtualChainChanged(
+                                VirtualChainChangedNotification {
+                                    data: payload.data,
+                                    accepted_transaction_ids: None,
+                                },
+                            ));
                         }
                     }
                     Some(self.clone())
@@ -163,10 +196,12 @@ pub mod test_helpers {
                                 .cloned()
                                 .collect::<Vec<_>>();
                             if !addresses.is_empty() {
-                                return Some(TestNotification::UtxosChanged(UtxosChangedNotification {
-                                    data: payload.data,
-                                    addresses: Arc::new(addresses),
-                                }));
+                                return Some(TestNotification::UtxosChanged(
+                                    UtxosChangedNotification {
+                                        data: payload.data,
+                                        addresses: Arc::new(addresses),
+                                    },
+                                ));
                             } else {
                                 return None;
                             }

@@ -74,8 +74,13 @@ impl<
     ) -> (Vec<Hash>, Hash) {
         let low_hash = match suggested_low_hash {
             Some(suggested) => {
-                if !self.reachability_service.is_chain_ancestor_of(suggested, current_candidate) {
-                    assert!(self.reachability_service.is_chain_ancestor_of(current_candidate, suggested));
+                if !self
+                    .reachability_service
+                    .is_chain_ancestor_of(suggested, current_candidate)
+                {
+                    assert!(self
+                        .reachability_service
+                        .is_chain_ancestor_of(current_candidate, suggested));
                     suggested
                 } else {
                     current_candidate
@@ -85,8 +90,12 @@ impl<
         };
 
         // If the pruning point is more out of date than that, an IBD with headers proof is needed anyway.
-        let mut new_pruning_points = Vec::with_capacity((self.pruning_depth / self.finality_depth) as usize);
-        let mut latest_pruning_point_bs = self.ghostdag_store.get_blue_score(current_pruning_point).unwrap();
+        let mut new_pruning_points =
+            Vec::with_capacity((self.pruning_depth / self.finality_depth) as usize);
+        let mut latest_pruning_point_bs = self
+            .ghostdag_store
+            .get_blue_score(current_pruning_point)
+            .unwrap();
 
         if latest_pruning_point_bs + self.pruning_depth > ghostdag_data.blue_score {
             // The pruning point is not in depth of self.pruning_depth, so there's
@@ -98,7 +107,11 @@ impl<
 
         let mut new_candidate = current_candidate;
 
-        for selected_child in self.reachability_service.forward_chain_iterator(low_hash, ghostdag_data.selected_parent, true) {
+        for selected_child in self.reachability_service.forward_chain_iterator(
+            low_hash,
+            ghostdag_data.selected_parent,
+            true,
+        ) {
             let selected_child_bs = self.ghostdag_store.get_blue_score(selected_child).unwrap();
 
             if ghostdag_data.blue_score - selected_child_bs < self.pruning_depth {
@@ -108,7 +121,8 @@ impl<
             new_candidate = selected_child;
             let new_candidate_bs = selected_child_bs;
 
-            if self.finality_score(new_candidate_bs) > self.finality_score(latest_pruning_point_bs) {
+            if self.finality_score(new_candidate_bs) > self.finality_score(latest_pruning_point_bs)
+            {
                 new_pruning_points.push(new_candidate);
                 latest_pruning_point_bs = new_candidate_bs;
             }
@@ -123,27 +137,39 @@ impl<
         blue_score / self.finality_depth
     }
 
-    pub fn expected_header_pruning_point(&self, ghostdag_data: CompactGhostdagData, pruning_info: PruningPointInfo) -> Hash {
+    pub fn expected_header_pruning_point(
+        &self,
+        ghostdag_data: CompactGhostdagData,
+        pruning_info: PruningPointInfo,
+    ) -> Hash {
         if ghostdag_data.selected_parent == self.genesis_hash {
             return self.genesis_hash;
         }
 
-        let (current_pruning_point, current_candidate, current_pruning_point_index) = pruning_info.decompose();
+        let (current_pruning_point, current_candidate, current_pruning_point_index) =
+            pruning_info.decompose();
 
-        let sp_header_pp = self.headers_store.get_header(ghostdag_data.selected_parent).unwrap().pruning_point;
+        let sp_header_pp = self
+            .headers_store
+            .get_header(ghostdag_data.selected_parent)
+            .unwrap()
+            .pruning_point;
         let sp_header_pp_blue_score = self.headers_store.get_blue_score(sp_header_pp).unwrap();
 
         // If the block doesn't have the pruning in its selected chain we know for sure that it can't trigger a pruning point
         // change (we check the selected parent to take care of the case where the block is the virtual which doesn't have reachability data).
-        let has_pruning_point_in_its_selected_chain =
-            self.reachability_service.is_chain_ancestor_of(current_pruning_point, ghostdag_data.selected_parent);
+        let has_pruning_point_in_its_selected_chain = self
+            .reachability_service
+            .is_chain_ancestor_of(current_pruning_point, ghostdag_data.selected_parent);
 
         // Note: the pruning point from the POV of the current block is the first block in its chain that is in depth of self.pruning_depth and
         // its finality score is greater than the previous pruning point. This is why if the diff between finality_score(selected_parent.blue_score + 1) * finality_interval
         // and the current block blue score is less than self.pruning_depth we can know for sure that this block didn't trigger a pruning point change.
-        let min_required_blue_score_for_next_pruning_point = (self.finality_score(sp_header_pp_blue_score) + 1) * self.finality_depth;
+        let min_required_blue_score_for_next_pruning_point =
+            (self.finality_score(sp_header_pp_blue_score) + 1) * self.finality_depth;
         let next_or_current_pp = if has_pruning_point_in_its_selected_chain
-            && min_required_blue_score_for_next_pruning_point + self.pruning_depth <= ghostdag_data.blue_score
+            && min_required_blue_score_for_next_pruning_point + self.pruning_depth
+                <= ghostdag_data.blue_score
         {
             // If the selected parent pruning point is in the future of current global pruning point, then provide it as a suggestion
             let suggested_low_hash = self
@@ -158,7 +184,10 @@ impl<
                 current_pruning_point,
             );
 
-            new_pruning_points.last().copied().unwrap_or(current_pruning_point)
+            new_pruning_points
+                .last()
+                .copied()
+                .unwrap_or(current_pruning_point)
         } else {
             sp_header_pp
         };
@@ -186,7 +215,10 @@ impl<
         if pp_candidate == self.genesis_hash {
             return true;
         }
-        if !self.reachability_service.is_chain_ancestor_of(pp_candidate, hst) {
+        if !self
+            .reachability_service
+            .is_chain_ancestor_of(pp_candidate, hst)
+        {
             return false;
         }
 
@@ -194,7 +226,11 @@ impl<
         self.is_pruning_point_in_pruning_depth(hst_bs, pp_candidate)
     }
 
-    pub fn are_pruning_points_in_valid_chain(&self, pruning_info: PruningPointInfo, hst: Hash) -> bool {
+    pub fn are_pruning_points_in_valid_chain(
+        &self,
+        pruning_info: PruningPointInfo,
+        hst: Hash,
+    ) -> bool {
         // We want to validate that the past pruning points form a chain to genesis. Since
         // each pruning point's header doesn't point to the previous pruning point, but to
         // the pruning point from its POV, we can't just traverse from one pruning point to
@@ -211,9 +247,16 @@ impl<
         // any other pruning point in the list, so we are compelled to check if it's referenced by
         // the selected chain.
         let mut expected_pps_queue = VecDeque::new();
-        for current in self.reachability_service.backward_chain_iterator(hst, pruning_info.pruning_point, false) {
+        for current in self.reachability_service.backward_chain_iterator(
+            hst,
+            pruning_info.pruning_point,
+            false,
+        ) {
             let current_header = self.headers_store.get_header(current).unwrap();
-            if expected_pps_queue.back().is_none_or(|&&h| h != current_header.pruning_point) {
+            if expected_pps_queue
+                .back()
+                .is_none_or(|&&h| h != current_header.pruning_point)
+            {
                 expected_pps_queue.push_back(current_header.pruning_point);
             }
         }

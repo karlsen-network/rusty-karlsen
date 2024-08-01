@@ -40,13 +40,19 @@ impl PublicKey {
     pub fn try_new(key: &str) -> Result<PublicKey> {
         match secp256k1::PublicKey::from_str(key) {
             Ok(public_key) => Ok((&public_key).into()),
-            Err(_e) => Ok(Self { xonly_public_key: secp256k1::XOnlyPublicKey::from_str(key)?, public_key: None }),
+            Err(_e) => Ok(Self {
+                xonly_public_key: secp256k1::XOnlyPublicKey::from_str(key)?,
+                public_key: None,
+            }),
         }
     }
 
     #[wasm_bindgen(js_name = "toString")]
     pub fn to_string_impl(&self) -> String {
-        self.public_key.as_ref().map(|pk| pk.to_string()).unwrap_or_else(|| self.xonly_public_key.to_string())
+        self.public_key
+            .as_ref()
+            .map(|pk| pk.to_string())
+            .unwrap_or_else(|| self.xonly_public_key.to_string())
     }
 
     /// Get the [`Address`] of this PublicKey.
@@ -116,14 +122,20 @@ impl TryFrom<&PublicKey> for secp256k1::PublicKey {
 impl From<&secp256k1::PublicKey> for PublicKey {
     fn from(public_key: &secp256k1::PublicKey) -> Self {
         let (xonly_public_key, _) = public_key.x_only_public_key();
-        Self { xonly_public_key, public_key: Some(*public_key) }
+        Self {
+            xonly_public_key,
+            public_key: Some(*public_key),
+        }
     }
 }
 
 impl From<secp256k1::PublicKey> for PublicKey {
     fn from(public_key: secp256k1::PublicKey) -> Self {
         let (xonly_public_key, _) = public_key.x_only_public_key();
-        Self { xonly_public_key, public_key: Some(public_key) }
+        Self {
+            xonly_public_key,
+            public_key: Some(public_key),
+        }
     }
 }
 
@@ -155,8 +167,14 @@ impl TryFrom<PublicKeyArrayT> for Vec<secp256k1::PublicKey> {
     fn try_from(value: PublicKeyArrayT) -> Result<Self> {
         if value.is_array() {
             let array = Array::from(&value);
-            let pubkeys = array.iter().map(PublicKey::try_cast_from).collect::<Result<Vec<_>>>()?;
-            Ok(pubkeys.iter().map(|pk| pk.as_ref().try_into()).collect::<Result<Vec<_>>>()?)
+            let pubkeys = array
+                .iter()
+                .map(PublicKey::try_cast_from)
+                .collect::<Result<Vec<_>>>()?;
+            Ok(pubkeys
+                .iter()
+                .map(|pk| pk.as_ref().try_into())
+                .collect::<Result<Vec<_>>>()?)
         } else {
             Err(Error::InvalidPublicKeyArray)
         }

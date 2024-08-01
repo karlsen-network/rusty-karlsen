@@ -31,12 +31,19 @@ impl Signed {
 /// TODO (aspect) - merge this with `v1` fn above or refactor wallet core to use the script engine.
 /// Sign a transaction using schnorr
 #[allow(clippy::result_large_err)]
-pub fn sign_with_multiple_v3(tx: Transaction, privkeys: &[[u8; 32]]) -> crate::result::Result<Signed> {
+pub fn sign_with_multiple_v3(
+    tx: Transaction,
+    privkeys: &[[u8; 32]],
+) -> crate::result::Result<Signed> {
     let mut map = BTreeMap::new();
     for privkey in privkeys {
-        let schnorr_key = secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, privkey).unwrap();
+        let schnorr_key =
+            secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, privkey).unwrap();
         let schnorr_public_key = schnorr_key.public_key().x_only_public_key().0;
-        let script_pub_key_script = once(0x20).chain(schnorr_public_key.serialize().into_iter()).chain(once(0xac)).collect_vec();
+        let script_pub_key_script = once(0x20)
+            .chain(schnorr_public_key.serialize().into_iter())
+            .chain(once(0xac))
+            .collect_vec();
         map.insert(script_pub_key_script, schnorr_key);
     }
 
@@ -50,16 +57,30 @@ pub fn sign_with_multiple_v3(tx: Transaction, privkeys: &[[u8; 32]]) -> crate::r
             let script_pub_key = match tx.inner().inputs[i].script_public_key() {
                 Some(script) => script,
                 None => {
-                    return Err(crate::imports::Error::Custom("expected to be called only following full UTXO population".to_string()))
+                    return Err(crate::imports::Error::Custom(
+                        "expected to be called only following full UTXO population".to_string(),
+                    ))
                 }
             };
             let script = script_pub_key.script();
             if let Some(schnorr_key) = map.get(script) {
-                let sig_hash = calc_schnorr_signature_hash(&populated_transaction, i, SIG_HASH_ALL, &mut reused_values);
-                let msg = secp256k1::Message::from_digest_slice(sig_hash.as_bytes().as_slice()).unwrap();
+                let sig_hash = calc_schnorr_signature_hash(
+                    &populated_transaction,
+                    i,
+                    SIG_HASH_ALL,
+                    &mut reused_values,
+                );
+                let msg =
+                    secp256k1::Message::from_digest_slice(sig_hash.as_bytes().as_slice()).unwrap();
                 let sig: [u8; 64] = *schnorr_key.sign_schnorr(msg).as_ref();
                 // This represents OP_DATA_65 <SIGNATURE+SIGHASH_TYPE> (since signature length is 64 bytes and SIGHASH_TYPE is one byte)
-                tx.set_signature_script(i, std::iter::once(65u8).chain(sig).chain([SIG_HASH_ALL.to_u8()]).collect())?;
+                tx.set_signature_script(
+                    i,
+                    std::iter::once(65u8)
+                        .chain(sig)
+                        .chain([SIG_HASH_ALL.to_u8()])
+                        .collect(),
+                )?;
             } else {
                 additional_signatures_required = true;
             }

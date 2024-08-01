@@ -8,7 +8,9 @@ use core::{
 };
 
 /// Index of a particular child key for a given (extended) private key.
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord, BorshSerialize, BorshDeserialize,
+)]
 pub struct ChildNumber(pub u32);
 
 impl ChildNumber {

@@ -1,7 +1,8 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use karlsen_addresses::Address;
 use karlsen_consensus_core::tx::{
-    ScriptPublicKey, ScriptVec, TransactionId, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry,
+    ScriptPublicKey, ScriptVec, TransactionId, TransactionInput, TransactionOutpoint,
+    TransactionOutput, UtxoEntry,
 };
 use serde::{Deserialize, Serialize};
 
@@ -69,7 +70,11 @@ impl RpcTransactionOutput {
 
 impl From<TransactionOutput> for RpcTransactionOutput {
     fn from(output: TransactionOutput) -> Self {
-        Self { value: output.value, script_public_key: output.script_public_key, verbose_data: None }
+        Self {
+            value: output.value,
+            script_public_key: output.script_public_key,
+            verbose_data: None,
+        }
     }
 }
 

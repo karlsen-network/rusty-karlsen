@@ -9,7 +9,9 @@ pub struct Monitor {
 
 impl Default for Monitor {
     fn default() -> Self {
-        Monitor { shutdown_tx: Arc::new(Mutex::new(None)) }
+        Monitor {
+            shutdown_tx: Arc::new(Mutex::new(None)),
+        }
     }
 }
 
@@ -31,20 +33,33 @@ impl Handler for Monitor {
         Ok(())
     }
 
-    async fn handle(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, cmd: &str) -> cli::Result<()> {
+    async fn handle(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        argv: Vec<String>,
+        cmd: &str,
+    ) -> cli::Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         self.main(&ctx, argv, cmd).await.map_err(|e| e.into())
     }
 }
 
 impl Monitor {
-    async fn main(self: Arc<Self>, ctx: &Arc<KarlsenCli>, _argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<KarlsenCli>,
+        _argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         let max_events = 16;
         let events = Arc::new(Mutex::new(VecDeque::new()));
         let events_rx = ctx.wallet().multiplexer().channel();
 
         let (shutdown_tx, shutdown_rx) = oneshot();
-        self.shutdown_tx.lock().unwrap().replace(shutdown_tx.clone());
+        self.shutdown_tx
+            .lock()
+            .unwrap()
+            .replace(shutdown_tx.clone());
         let mut interval = interval(Duration::from_millis(1000));
 
         let term = ctx.term();
@@ -90,17 +105,29 @@ impl Monitor {
         Ok(())
     }
 
-    async fn redraw(self: &Arc<Self>, ctx: &Arc<KarlsenCli>, events: &Arc<Mutex<VecDeque<Box<Events>>>>) -> Result<()> {
+    async fn redraw(
+        self: &Arc<Self>,
+        ctx: &Arc<KarlsenCli>,
+        events: &Arc<Mutex<VecDeque<Box<Events>>>>,
+    ) -> Result<()> {
         tprint!(ctx, "{}", ClearScreen);
         tprint!(ctx, "{}", Goto(1, 1));
 
         let wallet = ctx.wallet();
 
         if !wallet.is_connected() {
-            tprintln!(ctx, "{}", style("Wallet is not connected to the network").magenta());
+            tprintln!(
+                ctx,
+                "{}",
+                style("Wallet is not connected to the network").magenta()
+            );
             tprintln!(ctx);
         } else if !wallet.is_synced() {
-            tprintln!(ctx, "{}", style("Karlsen node is currently syncing").magenta());
+            tprintln!(
+                ctx,
+                "{}",
+                style("Karlsen node is currently syncing").magenta()
+            );
             tprintln!(ctx);
         }
 
@@ -115,15 +142,28 @@ impl Monitor {
                 let balance_strings = BalanceStrings::from((balance.as_ref(), &network_type, None));
                 let id = id.short();
 
-                let mature_utxo_count =
-                    balance.as_ref().map(|balance| balance.mature_utxo_count.separated_string()).unwrap_or("N/A".to_string());
-                let pending_utxo_count = balance.as_ref().map(|balance| balance.pending_utxo_count).unwrap_or(0);
+                let mature_utxo_count = balance
+                    .as_ref()
+                    .map(|balance| balance.mature_utxo_count.separated_string())
+                    .unwrap_or("N/A".to_string());
+                let pending_utxo_count = balance
+                    .as_ref()
+                    .map(|balance| balance.pending_utxo_count)
+                    .unwrap_or(0);
 
-                let pending_utxo_info =
-                    if pending_utxo_count > 0 { format!("({pending_utxo_count} pending)") } else { "".to_string() };
-                let utxo_info = style(format!("{mature_utxo_count} UTXOs {pending_utxo_info}")).dim();
+                let pending_utxo_info = if pending_utxo_count > 0 {
+                    format!("({pending_utxo_count} pending)")
+                } else {
+                    "".to_string()
+                };
+                let utxo_info =
+                    style(format!("{mature_utxo_count} UTXOs {pending_utxo_info}")).dim();
 
-                tprintln!(ctx, "{} {id}: {balance_strings}   {utxo_info}", style("balance".pad_to_width(8)).blue());
+                tprintln!(
+                    ctx,
+                    "{} {id}: {balance_strings}   {utxo_info}",
+                    style("balance".pad_to_width(8)).blue()
+                );
             }
             _ => {}
         });

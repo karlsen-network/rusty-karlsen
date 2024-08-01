@@ -30,7 +30,10 @@ async fn run() -> Result<()> {
     panic::init_ungraceful_panic_handler();
 
     println!();
-    println!("Karlsen wRPC Resolver v{} starting...", env!("CARGO_PKG_VERSION"));
+    println!(
+        "Karlsen wRPC Resolver v{} starting...",
+        env!("CARGO_PKG_VERSION")
+    );
 
     monitor::init(&args);
     let (listener, app) = server::server(&args).await?;

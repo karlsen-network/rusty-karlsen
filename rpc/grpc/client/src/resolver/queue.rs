@@ -23,8 +23,17 @@ struct Pending {
 }
 
 impl Pending {
-    fn new(op: KarlsendPayloadOps, request: KarlsendRequest, sender: KarlsendResponseSender) -> Self {
-        Self { timestamp: Instant::now(), op, request, sender }
+    fn new(
+        op: KarlsendPayloadOps,
+        request: KarlsendRequest,
+        sender: KarlsendResponseSender,
+    ) -> Self {
+        Self {
+            timestamp: Instant::now(),
+            op,
+            request,
+            sender,
+        }
     }
 
     fn is_matching(&self, response: &KarlsendResponse, response_op: KarlsendPayloadOps) -> bool {
@@ -39,12 +48,18 @@ pub(crate) struct QueueResolver {
 
 impl QueueResolver {
     pub(crate) fn new() -> Self {
-        Self { pending_calls: Arc::new(Mutex::new(VecDeque::new())) }
+        Self {
+            pending_calls: Arc::new(Mutex::new(VecDeque::new())),
+        }
     }
 }
 
 impl Resolver for QueueResolver {
-    fn register_request(&self, op: KarlsendPayloadOps, request: &KarlsendRequest) -> KarlsendResponseReceiver {
+    fn register_request(
+        &self,
+        op: KarlsendPayloadOps,
+        request: &KarlsendRequest,
+    ) -> KarlsendResponseReceiver {
         let (sender, receiver) = oneshot::channel::<Result<KarlsendResponse>>();
         {
             let pending = Pending::new(op, request.clone(), sender);
@@ -57,18 +72,31 @@ impl Resolver for QueueResolver {
     }
 
     fn handle_response(&self, response: KarlsendResponse) {
-        let response_op: KarlsendPayloadOps = response.payload.as_ref().unwrap().try_into().expect("response is not a notification");
+        let response_op: KarlsendPayloadOps = response
+            .payload
+            .as_ref()
+            .unwrap()
+            .try_into()
+            .expect("response is not a notification");
         trace!("[Resolver] handle_response type: {:?}", response_op);
         let mut pending_calls = self.pending_calls.lock().unwrap();
         let mut pending: Option<Pending> = None;
         if pending_calls.front().is_some() {
-            if pending_calls.front().unwrap().is_matching(&response, response_op) {
+            if pending_calls
+                .front()
+                .unwrap()
+                .is_matching(&response, response_op)
+            {
                 pending = pending_calls.pop_front();
             } else {
                 let pending_slice = pending_calls.make_contiguous();
                 // Iterate the queue front to back, so older pendings first
                 for i in 0..pending_slice.len() {
-                    if pending_calls.get(i).unwrap().is_matching(&response, response_op) {
+                    if pending_calls
+                        .get(i)
+                        .unwrap()
+                        .is_matching(&response, response_op)
+                    {
                         pending = pending_calls.remove(i);
                         break;
                     }
@@ -77,11 +105,17 @@ impl Resolver for QueueResolver {
         }
         drop(pending_calls);
         if let Some(pending) = pending {
-            trace!("[Resolver] handle_response matching request found: {:?}", pending.request);
+            trace!(
+                "[Resolver] handle_response matching request found: {:?}",
+                pending.request
+            );
             match pending.sender.send(Ok(response)) {
                 Ok(_) => {}
                 Err(err) => {
-                    trace!("[Resolver] handle_response failed to send the response of a pending: {:?}", err);
+                    trace!(
+                        "[Resolver] handle_response failed to send the response of a pending: {:?}",
+                        err
+                    );
                 }
             }
         }
@@ -100,7 +134,10 @@ impl Resolver for QueueResolver {
                 match pending.sender.send(Err(Error::Timeout)) {
                     Ok(_) => {}
                     Err(err) => {
-                        trace!("[Resolver] the timeout monitor failed to send a timeout error: {:?}", err);
+                        trace!(
+                            "[Resolver] the timeout monitor failed to send a timeout error: {:?}",
+                            err
+                        );
                     }
                 }
             } else {

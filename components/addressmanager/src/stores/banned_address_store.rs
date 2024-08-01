@@ -74,19 +74,30 @@ pub struct DbBannedAddressesStore {
 
 impl DbBannedAddressesStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::BannedAddresses.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbAccess::new(
+                db,
+                cache_policy,
+                DatabaseStorePrefixes::BannedAddresses.into(),
+            ),
+        }
     }
 
-    pub fn iterator(&self) -> impl Iterator<Item = Result<(IpAddr, ConnectionBanTimestamp), Box<dyn Error>>> + '_ {
+    pub fn iterator(
+        &self,
+    ) -> impl Iterator<Item = Result<(IpAddr, ConnectionBanTimestamp), Box<dyn Error>>> + '_ {
         self.access.iterator().map(|iter_result| match iter_result {
-            Ok((key_bytes, connection_ban_timestamp)) => match <[u8; ADDRESS_KEY_SIZE]>::try_from(&key_bytes[..]) {
-                Ok(address_key_slice) => {
-                    let addr_key = AddressKey(address_key_slice);
-                    let address: IpAddr = addr_key.into();
-                    Ok((address, connection_ban_timestamp))
+            Ok((key_bytes, connection_ban_timestamp)) => {
+                match <[u8; ADDRESS_KEY_SIZE]>::try_from(&key_bytes[..]) {
+                    Ok(address_key_slice) => {
+                        let addr_key = AddressKey(address_key_slice);
+                        let address: IpAddr = addr_key.into();
+                        Ok((address, connection_ban_timestamp))
+                    }
+                    Err(e) => Err(e.into()),
                 }
-                Err(e) => Err(e.into()),
-            },
+            }
             Err(e) => Err(e),
         })
     }
@@ -100,7 +111,8 @@ impl BannedAddressesStoreReader for DbBannedAddressesStore {
 
 impl BannedAddressesStore for DbBannedAddressesStore {
     fn set(&mut self, ip: IpAddr, timestamp: ConnectionBanTimestamp) -> StoreResult<()> {
-        self.access.write(DirectDbWriter::new(&self.db), ip.into(), timestamp)
+        self.access
+            .write(DirectDbWriter::new(&self.db), ip.into(), timestamp)
     }
 
     fn remove(&mut self, ip: IpAddr) -> StoreResult<()> {

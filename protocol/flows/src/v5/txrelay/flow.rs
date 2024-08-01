@@ -73,8 +73,19 @@ impl Flow for RelayTransactionsFlow {
 }
 
 impl RelayTransactionsFlow {
-    pub fn new(ctx: FlowContext, router: Arc<Router>, invs_route: IncomingRoute, msg_route: IncomingRoute) -> Self {
-        Self { ctx, router, invs_route, msg_route, spam_counter: 0 }
+    pub fn new(
+        ctx: FlowContext,
+        router: Arc<Router>,
+        invs_route: IncomingRoute,
+        msg_route: IncomingRoute,
+    ) -> Self {
+        Self {
+            ctx,
+            router,
+            invs_route,
+            msg_route,
+            spam_counter: 0,
+        }
     }
 
     pub fn invs_channel_size() -> usize {
@@ -106,11 +117,14 @@ impl RelayTransactionsFlow {
             }
 
             // Loop over incoming block inv messages
-            let inv: Vec<TransactionId> = dequeue!(self.invs_route, Payload::InvTransactions)?.try_into()?;
+            let inv: Vec<TransactionId> =
+                dequeue!(self.invs_route, Payload::InvTransactions)?.try_into()?;
             // trace!("Receive an inv message from {} with {} transaction ids", self.router.identity(), inv.len());
 
             if inv.len() > MAX_INV_PER_TX_INV_MSG {
-                return Err(ProtocolError::Other("Number of invs in tx inv message is over the limit"));
+                return Err(ProtocolError::Other(
+                    "Number of invs in tx inv message is over the limit",
+                ));
             }
 
             let session = self.ctx.consensus().unguarded_session();
@@ -120,8 +134,15 @@ impl RelayTransactionsFlow {
                 continue;
             }
 
-            let requests = self.request_transactions(inv, throttling_state.should_throttle, &throttling_state.curr_snapshot).await?;
-            self.receive_transactions(session, requests, throttling_state.should_throttle).await?;
+            let requests = self
+                .request_transactions(
+                    inv,
+                    throttling_state.should_throttle,
+                    &throttling_state.curr_snapshot,
+                )
+                .await?;
+            self.receive_transactions(session, requests, throttling_state.should_throttle)
+                .await?;
         }
     }
 
@@ -133,15 +154,26 @@ impl RelayTransactionsFlow {
     ) -> Result<Vec<RequestScope<TransactionId>>, ProtocolError> {
         // Build a vector with the transaction ids unknown in the mempool and not already requested
         // by another peer
-        let transaction_ids = self.ctx.mining_manager().clone().unknown_transactions(transaction_ids).await;
+        let transaction_ids = self
+            .ctx
+            .mining_manager()
+            .clone()
+            .unknown_transactions(transaction_ids)
+            .await;
         let mut requests = Vec::new();
-        let snapshot_delta = curr_snapshot - &self.ctx.mining_manager().clone().p2p_tx_count_sample();
+        let snapshot_delta =
+            curr_snapshot - &self.ctx.mining_manager().clone().p2p_tx_count_sample();
 
         // To reduce the P2P TPS to below the threshold, we need to request up to a max of
         // whatever the balances overage. If MAX_TPS_THRESHOLD is 3000 and the current TPS is 4000,
         // then we can only request up to 2000 (MAX - (4000 - 3000)) to average out into the threshold.
-        let curr_p2p_tps = 1000 * snapshot_delta.low_priority_tx_counts / (snapshot_delta.elapsed_time.as_millis().max(1) as u64);
-        let overage = if should_throttle && curr_p2p_tps > MAX_TPS_THRESHOLD { curr_p2p_tps - MAX_TPS_THRESHOLD } else { 0 };
+        let curr_p2p_tps = 1000 * snapshot_delta.low_priority_tx_counts
+            / (snapshot_delta.elapsed_time.as_millis().max(1) as u64);
+        let overage = if should_throttle && curr_p2p_tps > MAX_TPS_THRESHOLD {
+            curr_p2p_tps - MAX_TPS_THRESHOLD
+        } else {
+            0
+        };
 
         let limit = MAX_TPS_THRESHOLD.saturating_sub(overage);
 
@@ -161,7 +193,9 @@ impl RelayTransactionsFlow {
             self.router
                 .enqueue(make_message!(
                     Payload::RequestTransactions,
-                    RequestTransactionsMessage { ids: requests.iter().map(|x| x.req.into()).collect() }
+                    RequestTransactionsMessage {
+                        ids: requests.iter().map(|x| x.req.into()).collect()
+                    }
                 ))
                 .await?;
         }
@@ -176,8 +210,12 @@ impl RelayTransactionsFlow {
             Ok(op) => {
                 if let Some(msg) = op {
                     match msg.payload {
-                        Some(Payload::Transaction(payload)) => Ok(Response::Transaction(payload.try_into()?)),
-                        Some(Payload::TransactionNotFound(payload)) => Ok(Response::NotFound(payload.try_into()?)),
+                        Some(Payload::Transaction(payload)) => {
+                            Ok(Response::Transaction(payload.try_into()?))
+                        }
+                        Some(Payload::TransactionNotFound(payload)) => {
+                            Ok(Response::NotFound(payload.try_into()?))
+                        }
                         _ => Err(ProtocolError::UnexpectedMessage(
                             stringify!(Payload::Transaction | Payload::TransactionNotFound),
                             msg.payload.as_ref().map(|v| v.into()),
@@ -219,7 +257,12 @@ impl RelayTransactionsFlow {
             .ctx
             .mining_manager()
             .clone()
-            .validate_and_insert_transaction_batch(&consensus, transactions, Priority::Low, Orphan::Allowed)
+            .validate_and_insert_transaction_batch(
+                &consensus,
+                transactions,
+                Priority::Low,
+                Orphan::Allowed,
+            )
             .await;
 
         for res in insert_results.iter() {
@@ -227,13 +270,21 @@ impl RelayTransactionsFlow {
                 Ok(_) => {}
                 Err(MiningManagerError::MempoolError(RuleError::RejectInvalid(transaction_id))) => {
                     // TODO: discuss a banning process
-                    return Err(ProtocolError::MisbehavingPeer(format!("rejected invalid transaction {}", transaction_id)));
+                    return Err(ProtocolError::MisbehavingPeer(format!(
+                        "rejected invalid transaction {}",
+                        transaction_id
+                    )));
                 }
                 Err(MiningManagerError::MempoolError(RuleError::RejectSpamTransaction(_)))
                 | Err(MiningManagerError::MempoolError(RuleError::RejectNonStandard(..))) => {
                     self.spam_counter += 1;
                     if self.spam_counter % 100 == 0 {
-                        karlsen_core::warn!("Peer {} has shared {} spam/non-standard txs ({:?})", self.router, self.spam_counter, res);
+                        karlsen_core::warn!(
+                            "Peer {} has shared {} spam/non-standard txs ({:?})",
+                            self.router,
+                            self.spam_counter,
+                            res
+                        );
                     }
                 }
                 Err(_) => {}
@@ -276,7 +327,11 @@ impl Flow for RequestTransactionsFlow {
 
 impl RequestTransactionsFlow {
     pub fn new(ctx: FlowContext, router: Arc<Router>, incoming_route: IncomingRoute) -> Self {
-        Self { ctx, router, incoming_route }
+        Self {
+            ctx,
+            router,
+            incoming_route,
+        }
     }
 
     async fn start_impl(&mut self) -> Result<(), ProtocolError> {
@@ -284,17 +339,28 @@ impl RequestTransactionsFlow {
             let msg = dequeue!(self.incoming_route, Payload::RequestTransactions)?;
             let tx_ids: Vec<_> = msg.try_into()?;
             for transaction_id in tx_ids {
-                if let Some(mutable_tx) =
-                    self.ctx.mining_manager().clone().get_transaction(transaction_id, TransactionQuery::TransactionsOnly).await
+                if let Some(mutable_tx) = self
+                    .ctx
+                    .mining_manager()
+                    .clone()
+                    .get_transaction(transaction_id, TransactionQuery::TransactionsOnly)
+                    .await
                 {
                     // trace!("Send transaction {} to {}", mutable_tx.id(), self.router.identity());
-                    self.router.enqueue(make_message!(Payload::Transaction, (&*mutable_tx.tx).into())).await?;
+                    self.router
+                        .enqueue(make_message!(
+                            Payload::Transaction,
+                            (&*mutable_tx.tx).into()
+                        ))
+                        .await?;
                 } else {
                     // trace!("Send transaction id {} not found to {}", transaction_id, self.router.identity());
                     self.router
                         .enqueue(make_message!(
                             Payload::TransactionNotFound,
-                            TransactionNotFoundMessage { id: Some(transaction_id.into()) }
+                            TransactionNotFoundMessage {
+                                id: Some(transaction_id.into())
+                            }
                         ))
                         .await?;
                 }
@@ -310,12 +376,19 @@ fn check_tx_throttling(throttling_state: &mut ThrottlingState, next_snapshot: P2
     throttling_state.curr_snapshot = next_snapshot;
 
     if snapshot_delta.low_priority_tx_counts > 0 {
-        let tps = 1000 * snapshot_delta.low_priority_tx_counts / snapshot_delta.elapsed_time.as_millis().max(1) as u64;
+        let tps = 1000 * snapshot_delta.low_priority_tx_counts
+            / snapshot_delta.elapsed_time.as_millis().max(1) as u64;
         if !throttling_state.should_throttle && tps > MAX_TPS_THRESHOLD {
-            warn!("P2P tx relay threshold exceeded. Throttling relay. Current: {}, Max: {}", tps, MAX_TPS_THRESHOLD);
+            warn!(
+                "P2P tx relay threshold exceeded. Throttling relay. Current: {}, Max: {}",
+                tps, MAX_TPS_THRESHOLD
+            );
             throttling_state.should_throttle = true;
         } else if throttling_state.should_throttle && tps < MAX_TPS_THRESHOLD / 2 {
-            warn!("P2P tx relay threshold back to normal. Current: {}, Max: {}", tps, MAX_TPS_THRESHOLD);
+            warn!(
+                "P2P tx relay threshold back to normal. Current: {}, Max: {}",
+                tps, MAX_TPS_THRESHOLD
+            );
             throttling_state.should_throttle = false;
         }
     }
@@ -328,7 +401,10 @@ mod tests {
     use super::*;
 
     fn create_snapshot(low_priority_tx_counts: u64, elapsed_time: u64) -> P2pTxCountSample {
-        P2pTxCountSample { low_priority_tx_counts, elapsed_time: Duration::from_millis(elapsed_time) }
+        P2pTxCountSample {
+            low_priority_tx_counts,
+            elapsed_time: Duration::from_millis(elapsed_time),
+        }
     }
 
     #[test]
@@ -344,33 +420,48 @@ mod tests {
         // Below threshold
         p2p_tx_counts += MAX_TPS_THRESHOLD / 3;
         elapsed_time += 1000;
-        check_tx_throttling(&mut throttling_state, create_snapshot(p2p_tx_counts, elapsed_time));
+        check_tx_throttling(
+            &mut throttling_state,
+            create_snapshot(p2p_tx_counts, elapsed_time),
+        );
         assert!(!throttling_state.should_throttle);
 
         // Still below threshold
         p2p_tx_counts += MAX_TPS_THRESHOLD;
         elapsed_time += 1000;
-        check_tx_throttling(&mut throttling_state, create_snapshot(p2p_tx_counts, elapsed_time));
+        check_tx_throttling(
+            &mut throttling_state,
+            create_snapshot(p2p_tx_counts, elapsed_time),
+        );
         assert!(!throttling_state.should_throttle);
 
         // Go above threshold. Note, this is not sensitive to tight bounds and can allow for up to (bps - 1) in excess of threshold
         // before triggering throttling.
         p2p_tx_counts += MAX_TPS_THRESHOLD + 1;
         elapsed_time += 1000;
-        check_tx_throttling(&mut throttling_state, create_snapshot(p2p_tx_counts, elapsed_time));
+        check_tx_throttling(
+            &mut throttling_state,
+            create_snapshot(p2p_tx_counts, elapsed_time),
+        );
         assert!(throttling_state.should_throttle);
 
         // Go below threshold but not enough to stop throttling
         // (need to be below threshold / 2 to stop throttling)
         p2p_tx_counts += MAX_TPS_THRESHOLD / 2;
         elapsed_time += 1000;
-        check_tx_throttling(&mut throttling_state, create_snapshot(p2p_tx_counts, elapsed_time));
+        check_tx_throttling(
+            &mut throttling_state,
+            create_snapshot(p2p_tx_counts, elapsed_time),
+        );
         assert!(throttling_state.should_throttle);
 
         // Go below threshold to stop throttling
         p2p_tx_counts += (MAX_TPS_THRESHOLD - 1) / 2;
         elapsed_time += 1000;
-        check_tx_throttling(&mut throttling_state, create_snapshot(p2p_tx_counts, elapsed_time));
+        check_tx_throttling(
+            &mut throttling_state,
+            create_snapshot(p2p_tx_counts, elapsed_time),
+        );
         assert!(!throttling_state.should_throttle);
     }
 }

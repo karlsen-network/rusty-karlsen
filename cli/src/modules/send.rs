@@ -5,7 +5,12 @@ use crate::imports::*;
 pub struct Send;
 
 impl Send {
-    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         // address, amount, priority fee
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 

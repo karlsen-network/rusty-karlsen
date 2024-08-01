@@ -26,11 +26,17 @@ impl MemSizeEstimator for BlockWindowHeap {}
 
 impl BlockWindowHeap {
     pub fn new(origin: WindowOrigin) -> Self {
-        Self { blocks: Default::default(), origin }
+        Self {
+            blocks: Default::default(),
+            origin,
+        }
     }
 
     pub fn with_capacity(origin: WindowOrigin, capacity: usize) -> Self {
-        Self { blocks: BinaryHeap::with_capacity(capacity), origin }
+        Self {
+            blocks: BinaryHeap::with_capacity(capacity),
+            origin,
+        }
     }
 
     #[inline]

@@ -55,7 +55,10 @@ pub trait BlockHashIteratorExtensions: Iterator<Item = Hash> {
         Self: Sized,
     {
         let (lower, _) = self.size_hint();
-        BlockUnique { iter: self, seen: BlockHashSet::with_capacity(lower) }
+        BlockUnique {
+            iter: self,
+            seen: BlockHashSet::with_capacity(lower),
+        }
     }
 }
 
@@ -89,8 +92,14 @@ where
     I: DoubleEndedIterator<Item = Hash>,
 {
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.iter.by_ref().rev().find(|&hash| self.seen.insert(hash))
+        self.iter
+            .by_ref()
+            .rev()
+            .find(|&hash| self.seen.insert(hash))
     }
 }
 
-impl<I> std::iter::FusedIterator for BlockUnique<I> where I: Iterator<Item = Hash> + std::iter::FusedIterator {}
+impl<I> std::iter::FusedIterator for BlockUnique<I> where
+    I: Iterator<Item = Hash> + std::iter::FusedIterator
+{
+}

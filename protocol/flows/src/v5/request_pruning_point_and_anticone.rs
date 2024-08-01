@@ -6,8 +6,8 @@ use karlsen_p2p_lib::{
     common::ProtocolError,
     dequeue, dequeue_with_request_id, make_response,
     pb::{
-        self, karlsend_message::Payload, BlockWithTrustedDataV4Message, DoneBlocksWithTrustedDataMessage, PruningPointsMessage,
-        TrustedDataMessage,
+        self, karlsend_message::Payload, BlockWithTrustedDataV4Message,
+        DoneBlocksWithTrustedDataMessage, PruningPointsMessage, TrustedDataMessage,
     },
     IncomingRoute, Router,
 };
@@ -34,12 +34,19 @@ impl Flow for PruningPointAndItsAnticoneRequestsFlow {
 
 impl PruningPointAndItsAnticoneRequestsFlow {
     pub fn new(ctx: FlowContext, router: Arc<Router>, incoming_route: IncomingRoute) -> Self {
-        Self { ctx, router, incoming_route }
+        Self {
+            ctx,
+            router,
+            incoming_route,
+        }
     }
 
     async fn start_impl(&mut self) -> Result<(), ProtocolError> {
         loop {
-            let (_, request_id) = dequeue_with_request_id!(self.incoming_route, Payload::RequestPruningPointAndItsAnticone)?;
+            let (_, request_id) = dequeue_with_request_id!(
+                self.incoming_route,
+                Payload::RequestPruningPointAndItsAnticone
+            )?;
             debug!("Got request for pruning point and its anticone");
 
             let consensus = self.ctx.consensus();
@@ -49,12 +56,19 @@ impl PruningPointAndItsAnticoneRequestsFlow {
             self.router
                 .enqueue(make_response!(
                     Payload::PruningPoints,
-                    PruningPointsMessage { headers: pp_headers.into_iter().map(|header| <pb::BlockHeader>::from(&*header)).collect() },
+                    PruningPointsMessage {
+                        headers: pp_headers
+                            .into_iter()
+                            .map(|header| <pb::BlockHeader>::from(&*header))
+                            .collect()
+                    },
                     request_id
                 ))
                 .await?;
 
-            let trusted_data = session.async_get_pruning_point_anticone_and_trusted_data().await?;
+            let trusted_data = session
+                .async_get_pruning_point_anticone_and_trusted_data()
+                .await?;
             let pp_anticone = &trusted_data.anticone;
             let daa_window = &trusted_data.daa_window_blocks;
             let ghostdag_data = &trusted_data.ghostdag_blocks;
@@ -62,17 +76,28 @@ impl PruningPointAndItsAnticoneRequestsFlow {
                 .enqueue(make_response!(
                     Payload::TrustedData,
                     TrustedDataMessage {
-                        daa_window: daa_window.iter().map(|daa_block| daa_block.into()).collect_vec(),
+                        daa_window: daa_window
+                            .iter()
+                            .map(|daa_block| daa_block.into())
+                            .collect_vec(),
                         ghostdag_data: ghostdag_data.iter().map(|gd| gd.into()).collect_vec()
                     },
                     request_id
                 ))
                 .await?;
 
-            let daa_window_hash_to_index =
-                BlockHashMap::from_iter(daa_window.iter().enumerate().map(|(i, trusted_header)| (trusted_header.header.hash, i)));
-            let ghostdag_data_hash_to_index =
-                BlockHashMap::from_iter(ghostdag_data.iter().enumerate().map(|(i, trusted_gd)| (trusted_gd.hash, i)));
+            let daa_window_hash_to_index = BlockHashMap::from_iter(
+                daa_window
+                    .iter()
+                    .enumerate()
+                    .map(|(i, trusted_header)| (trusted_header.header.hash, i)),
+            );
+            let ghostdag_data_hash_to_index = BlockHashMap::from_iter(
+                ghostdag_data
+                    .iter()
+                    .enumerate()
+                    .map(|(i, trusted_gd)| (trusted_gd.hash, i)),
+            );
 
             for hashes in pp_anticone.chunks(IBD_BATCH_SIZE) {
                 for hash in hashes {
@@ -93,7 +118,11 @@ impl PruningPointAndItsAnticoneRequestsFlow {
                     self.router
                         .enqueue(make_response!(
                             Payload::BlockWithTrustedDataV4,
-                            BlockWithTrustedDataV4Message { block: Some((&block).into()), daa_window_indices, ghostdag_data_indices },
+                            BlockWithTrustedDataV4Message {
+                                block: Some((&block).into()),
+                                daa_window_indices,
+                                ghostdag_data_indices
+                            },
                             request_id
                         ))
                         .await?;
@@ -103,13 +132,20 @@ impl PruningPointAndItsAnticoneRequestsFlow {
                     // No timeout here, as we don't care if the syncee takes its time computing,
                     // since it only blocks this dedicated flow
                     drop(session); // Avoid holding the session through dequeue calls
-                    dequeue!(self.incoming_route, Payload::RequestNextPruningPointAndItsAnticoneBlocks)?;
+                    dequeue!(
+                        self.incoming_route,
+                        Payload::RequestNextPruningPointAndItsAnticoneBlocks
+                    )?;
                     session = consensus.session().await;
                 }
             }
 
             self.router
-                .enqueue(make_response!(Payload::DoneBlocksWithTrustedData, DoneBlocksWithTrustedDataMessage {}, request_id))
+                .enqueue(make_response!(
+                    Payload::DoneBlocksWithTrustedData,
+                    DoneBlocksWithTrustedDataMessage {},
+                    request_id
+                ))
                 .await?;
             debug!("Finished sending pruning point anticone")
         }

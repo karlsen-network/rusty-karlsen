@@ -2,7 +2,10 @@ use std::{collections::VecDeque, sync::Arc};
 
 use crate::model::{
     services::reachability::{MTReachabilityService, ReachabilityService},
-    stores::{ghostdag::GhostdagStoreReader, reachability::ReachabilityStoreReader, relations::RelationsStoreReader},
+    stores::{
+        ghostdag::GhostdagStoreReader, reachability::ReachabilityStoreReader,
+        relations::RelationsStoreReader,
+    },
 };
 use itertools::Itertools;
 use karlsen_consensus_core::{
@@ -14,27 +17,41 @@ use karlsen_core::trace;
 use karlsen_hashes::Hash;
 
 #[derive(Clone)]
-pub struct DagTraversalManager<T: GhostdagStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> {
+pub struct DagTraversalManager<
+    T: GhostdagStoreReader,
+    U: ReachabilityStoreReader,
+    V: RelationsStoreReader,
+> {
     genesis_hash: Hash,
     ghostdag_store: Arc<T>,
     relations_store: V,
     reachability_service: MTReachabilityService<U>,
 }
 
-impl<T: GhostdagStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader> DagTraversalManager<T, U, V> {
+impl<T: GhostdagStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader>
+    DagTraversalManager<T, U, V>
+{
     pub fn new(
         genesis_hash: Hash,
         ghostdag_store: Arc<T>,
         relations_store: V,
         reachability_service: MTReachabilityService<U>,
     ) -> Self {
-        Self { genesis_hash, ghostdag_store, relations_store, reachability_service }
+        Self {
+            genesis_hash,
+            ghostdag_store,
+            relations_store,
+            reachability_service,
+        }
     }
 
     pub fn calculate_chain_path(&self, from: Hash, to: Hash) -> ChainPath {
         let mut removed = Vec::new();
         let mut common_ancestor = from;
-        for current in self.reachability_service.default_backward_chain_iterator(from) {
+        for current in self
+            .reachability_service
+            .default_backward_chain_iterator(from)
+        {
             if !self.reachability_service.is_chain_ancestor_of(current, to) {
                 removed.push(current);
             } else {
@@ -43,7 +60,10 @@ impl<T: GhostdagStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader
             }
         }
         // It is more intuitive to use forward iterator here, but going downwards the selected chain is faster.
-        let mut added = self.reachability_service.backward_chain_iterator(to, common_ancestor, false).collect_vec();
+        let mut added = self
+            .reachability_service
+            .backward_chain_iterator(to, common_ancestor, false)
+            .collect_vec();
         added.reverse();
         ChainPath { added, removed }
     }
@@ -96,7 +116,10 @@ impl<T: GhostdagStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader
             traversal_count += 1;
             if let Some(max_traversal_allowed) = max_traversal_allowed {
                 if traversal_count > max_traversal_allowed {
-                    return Err(TraversalError::ReachedMaxTraversalAllowed(traversal_count, max_traversal_allowed));
+                    return Err(TraversalError::ReachedMaxTraversalAllowed(
+                        traversal_count,
+                        max_traversal_allowed,
+                    ));
                 }
             }
 
@@ -110,11 +133,19 @@ impl<T: GhostdagStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader
                 );
             }
             // At this point, we know `current` is in antipast of `block`. The second condition is there to check if it's in the anticone
-            if !return_anticone_only || !self.reachability_service.is_dag_ancestor_of(block, current) {
+            if !return_anticone_only
+                || !self.reachability_service.is_dag_ancestor_of(block, current)
+            {
                 output.push(current);
             }
 
-            for parent in self.relations_store.get_parents(current).unwrap().iter().copied() {
+            for parent in self
+                .relations_store
+                .get_parents(current)
+                .unwrap()
+                .iter()
+                .copied()
+            {
                 if visited.insert(parent) {
                     queue.push_back(parent);
                 }
@@ -124,7 +155,11 @@ impl<T: GhostdagStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader
         Ok(output)
     }
 
-    pub fn lowest_chain_block_above_or_equal_to_blue_score(&self, high: Hash, blue_score: u64) -> Hash {
+    pub fn lowest_chain_block_above_or_equal_to_blue_score(
+        &self,
+        high: Hash,
+        blue_score: u64,
+    ) -> Hash {
         let high_gd = self.ghostdag_store.get_compact_data(high).unwrap();
         assert!(high_gd.blue_score >= blue_score);
 
@@ -133,7 +168,10 @@ impl<T: GhostdagStoreReader, U: ReachabilityStoreReader, V: RelationsStoreReader
 
         while current != self.genesis_hash {
             assert!(!current.is_origin(), "there's no such known block");
-            let selected_parent_gd = self.ghostdag_store.get_compact_data(current_gd.selected_parent).unwrap();
+            let selected_parent_gd = self
+                .ghostdag_store
+                .get_compact_data(current_gd.selected_parent)
+                .unwrap();
             if selected_parent_gd.blue_score < blue_score {
                 break;
             }

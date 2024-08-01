@@ -1,7 +1,9 @@
 pub use super::{
     bps::{Bps, Testnet11Bps},
     constants::consensus::*,
-    genesis::{GenesisBlock, DEVNET_GENESIS, GENESIS, SIMNET_GENESIS, TESTNET11_GENESIS, TESTNET_GENESIS},
+    genesis::{
+        GenesisBlock, DEVNET_GENESIS, GENESIS, SIMNET_GENESIS, TESTNET11_GENESIS, TESTNET_GENESIS,
+    },
 };
 use crate::{
     constants::STORAGE_MASS_PARAMETER,
@@ -95,7 +97,10 @@ pub struct Params {
 }
 
 fn unix_now() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u64
 }
 
 impl Params {
@@ -200,7 +205,9 @@ impl Params {
         if selected_parent_daa_score < self.sampling_activation_daa_score {
             self.target_time_per_block * self.legacy_difficulty_window_size as u64
         } else {
-            self.target_time_per_block * self.difficulty_sample_rate * self.sampled_difficulty_window_size as u64
+            self.target_time_per_block
+                * self.difficulty_sample_rate
+                * self.sampled_difficulty_window_size as u64
         }
     }
 
@@ -228,7 +235,8 @@ impl Params {
             // We consider the node close to being synced if the sink (virtual selected parent) block
             // timestamp is within DAA window duration far in the past. Blocks mined over such DAG state would
             // enter the DAA window of fully-synced nodes and thus contribute to overall network difficulty
-            unix_now() < sink_timestamp + self.expected_daa_window_duration_in_milliseconds(sink_daa_score)
+            unix_now()
+                < sink_timestamp + self.expected_daa_window_duration_in_milliseconds(sink_daa_score)
         } else {
             // For testnets we consider the node to be synced if the sink timestamp is within a time range which
             // is overwhelmingly unlikely to pass without mined blocks even if net hashrate decreased dramatically.
@@ -237,7 +245,8 @@ impl Params {
             // with significant testnet hashrate does not overwhelm the network with deep side-DAGs.
             //
             // We use DAA duration as baseline and scale it down with BPS (and divide by 3 for mining only when very close to current time on TN11)
-            let max_expected_duration_without_blocks_in_milliseconds = self.target_time_per_block * NEW_DIFFICULTY_WINDOW_DURATION / 3; // = DAA duration in milliseconds / bps / 3
+            let max_expected_duration_without_blocks_in_milliseconds =
+                self.target_time_per_block * NEW_DIFFICULTY_WINDOW_DURATION / 3; // = DAA duration in milliseconds / bps / 3
             unix_now() < sink_timestamp + max_expected_duration_without_blocks_in_milliseconds
         }
     }
@@ -351,9 +360,7 @@ pub const MAINNET_PARAMS: Params = Params {
 };
 
 pub const TESTNET_PARAMS: Params = Params {
-    dns_seeders: &[
-        "testnet-1-dnsseed.karlsencoin.com",
-    ],
+    dns_seeders: &["testnet-1-dnsseed.karlsencoin.com"],
     net: NetworkId::with_suffix(NetworkType::Testnet, 1),
     genesis: TESTNET_GENESIS,
     ghostdag_k: LEGACY_DEFAULT_GHOSTDAG_K,
@@ -410,9 +417,7 @@ pub const TESTNET_PARAMS: Params = Params {
 };
 
 pub const TESTNET11_PARAMS: Params = Params {
-    dns_seeders: &[
-        "testnet-1-dnsseed.karlsencoin.com",
-    ],
+    dns_seeders: &["testnet-1-dnsseed.karlsencoin.com"],
     net: NetworkId::with_suffix(NetworkType::Testnet, 11),
     genesis: TESTNET11_GENESIS,
     legacy_timestamp_deviation_tolerance: LEGACY_TIMESTAMP_DEVIATION_TOLERANCE,

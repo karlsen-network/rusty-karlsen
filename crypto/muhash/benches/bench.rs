@@ -66,7 +66,9 @@ fn bench_muhash(c: &mut Criterion) {
         b.iter(|| black_box(muhash.clone()).serialize())
     });
 
-    c.bench_function("MuHash::serialize rand", |b| b.iter(|| black_box(rand_set.clone()).serialize()));
+    c.bench_function("MuHash::serialize rand", |b| {
+        b.iter(|| black_box(rand_set.clone()).serialize())
+    });
 
     c.bench_function("MuHash::finalize", |b| {
         b.iter(|| black_box(rand_set.clone()).finalize());

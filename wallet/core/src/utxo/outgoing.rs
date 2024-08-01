@@ -26,8 +26,15 @@ pub struct OutgoingTransaction {
 }
 
 impl OutgoingTransaction {
-    pub fn new(current_daa_score: u64, originating_context: UtxoContext, pending_transaction: PendingTransaction) -> Self {
-        let destination_context = pending_transaction.generator().destination_utxo_context().clone();
+    pub fn new(
+        current_daa_score: u64,
+        originating_context: UtxoContext,
+        pending_transaction: PendingTransaction,
+    ) -> Self {
+        let destination_context = pending_transaction
+            .generator()
+            .destination_utxo_context()
+            .clone();
 
         let inner = Inner {
             id: pending_transaction.id(),
@@ -38,7 +45,9 @@ impl OutgoingTransaction {
             acceptance_daa_score: AtomicU64::new(0),
         };
 
-        Self { inner: Arc::new(inner) }
+        Self {
+            inner: Arc::new(inner),
+        }
     }
 
     pub fn id(&self) -> TransactionId {
@@ -66,7 +75,9 @@ impl OutgoingTransaction {
     }
 
     pub fn tag_as_accepted_at_daa_score(&self, accepted_daa_score: u64) {
-        self.inner.acceptance_daa_score.store(accepted_daa_score, Ordering::Relaxed);
+        self.inner
+            .acceptance_daa_score
+            .store(accepted_daa_score, Ordering::Relaxed);
     }
 
     pub fn acceptance_daa_score(&self) -> u64 {

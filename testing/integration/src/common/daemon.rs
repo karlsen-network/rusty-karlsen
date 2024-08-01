@@ -35,7 +35,13 @@ impl ClientManager {
         let rpc_port = args.rpclisten.unwrap().normalize(0).port;
         let p2p_port = args.listen.unwrap().normalize(0).port;
         let args = RwLock::new(args);
-        Self { args, network, context, rpc_port, p2p_port }
+        Self {
+            args,
+            network,
+            context,
+            rpc_port,
+            p2p_port,
+        }
     }
 
     pub async fn new_client(&self) -> GrpcClient {
@@ -76,7 +82,11 @@ impl ClientManager {
         .unwrap()
     }
 
-    pub async fn new_client_pool<T: Send + 'static>(&self, pool_size: usize, distribution_channel_capacity: usize) -> ClientPool<T> {
+    pub async fn new_client_pool<T: Send + 'static>(
+        &self,
+        pool_size: usize,
+        distribution_channel_capacity: usize,
+    ) -> ClientPool<T> {
         let mut clients = Vec::with_capacity(pool_size);
         for _ in 0..pool_size {
             clients.push(Arc::new(self.new_client().await));
@@ -99,10 +109,18 @@ pub struct Daemon {
 impl Daemon {
     pub fn fill_args_with_random_ports(args: &mut Args) {
         // This should ask the OS to allocate free port for socket 1 to 4.
-        let socket1 = std::net::TcpListener::bind(format!("127.0.0.1:{}", args.rpclisten.map_or(0, |x| x.normalize(0).port))).unwrap();
+        let socket1 = std::net::TcpListener::bind(format!(
+            "127.0.0.1:{}",
+            args.rpclisten.map_or(0, |x| x.normalize(0).port)
+        ))
+        .unwrap();
         let rpc_port = socket1.local_addr().unwrap().port();
 
-        let socket2 = std::net::TcpListener::bind(format!("127.0.0.1:{}", args.listen.map_or(0, |x| x.normalize(0).port))).unwrap();
+        let socket2 = std::net::TcpListener::bind(format!(
+            "127.0.0.1:{}",
+            args.listen.map_or(0, |x| x.normalize(0).port)
+        ))
+        .unwrap();
         let p2p_port = socket2.local_addr().unwrap().port();
 
         let socket3 = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
@@ -124,7 +142,11 @@ impl Daemon {
 
     pub fn new_random(fd_total_budget: i32) -> Daemon {
         // UPnP registration might take some time and is not needed for usual daemon tests
-        let args = Args { devnet: true, disable_upnp: true, ..Default::default() };
+        let args = Args {
+            devnet: true,
+            disable_upnp: true,
+            ..Default::default()
+        };
         Self::new_random_with_args(args, fd_total_budget)
     }
 
@@ -136,14 +158,34 @@ impl Daemon {
 
     pub fn with_manager(client_manager: Arc<ClientManager>, fd_total_budget: i32) -> Daemon {
         let appdir_tempdir = get_karlsen_tempdir();
-        client_manager.args.write().appdir = Some(appdir_tempdir.path().to_str().unwrap().to_owned());
-        let (core, _) = create_core_with_runtime(&Default::default(), &client_manager.args.read(), fd_total_budget);
-        let async_service = &Arc::downcast::<AsyncRuntime>(core.find(AsyncRuntime::IDENT).unwrap().arc_any()).unwrap();
-        let rpc_core_service = &Arc::downcast::<RpcCoreService>(async_service.find(RpcCoreService::IDENT).unwrap().arc_any()).unwrap();
+        client_manager.args.write().appdir =
+            Some(appdir_tempdir.path().to_str().unwrap().to_owned());
+        let (core, _) = create_core_with_runtime(
+            &Default::default(),
+            &client_manager.args.read(),
+            fd_total_budget,
+        );
+        let async_service =
+            &Arc::downcast::<AsyncRuntime>(core.find(AsyncRuntime::IDENT).unwrap().arc_any())
+                .unwrap();
+        let rpc_core_service = &Arc::downcast::<RpcCoreService>(
+            async_service.find(RpcCoreService::IDENT).unwrap().arc_any(),
+        )
+        .unwrap();
         let shutdown_requested = rpc_core_service.core_shutdown_request_listener();
-        let grpc_server = &Arc::downcast::<GrpcService>(async_service.find(GrpcService::IDENT).unwrap().arc_any()).unwrap();
+        let grpc_server = &Arc::downcast::<GrpcService>(
+            async_service.find(GrpcService::IDENT).unwrap().arc_any(),
+        )
+        .unwrap();
         let grpc_server_started = grpc_server.started();
-        Daemon { client_manager, core, grpc_server_started, shutdown_requested, workers: None, _appdir_tempdir: appdir_tempdir }
+        Daemon {
+            client_manager,
+            core,
+            grpc_server_started,
+            shutdown_requested,
+            workers: None,
+            _appdir_tempdir: appdir_tempdir,
+        }
     }
 
     pub fn client_manager(&self) -> Arc<ClientManager> {

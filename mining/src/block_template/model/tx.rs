@@ -5,7 +5,10 @@ pub(crate) struct SelectableTransaction {
 
 impl SelectableTransaction {
     pub(crate) fn new(tx_value: f64, gas_limit: u64, alpha: i32) -> Self {
-        Self { gas_limit, p: tx_value.powi(alpha) }
+        Self {
+            gas_limit,
+            p: tx_value.powi(alpha),
+        }
     }
 }
 
@@ -29,7 +32,12 @@ pub(crate) struct Candidate {
 
 impl Candidate {
     pub(crate) fn new(index: usize, start: f64, end: f64) -> Self {
-        Self { index, start, end, is_marked_for_deletion: false }
+        Self {
+            index,
+            start,
+            end,
+            is_marked_for_deletion: false,
+        }
     }
 }
 
@@ -49,7 +57,10 @@ impl CandidateList {
             candidates.push(candidate);
             total_p += current_p;
         });
-        Self { candidates, total_p }
+        Self {
+            candidates,
+            total_p,
+        }
     }
 
     pub(crate) fn is_empty(&self) -> bool {
@@ -59,13 +70,19 @@ impl CandidateList {
     pub(crate) fn rebalanced(&self, selectable_txs: &SelectableTransactions) -> Self {
         let mut candidates = Vec::with_capacity(self.candidates.len());
         let mut total_p = 0.0;
-        self.candidates.iter().filter(|x| !x.is_marked_for_deletion).for_each(|x| {
-            let current_p = selectable_txs[x.index].p;
-            let candidate = Candidate::new(x.index, total_p, total_p + current_p);
-            candidates.push(candidate);
-            total_p += current_p;
-        });
-        Self { candidates, total_p }
+        self.candidates
+            .iter()
+            .filter(|x| !x.is_marked_for_deletion)
+            .for_each(|x| {
+                let current_p = selectable_txs[x.index].p;
+                let candidate = Candidate::new(x.index, total_p, total_p + current_p);
+                candidates.push(candidate);
+                total_p += current_p;
+            });
+        Self {
+            candidates,
+            total_p,
+        }
     }
 
     /// find finds the candidates in whose range r falls.
@@ -73,7 +90,8 @@ impl CandidateList {
     /// * tx1: start 0,   end 100
     /// * tx2: start 100, end 105
     /// * tx3: start 105, end 2000
-    /// And r=102, then find will return tx2.
+    ///
+    /// And r=102, then [`CandidateList::find`] will return tx2.
     pub(crate) fn find(&self, r: f64) -> usize {
         let mut min = 0;
         let mut max = self.candidates.len() - 1;

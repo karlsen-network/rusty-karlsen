@@ -13,7 +13,10 @@ impl DbKey {
     where
         TKey: Clone + AsRef<[u8]>,
     {
-        Self { path: prefix.iter().chain(key.as_ref().iter()).copied().collect(), prefix_len: prefix.len() }
+        Self {
+            path: prefix.iter().chain(key.as_ref().iter()).copied().collect(),
+            prefix_len: prefix.len(),
+        }
     }
 
     pub fn new_with_bucket<TKey, TBucket>(prefix: &[u8], bucket: TBucket, key: TKey) -> Self
@@ -118,15 +121,33 @@ mod tests {
     #[test]
     fn test_key_display() {
         let level = 37;
-        let key1 = DbKey::new(&[ReachabilityRelations.into(), RelationsParents.into()], Hash::from_u64_word(34567890));
-        let key2 = DbKey::new(&[Reachability.into(), Separator.into()], Hash::from_u64_word(345690));
+        let key1 = DbKey::new(
+            &[ReachabilityRelations.into(), RelationsParents.into()],
+            Hash::from_u64_word(34567890),
+        );
+        let key2 = DbKey::new(
+            &[Reachability.into(), Separator.into()],
+            Hash::from_u64_word(345690),
+        );
         let key3 = DbKey::new(&[Reachability.into(), level], Hash::from_u64_word(345690));
-        let key4 = DbKey::new(&[RelationsParents.into(), level], Hash::from_u64_word(345690));
+        let key4 = DbKey::new(
+            &[RelationsParents.into(), level],
+            Hash::from_u64_word(345690),
+        );
 
-        assert!(key1.to_string().starts_with(&format!("{:?}/{:?}/00", ReachabilityRelations, RelationsParents)));
-        assert!(key2.to_string().starts_with(&format!("{:?}/00", Reachability)));
-        assert!(key3.to_string().starts_with(&format!("{:?}/{}/00", Reachability, level)));
-        assert!(key4.to_string().starts_with(&format!("{:?}/{}/00", RelationsParents, level)));
+        assert!(key1.to_string().starts_with(&format!(
+            "{:?}/{:?}/00",
+            ReachabilityRelations, RelationsParents
+        )));
+        assert!(key2
+            .to_string()
+            .starts_with(&format!("{:?}/00", Reachability)));
+        assert!(key3
+            .to_string()
+            .starts_with(&format!("{:?}/{}/00", Reachability, level)));
+        assert!(key4
+            .to_string()
+            .starts_with(&format!("{:?}/{}/00", RelationsParents, level)));
 
         let key5 = DbKey::new(b"human/readable", Hash::from_bytes([SEPARATOR; HASH_SIZE]));
         let key6 = DbKey::prefix_only(&[0xC0, 0xC1, 0xF5, 0xF6]);

@@ -12,7 +12,11 @@ pub struct RpcMempoolEntry {
 
 impl RpcMempoolEntry {
     pub fn new(fee: u64, transaction: RpcTransaction, is_orphan: bool) -> Self {
-        Self { fee, transaction, is_orphan }
+        Self {
+            fee,
+            transaction,
+            is_orphan,
+        }
     }
 }
 
@@ -24,8 +28,16 @@ pub struct RpcMempoolEntryByAddress {
 }
 
 impl RpcMempoolEntryByAddress {
-    pub fn new(address: RpcAddress, sending: Vec<RpcMempoolEntry>, receiving: Vec<RpcMempoolEntry>) -> Self {
-        Self { address, sending, receiving }
+    pub fn new(
+        address: RpcAddress,
+        sending: Vec<RpcMempoolEntry>,
+        receiving: Vec<RpcMempoolEntry>,
+    ) -> Self {
+        Self {
+            address,
+            sending,
+            receiving,
+        }
     }
 }
 

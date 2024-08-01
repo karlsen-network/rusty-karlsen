@@ -6,8 +6,8 @@ use karlsen_consensus_core::{
     sign::sign,
     subnets::SUBNETWORK_ID_NATIVE,
     tx::{
-        MutableTransaction, ScriptPublicKey, SignableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutpoint,
-        TransactionOutput, UtxoEntry,
+        MutableTransaction, ScriptPublicKey, SignableTransaction, Transaction, TransactionId,
+        TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry,
     },
     utxo::{
         utxo_collection::{UtxoCollection, UtxoCollectionExtensions},
@@ -16,7 +16,9 @@ use karlsen_consensus_core::{
 };
 use karlsen_core::info;
 use karlsen_grpc_client::GrpcClient;
-use karlsen_rpc_core::{api::rpc::RpcApi, BlockAddedNotification, Notification, VirtualDaaScoreChangedNotification};
+use karlsen_rpc_core::{
+    api::rpc::RpcApi, BlockAddedNotification, Notification, VirtualDaaScoreChangedNotification,
+};
 use karlsen_txscript::pay_to_address_script;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use secp256k1::Keypair;
@@ -71,22 +73,42 @@ pub fn generate_tx_dag(
             .take(num_inputs * target_width)
             .chunks(num_inputs)
             .into_iter()
-            .map(|c| c.into_iter().map(|(o, e)| (TransactionInput::new(*o, vec![], 0, 1), e.clone())).unzip())
+            .map(|c| {
+                c.into_iter()
+                    .map(|(o, e)| (TransactionInput::new(*o, vec![], 0, 1), e.clone()))
+                    .unzip()
+            })
             .collect::<Vec<(Vec<_>, Vec<_>)>>()
             .into_par_iter()
             .map(|(inputs, entries)| {
                 let total_in = entries.iter().map(|e| e.amount).sum::<u64>();
                 let total_out = total_in - required_fee(num_inputs, num_outputs);
                 let outputs = (0..num_outputs)
-                    .map(|_| TransactionOutput { value: total_out / num_outputs, script_public_key: spk.clone() })
+                    .map(|_| TransactionOutput {
+                        value: total_out / num_outputs,
+                        script_public_key: spk.clone(),
+                    })
                     .collect_vec();
-                let unsigned_tx = Transaction::new(TX_VERSION, inputs, outputs, 0, SUBNETWORK_ID_NATIVE, 0, vec![]);
-                sign(SignableTransaction::with_entries(unsigned_tx, entries), schnorr_key)
+                let unsigned_tx = Transaction::new(
+                    TX_VERSION,
+                    inputs,
+                    outputs,
+                    0,
+                    SUBNETWORK_ID_NATIVE,
+                    0,
+                    vec![],
+                );
+                sign(
+                    SignableTransaction::with_entries(unsigned_tx, entries),
+                    schnorr_key,
+                )
             })
             .collect::<Vec<_>>()
             .into_iter()
             .for_each(|signed_tx| {
-                utxo_diff.add_transaction(&signed_tx.as_verifiable(), 0).unwrap();
+                utxo_diff
+                    .add_transaction(&signed_tx.as_verifiable(), 0)
+                    .unwrap();
                 txs.push(Arc::new(signed_tx.tx));
             });
         utxoset.remove_collection(&utxo_diff.remove);
@@ -117,8 +139,12 @@ pub fn verify_tx_dag(initial_utxoset: &UtxoCollection, txs: &[Arc<Transaction>])
     }
 }
 
-pub async fn wait_for<Fut>(sleep_millis: u64, max_iterations: u64, success: impl Fn() -> Fut, panic_message: &'static str)
-where
+pub async fn wait_for<Fut>(
+    sleep_millis: u64,
+    max_iterations: u64,
+    success: impl Fn() -> Fut,
+    panic_message: &'static str,
+) where
     Fut: Future<Output = bool>,
 {
     let mut i: u64 = 0;
@@ -145,15 +171,36 @@ pub fn generate_tx(
     let script_public_key = pay_to_address_script(address);
     let inputs = utxos
         .iter()
-        .map(|(op, _)| TransactionInput { previous_outpoint: *op, signature_script: vec![], sequence: 0, sig_op_count: 1 })
+        .map(|(op, _)| TransactionInput {
+            previous_outpoint: *op,
+            signature_script: vec![],
+            sequence: 0,
+            sig_op_count: 1,
+        })
         .collect_vec();
 
     let outputs = (0..num_outputs)
-        .map(|_| TransactionOutput { value: amount / num_outputs, script_public_key: script_public_key.clone() })
+        .map(|_| TransactionOutput {
+            value: amount / num_outputs,
+            script_public_key: script_public_key.clone(),
+        })
         .collect_vec();
-    let unsigned_tx = Transaction::new(TX_VERSION, inputs, outputs, 0, SUBNETWORK_ID_NATIVE, 0, vec![]);
-    let signed_tx =
-        sign(MutableTransaction::with_entries(unsigned_tx, utxos.iter().map(|(_, entry)| entry.clone()).collect_vec()), schnorr_key);
+    let unsigned_tx = Transaction::new(
+        TX_VERSION,
+        inputs,
+        outputs,
+        0,
+        SUBNETWORK_ID_NATIVE,
+        0,
+        vec![],
+    );
+    let signed_tx = sign(
+        MutableTransaction::with_entries(
+            unsigned_tx,
+            utxos.iter().map(|(_, entry)| entry.clone()).collect_vec(),
+        ),
+        schnorr_key,
+    );
     signed_tx.tx
 }
 
@@ -162,12 +209,15 @@ pub async fn fetch_spendable_utxos(
     address: Address,
     coinbase_maturity: u64,
 ) -> Vec<(TransactionOutpoint, UtxoEntry)> {
-    let resp = client.get_utxos_by_addresses(vec![address.clone()]).await.unwrap();
+    let resp = client
+        .get_utxos_by_addresses(vec![address.clone()])
+        .await
+        .unwrap();
     let virtual_daa_score = client.get_server_info().await.unwrap().virtual_daa_score;
     let mut utxos = Vec::with_capacity(resp.len());
-    for resp_entry in
-        resp.into_iter().filter(|resp_entry| is_utxo_spendable(&resp_entry.utxo_entry, virtual_daa_score, coinbase_maturity))
-    {
+    for resp_entry in resp.into_iter().filter(|resp_entry| {
+        is_utxo_spendable(&resp_entry.utxo_entry, virtual_daa_score, coinbase_maturity)
+    }) {
         assert!(resp_entry.address.is_some());
         assert_eq!(*resp_entry.address.as_ref().unwrap(), address);
         utxos.push((resp_entry.outpoint, resp_entry.utxo_entry));
@@ -176,26 +226,49 @@ pub async fn fetch_spendable_utxos(
     utxos
 }
 
-pub fn is_utxo_spendable(entry: &UtxoEntry, virtual_daa_score: u64, coinbase_maturity: u64) -> bool {
-    let needed_confirmations = if !entry.is_coinbase { 10 } else { coinbase_maturity };
+pub fn is_utxo_spendable(
+    entry: &UtxoEntry,
+    virtual_daa_score: u64,
+    coinbase_maturity: u64,
+) -> bool {
+    let needed_confirmations = if !entry.is_coinbase {
+        10
+    } else {
+        coinbase_maturity
+    };
     entry.block_daa_score + needed_confirmations <= virtual_daa_score
 }
 
-pub async fn mine_block(pay_address: Address, submitting_client: &GrpcClient, listening_clients: &[ListeningClient]) {
+pub async fn mine_block(
+    pay_address: Address,
+    submitting_client: &GrpcClient,
+    listening_clients: &[ListeningClient],
+) {
     // Discard all unreceived block added notifications in each listening client
-    listening_clients.iter().for_each(|x| x.block_added_listener().unwrap().drain());
+    listening_clients
+        .iter()
+        .for_each(|x| x.block_added_listener().unwrap().drain());
 
     // Mine a block
-    let template = submitting_client.get_block_template(pay_address.clone(), vec![]).await.unwrap();
+    let template = submitting_client
+        .get_block_template(pay_address.clone(), vec![])
+        .await
+        .unwrap();
     let block_hash = template.block.header.hash;
-    submitting_client.submit_block(template.block, false).await.unwrap();
+    submitting_client
+        .submit_block(template.block, false)
+        .await
+        .unwrap();
 
     // Wait for each listening client to get notified the submitted block was added to the DAG
     for client in listening_clients.iter() {
-        let block_daa_score: u64 = match timeout(Duration::from_millis(500), client.block_added_listener().unwrap().receiver.recv())
-            .await
-            .unwrap()
-            .unwrap()
+        let block_daa_score: u64 = match timeout(
+            Duration::from_millis(500),
+            client.block_added_listener().unwrap().receiver.recv(),
+        )
+        .await
+        .unwrap()
+        .unwrap()
         {
             Notification::BlockAdded(BlockAddedNotification { block }) => {
                 assert_eq!(block.header.hash, block_hash);
@@ -203,12 +276,21 @@ pub async fn mine_block(pay_address: Address, submitting_client: &GrpcClient, li
             }
             _ => panic!("wrong notification type"),
         };
-        match timeout(Duration::from_millis(500), client.virtual_daa_score_changed_listener().unwrap().receiver.recv())
-            .await
-            .unwrap()
-            .unwrap()
+        match timeout(
+            Duration::from_millis(500),
+            client
+                .virtual_daa_score_changed_listener()
+                .unwrap()
+                .receiver
+                .recv(),
+        )
+        .await
+        .unwrap()
+        .unwrap()
         {
-            Notification::VirtualDaaScoreChanged(VirtualDaaScoreChangedNotification { virtual_daa_score }) => {
+            Notification::VirtualDaaScoreChanged(VirtualDaaScoreChangedNotification {
+                virtual_daa_score,
+            }) => {
                 assert_eq!(virtual_daa_score, block_daa_score + 1);
             }
             _ => panic!("wrong notification type"),

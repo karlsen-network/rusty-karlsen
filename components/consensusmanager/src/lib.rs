@@ -9,7 +9,8 @@ mod session;
 
 pub use batch::BlockProcessingBatch;
 pub use session::{
-    spawn_blocking, ConsensusInstance, ConsensusProxy, ConsensusSessionBlocking, SessionLock, SessionReadGuard, SessionWriteGuard,
+    spawn_blocking, ConsensusInstance, ConsensusProxy, ConsensusSessionBlocking, SessionLock,
+    SessionReadGuard, SessionWriteGuard,
 };
 
 /// Consensus controller trait. Includes methods required to start/stop/control consensus, but which should not
@@ -120,16 +121,25 @@ impl ConsensusManager {
 
     pub fn new(factory: Arc<dyn ConsensusFactory>) -> Self {
         let (consensus, ctl) = factory.new_active_consensus();
-        Self { factory, inner: RwLock::new(ManagerInner::new(consensus, ctl)) }
+        Self {
+            factory,
+            inner: RwLock::new(ManagerInner::new(consensus, ctl)),
+        }
     }
 
     /// Creates a consensus manager with a fixed consensus. Will panic if staging API is used. To be
     /// used for test purposes only.
     pub fn from_consensus<T: ConsensusApi + ConsensusCtl + 'static>(consensus: Arc<T>) -> Self {
-        let (consensus, ctl) = (consensus.clone() as DynConsensus, consensus as DynConsensusCtl);
+        let (consensus, ctl) = (
+            consensus.clone() as DynConsensus,
+            consensus as DynConsensusCtl,
+        );
         Self {
             factory: Arc::new(MockFactory),
-            inner: RwLock::new(ManagerInner::new(ConsensusInstance::new(SessionLock::new(), consensus), ctl)),
+            inner: RwLock::new(ManagerInner::new(
+                ConsensusInstance::new(SessionLock::new(), consensus),
+                ctl,
+            )),
         }
     }
 
@@ -195,7 +205,11 @@ pub struct StagingConsensus {
 impl StagingConsensus {
     fn new(manager: Arc<ConsensusManager>, staging: ConsensusInner) -> Self {
         let handles = VecDeque::from_iter(staging.ctl.start());
-        Self { manager, staging, handles }
+        Self {
+            manager,
+            staging,
+            handles,
+        }
     }
 
     pub fn commit(self) {
@@ -205,7 +219,14 @@ impl StagingConsensus {
         prev.ctl.stop();
         g.current.ctl.make_active();
         drop(g);
-        let handlers = self.manager.inner.read().consensus_reset_handlers.iter().cloned().collect_vec();
+        let handlers = self
+            .manager
+            .inner
+            .read()
+            .consensus_reset_handlers
+            .iter()
+            .cloned()
+            .collect_vec();
         for handler in handlers {
             handler.handle_consensus_reset();
         }

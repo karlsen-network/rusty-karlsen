@@ -60,8 +60,11 @@ impl ConnectionInner {
 
 impl Notify<Notification> for ConnectionInner {
     fn notify(&self, notification: Notification) -> NotifyResult<()> {
-        self.send(Connection::into_message(&notification, &self.messenger.encoding().into()))
-            .map_err(|err| NotifyError::General(err.to_string()))
+        self.send(Connection::into_message(
+            &notification,
+            &self.messenger.encoding().into(),
+        ))
+        .map_err(|err| NotifyError::General(err.to_string()))
     }
 }
 
@@ -82,12 +85,28 @@ pub struct Connection {
 }
 
 impl Connection {
-    pub fn new(id: u64, peer: &SocketAddr, messenger: Arc<Messenger>, grpc_client: Option<Arc<GrpcClient>>) -> Connection {
+    pub fn new(
+        id: u64,
+        peer: &SocketAddr,
+        messenger: Arc<Messenger>,
+        grpc_client: Option<Arc<GrpcClient>>,
+    ) -> Connection {
         // If a GrpcClient is provided, it has to come configured in direct mode
-        assert!(grpc_client.is_none() || grpc_client.as_ref().unwrap().notification_mode() == NotificationMode::Direct);
+        assert!(
+            grpc_client.is_none()
+                || grpc_client.as_ref().unwrap().notification_mode() == NotificationMode::Direct
+        );
         // Should a gRPC client be provided, no listener_id is required for subscriptions so the listener id is set to default
         let listener_id = Mutex::new(grpc_client.clone().map(|_| ListenerId::default()));
-        Connection { inner: Arc::new(ConnectionInner { id, peer: *peer, messenger, grpc_client, listener_id }) }
+        Connection {
+            inner: Arc::new(ConnectionInner {
+                id,
+                peer: *peer,
+                messenger,
+                grpc_client,
+                listener_id,
+            }),
+        }
     }
 
     /// Obtain the connection id
@@ -101,11 +120,9 @@ impl Connection {
     }
 
     pub fn grpc_client(&self) -> Arc<GrpcClient> {
-        self.inner
-            .grpc_client
-            .as_ref()
-            .cloned()
-            .unwrap_or_else(|| panic!("Incorrect use: `server::Connection` does not carry RpcApi references"))
+        self.inner.grpc_client.as_ref().cloned().unwrap_or_else(|| {
+            panic!("Incorrect use: `server::Connection` does not carry RpcApi references")
+        })
     }
 
     pub fn grpc_client_notify_target(&self) -> GrpcClientNotify {
@@ -126,14 +143,26 @@ impl Connection {
 
     /// Creates a WebSocket [`Message`] that can be posted to the connection ([`Messenger`]) sink
     /// directly.
-    pub fn create_serialized_notification_message<Ops, Msg>(encoding: Encoding, op: Ops, msg: Msg) -> WrpcResult<Message>
+    pub fn create_serialized_notification_message<Ops, Msg>(
+        encoding: Encoding,
+        op: Ops,
+        msg: Msg,
+    ) -> WrpcResult<Message>
     where
         Ops: OpsT,
         Msg: MsgT,
     {
         match encoding {
-            Encoding::Borsh => workflow_rpc::server::protocol::borsh::create_serialized_notification_message(op, msg),
-            Encoding::SerdeJson => workflow_rpc::server::protocol::borsh::create_serialized_notification_message(op, msg),
+            Encoding::Borsh => {
+                workflow_rpc::server::protocol::borsh::create_serialized_notification_message(
+                    op, msg,
+                )
+            }
+            Encoding::SerdeJson => {
+                workflow_rpc::server::protocol::borsh::create_serialized_notification_message(
+                    op, msg,
+                )
+            }
         }
     }
 }
@@ -157,11 +186,18 @@ impl ConnectionT for Connection {
 
     fn into_message(notification: &Self::Notification, encoding: &Self::Encoding) -> Self::Message {
         let op: RpcApiOps = notification.event_type().into();
-        Self::create_serialized_notification_message(encoding.clone().into(), op, notification.clone()).unwrap()
+        Self::create_serialized_notification_message(
+            encoding.clone().into(),
+            op,
+            notification.clone(),
+        )
+        .unwrap()
     }
 
     async fn send(&self, message: Self::Message) -> core::result::Result<(), Self::Error> {
-        self.inner.send(message).map_err(|err| NotifyError::General(err.to_string()))
+        self.inner
+            .send(message)
+            .map_err(|err| NotifyError::General(err.to_string()))
     }
 
     fn close(&self) -> bool {

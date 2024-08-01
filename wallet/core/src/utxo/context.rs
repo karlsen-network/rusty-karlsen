@@ -11,8 +11,8 @@ use crate::result::Result;
 use crate::storage::TransactionRecord;
 use crate::tx::PendingTransaction;
 use crate::utxo::{
-    Maturity, NetworkParams, OutgoingTransaction, PendingUtxoEntryReference, UtxoContextBinding, UtxoEntryId, UtxoEntryReference,
-    UtxoEntryReferenceExtension, UtxoProcessor,
+    Maturity, NetworkParams, OutgoingTransaction, PendingUtxoEntryReference, UtxoContextBinding,
+    UtxoEntryId, UtxoEntryReference, UtxoEntryReferenceExtension, UtxoProcessor,
 };
 use karlsen_hashes::Hash;
 use sorted_insert::SortedInsertBinaryByKey;
@@ -23,7 +23,20 @@ fn next_utxo_context_id() -> Hash {
     Hash::from_slice(sha256_hash(id.to_le_bytes().as_slice()).as_ref())
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Ord,
+    PartialOrd,
+    Hash,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+)]
 pub struct UtxoContextId(pub(crate) Hash);
 
 impl Default for UtxoContextId {
@@ -114,7 +127,10 @@ impl Default for Context {
 
 impl Context {
     fn new_with_mature(mature: Vec<UtxoEntryReference>) -> Self {
-        Self { mature, ..Default::default() }
+        Self {
+            mature,
+            ..Default::default()
+        }
     }
 
     pub fn clear(&mut self) {
@@ -137,12 +153,26 @@ struct Inner {
 
 impl Inner {
     pub fn new(processor: &UtxoProcessor, binding: UtxoContextBinding) -> Self {
-        Self { id: binding.id(), binding, context: Mutex::new(Context::default()), processor: processor.clone() }
+        Self {
+            id: binding.id(),
+            binding,
+            context: Mutex::new(Context::default()),
+            processor: processor.clone(),
+        }
     }
 
-    pub fn new_with_mature_entries(processor: &UtxoProcessor, binding: UtxoContextBinding, mature: Vec<UtxoEntryReference>) -> Self {
+    pub fn new_with_mature_entries(
+        processor: &UtxoProcessor,
+        binding: UtxoContextBinding,
+        mature: Vec<UtxoEntryReference>,
+    ) -> Self {
         let context = Context::new_with_mature(mature);
-        Self { id: binding.id(), binding, context: Mutex::new(context), processor: processor.clone() }
+        Self {
+            id: binding.id(),
+            binding,
+            context: Mutex::new(context),
+            processor: processor.clone(),
+        }
     }
 }
 
@@ -167,7 +197,9 @@ pub struct UtxoContext {
 
 impl UtxoContext {
     pub fn new(processor: &UtxoProcessor, binding: UtxoContextBinding) -> Self {
-        Self { inner: Arc::new(Inner::new(processor, binding)) }
+        Self {
+            inner: Arc::new(Inner::new(processor, binding)),
+        }
     }
 
     pub fn new_with_mature_entries(
@@ -175,7 +207,13 @@ impl UtxoContext {
         binding: UtxoContextBinding,
         mature_entries: Vec<UtxoEntryReference>,
     ) -> Self {
-        Self { inner: Arc::new(Inner::new_with_mature_entries(processor, binding, mature_entries)) }
+        Self {
+            inner: Arc::new(Inner::new_with_mature_entries(
+                processor,
+                binding,
+                mature_entries,
+            )),
+        }
     }
 
     pub fn context(&self) -> MutexGuard<Context> {
@@ -236,32 +274,55 @@ impl UtxoContext {
             context.balance.replace(balance.clone());
             balance
         };
-        self.processor().notify(Events::Balance { balance: Some(balance.clone()), id: self.id() }).await?;
+        self.processor()
+            .notify(Events::Balance {
+                balance: Some(balance.clone()),
+                id: self.id(),
+            })
+            .await?;
 
         Ok(balance)
     }
 
     /// Process pending transaction. Remove mature UTXO entries and add them to the consumed set.
     /// Produces a notification on the even multiplexer.
-    pub(crate) async fn register_outgoing_transaction(&self, pending_tx: &PendingTransaction) -> Result<()> {
+    pub(crate) async fn register_outgoing_transaction(
+        &self,
+        pending_tx: &PendingTransaction,
+    ) -> Result<()> {
         {
-            let current_daa_score =
-                self.processor().current_daa_score().ok_or(Error::MissingDaaScore("register_outgoing_transaction()"))?;
+            let current_daa_score = self
+                .processor()
+                .current_daa_score()
+                .ok_or(Error::MissingDaaScore("register_outgoing_transaction()"))?;
 
             let mut context = self.context();
             let pending_utxo_entries = pending_tx.utxo_entries();
-            context.mature.retain(|entry| !pending_utxo_entries.contains_key(&entry.id()));
+            context
+                .mature
+                .retain(|entry| !pending_utxo_entries.contains_key(&entry.id()));
 
-            let outgoing_transaction = OutgoingTransaction::new(current_daa_score, self.clone(), pending_tx.clone());
-            self.processor().register_outgoing_transaction(outgoing_transaction.clone());
-            context.outgoing.insert(outgoing_transaction.id(), outgoing_transaction);
+            let outgoing_transaction =
+                OutgoingTransaction::new(current_daa_score, self.clone(), pending_tx.clone());
+            self.processor()
+                .register_outgoing_transaction(outgoing_transaction.clone());
+            context
+                .outgoing
+                .insert(outgoing_transaction.id(), outgoing_transaction);
         }
 
         Ok(())
     }
 
-    pub(crate) async fn notify_outgoing_transaction(&self, pending_tx: &PendingTransaction) -> Result<()> {
-        let outgoing_tx = self.processor().outgoing().get(&pending_tx.id()).expect("outgoing transaction for notification");
+    pub(crate) async fn notify_outgoing_transaction(
+        &self,
+        pending_tx: &PendingTransaction,
+    ) -> Result<()> {
+        let outgoing_tx = self
+            .processor()
+            .outgoing()
+            .get(&pending_tx.id())
+            .expect("outgoing transaction for notification");
 
         if pending_tx.is_batch() {
             let record = TransactionRecord::new_batch(self, &outgoing_tx, None)?;
@@ -276,44 +337,75 @@ impl UtxoContext {
 
     /// Cancel outgoing transaction in case of a submission error. Removes [`OutgoingTransaction`] from the
     /// [`UtxoProcessor`] and returns UtxoEntries from the outgoing transaction back to the mature pool.
-    pub(crate) async fn cancel_outgoing_transaction(&self, pending_tx: &PendingTransaction) -> Result<()> {
-        self.processor().cancel_outgoing_transaction(pending_tx.id());
+    pub(crate) async fn cancel_outgoing_transaction(
+        &self,
+        pending_tx: &PendingTransaction,
+    ) -> Result<()> {
+        self.processor()
+            .cancel_outgoing_transaction(pending_tx.id());
 
         let mut context = self.context();
 
-        let outgoing_transaction = context.outgoing.remove(&pending_tx.id()).expect("outgoing transaction");
-        outgoing_transaction.utxo_entries().iter().for_each(|(_, entry)| {
-            context.mature.push(entry.clone());
-        });
+        let outgoing_transaction = context
+            .outgoing
+            .remove(&pending_tx.id())
+            .expect("outgoing transaction");
+        outgoing_transaction
+            .utxo_entries()
+            .iter()
+            .for_each(|(_, entry)| {
+                context.mature.push(entry.clone());
+            });
 
         Ok(())
     }
 
     /// Insert `utxo_entry` into the `UtxoSet`.
     /// NOTE: The insert will be ignored if already present in the inner map.
-    pub async fn insert(&self, utxo_entry: UtxoEntryReference, current_daa_score: u64, force_maturity: bool) -> Result<()> {
+    pub async fn insert(
+        &self,
+        utxo_entry: UtxoEntryReference,
+        current_daa_score: u64,
+        force_maturity: bool,
+    ) -> Result<()> {
         let mut context = self.context();
-        if let std::collections::hash_map::Entry::Vacant(e) = context.map.entry(utxo_entry.id().clone()) {
+        if let std::collections::hash_map::Entry::Vacant(e) =
+            context.map.entry(utxo_entry.id().clone())
+        {
             e.insert(utxo_entry.clone());
             if force_maturity {
-                context.mature.sorted_insert_binary_asc_by_key(utxo_entry.clone(), |entry| entry.amount_as_ref());
+                context
+                    .mature
+                    .sorted_insert_binary_asc_by_key(utxo_entry.clone(), |entry| {
+                        entry.amount_as_ref()
+                    });
             } else {
                 let params = NetworkParams::from(self.processor().network_id()?);
                 match utxo_entry.maturity(&params, current_daa_score) {
                     Maturity::Stasis => {
-                        context.stasis.insert(utxo_entry.id().clone(), utxo_entry.clone());
-                        self.processor()
-                            .stasis()
-                            .insert(utxo_entry.id().clone(), PendingUtxoEntryReference::new(utxo_entry, self.clone()));
+                        context
+                            .stasis
+                            .insert(utxo_entry.id().clone(), utxo_entry.clone());
+                        self.processor().stasis().insert(
+                            utxo_entry.id().clone(),
+                            PendingUtxoEntryReference::new(utxo_entry, self.clone()),
+                        );
                     }
                     Maturity::Pending => {
-                        context.pending.insert(utxo_entry.id().clone(), utxo_entry.clone());
-                        self.processor()
-                            .pending()
-                            .insert(utxo_entry.id().clone(), PendingUtxoEntryReference::new(utxo_entry, self.clone()));
+                        context
+                            .pending
+                            .insert(utxo_entry.id().clone(), utxo_entry.clone());
+                        self.processor().pending().insert(
+                            utxo_entry.id().clone(),
+                            PendingUtxoEntryReference::new(utxo_entry, self.clone()),
+                        );
                     }
                     Maturity::Confirmed => {
-                        context.mature.sorted_insert_binary_asc_by_key(utxo_entry.clone(), |entry| entry.amount_as_ref());
+                        context
+                            .mature
+                            .sorted_insert_binary_asc_by_key(utxo_entry.clone(), |entry| {
+                                entry.amount_as_ref()
+                            });
                     }
                 }
             }
@@ -336,12 +428,16 @@ impl UtxoContext {
                 if let Some(pending) = context.pending.remove(&id) {
                     removed.push(UtxoEntryVariant::Pending(pending));
                     if self.processor().pending().remove(&id).is_none() {
-                        log_error!("Error: unable to remove utxo entry from global pending (with context)");
+                        log_error!(
+                            "Error: unable to remove utxo entry from global pending (with context)"
+                        );
                     }
                 } else if let Some(stasis) = context.stasis.remove(&id) {
                     removed.push(UtxoEntryVariant::Stasis(stasis));
                     if self.processor().stasis().remove(&id).is_none() {
-                        log_error!("Error: unable to remove utxo entry from global pending (with context)");
+                        log_error!(
+                            "Error: unable to remove utxo entry from global pending (with context)"
+                        );
                     }
                 } else {
                     remove_mature_ids.push(id);
@@ -365,13 +461,21 @@ impl UtxoContext {
 
     /// This function handles `Pending` to `Mature` transformation.
     pub async fn promote(&self, utxos: Vec<UtxoEntryReference>) -> Result<()> {
-        let transactions = HashMap::group_from(utxos.iter().map(|utxo| (utxo.transaction_id(), utxo.clone())));
+        let transactions = HashMap::group_from(
+            utxos
+                .iter()
+                .map(|utxo| (utxo.transaction_id(), utxo.clone())),
+        );
 
         for (txid, utxos) in transactions.into_iter() {
             for utxo_entry in utxos.iter() {
                 let mut context = self.context();
                 if context.pending.remove(utxo_entry.id_as_ref()).is_some() {
-                    context.mature.sorted_insert_binary_asc_by_key(utxo_entry.clone(), |entry| entry.amount_as_ref());
+                    context
+                        .mature
+                        .sorted_insert_binary_asc_by_key(utxo_entry.clone(), |entry| {
+                            entry.amount_as_ref()
+                        });
                 } else {
                     log_error!("Error: non-pending utxo promotion!");
                     unreachable!("Error: non-pending utxo promotion!");
@@ -391,7 +495,8 @@ impl UtxoContext {
 
     /// This function handles `Stasis` to `Pending` transformation.
     pub async fn revive(&self, utxos: Vec<UtxoEntryReference>) -> Result<()> {
-        let transactions = HashMap::group_from(utxos.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
+        let transactions =
+            HashMap::group_from(utxos.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
 
         for (txid, utxos) in transactions.into_iter() {
             for utxo_entry in utxos.iter() {
@@ -416,7 +521,11 @@ impl UtxoContext {
         context.outgoing.remove(txid)
     }
 
-    pub async fn extend_from_scan(&self, utxo_entries: Vec<UtxoEntryReference>, current_daa_score: u64) -> Result<()> {
+    pub async fn extend_from_scan(
+        &self,
+        utxo_entries: Vec<UtxoEntryReference>,
+        current_daa_score: u64,
+    ) -> Result<()> {
         let (pending, mature) = {
             let mut context = self.context();
 
@@ -426,25 +535,37 @@ impl UtxoContext {
             let params = NetworkParams::from(self.processor().network_id()?);
 
             for utxo_entry in utxo_entries.into_iter() {
-                if let std::collections::hash_map::Entry::Vacant(e) = context.map.entry(utxo_entry.id()) {
+                if let std::collections::hash_map::Entry::Vacant(e) =
+                    context.map.entry(utxo_entry.id())
+                {
                     e.insert(utxo_entry.clone());
                     match utxo_entry.maturity(&params, current_daa_score) {
                         Maturity::Stasis => {
-                            context.stasis.insert(utxo_entry.id().clone(), utxo_entry.clone());
-                            self.processor()
-                                .stasis()
-                                .insert(utxo_entry.id().clone(), PendingUtxoEntryReference::new(utxo_entry, self.clone()));
+                            context
+                                .stasis
+                                .insert(utxo_entry.id().clone(), utxo_entry.clone());
+                            self.processor().stasis().insert(
+                                utxo_entry.id().clone(),
+                                PendingUtxoEntryReference::new(utxo_entry, self.clone()),
+                            );
                         }
                         Maturity::Pending => {
                             pending.push(utxo_entry.clone());
-                            context.pending.insert(utxo_entry.id().clone(), utxo_entry.clone());
-                            self.processor()
-                                .pending()
-                                .insert(utxo_entry.id().clone(), PendingUtxoEntryReference::new(utxo_entry, self.clone()));
+                            context
+                                .pending
+                                .insert(utxo_entry.id().clone(), utxo_entry.clone());
+                            self.processor().pending().insert(
+                                utxo_entry.id().clone(),
+                                PendingUtxoEntryReference::new(utxo_entry, self.clone()),
+                            );
                         }
                         Maturity::Confirmed => {
                             mature.push(utxo_entry.clone());
-                            context.mature.sorted_insert_binary_asc_by_key(utxo_entry.clone(), |entry| entry.amount_as_ref());
+                            context
+                                .mature
+                                .sorted_insert_binary_asc_by_key(utxo_entry.clone(), |entry| {
+                                    entry.amount_as_ref()
+                                });
                         }
                     }
                 } else {
@@ -458,13 +579,18 @@ impl UtxoContext {
         // cascade discovery to the processor
         // for unixtime resolution
 
-        let pending = HashMap::group_from(pending.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
+        let pending = HashMap::group_from(
+            pending
+                .into_iter()
+                .map(|utxo| (utxo.transaction_id(), utxo)),
+        );
         for (id, utxos) in pending.into_iter() {
             let record = TransactionRecord::new_external(self, id, &utxos);
             self.processor().handle_discovery(record).await?;
         }
 
-        let mature = HashMap::group_from(mature.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
+        let mature =
+            HashMap::group_from(mature.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
         for (id, utxos) in mature.into_iter() {
             let record = TransactionRecord::new_external(self, id, &utxos);
             self.processor().handle_discovery(record).await?;
@@ -508,28 +634,45 @@ impl UtxoContext {
 
         let mature = (mature + consumed).saturating_sub(outgoing);
 
-        Balance::new(mature, pending, outgoing, context.mature.len(), context.pending.len(), context.stasis.len())
+        Balance::new(
+            mature,
+            pending,
+            outgoing,
+            context.mature.len(),
+            context.pending.len(),
+            context.stasis.len(),
+        )
     }
 
-    pub(crate) async fn handle_utxo_added(&self, utxos: Vec<UtxoEntryReference>, current_daa_score: u64) -> Result<()> {
+    pub(crate) async fn handle_utxo_added(
+        &self,
+        utxos: Vec<UtxoEntryReference>,
+        current_daa_score: u64,
+    ) -> Result<()> {
         // add UTXOs to account set
 
         let params = NetworkParams::from(self.processor().network_id()?);
 
         let mut accepted_outgoing_transactions = AHashSet::new();
 
-        let added = HashMap::group_from(utxos.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
+        let added =
+            HashMap::group_from(utxos.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
         for (txid, utxos) in added.into_iter() {
             // get outgoing transaction from the processor in case the transaction
             // originates from a different [`Account`] represented by a different [`UtxoContext`].
             let outgoing_transaction = self.processor().outgoing().get(&txid);
 
             let force_maturity_if_outgoing = outgoing_transaction.is_some();
-            let is_coinbase_stasis =
-                utxos.first().map(|utxo| matches!(utxo.maturity(&params, current_daa_score), Maturity::Stasis)).unwrap_or_default();
+            let is_coinbase_stasis = utxos
+                .first()
+                .map(|utxo| matches!(utxo.maturity(&params, current_daa_score), Maturity::Stasis))
+                .unwrap_or_default();
 
             for utxo in utxos.iter() {
-                if let Err(err) = self.insert(utxo.clone(), current_daa_score, force_maturity_if_outgoing).await {
+                if let Err(err) = self
+                    .insert(utxo.clone(), current_daa_score, force_maturity_if_outgoing)
+                    .await
+                {
                     // TODO - remove `Result<>` from insert at a later date once
                     // we are confident that the insert will never result in an error.
                     log_error!("{}", err);
@@ -540,14 +683,27 @@ impl UtxoContext {
                 accepted_outgoing_transactions.insert((*outgoing_transaction).clone());
 
                 if outgoing_transaction.is_batch() {
-                    let record = TransactionRecord::new_batch(self, &outgoing_transaction, Some(current_daa_score))?;
+                    let record = TransactionRecord::new_batch(
+                        self,
+                        &outgoing_transaction,
+                        Some(current_daa_score),
+                    )?;
                     self.processor().notify(Events::Maturity { record }).await?;
                 } else if outgoing_transaction.originating_context() == self {
-                    let record = TransactionRecord::new_change(self, &outgoing_transaction, Some(current_daa_score), &utxos)?;
+                    let record = TransactionRecord::new_change(
+                        self,
+                        &outgoing_transaction,
+                        Some(current_daa_score),
+                        &utxos,
+                    )?;
                     self.processor().notify(Events::Maturity { record }).await?;
                 } else {
-                    let record =
-                        TransactionRecord::new_transfer_incoming(self, &outgoing_transaction, Some(current_daa_score), &utxos)?;
+                    let record = TransactionRecord::new_transfer_incoming(
+                        self,
+                        &outgoing_transaction,
+                        Some(current_daa_score),
+                        &utxos,
+                    )?;
                     self.processor().notify(Events::Maturity { record }).await?;
                 }
             } else if !is_coinbase_stasis {
@@ -564,10 +720,15 @@ impl UtxoContext {
         Ok(())
     }
 
-    pub(crate) async fn handle_utxo_removed(&self, mut utxos: Vec<UtxoEntryReference>, current_daa_score: u64) -> Result<()> {
+    pub(crate) async fn handle_utxo_removed(
+        &self,
+        mut utxos: Vec<UtxoEntryReference>,
+        current_daa_score: u64,
+    ) -> Result<()> {
         // remove UTXOs from account set
 
         let outgoing_transactions = self.processor().outgoing();
+        #[allow(clippy::mutable_key_type)]
         let mut accepted_outgoing_transactions = HashSet::<OutgoingTransaction>::new();
 
         utxos.retain(|utxo| {
@@ -582,14 +743,29 @@ impl UtxoContext {
 
         for accepted_outgoing_transaction in accepted_outgoing_transactions.into_iter() {
             if accepted_outgoing_transaction.is_batch() {
-                let record = TransactionRecord::new_batch(self, &accepted_outgoing_transaction, Some(current_daa_score))?;
+                let record = TransactionRecord::new_batch(
+                    self,
+                    &accepted_outgoing_transaction,
+                    Some(current_daa_score),
+                )?;
                 self.processor().notify(Events::Maturity { record }).await?;
-            } else if accepted_outgoing_transaction.destination_context().is_some() {
-                let record =
-                    TransactionRecord::new_transfer_outgoing(self, &accepted_outgoing_transaction, Some(current_daa_score), &utxos)?;
+            } else if accepted_outgoing_transaction
+                .destination_context()
+                .is_some()
+            {
+                let record = TransactionRecord::new_transfer_outgoing(
+                    self,
+                    &accepted_outgoing_transaction,
+                    Some(current_daa_score),
+                    &utxos,
+                )?;
                 self.processor().notify(Events::Maturity { record }).await?;
             } else {
-                let record = TransactionRecord::new_outgoing(self, &accepted_outgoing_transaction, Some(current_daa_score))?;
+                let record = TransactionRecord::new_outgoing(
+                    self,
+                    &accepted_outgoing_transaction,
+                    Some(current_daa_score),
+                )?;
                 self.processor().notify(Events::Maturity { record }).await?;
             }
         }
@@ -616,9 +792,15 @@ impl UtxoContext {
             }
         });
 
-        let mature = HashMap::group_from(mature.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
-        let pending = HashMap::group_from(pending.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
-        let stasis = HashMap::group_from(stasis.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
+        let mature =
+            HashMap::group_from(mature.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
+        let pending = HashMap::group_from(
+            pending
+                .into_iter()
+                .map(|utxo| (utxo.transaction_id(), utxo)),
+        );
+        let stasis =
+            HashMap::group_from(stasis.into_iter().map(|utxo| (utxo.transaction_id(), utxo)));
 
         for (txid, utxos) in mature.into_iter() {
             let record = TransactionRecord::new_external(self, txid, &utxos);
@@ -670,8 +852,14 @@ impl UtxoContext {
     pub async fn unregister_addresses(&self, addresses: Vec<Address>) -> Result<()> {
         if !addresses.is_empty() {
             let local = self.addresses();
-            let addresses = addresses.clone().into_iter().map(Arc::new).collect::<Vec<_>>();
-            self.processor().unregister_addresses(addresses.clone()).await?;
+            let addresses = addresses
+                .clone()
+                .into_iter()
+                .map(Arc::new)
+                .collect::<Vec<_>>();
+            self.processor()
+                .unregister_addresses(addresses.clone())
+                .await?;
             addresses.iter().for_each(|address| {
                 local.remove(address);
             });
@@ -682,10 +870,19 @@ impl UtxoContext {
         Ok(())
     }
 
-    pub async fn scan_and_register_addresses(&self, addresses: Vec<Address>, current_daa_score: Option<u64>) -> Result<()> {
+    pub async fn scan_and_register_addresses(
+        &self,
+        addresses: Vec<Address>,
+        current_daa_score: Option<u64>,
+    ) -> Result<()> {
         self.register_addresses(&addresses).await?;
-        let resp = self.processor().rpc_api().get_utxos_by_addresses(addresses).await?;
-        let refs: Vec<UtxoEntryReference> = resp.into_iter().map(UtxoEntryReference::from).collect();
+        let resp = self
+            .processor()
+            .rpc_api()
+            .get_utxos_by_addresses(addresses)
+            .await?;
+        let refs: Vec<UtxoEntryReference> =
+            resp.into_iter().map(UtxoEntryReference::from).collect();
         let current_daa_score = current_daa_score.or_else(|| {
                 self.processor()
                     .current_daa_score()

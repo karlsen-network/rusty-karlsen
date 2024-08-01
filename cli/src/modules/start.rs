@@ -5,7 +5,12 @@ use crate::imports::*;
 pub struct Start;
 
 impl Start {
-    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, _argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        _argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         // - TODO - check states
 
         ctx.term().exec("wallet open").await?;

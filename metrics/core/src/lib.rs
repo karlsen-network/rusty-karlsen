@@ -19,8 +19,16 @@ use workflow_core::task::spawn;
 use workflow_core::time::unixtime_as_millis_f64;
 use workflow_log::*;
 
-pub type MetricsSinkFn =
-    Arc<Box<dyn Send + Sync + Fn(MetricsSnapshot) -> Option<Pin<Box<(dyn Send + 'static + Future<Output = Result<()>>)>>> + 'static>>;
+pub type MetricsSinkFn = Arc<
+    Box<
+        dyn Send
+            + Sync
+            + Fn(
+                MetricsSnapshot,
+            ) -> Option<Pin<Box<(dyn Send + 'static + Future<Output = Result<()>>)>>>
+            + 'static,
+    >,
+>;
 
 pub struct Metrics {
     task_ctl: DuplexChannel,
@@ -108,23 +116,38 @@ impl Metrics {
     }
 
     pub async fn stop_task(&self) -> Result<()> {
-        self.task_ctl.signal(()).await.expect("Metrics::stop_task() signal error");
+        self.task_ctl
+            .signal(())
+            .await
+            .expect("Metrics::stop_task() signal error");
         Ok(())
     }
 
     // --- samplers
 
-    async fn sample_metrics(self: &Arc<Self>, rpc: Arc<dyn RpcApi>, data: &mut MetricsData) -> Result<()> {
-        let GetMetricsResponse { server_time: _, consensus_metrics, connection_metrics, bandwidth_metrics, process_metrics } =
-            rpc.get_metrics(true, true, true, true).await?;
+    async fn sample_metrics(
+        self: &Arc<Self>,
+        rpc: Arc<dyn RpcApi>,
+        data: &mut MetricsData,
+    ) -> Result<()> {
+        let GetMetricsResponse {
+            server_time: _,
+            consensus_metrics,
+            connection_metrics,
+            bandwidth_metrics,
+            process_metrics,
+        } = rpc.get_metrics(true, true, true, true).await?;
 
         if let Some(consensus_metrics) = consensus_metrics {
             data.node_blocks_submitted_count = consensus_metrics.node_blocks_submitted_count;
             data.node_headers_processed_count = consensus_metrics.node_headers_processed_count;
-            data.node_dependencies_processed_count = consensus_metrics.node_dependencies_processed_count;
+            data.node_dependencies_processed_count =
+                consensus_metrics.node_dependencies_processed_count;
             data.node_bodies_processed_count = consensus_metrics.node_bodies_processed_count;
-            data.node_transactions_processed_count = consensus_metrics.node_transactions_processed_count;
-            data.node_chain_blocks_processed_count = consensus_metrics.node_chain_blocks_processed_count;
+            data.node_transactions_processed_count =
+                consensus_metrics.node_transactions_processed_count;
+            data.node_chain_blocks_processed_count =
+                consensus_metrics.node_chain_blocks_processed_count;
             data.node_mass_processed_count = consensus_metrics.node_mass_processed_count;
             // --
             data.node_database_blocks_count = consensus_metrics.node_database_blocks_count;
@@ -133,7 +156,8 @@ impl Metrics {
             data.network_tip_hashes_count = consensus_metrics.network_tip_hashes_count;
             data.network_difficulty = consensus_metrics.network_difficulty;
             data.network_past_median_time = consensus_metrics.network_past_median_time;
-            data.network_virtual_parent_hashes_count = consensus_metrics.network_virtual_parent_hashes_count;
+            data.network_virtual_parent_hashes_count =
+                consensus_metrics.network_virtual_parent_hashes_count;
             data.network_virtual_daa_score = consensus_metrics.network_virtual_daa_score;
         }
 

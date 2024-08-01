@@ -42,11 +42,19 @@ impl<TS: AsRef<TickService>> Monitor<TS> {
         let mut last_written = 0;
         let mut process_stat = ProcessStat::cur()?;
         while let TickReason::Wakeup = self.tick_service.as_ref().tick(self.fetch_interval).await {
-            let ProcessMemoryInfo { resident_set_size, virtual_memory_size, .. } = get_process_memory_info()?;
+            let ProcessMemoryInfo {
+                resident_set_size,
+                virtual_memory_size,
+                ..
+            } = get_process_memory_info()?;
             let core_num = processor_numbers()?;
             let cpu_usage = process_stat.cpu()?;
             let fd_num = fd_count_cur()?;
-            let IOStats { read_bytes: disk_io_read_bytes, write_bytes: disk_io_write_bytes, .. } = get_process_io_stats()?;
+            let IOStats {
+                read_bytes: disk_io_read_bytes,
+                write_bytes: disk_io_write_bytes,
+                ..
+            } = get_process_io_stats()?;
 
             let time_delta = last_log_time.elapsed();
 
@@ -134,7 +142,10 @@ mod tests {
             let big = vec![0u64; 1_000_000];
             let _ = big.into_iter().sum::<u64>();
         };
-        let m = Builder::new().with_fetch_cb(cb).with_tick_service(ts.clone()).build();
+        let m = Builder::new()
+            .with_fetch_cb(cb)
+            .with_tick_service(ts.clone())
+            .build();
 
         let handle1 = tokio::spawn(async move {
             sleep(Duration::from_millis(3500)).await;

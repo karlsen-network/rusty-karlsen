@@ -32,7 +32,9 @@ pub fn register_link_matchers(cli: &Arc<KarlsenCli>) -> Result<()> {
         Arc::new(Box::new(move |modifiers, uri| {
             if modifiers.ctrl || modifiers.meta {
                 if uri.starts_with("karlsentest") {
-                    cli_.term().writeln("testnet addresses can not be currently looked up with the block explorer");
+                    cli_.term().writeln(
+                        "testnet addresses can not be currently looked up with the block explorer",
+                    );
                 } else {
                     let url = format!("https://explorer.karlsencoin.com/addresses/{uri}");
                     if is_nw() {
@@ -56,7 +58,9 @@ pub fn register_link_matchers(cli: &Arc<KarlsenCli>) -> Result<()> {
             let uri = re.replace(text, "");
 
             if modifiers.ctrl || modifiers.meta {
-                nw_sys::shell::open_external(&format!("https://explorer.karlsencoin.com/blocks/{uri}"));
+                nw_sys::shell::open_external(&format!(
+                    "https://explorer.karlsencoin.com/blocks/{uri}"
+                ));
             } else {
                 write_to_clipboard(&cli_, uri.to_string().as_str());
             }
@@ -72,7 +76,9 @@ pub fn register_link_matchers(cli: &Arc<KarlsenCli>) -> Result<()> {
             let uri = re.replace(text, "");
 
             if modifiers.ctrl || modifiers.meta {
-                nw_sys::shell::open_external(&format!("https://explorer.karlsencoin.com/txs/{uri}"));
+                nw_sys::shell::open_external(&format!(
+                    "https://explorer.karlsencoin.com/txs/{uri}"
+                ));
             } else {
                 write_to_clipboard(&cli_, uri.to_string().as_str());
             }

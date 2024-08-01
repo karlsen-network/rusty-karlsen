@@ -1,6 +1,7 @@
 use crate::{processor::Processor, IDENT};
 use karlsen_consensus_notify::{
-    connection::ConsensusChannelConnection, notification::Notification as ConsensusNotification, notifier::ConsensusNotifier,
+    connection::ConsensusChannelConnection, notification::Notification as ConsensusNotification,
+    notifier::ConsensusNotifier,
 };
 use karlsen_core::{
     task::service::{AsyncService, AsyncServiceError, AsyncServiceFuture},
@@ -38,25 +39,55 @@ impl IndexService {
         // Prepare consensus-notify objects
         let consensus_notify_channel = Channel::<ConsensusNotification>::default();
         let consensus_notify_listener_id = consensus_notifier.register_new_listener(
-            ConsensusChannelConnection::new(INDEX_SERVICE, consensus_notify_channel.sender(), ChannelType::Closable),
+            ConsensusChannelConnection::new(
+                INDEX_SERVICE,
+                consensus_notify_channel.sender(),
+                ChannelType::Closable,
+            ),
             ListenerLifespan::Static(policies),
         );
 
         // Prepare the index-processor notifier
         // No subscriber is defined here because the subscription are manually created during the construction and never changed after that.
-        let events: EventSwitches = [EventType::UtxosChanged, EventType::PruningPointUtxoSetOverride].as_ref().into();
-        let collector = Arc::new(Processor::new(utxoindex.clone(), consensus_notify_channel.receiver()));
-        let notifier = Arc::new(IndexNotifier::new(INDEX_SERVICE, events, vec![collector], vec![], subscription_context, 1, policies));
+        let events: EventSwitches = [
+            EventType::UtxosChanged,
+            EventType::PruningPointUtxoSetOverride,
+        ]
+        .as_ref()
+        .into();
+        let collector = Arc::new(Processor::new(
+            utxoindex.clone(),
+            consensus_notify_channel.receiver(),
+        ));
+        let notifier = Arc::new(IndexNotifier::new(
+            INDEX_SERVICE,
+            events,
+            vec![collector],
+            vec![],
+            subscription_context,
+            1,
+            policies,
+        ));
 
         // Manually subscribe to index-processor related event types
         consensus_notifier
-            .try_start_notify(consensus_notify_listener_id, UtxosChangedScope::default().into())
+            .try_start_notify(
+                consensus_notify_listener_id,
+                UtxosChangedScope::default().into(),
+            )
             .expect("the subscription always succeeds");
         consensus_notifier
-            .try_start_notify(consensus_notify_listener_id, PruningPointUtxoSetOverrideScope::default().into())
+            .try_start_notify(
+                consensus_notify_listener_id,
+                PruningPointUtxoSetOverrideScope::default().into(),
+            )
             .expect("the subscription always succeeds");
 
-        Self { utxoindex, notifier, shutdown: SingleTrigger::default() }
+        Self {
+            utxoindex,
+            notifier,
+            shutdown: SingleTrigger::default(),
+        }
     }
 
     pub fn notifier(&self) -> Arc<IndexNotifier> {

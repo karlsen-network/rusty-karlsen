@@ -50,7 +50,9 @@ impl core::ops::Sub for &ProcessingCountersSnapshot {
             mergeset_counts: self.mergeset_counts.saturating_sub(rhs.mergeset_counts),
             body_counts: self.body_counts.saturating_sub(rhs.body_counts),
             txs_counts: self.txs_counts.saturating_sub(rhs.txs_counts),
-            chain_block_counts: self.chain_block_counts.saturating_sub(rhs.chain_block_counts),
+            chain_block_counts: self
+                .chain_block_counts
+                .saturating_sub(rhs.chain_block_counts),
             mass_counts: self.mass_counts.saturating_sub(rhs.mass_counts),
         }
     }

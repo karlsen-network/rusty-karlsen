@@ -53,7 +53,12 @@ pub struct Server {
 const WRPC_SERVER: &str = "wrpc-server";
 
 impl Server {
-    pub fn new(tasks: usize, encoding: Encoding, core_service: Option<Arc<RpcCoreService>>, options: Arc<Options>) -> Self {
+    pub fn new(
+        tasks: usize,
+        encoding: Encoding,
+        core_service: Option<Arc<RpcCoreService>>,
+        options: Arc<Options>,
+    ) -> Self {
         // This notifier UTXOs subscription granularity to rpc-core notifier
         let policies = MutationPolicies::new(UtxosChangedMutationPolicy::AddressSet);
 
@@ -68,15 +73,28 @@ impl Server {
             // Prepare rpc service objects
             let notification_channel = NotificationChannel::default();
             let listener_id = service.notifier().register_new_listener(
-                ChannelConnection::new(WRPC_SERVER, notification_channel.sender(), ChannelType::Closable),
+                ChannelConnection::new(
+                    WRPC_SERVER,
+                    notification_channel.sender(),
+                    ChannelType::Closable,
+                ),
                 ListenerLifespan::Static(policies),
             );
 
             // Prepare notification internals
             let enabled_events = EVENT_TYPE_ARRAY[..].into();
             let converter = Arc::new(WrpcServiceConverter::new());
-            let collector = Arc::new(WrpcServiceCollector::new(WRPC_SERVER, notification_channel.receiver(), converter));
-            let subscriber = Arc::new(Subscriber::new(WRPC_SERVER, enabled_events, service.notifier(), listener_id));
+            let collector = Arc::new(WrpcServiceCollector::new(
+                WRPC_SERVER,
+                notification_channel.receiver(),
+                converter,
+            ));
+            let subscriber = Arc::new(Subscriber::new(
+                WRPC_SERVER,
+                enabled_events,
+                service.notifier(),
+                listener_id,
+            ));
             let wrpc_notifier = Arc::new(Notifier::new(
                 WRPC_SERVER,
                 enabled_events,
@@ -86,7 +104,10 @@ impl Server {
                 tasks,
                 policies,
             ));
-            Some(RpcCore { service, wrpc_notifier })
+            Some(RpcCore {
+                service,
+                wrpc_notifier,
+            })
         } else {
             None
         };
@@ -109,7 +130,11 @@ impl Server {
         }
     }
 
-    pub async fn connect(&self, peer: &SocketAddr, messenger: Arc<Messenger>) -> Result<Connection> {
+    pub async fn connect(
+        &self,
+        peer: &SocketAddr,
+        messenger: Arc<Messenger>,
+    ) -> Result<Connection> {
         // log_trace!("WebSocket connected: {}", peer);
         let id = self.inner.next_connection_id.fetch_add(1, Ordering::SeqCst);
 
@@ -137,7 +162,10 @@ impl Server {
         let connection = Connection::new(id, peer, messenger, grpc_client);
         if self.inner.options.grpc_proxy_address.is_some() {
             // log_trace!("starting gRPC");
-            connection.grpc_client().start(Some(connection.grpc_client_notify_target())).await;
+            connection
+                .grpc_client()
+                .start(Some(connection.grpc_client_notify_target()))
+                .await;
             // log_trace!("gRPC started...");
         }
         self.inner.sockets.lock()?.insert(id, connection.clone());
@@ -165,7 +193,10 @@ impl Server {
 
     #[inline(always)]
     pub fn notifier(&self) -> Option<Arc<WrpcNotifier>> {
-        self.inner.rpc_core.as_ref().map(|x| x.wrpc_notifier.clone())
+        self.inner
+            .rpc_core
+            .as_ref()
+            .map(|x| x.wrpc_notifier.clone())
     }
 
     pub fn rpc_service(&self, connection: &Connection) -> DynRpcService {
@@ -183,17 +214,25 @@ impl Server {
             // The only possible case here is a server connected to rpc core.
             // If the proxy is used, the connection has a gRPC client and the listener id
             // is always set to Some(ListenerId::default()) by the connection ctor.
-            let notifier =
-                self.notifier().unwrap_or_else(|| panic!("Incorrect use: `server::Server` does not carry an internal notifier"));
-            let listener_id = notifier.register_new_listener(connection.clone(), ListenerLifespan::Dynamic);
+            let notifier = self.notifier().unwrap_or_else(|| {
+                panic!("Incorrect use: `server::Server` does not carry an internal notifier")
+            });
+            let listener_id =
+                notifier.register_new_listener(connection.clone(), ListenerLifespan::Dynamic);
             connection.register_notification_listener(listener_id);
             listener_id
         };
         workflow_log::log_trace!("notification subscribe[0x{listener_id:x}] {scope:?}");
         if let Some(rpc_core) = &self.inner.rpc_core {
-            rpc_core.wrpc_notifier.clone().try_start_notify(listener_id, scope)?;
+            rpc_core
+                .wrpc_notifier
+                .clone()
+                .try_start_notify(listener_id, scope)?;
         } else {
-            connection.grpc_client().start_notify(listener_id, scope).await?;
+            connection
+                .grpc_client()
+                .start_notify(listener_id, scope)
+                .await?;
         }
         Ok(())
     }
@@ -202,9 +241,15 @@ impl Server {
         if let Some(listener_id) = connection.listener_id() {
             workflow_log::log_trace!("notification unsubscribe[0x{listener_id:x}] {scope:?}");
             if let Some(rpc_core) = &self.inner.rpc_core {
-                rpc_core.wrpc_notifier.clone().try_stop_notify(listener_id, scope)?;
+                rpc_core
+                    .wrpc_notifier
+                    .clone()
+                    .try_stop_notify(listener_id, scope)?;
             } else {
-                connection.grpc_client().stop_notify(listener_id, scope).await?;
+                connection
+                    .grpc_client()
+                    .stop_notify(listener_id, scope)
+                    .await?;
             }
         } else {
             workflow_log::log_trace!("notification unsubscribe[N/A] {scope:?}");

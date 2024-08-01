@@ -1076,7 +1076,11 @@ mod tests {
             assert_equal(mine2, default2, check_fmt);
 
             let mine = mine.overflowing_add(mine2).0.overflowing_mul(mine2).0;
-            let default = default.overflowing_add(default2).0.overflowing_mul(default2).0;
+            let default = default
+                .overflowing_add(default2)
+                .0
+                .overflowing_mul(default2)
+                .0;
             assert_equal(mine, default, check_fmt);
             let shift = rng.next_u32() % 4096;
             {
@@ -1107,7 +1111,10 @@ mod tests {
             {
                 let rand_u64 = rng.next_u64();
                 let mine_divrem = mine.div_rem_u64(rand_u64);
-                let default_divrem = (default / u128::from(rand_u64), default % u128::from(rand_u64));
+                let default_divrem = (
+                    default / u128::from(rand_u64),
+                    default % u128::from(rand_u64),
+                );
                 assert_equal(mine_divrem.0, default_divrem.0, check_fmt);
                 assert_eq!(mine_divrem.1, u64::try_from(default_divrem.1).unwrap());
             }

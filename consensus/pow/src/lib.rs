@@ -9,7 +9,7 @@ pub mod xoshiro;
 use std::cmp::max;
 
 use crate::matrix::Matrix;
-use karlsen_consensus_core::{constants, hashing::{self, header}, header::Header, BlockLevel};
+use karlsen_consensus_core::{constants, hashing, header::Header, BlockLevel};
 //use karlsen_consensus_core::errors::block::RuleError;
 //use karlsen_hashes::Pow;
 use karlsen_hashes::{PowB3Hash, PowFishHash};
@@ -38,9 +38,13 @@ impl State {
         //let fishhasher = PowFishHash::new();
         let header_version = header.version;
 
-        Self { matrix, target, hasher, /*fishhasher,*/ header_version}
+        Self {
+            matrix,
+            target,
+            hasher,
+            /*fishhasher,*/ header_version,
+        }
     }
-
 
     fn calculate_pow_khashv1(&self, nonce: u64) -> Uint256 {
         // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
@@ -49,6 +53,7 @@ impl State {
         Uint256::from_le_bytes(hash.as_bytes())
     }
 
+    #[allow(dead_code)]
     fn calculate_pow_khashv2(&self, nonce: u64) -> Uint256 {
         // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
@@ -78,13 +83,13 @@ impl State {
     /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
         if self.header_version == constants::BLOCK_VERSION_KHASHV1 {
-            return self.calculate_pow_khashv1(nonce);
+            self.calculate_pow_khashv1(nonce)
         } else if self.header_version == constants::BLOCK_VERSION_KHASHV2 {
-            return self.calculate_pow_khashv2plus(nonce);
+            self.calculate_pow_khashv2plus(nonce)
         } else {
             // TODO handle block version error
             //Err(RuleError::WrongBlockVersion(self.header_version));
-            return self.calculate_pow_khashv1(nonce);
+            self.calculate_pow_khashv1(nonce)
         }
     }
 

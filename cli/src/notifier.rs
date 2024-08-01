@@ -33,11 +33,20 @@ unsafe impl Sync for Notifier {}
 
 impl Notifier {
     pub fn try_new() -> Result<Notifier> {
-        Ok(Notifier { inner: Arc::new(Inner { elements: Mutex::new(None), current: Mutex::new(None) }) })
+        Ok(Notifier {
+            inner: Arc::new(Inner {
+                elements: Mutex::new(None),
+                current: Mutex::new(None),
+            }),
+        })
     }
 
     pub fn try_init(&self) -> Result<()> {
-        let elements = if is_nw() || is_web() { Some(Self::create_elements()?) } else { None };
+        let elements = if is_nw() || is_web() {
+            Some(Self::create_elements()?)
+        } else {
+            None
+        };
         *self.inner.elements.lock().unwrap() = elements;
         Ok(())
     }
@@ -122,7 +131,9 @@ pub struct NotifierGuard {
 
 impl NotifierGuard {
     pub fn new(notifier: &Notifier) -> NotifierGuard {
-        NotifierGuard { notifier: notifier.clone() }
+        NotifierGuard {
+            notifier: notifier.clone(),
+        }
     }
 
     pub fn hide(&self) {

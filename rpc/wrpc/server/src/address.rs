@@ -13,7 +13,11 @@ pub enum WrpcNetAddress {
 }
 
 impl WrpcNetAddress {
-    pub fn to_address(&self, network_type: &NetworkType, encoding: &WrpcEncoding) -> ContextualNetAddress {
+    pub fn to_address(
+        &self,
+        network_type: &NetworkType,
+        encoding: &WrpcEncoding,
+    ) -> ContextualNetAddress {
         match self {
             WrpcNetAddress::Default => {
                 let port = match encoding {

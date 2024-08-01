@@ -25,9 +25,15 @@ pub trait UtxoIndexApi: Send + Sync + Debug {
     /// Retrieve utxos by script public keys supply from the utxoindex db.
     ///
     /// Note: Use a read lock when accessing this method
-    fn get_utxos_by_script_public_keys(&self, script_public_keys: ScriptPublicKeys) -> StoreResult<UtxoSetByScriptPublicKey>;
+    fn get_utxos_by_script_public_keys(
+        &self,
+        script_public_keys: ScriptPublicKeys,
+    ) -> StoreResult<UtxoSetByScriptPublicKey>;
 
-    fn get_balance_by_script_public_keys(&self, script_public_keys: ScriptPublicKeys) -> StoreResult<BalanceByScriptPublicKey>;
+    fn get_balance_by_script_public_keys(
+        &self,
+        script_public_keys: ScriptPublicKeys,
+    ) -> StoreResult<BalanceByScriptPublicKey>;
 
     // This can have a big memory footprint, so it should be used only for tests.
     fn get_all_outpoints(&self) -> StoreResult<HashSet<TransactionOutpoint>>;
@@ -47,7 +53,11 @@ pub trait UtxoIndexApi: Send + Sync + Debug {
     /// Update the utxoindex with the given utxo_diff, and tips.
     ///
     /// Note: Use a write lock when accessing this method
-    fn update(&mut self, utxo_diff: Arc<UtxoDiff>, tips: Arc<Vec<Hash>>) -> UtxoIndexResult<UtxoChanges>;
+    fn update(
+        &mut self,
+        utxo_diff: Arc<UtxoDiff>,
+        tips: Arc<Vec<Hash>>,
+    ) -> UtxoIndexResult<UtxoChanges>;
 
     /// Resync the utxoindex from the consensus db
     ///
@@ -67,21 +77,44 @@ impl UtxoIndexProxy {
     }
 
     pub async fn get_circulating_supply(self) -> StoreResult<u64> {
-        spawn_blocking(move || self.inner.read().get_circulating_supply()).await.unwrap()
+        spawn_blocking(move || self.inner.read().get_circulating_supply())
+            .await
+            .unwrap()
     }
 
-    pub async fn get_utxos_by_script_public_keys(self, script_public_keys: ScriptPublicKeys) -> StoreResult<UtxoSetByScriptPublicKey> {
-        spawn_blocking(move || self.inner.read().get_utxos_by_script_public_keys(script_public_keys)).await.unwrap()
+    pub async fn get_utxos_by_script_public_keys(
+        self,
+        script_public_keys: ScriptPublicKeys,
+    ) -> StoreResult<UtxoSetByScriptPublicKey> {
+        spawn_blocking(move || {
+            self.inner
+                .read()
+                .get_utxos_by_script_public_keys(script_public_keys)
+        })
+        .await
+        .unwrap()
     }
 
     pub async fn get_balance_by_script_public_keys(
         self,
         script_public_keys: ScriptPublicKeys,
     ) -> StoreResult<BalanceByScriptPublicKey> {
-        spawn_blocking(move || self.inner.read().get_balance_by_script_public_keys(script_public_keys)).await.unwrap()
+        spawn_blocking(move || {
+            self.inner
+                .read()
+                .get_balance_by_script_public_keys(script_public_keys)
+        })
+        .await
+        .unwrap()
     }
 
-    pub async fn update(self, utxo_diff: Arc<UtxoDiff>, tips: Arc<Vec<Hash>>) -> UtxoIndexResult<UtxoChanges> {
-        spawn_blocking(move || self.inner.write().update(utxo_diff, tips)).await.unwrap()
+    pub async fn update(
+        self,
+        utxo_diff: Arc<UtxoDiff>,
+        tips: Arc<Vec<Hash>>,
+    ) -> UtxoIndexResult<UtxoChanges> {
+        spawn_blocking(move || self.inner.write().update(utxo_diff, tips))
+            .await
+            .unwrap()
     }
 }

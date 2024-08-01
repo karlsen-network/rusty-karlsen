@@ -69,7 +69,11 @@ pub enum AssertKind {
 #[cold]
 #[track_caller]
 #[doc(hidden)]
-pub fn assert_matches_failed<T: fmt::Debug + ?Sized>(left: &T, right: &str, args: Option<fmt::Arguments<'_>>) -> ! {
+pub fn assert_matches_failed<T: fmt::Debug + ?Sized>(
+    left: &T,
+    right: &str,
+    args: Option<fmt::Arguments<'_>>,
+) -> ! {
     // Use the Display implementation to display the pattern.
     struct Pattern<'a>(&'a str);
     impl fmt::Debug for Pattern<'_> {
@@ -82,7 +86,12 @@ pub fn assert_matches_failed<T: fmt::Debug + ?Sized>(left: &T, right: &str, args
 
 /// Non-generic version of the above functions, to avoid code bloat.
 #[track_caller]
-fn assert_failed_inner(kind: AssertKind, left: &dyn fmt::Debug, right: &dyn fmt::Debug, args: Option<fmt::Arguments<'_>>) -> ! {
+fn assert_failed_inner(
+    kind: AssertKind,
+    left: &dyn fmt::Debug,
+    right: &dyn fmt::Debug,
+    args: Option<fmt::Arguments<'_>>,
+) -> ! {
     let op = match kind {
         AssertKind::Eq => "==",
         AssertKind::Ne => "!=",

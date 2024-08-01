@@ -23,7 +23,8 @@ impl Mempool {
     ) -> RuleResult<MutableTransaction> {
         self.validate_transaction_unacceptance(&transaction)?;
         // Populate mass in the beginning, it will be used in multiple places throughout the validation and insertion.
-        transaction.calculated_compute_mass = Some(consensus.calculate_transaction_compute_mass(&transaction.tx));
+        transaction.calculated_compute_mass =
+            Some(consensus.calculate_transaction_compute_mass(&transaction.tx));
         self.validate_transaction_in_isolation(&transaction)?;
         self.transaction_pool.check_double_spends(&transaction)?;
         self.populate_mempool_entries(&mut transaction);
@@ -45,7 +46,10 @@ impl Mempool {
         // longer atomic and different code paths may lead to inserting the same transaction
         // concurrently.
         if self.transaction_pool.has(&transaction_id) {
-            debug!("Transaction {0} is not post validated since already in the mempool", transaction_id);
+            debug!(
+                "Transaction {0} is not post validated since already in the mempool",
+                transaction_id
+            );
             return Ok(None);
         }
 
@@ -60,7 +64,11 @@ impl Mempool {
                 if orphan == Orphan::Forbidden {
                     return Err(RuleError::RejectDisallowedOrphan(transaction_id));
                 }
-                self.orphan_pool.try_add_orphan(consensus.get_virtual_daa_score(), transaction, priority)?;
+                self.orphan_pool.try_add_orphan(
+                    consensus.get_virtual_daa_score(),
+                    transaction,
+                    priority,
+                )?;
                 return Ok(None);
             }
             Err(err) => {
@@ -71,18 +79,33 @@ impl Mempool {
         self.validate_transaction_in_context(&transaction)?;
 
         // Before adding the transaction, check if there is room in the pool
-        self.transaction_pool.limit_transaction_count(1, &transaction)?.iter().try_for_each(|x| {
-            self.remove_transaction(x, true, TxRemovalReason::MakingRoom, format!(" for {}", transaction_id).as_str())
-        })?;
+        self.transaction_pool
+            .limit_transaction_count(1, &transaction)?
+            .iter()
+            .try_for_each(|x| {
+                self.remove_transaction(
+                    x,
+                    true,
+                    TxRemovalReason::MakingRoom,
+                    format!(" for {}", transaction_id).as_str(),
+                )
+            })?;
 
         // Add the transaction to the mempool as a MempoolTransaction and return a clone of the embedded Arc<Transaction>
-        let accepted_transaction =
-            self.transaction_pool.add_transaction(transaction, consensus.get_virtual_daa_score(), priority)?.mtx.tx.clone();
+        let accepted_transaction = self
+            .transaction_pool
+            .add_transaction(transaction, consensus.get_virtual_daa_score(), priority)?
+            .mtx
+            .tx
+            .clone();
         Ok(Some(accepted_transaction))
     }
 
     /// Validates that the transaction wasn't already accepted into the DAG
-    fn validate_transaction_unacceptance(&self, transaction: &MutableTransaction) -> RuleResult<()> {
+    fn validate_transaction_unacceptance(
+        &self,
+        transaction: &MutableTransaction,
+    ) -> RuleResult<()> {
         // Reject if the transaction is registered as an accepted transaction
         let transaction_id = transaction.id();
         match self.accepted_transactions.has(&transaction_id) {
@@ -91,7 +114,10 @@ impl Mempool {
         }
     }
 
-    fn validate_transaction_in_isolation(&self, transaction: &MutableTransaction) -> RuleResult<()> {
+    fn validate_transaction_in_isolation(
+        &self,
+        transaction: &MutableTransaction,
+    ) -> RuleResult<()> {
         let transaction_id = transaction.id();
         if self.transaction_pool.has(&transaction_id) {
             return Err(RuleError::RejectDuplicate(transaction_id));
@@ -104,13 +130,22 @@ impl Mempool {
 
     fn validate_transaction_in_context(&self, transaction: &MutableTransaction) -> RuleResult<()> {
         // TEMP: apply parts of go-karlsend mempool dust prevention patch
-        let has_coinbase_input = transaction.entries.iter().any(|e| e.as_ref().unwrap().is_coinbase);
-        let num_extra_outs = transaction.tx.outputs.len() as i64 - transaction.tx.inputs.len() as i64;
+        let has_coinbase_input = transaction
+            .entries
+            .iter()
+            .any(|e| e.as_ref().unwrap().is_coinbase);
+        let num_extra_outs =
+            transaction.tx.outputs.len() as i64 - transaction.tx.inputs.len() as i64;
         if !has_coinbase_input
             && num_extra_outs > 2
-            && transaction.calculated_fee.unwrap() < num_extra_outs as u64 * karlsen_consensus_core::constants::SOMPI_PER_KARLSEN
+            && transaction.calculated_fee.unwrap()
+                < num_extra_outs as u64 * karlsen_consensus_core::constants::SOMPI_PER_KARLSEN
         {
-            karlsen_core::trace!("Rejected spam tx {} from mempool ({} outputs)", transaction.id(), transaction.tx.outputs.len());
+            karlsen_core::trace!(
+                "Rejected spam tx {} from mempool ({} outputs)",
+                transaction.id(),
+                transaction.tx.outputs.len()
+            );
             return Err(RuleError::RejectSpamTransaction(transaction.id()));
         }
 
@@ -136,7 +171,12 @@ impl Mempool {
                 for (i, input) in orphan.mtx.tx.inputs.iter().enumerate() {
                     if input.previous_outpoint == outpoint {
                         if orphan.mtx.entries[i].is_none() {
-                            let entry = UtxoEntry::new(output.value, output.script_public_key.clone(), UNACCEPTED_DAA_SCORE, false);
+                            let entry = UtxoEntry::new(
+                                output.value,
+                                output.script_public_key.clone(),
+                                UNACCEPTED_DAA_SCORE,
+                                false,
+                            );
                             orphan.mtx.entries[i] = Some(entry);
                             if orphan.mtx.is_verifiable() {
                                 orphan_id = Some(orphan.id());
@@ -160,7 +200,11 @@ impl Mempool {
                     Err(err) => {
                         // In case of validation error, we log the problem and drop the
                         // erroneous transaction.
-                        info!("Failed to unorphan transaction {0} due to rule error: {1}", orphan_id, err.to_string());
+                        info!(
+                            "Failed to unorphan transaction {0} due to rule error: {1}",
+                            orphan_id,
+                            err.to_string()
+                        );
                     }
                 }
             }
@@ -169,7 +213,10 @@ impl Mempool {
         unorphaned_transactions
     }
 
-    fn unorphan_transaction(&mut self, transaction_id: &TransactionId) -> RuleResult<MempoolTransaction> {
+    fn unorphan_transaction(
+        &mut self,
+        transaction_id: &TransactionId,
+    ) -> RuleResult<MempoolTransaction> {
         // Rust rewrite:
         // - Instead of adding the validated transaction to mempool transaction pool,
         //   we return it.
@@ -178,15 +225,25 @@ impl Mempool {
         //   This job is delegated to a fn called later in the process (Manager::validate_and_insert_unorphaned_transactions).
 
         // Remove the transaction identified by transaction_id from the orphan pool.
-        let mut transactions = self.orphan_pool.remove_orphan(transaction_id, false, TxRemovalReason::Unorphaned, "")?;
+        let mut transactions = self.orphan_pool.remove_orphan(
+            transaction_id,
+            false,
+            TxRemovalReason::Unorphaned,
+            "",
+        )?;
 
         // At this point, `transactions` contains exactly one transaction.
         // The one we just removed from the orphan pool.
-        assert_eq!(transactions.len(), 1, "the list returned by remove_orphan is expected to contain exactly one transaction");
+        assert_eq!(
+            transactions.len(),
+            1,
+            "the list returned by remove_orphan is expected to contain exactly one transaction"
+        );
         let transaction = transactions.pop().unwrap();
 
         self.validate_transaction_unacceptance(&transaction.mtx)?;
-        self.transaction_pool.check_double_spends(&transaction.mtx)?;
+        self.transaction_pool
+            .check_double_spends(&transaction.mtx)?;
         Ok(transaction)
     }
 }

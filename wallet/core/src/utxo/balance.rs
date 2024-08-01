@@ -141,7 +141,11 @@ impl Balance {
         }
     }
 
-    pub fn to_balance_strings(&self, network_type: &NetworkType, padding: Option<usize>) -> BalanceStrings {
+    pub fn to_balance_strings(
+        &self,
+        network_type: &NetworkType,
+        padding: Option<usize>,
+    ) -> BalanceStrings {
         (Some(self), network_type, padding).into()
     }
 }
@@ -159,9 +163,12 @@ impl AtomicBalance {
     pub fn add(&self, balance: Balance) {
         self.mature.fetch_add(balance.mature, Ordering::SeqCst);
         self.pending.fetch_add(balance.pending, Ordering::SeqCst);
-        self.mature_utxos.fetch_add(balance.mature_utxo_count, Ordering::SeqCst);
-        self.pending_utxos.fetch_add(balance.pending_utxo_count, Ordering::SeqCst);
-        self.stasis_utxos.fetch_add(balance.stasis_utxo_count, Ordering::SeqCst);
+        self.mature_utxos
+            .fetch_add(balance.mature_utxo_count, Ordering::SeqCst);
+        self.pending_utxos
+            .fetch_add(balance.pending_utxo_count, Ordering::SeqCst);
+        self.stasis_utxos
+            .fetch_add(balance.stasis_utxo_count, Ordering::SeqCst);
     }
 }
 
@@ -186,21 +193,40 @@ pub struct BalanceStrings {
 }
 
 impl From<(Option<&Balance>, &NetworkType, Option<usize>)> for BalanceStrings {
-    fn from((balance, network_type, padding): (Option<&Balance>, &NetworkType, Option<usize>)) -> Self {
+    fn from(
+        (balance, network_type, padding): (Option<&Balance>, &NetworkType, Option<usize>),
+    ) -> Self {
         let suffix = utils::karlsen_suffix(network_type);
         if let Some(balance) = balance {
             let mut mature = utils::sompi_to_karlsen_string(balance.mature);
-            let mut pending = if balance.pending > 0 { Some(utils::sompi_to_karlsen_string(balance.pending)) } else { None };
+            let mut pending = if balance.pending > 0 {
+                Some(utils::sompi_to_karlsen_string(balance.pending))
+            } else {
+                None
+            };
             if let Some(padding) = padding {
                 mature = mature.pad_to_width(padding);
                 pending = pending.map(|pending| pending.pad_to_width(padding));
             }
             Self {
-                mature: format!("{} {}", balance.mature_delta.style(&mature, DeltaStyle::Mature), suffix),
-                pending: pending.map(|pending| format!("{} {}", balance.pending_delta.style(&pending, DeltaStyle::Pending), suffix)),
+                mature: format!(
+                    "{} {}",
+                    balance.mature_delta.style(&mature, DeltaStyle::Mature),
+                    suffix
+                ),
+                pending: pending.map(|pending| {
+                    format!(
+                        "{} {}",
+                        balance.pending_delta.style(&pending, DeltaStyle::Pending),
+                        suffix
+                    )
+                }),
             }
         } else {
-            Self { mature: format!("N/A {suffix}"), pending: None }
+            Self {
+                mature: format!("N/A {suffix}"),
+                pending: None,
+            }
         }
     }
 }

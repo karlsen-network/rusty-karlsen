@@ -72,26 +72,41 @@ impl Router {
 
         interface.method(
             RpcApiOps::Subscribe,
-            workflow_rpc::server::Method::new(move |manager: Server, connection: Connection, scope: Scope| {
-                Box::pin(async move {
-                    manager.start_notify(&connection, scope).await.map_err(|err| err.to_string())?;
-                    Ok(SubscribeResponse::new(connection.id()))
-                })
-            }),
+            workflow_rpc::server::Method::new(
+                move |manager: Server, connection: Connection, scope: Scope| {
+                    Box::pin(async move {
+                        manager
+                            .start_notify(&connection, scope)
+                            .await
+                            .map_err(|err| err.to_string())?;
+                        Ok(SubscribeResponse::new(connection.id()))
+                    })
+                },
+            ),
         );
 
         interface.method(
             RpcApiOps::Unsubscribe,
-            workflow_rpc::server::Method::new(move |manager: Server, connection: Connection, scope: Scope| {
-                Box::pin(async move {
-                    manager.stop_notify(&connection, scope).await.unwrap_or_else(|err| {
-                        workflow_log::log_trace!("wRPC server -> error calling stop_notify(): {err}");
-                    });
-                    Ok(UnsubscribeResponse {})
-                })
-            }),
+            workflow_rpc::server::Method::new(
+                move |manager: Server, connection: Connection, scope: Scope| {
+                    Box::pin(async move {
+                        manager
+                            .stop_notify(&connection, scope)
+                            .await
+                            .unwrap_or_else(|err| {
+                                workflow_log::log_trace!(
+                                    "wRPC server -> error calling stop_notify(): {err}"
+                                );
+                            });
+                        Ok(UnsubscribeResponse {})
+                    })
+                },
+            ),
         );
 
-        Router { interface: Arc::new(interface), server_context }
+        Router {
+            interface: Arc::new(interface),
+            server_context,
+        }
     }
 }

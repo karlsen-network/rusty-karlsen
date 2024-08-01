@@ -8,7 +8,10 @@ use karlsen_consensus_core::{block::Block, tx::Transaction};
 
 impl From<&Block> for protowire::BlockMessage {
     fn from(block: &Block) -> Self {
-        Self { header: Some(block.header.as_ref().into()), transactions: block.transactions.iter().map(|tx| tx.into()).collect() }
+        Self {
+            header: Some(block.header.as_ref().into()),
+            transactions: block.transactions.iter().map(|tx| tx.into()).collect(),
+        }
     }
 }
 
@@ -22,7 +25,11 @@ impl TryFrom<protowire::BlockMessage> for Block {
     fn try_from(block: protowire::BlockMessage) -> Result<Self, Self::Error> {
         Ok(Self::new(
             block.header.try_into_ex()?,
-            block.transactions.into_iter().map(|i| i.try_into()).collect::<Result<Vec<Transaction>, Self::Error>>()?,
+            block
+                .transactions
+                .into_iter()
+                .map(|i| i.try_into())
+                .collect::<Result<Vec<Transaction>, Self::Error>>()?,
         ))
     }
 }

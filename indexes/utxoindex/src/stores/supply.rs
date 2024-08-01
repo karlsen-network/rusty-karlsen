@@ -27,7 +27,10 @@ pub struct DbCirculatingSupplyStore {
 
 impl DbCirculatingSupplyStore {
     pub fn new(db: Arc<DB>) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbItem::new(db, DatabaseStorePrefixes::CirculatingSupply.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbItem::new(db, DatabaseStorePrefixes::CirculatingSupply.into()),
+        }
     }
 }
 
@@ -43,15 +46,18 @@ impl CirculatingSupplyStore for DbCirculatingSupplyStore {
             return self.get();
         }
 
-        let circulating_supply = self.access.update(DirectDbWriter::new(&self.db), move |circulating_supply| {
-            circulating_supply + (to_add) //note: this only works because we force monotonic in `UtxoIndex::update`.
-        });
+        let circulating_supply =
+            self.access
+                .update(DirectDbWriter::new(&self.db), move |circulating_supply| {
+                    circulating_supply + (to_add) //note: this only works because we force monotonic in `UtxoIndex::update`.
+                });
 
         circulating_supply
     }
 
     fn insert(&mut self, circulating_supply: CirculatingSupply) -> StoreResult<()> {
-        self.access.write(DirectDbWriter::new(&self.db), &circulating_supply)
+        self.access
+            .write(DirectDbWriter::new(&self.db), &circulating_supply)
     }
 
     fn remove(&mut self) -> StoreResult<()> {

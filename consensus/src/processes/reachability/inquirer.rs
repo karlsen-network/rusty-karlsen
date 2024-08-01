@@ -10,7 +10,11 @@ pub fn init(store: &mut (impl ReachabilityStore + ?Sized)) -> Result<()> {
     init_with_params(store, blockhash::ORIGIN, Interval::maximal())
 }
 
-pub(super) fn init_with_params(store: &mut (impl ReachabilityStore + ?Sized), origin: Hash, capacity: Interval) -> Result<()> {
+pub(super) fn init_with_params(
+    store: &mut (impl ReachabilityStore + ?Sized),
+    origin: Hash,
+    capacity: Interval,
+) -> Result<()> {
     if store.has(origin)? {
         return Ok(());
     }
@@ -27,7 +31,14 @@ pub fn add_block(
     selected_parent: Hash,
     mergeset_iterator: HashIterator,
 ) -> Result<()> {
-    add_block_with_params(store, new_block, selected_parent, mergeset_iterator, None, None)
+    add_block_with_params(
+        store,
+        new_block,
+        selected_parent,
+        mergeset_iterator,
+        None,
+        None,
+    )
 }
 
 fn add_block_with_params(
@@ -49,7 +60,11 @@ fn add_block_with_params(
     Ok(())
 }
 
-fn add_dag_block(store: &mut (impl ReachabilityStore + ?Sized), new_block: Hash, mergeset_iterator: HashIterator) -> Result<()> {
+fn add_dag_block(
+    store: &mut (impl ReachabilityStore + ?Sized),
+    new_block: Hash,
+    mergeset_iterator: HashIterator,
+) -> Result<()> {
     // Update the future covering set for blocks in the mergeset
     for merged_block in mergeset_iterator {
         insert_to_future_covering_set(store, merged_block, new_block)?;
@@ -61,7 +76,11 @@ fn add_dag_block(store: &mut (impl ReachabilityStore + ?Sized), new_block: Hash,
 /// keeping full reachability info for all other blocks. That is, for any other
 /// B, C ∈ G, DAG/chain queries are guaranteed to return the same results as
 /// before the deletion.
-pub fn delete_block(store: &mut (impl ReachabilityStore + ?Sized), block: Hash, mergeset_iterator: HashIterator) -> Result<()> {
+pub fn delete_block(
+    store: &mut (impl ReachabilityStore + ?Sized),
+    block: Hash,
+    mergeset_iterator: HashIterator,
+) -> Result<()> {
     let interval = store.get_interval(block)?;
     let parent = store.get_parent(block)?;
     let children = store.get_children(block)?;
@@ -75,13 +94,14 @@ pub fn delete_block(store: &mut (impl ReachabilityStore + ?Sized), block: Hash, 
         6. Delete block
     */
 
-    let block_index = match binary_search_descendant(store, store.get_children(parent)?.as_slice(), block)? {
-        SearchOutput::NotFound(_) => return Err(ReachabilityError::DataInconsistency),
-        SearchOutput::Found(hash, i) => {
-            debug_assert_eq!(hash, block);
-            i
-        }
-    };
+    let block_index =
+        match binary_search_descendant(store, store.get_children(parent)?.as_slice(), block)? {
+            SearchOutput::NotFound(_) => return Err(ReachabilityError::DataInconsistency),
+            SearchOutput::Found(hash, i) => {
+                debug_assert_eq!(hash, block);
+                i
+            }
+        };
 
     store.replace_child(parent, block, block_index, &children)?;
 
@@ -90,7 +110,11 @@ pub fn delete_block(store: &mut (impl ReachabilityStore + ?Sized), block: Hash, 
     }
 
     for merged_block in mergeset_iterator {
-        match binary_search_descendant(store, store.get_future_covering_set(merged_block)?.as_slice(), block)? {
+        match binary_search_descendant(
+            store,
+            store.get_future_covering_set(merged_block)?.as_slice(),
+            block,
+        )? {
             SearchOutput::NotFound(_) => return Err(ReachabilityError::DataInconsistency),
             SearchOutput::Found(hash, i) => {
                 debug_assert_eq!(hash, block);
@@ -116,7 +140,10 @@ pub fn delete_block(store: &mut (impl ReachabilityStore + ?Sized), block: Hash, 
             // Split the extra capacity between the first and last children
             let first_child = children[0];
             let first_interval = store.get_interval(first_child)?;
-            store.set_interval(first_child, Interval::new(interval.start, first_interval.end))?;
+            store.set_interval(
+                first_child,
+                Interval::new(interval.start, first_interval.end),
+            )?;
 
             let last_child = children.last().copied().expect("len > 1");
             let last_interval = store.get_interval(last_child)?;
@@ -129,8 +156,16 @@ pub fn delete_block(store: &mut (impl ReachabilityStore + ?Sized), block: Hash, 
     Ok(())
 }
 
-fn insert_to_future_covering_set(store: &mut (impl ReachabilityStore + ?Sized), merged_block: Hash, new_block: Hash) -> Result<()> {
-    match binary_search_descendant(store, store.get_future_covering_set(merged_block)?.as_slice(), new_block)? {
+fn insert_to_future_covering_set(
+    store: &mut (impl ReachabilityStore + ?Sized),
+    merged_block: Hash,
+    new_block: Hash,
+) -> Result<()> {
+    match binary_search_descendant(
+        store,
+        store.get_future_covering_set(merged_block)?.as_slice(),
+        new_block,
+    )? {
         // We expect the query to not succeed, and to only return the correct insertion index.
         // The existences of a `future covering item` (`FCI`) which is a chain ancestor of `new_block`
         // contradicts `merged_block ∈ mergeset(new_block)`. Similarly, the existence of an FCI
@@ -147,7 +182,10 @@ fn insert_to_future_covering_set(store: &mut (impl ReachabilityStore + ?Sized), 
 /// the `virtual selected parent` (`sink`). This might affect internal reachability heuristics such
 /// as moving the reindex point. The consensus runtime is expected to call this function
 /// for a new header selected tip which is `header only` / `pending UTXO verification`, or for a completely resolved `sink`.
-pub fn hint_virtual_selected_parent(store: &mut (impl ReachabilityStore + ?Sized), hint: Hash) -> Result<()> {
+pub fn hint_virtual_selected_parent(
+    store: &mut (impl ReachabilityStore + ?Sized),
+    hint: Hash,
+) -> Result<()> {
     try_advancing_reindex_root(
         store,
         hint,
@@ -158,34 +196,58 @@ pub fn hint_virtual_selected_parent(store: &mut (impl ReachabilityStore + ?Sized
 
 /// Checks if the `this` block is a strict chain ancestor of the `queried` block (aka `this ∈ chain(queried)`).
 /// Note that this results in `false` if `this == queried`
-pub fn is_strict_chain_ancestor_of(store: &(impl ReachabilityStoreReader + ?Sized), this: Hash, queried: Hash) -> Result<bool> {
-    Ok(store.get_interval(this)?.strictly_contains(store.get_interval(queried)?))
+pub fn is_strict_chain_ancestor_of(
+    store: &(impl ReachabilityStoreReader + ?Sized),
+    this: Hash,
+    queried: Hash,
+) -> Result<bool> {
+    Ok(store
+        .get_interval(this)?
+        .strictly_contains(store.get_interval(queried)?))
 }
 
 /// Checks if `this` block is a chain ancestor of `queried` block (aka `this ∈ chain(queried) ∪ {queried}`).
 /// Note that we use the graph theory convention here which defines that a block is also an ancestor of itself.
-pub fn is_chain_ancestor_of(store: &(impl ReachabilityStoreReader + ?Sized), this: Hash, queried: Hash) -> Result<bool> {
-    Ok(store.get_interval(this)?.contains(store.get_interval(queried)?))
+pub fn is_chain_ancestor_of(
+    store: &(impl ReachabilityStoreReader + ?Sized),
+    this: Hash,
+    queried: Hash,
+) -> Result<bool> {
+    Ok(store
+        .get_interval(this)?
+        .contains(store.get_interval(queried)?))
 }
 
 /// Returns true if `this` is a DAG ancestor of `queried` (aka `queried ∈ future(this) ∪ {this}`).
 /// Note: this method will return true if `this == queried`.
 /// The complexity of this method is O(log(|future_covering_set(this)|))
-pub fn is_dag_ancestor_of(store: &(impl ReachabilityStoreReader + ?Sized), this: Hash, queried: Hash) -> Result<bool> {
+pub fn is_dag_ancestor_of(
+    store: &(impl ReachabilityStoreReader + ?Sized),
+    this: Hash,
+    queried: Hash,
+) -> Result<bool> {
     // First, check if `this` is a chain ancestor of queried
     if is_chain_ancestor_of(store, this, queried)? {
         return Ok(true);
     }
     // Otherwise, use previously registered future blocks to complete the
     // DAG reachability test
-    match binary_search_descendant(store, store.get_future_covering_set(this)?.as_slice(), queried)? {
+    match binary_search_descendant(
+        store,
+        store.get_future_covering_set(this)?.as_slice(),
+        queried,
+    )? {
         SearchOutput::Found(_, _) => Ok(true),
         SearchOutput::NotFound(_) => Ok(false),
     }
 }
 
 /// Finds the child of `ancestor` which is also a chain ancestor of `descendant`.
-pub fn get_next_chain_ancestor(store: &(impl ReachabilityStoreReader + ?Sized), descendant: Hash, ancestor: Hash) -> Result<Hash> {
+pub fn get_next_chain_ancestor(
+    store: &(impl ReachabilityStoreReader + ?Sized),
+    descendant: Hash,
+    ancestor: Hash,
+) -> Result<Hash> {
     if descendant == ancestor {
         // The next ancestor does not exist
         return Err(ReachabilityError::BadQuery);
@@ -249,8 +311,15 @@ fn binary_search_descendant(
 }
 
 fn assert_hashes_ordered(store: &(impl ReachabilityStoreReader + ?Sized), ordered_hashes: &[Hash]) {
-    let intervals: Vec<Interval> = ordered_hashes.iter().cloned().map(|c| store.get_interval(c).unwrap()).collect();
-    debug_assert!(intervals.as_slice().windows(2).all(|w| w[0].end < w[1].start))
+    let intervals: Vec<Interval> = ordered_hashes
+        .iter()
+        .cloned()
+        .map(|c| store.get_interval(c).unwrap())
+        .collect();
+    debug_assert!(intervals
+        .as_slice()
+        .windows(2)
+        .all(|w| w[0].end < w[1].start))
 }
 
 #[cfg(test)]
@@ -260,8 +329,12 @@ mod tests {
     use crate::{
         model::stores::{
             children::ChildrenStore,
-            reachability::{DbReachabilityStore, MemoryReachabilityStore, StagingReachabilityStore},
-            relations::{DbRelationsStore, MemoryRelationsStore, RelationsStore, StagingRelationsStore},
+            reachability::{
+                DbReachabilityStore, MemoryReachabilityStore, StagingReachabilityStore,
+            },
+            relations::{
+                DbRelationsStore, MemoryRelationsStore, RelationsStore, StagingRelationsStore,
+            },
         },
         processes::reachability::{interval::Interval, tests::gen::generate_complex_dag},
     };
@@ -334,7 +407,10 @@ mod tests {
     /// Runs a DAG test-case by adding all blocks and then removing them while verifying full
     /// reachability and relations state frequently between operations.
     /// Note: runtime is quadratic in the number of blocks so should be used with mildly small DAGs (~50)
-    fn run_dag_test_case<S: RelationsStore + ChildrenStore + ?Sized, V: ReachabilityStore + ?Sized>(
+    fn run_dag_test_case<
+        S: RelationsStore + ChildrenStore + ?Sized,
+        V: ReachabilityStore + ?Sized,
+    >(
         relations: &mut S,
         reachability: &mut V,
         test: &DagTestCase,
@@ -345,7 +421,10 @@ mod tests {
             builder.init();
             builder.add_block(DagBlock::new(test.genesis.into(), vec![ORIGIN]));
             for (block, parents) in test.blocks.iter() {
-                builder.add_block(DagBlock::new((*block).into(), parents.iter().map(|&i| i.into()).collect()));
+                builder.add_block(DagBlock::new(
+                    (*block).into(),
+                    parents.iter().map(|&i| i.into()).collect(),
+                ));
             }
         }
 
@@ -374,12 +453,23 @@ mod tests {
         let chain_closure_ref = build_chain_closure(reachability, &hashes);
         let dag_closure_ref = build_transitive_closure(relations, reachability, &hashes);
 
-        for block in test.ids().choose_multiple(&mut rand::thread_rng(), test.blocks.len()).into_iter().chain(once(test.genesis)) {
+        for block in test
+            .ids()
+            .choose_multiple(&mut rand::thread_rng(), test.blocks.len())
+            .into_iter()
+            .chain(once(test.genesis))
+        {
             DagBuilder::new(reachability, relations).delete_block(block.into());
             hashes_ref.remove(&block.into());
             reachability.validate_intervals(ORIGIN).unwrap();
             validate_relations(relations).unwrap();
-            validate_closures(relations, reachability, &chain_closure_ref, &dag_closure_ref, &hashes_ref);
+            validate_closures(
+                relations,
+                reachability,
+                &chain_closure_ref,
+                &dag_closure_ref,
+                &hashes_ref,
+            );
         }
     }
 
@@ -388,18 +478,27 @@ mod tests {
     fn run_dag_test_case_with_staging(test: &DagTestCase) {
         let (_lifetime, db) = create_temp_db!(ConnBuilder::default().with_files_limit(10));
         let cache_policy = CachePolicy::Count(test.blocks.len() / 3);
-        let reachability = RwLock::new(DbReachabilityStore::new(db.clone(), cache_policy, cache_policy));
-        let mut relations = DbRelationsStore::with_prefix(db.clone(), &[], CachePolicy::Empty, CachePolicy::Empty);
+        let reachability = RwLock::new(DbReachabilityStore::new(
+            db.clone(),
+            cache_policy,
+            cache_policy,
+        ));
+        let mut relations =
+            DbRelationsStore::with_prefix(db.clone(), &[], CachePolicy::Empty, CachePolicy::Empty);
 
         // Add blocks via a staging store
         {
-            let mut staging_reachability = StagingReachabilityStore::new(reachability.upgradable_read());
+            let mut staging_reachability =
+                StagingReachabilityStore::new(reachability.upgradable_read());
             let mut staging_relations = StagingRelationsStore::new(&mut relations);
             let mut builder = DagBuilder::new(&mut staging_reachability, &mut staging_relations);
             builder.init();
             builder.add_block(DagBlock::new(test.genesis.into(), vec![ORIGIN]));
             for (block, parents) in test.blocks.iter() {
-                builder.add_block(DagBlock::new((*block).into(), parents.iter().map(|&i| i.into()).collect()));
+                builder.add_block(DagBlock::new(
+                    (*block).into(),
+                    parents.iter().map(|&i| i.into()).collect(),
+                ));
             }
 
             // Commit the staging changes
@@ -437,22 +536,35 @@ mod tests {
         let hashes = hashes_ref.iter().copied().collect_vec();
         assert_eq!(test.blocks.len() + 1, hashes.len());
         let chain_closure_ref = build_chain_closure(reachability_read.deref(), &hashes);
-        let dag_closure_ref = build_transitive_closure(&relations, reachability_read.deref(), &hashes);
+        let dag_closure_ref =
+            build_transitive_closure(&relations, reachability_read.deref(), &hashes);
 
         drop(reachability_read);
 
         let mut batch = WriteBatch::default();
-        let mut staging_reachability = StagingReachabilityStore::new(reachability.upgradable_read());
+        let mut staging_reachability =
+            StagingReachabilityStore::new(reachability.upgradable_read());
         let mut staging_relations = StagingRelationsStore::new(&mut relations);
 
-        for (i, block) in
-            test.ids().choose_multiple(&mut rand::thread_rng(), test.blocks.len()).into_iter().chain(once(test.genesis)).enumerate()
+        for (i, block) in test
+            .ids()
+            .choose_multiple(&mut rand::thread_rng(), test.blocks.len())
+            .into_iter()
+            .chain(once(test.genesis))
+            .enumerate()
         {
-            DagBuilder::new(&mut staging_reachability, &mut staging_relations).delete_block(block.into());
+            DagBuilder::new(&mut staging_reachability, &mut staging_relations)
+                .delete_block(block.into());
             hashes_ref.remove(&block.into());
             staging_reachability.validate_intervals(ORIGIN).unwrap();
             validate_relations(&staging_relations).unwrap();
-            validate_closures(&staging_relations, &staging_reachability, &chain_closure_ref, &dag_closure_ref, &hashes_ref);
+            validate_closures(
+                &staging_relations,
+                &staging_reachability,
+                &chain_closure_ref,
+                &dag_closure_ref,
+                &hashes_ref,
+            );
 
             // Once in a while verify the underlying store
             if i % (test.blocks.len() / 3) == 0 || i == test.blocks.len() - 1 {
@@ -469,12 +581,19 @@ mod tests {
                     let reachability_read = reachability.read();
                     reachability_read.validate_intervals(ORIGIN).unwrap();
                     validate_relations(&relations).unwrap();
-                    validate_closures(&relations, reachability_read.deref(), &chain_closure_ref, &dag_closure_ref, &hashes_ref);
+                    validate_closures(
+                        &relations,
+                        reachability_read.deref(),
+                        &chain_closure_ref,
+                        &dag_closure_ref,
+                        &hashes_ref,
+                    );
                 }
 
                 // Recapture staging stores
                 batch = WriteBatch::default();
-                staging_reachability = StagingReachabilityStore::new(reachability.upgradable_read());
+                staging_reachability =
+                    StagingReachabilityStore::new(reachability.upgradable_read());
                 staging_relations = StagingRelationsStore::new(&mut relations);
             }
         }
@@ -497,8 +616,26 @@ mod tests {
                 (11, vec![1]),
                 (12, vec![11, 10]),
             ],
-            expected_past_relations: vec![(2, 4), (2, 5), (2, 7), (5, 10), (6, 10), (10, 12), (11, 12)],
-            expected_anticone_relations: vec![(2, 3), (2, 6), (3, 6), (5, 6), (3, 8), (11, 2), (11, 4), (11, 6), (11, 9)],
+            expected_past_relations: vec![
+                (2, 4),
+                (2, 5),
+                (2, 7),
+                (5, 10),
+                (6, 10),
+                (10, 12),
+                (11, 12),
+            ],
+            expected_anticone_relations: vec![
+                (2, 3),
+                (2, 6),
+                (3, 6),
+                (5, 6),
+                (3, 8),
+                (11, 2),
+                (11, 4),
+                (11, 6),
+                (11, 9),
+            ],
         };
 
         let generate_complex = |bps| {

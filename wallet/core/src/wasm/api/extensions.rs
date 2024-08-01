@@ -15,7 +15,11 @@ pub trait WalletApiObjectExtension {
 
 impl WalletApiObjectExtension for Object {
     fn get_secret(&self, key: &str) -> Result<Secret> {
-        let string = self.get_value(key)?.as_string().ok_or(Error::InvalidArgument(key.to_string())).map(|s| s.trim().to_string())?;
+        let string = self
+            .get_value(key)?
+            .as_string()
+            .ok_or(Error::InvalidArgument(key.to_string()))
+            .map(|s| s.trim().to_string())?;
         if string.is_empty() {
             Err(Error::SecretIsEmpty(key.to_string()))
         } else {
@@ -63,7 +67,10 @@ impl WalletApiObjectExtension for Object {
 
     fn try_get_account_id_list(&self, key: &str) -> Result<Option<Vec<AccountId>>> {
         if let Ok(array) = self.get_vec(key) {
-            let account_ids = array.into_iter().map(|js_value| AccountId::try_from(&js_value)).collect::<Result<Vec<AccountId>>>()?;
+            let account_ids = array
+                .into_iter()
+                .map(|js_value| AccountId::try_from(&js_value))
+                .collect::<Result<Vec<AccountId>>>()?;
             Ok(Some(account_ids))
         } else {
             Ok(None)

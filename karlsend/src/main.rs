@@ -18,7 +18,9 @@ static ALLOC: dhat::Alloc = dhat::Alloc;
 
 pub fn main() {
     #[cfg(feature = "heap")]
-    let _profiler = dhat::Profiler::builder().file_name("karlsend-heap.json").build();
+    let _profiler = dhat::Profiler::builder()
+        .file_name("karlsend-heap.json")
+        .build();
 
     init_allocator_with_default_settings();
 
@@ -39,7 +41,10 @@ pub fn main() {
         }
     }
 
-    let fd_total_budget = fd_budget::limit() - args.rpc_max_clients as i32 - args.inbound_limit as i32 - args.outbound_target as i32;
+    let fd_total_budget = fd_budget::limit()
+        - args.rpc_max_clients as i32
+        - args.inbound_limit as i32
+        - args.outbound_target as i32;
     let (core, _) = create_core(args, fd_total_budget);
 
     // Bind the keyboard signal to the core

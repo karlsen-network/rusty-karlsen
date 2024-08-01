@@ -5,7 +5,12 @@ use crate::imports::*;
 pub struct Sign;
 
 impl Sign {
-    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, _argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        _argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         let _ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         // TODO - ctx.wallet().account()?.sign().await?;
 

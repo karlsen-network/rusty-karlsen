@@ -54,7 +54,11 @@ impl UtxoCollectionExtensions for UtxoCollection {
 
     fn intersects(&self, other: &Self) -> bool {
         // We prefer iterating over the smaller set
-        let (keys, other) = if self.len() <= other.len() { (self.keys(), other) } else { (other.keys(), self) };
+        let (keys, other) = if self.len() <= other.len() {
+            (self.keys(), other)
+        } else {
+            (other.keys(), self)
+        };
 
         for k in keys {
             if other.contains_key(k) {
@@ -124,7 +128,11 @@ pub(super) fn intersection_with_remainder_having_daa_score_in_place(
 /// `result    = result ∪ (this ∖ other)`
 ///
 /// where the set operators demand equality also on the DAA score dimension
-pub(super) fn subtraction_having_daa_score_in_place(this: &UtxoCollection, other: &UtxoCollection, result: &mut UtxoCollection) {
+pub(super) fn subtraction_having_daa_score_in_place(
+    this: &UtxoCollection,
+    other: &UtxoCollection,
+    result: &mut UtxoCollection,
+) {
     for (outpoint, entry) in this.iter() {
         if !other.contains_with_daa_score(outpoint, entry.block_daa_score) {
             result.insert(*outpoint, entry.clone());

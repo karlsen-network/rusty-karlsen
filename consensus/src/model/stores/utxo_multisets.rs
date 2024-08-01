@@ -28,22 +28,45 @@ pub struct DbUtxoMultisetsStore {
 
 impl DbUtxoMultisetsStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::UtxoMultisets.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbAccess::new(
+                db,
+                cache_policy,
+                DatabaseStorePrefixes::UtxoMultisets.into(),
+            ),
+        }
     }
 
     pub fn clone_with_new_cache(&self, cache_policy: CachePolicy) -> Self {
         Self::new(Arc::clone(&self.db), cache_policy)
     }
 
-    pub fn insert_batch(&self, batch: &mut WriteBatch, hash: Hash, multiset: MuHash) -> Result<(), StoreError> {
+    pub fn insert_batch(
+        &self,
+        batch: &mut WriteBatch,
+        hash: Hash,
+        multiset: MuHash,
+    ) -> Result<(), StoreError> {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
         self.set_batch(batch, hash, multiset)
     }
 
-    pub fn set_batch(&self, batch: &mut WriteBatch, hash: Hash, multiset: MuHash) -> Result<(), StoreError> {
-        self.access.write(BatchDbWriter::new(batch), hash, multiset.try_into().expect("multiset is expected to be finalized"))?;
+    pub fn set_batch(
+        &self,
+        batch: &mut WriteBatch,
+        hash: Hash,
+        multiset: MuHash,
+    ) -> Result<(), StoreError> {
+        self.access.write(
+            BatchDbWriter::new(batch),
+            hash,
+            multiset
+                .try_into()
+                .expect("multiset is expected to be finalized"),
+        )?;
         Ok(())
     }
 
@@ -63,7 +86,13 @@ impl UtxoMultisetsStore for DbUtxoMultisetsStore {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access.write(DirectDbWriter::new(&self.db), hash, multiset.try_into().expect("multiset is expected to be finalized"))?;
+        self.access.write(
+            DirectDbWriter::new(&self.db),
+            hash,
+            multiset
+                .try_into()
+                .expect("multiset is expected to be finalized"),
+        )?;
         Ok(())
     }
 

@@ -44,7 +44,11 @@ impl From<&PrvKeyData> for PrvKeyDataInfo {
 
 impl PrvKeyDataInfo {
     pub fn new(id: PrvKeyDataId, name: Option<String>, is_encrypted: bool) -> Self {
-        Self { id, name, is_encrypted }
+        Self {
+            id,
+            name,
+            is_encrypted,
+        }
     }
 
     pub fn is_encrypted(&self) -> bool {

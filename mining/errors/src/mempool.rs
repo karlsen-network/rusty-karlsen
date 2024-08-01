@@ -86,7 +86,9 @@ impl From<NonStandardError> for RuleError {
 impl From<TxRuleError> for RuleError {
     fn from(item: TxRuleError) -> Self {
         match item {
-            TxRuleError::ImmatureCoinbaseSpend(_, _, _, _, _) => RuleError::RejectImmatureSpend(item),
+            TxRuleError::ImmatureCoinbaseSpend(_, _, _, _, _) => {
+                RuleError::RejectImmatureSpend(item)
+            }
             TxRuleError::MissingTxOutpoints => RuleError::RejectMissingOutpoint,
             _ => RuleError::RejectTxRule(item),
         }

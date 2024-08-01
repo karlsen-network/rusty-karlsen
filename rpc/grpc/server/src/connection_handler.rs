@@ -57,8 +57,14 @@ pub struct ServerContext {
 }
 
 impl ServerContext {
-    pub fn new(core_service: DynRpcService, notifier: Arc<Notifier<Notification, Connection>>) -> Self {
-        Self { core_service, notifier }
+    pub fn new(
+        core_service: DynRpcService,
+        notifier: Arc<Notifier<Notification, Connection>>,
+    ) -> Self {
+        Self {
+            core_service,
+            notifier,
+        }
     }
 }
 
@@ -103,8 +109,17 @@ impl ConnectionHandler {
         // Prepare internals
         let core_events = EVENT_TYPE_ARRAY[..].into();
         let converter = Arc::new(GrpcServiceConverter::new());
-        let collector = Arc::new(GrpcServiceCollector::new(GRPC_SERVER, core_channel.receiver(), converter));
-        let subscriber = Arc::new(Subscriber::new(GRPC_SERVER, core_events, core_notifier, core_listener_id));
+        let collector = Arc::new(GrpcServiceCollector::new(
+            GRPC_SERVER,
+            core_channel.receiver(),
+            converter,
+        ));
+        let subscriber = Arc::new(Subscriber::new(
+            GRPC_SERVER,
+            core_events,
+            core_notifier,
+            core_listener_id,
+        ));
         let notifier: Arc<Notifier<Notification, Connection>> = Arc::new(Notifier::new(
             GRPC_SERVER,
             core_events,
@@ -118,7 +133,13 @@ impl ConnectionHandler {
         let interface = Arc::new(Factory::new_interface(server_context.clone(), network_bps));
         let running = Default::default();
 
-        Self { manager_sender, server_context, interface, running, counters }
+        Self {
+            manager_sender,
+            server_context,
+            interface,
+            running,
+            counters,
+        }
     }
 
     /// Launches a gRPC server listener loop
@@ -145,7 +166,9 @@ impl ConnectionHandler {
                 // .http2_keepalive_interval(Some(GRPC_KEEP_ALIVE_PING_INTERVAL))
                 // .http2_keepalive_timeout(Some(GRPC_KEEP_ALIVE_PING_TIMEOUT))
                 .layer(measure_request_body_size_layer(bytes_rx, |b| b))
-                .layer(MapResponseBodyLayer::new(move |body| CountBytesBody::new(body, bytes_tx.clone())))
+                .layer(MapResponseBodyLayer::new(move |body| {
+                    CountBytesBody::new(body, bytes_tx.clone())
+                }))
                 .add_service(protowire_server)
                 .serve_with_shutdown(
                     serve_address.into(),
@@ -229,13 +252,18 @@ impl ConnectionHandler {
 
 impl Drop for ConnectionHandler {
     fn drop(&mut self) {
-        debug!("GRPC, Dropping connection handler, refs {}", Arc::strong_count(&self.running));
+        debug!(
+            "GRPC, Dropping connection handler, refs {}",
+            Arc::strong_count(&self.running)
+        );
     }
 }
 
 #[tonic::async_trait]
 impl Rpc for ConnectionHandler {
-    type MessageStreamStream = Pin<Box<dyn Stream<Item = Result<KarlsendResponse, tonic::Status>> + Send + Sync + 'static>>;
+    type MessageStreamStream = Pin<
+        Box<dyn Stream<Item = Result<KarlsendResponse, tonic::Status>> + Send + Sync + 'static>,
+    >;
 
     /// Handle the new arriving client connection
     async fn message_stream(
@@ -245,11 +273,17 @@ impl Rpc for ConnectionHandler {
         const SERVICE_IS_DOWN: &str = "The gRPC service is down";
 
         if !self.running.load(Ordering::SeqCst) {
-            return Err(tonic::Status::new(tonic::Code::Unavailable, SERVICE_IS_DOWN));
+            return Err(tonic::Status::new(
+                tonic::Code::Unavailable,
+                SERVICE_IS_DOWN,
+            ));
         }
 
         let remote_address = request.remote_addr().ok_or_else(|| {
-            tonic::Status::new(tonic::Code::InvalidArgument, "Incoming connection opening request has no remote address")
+            tonic::Status::new(
+                tonic::Code::InvalidArgument,
+                "Incoming connection opening request has no remote address",
+            )
         })?;
 
         debug!("GRPC, Incoming message stream from {:?}", remote_address);
@@ -270,11 +304,21 @@ impl Rpc for ConnectionHandler {
 
         // Try to get the connection registered into the central Manager
         let (register_sender, register_receiver) = oneshot_channel();
-        match self.manager_sender.send(ManagerEvent::NewConnection(RegistrationRequest::new(connection, register_sender))).await {
+        match self
+            .manager_sender
+            .send(ManagerEvent::NewConnection(RegistrationRequest::new(
+                connection,
+                register_sender,
+            )))
+            .await
+        {
             Ok(()) => match register_receiver.await {
                 Ok(Ok(())) => {}
                 Ok(Err(err)) => {
-                    warn!("GRPC, refusing incoming message stream from {:?} - {}", remote_address, err);
+                    warn!(
+                        "GRPC, refusing incoming message stream from {:?} - {}",
+                        remote_address, err
+                    );
                     return Err(tonic::Status::new(
                         tonic::Code::ResourceExhausted,
                         "The gRPC service has reached full capacity and accepts no new connection",
@@ -285,7 +329,10 @@ impl Rpc for ConnectionHandler {
                         "GRPC, Refusing incoming message stream from {:?} - connection manager responded with {}",
                         remote_address, err
                     );
-                    return Err(tonic::Status::new(tonic::Code::Unavailable, SERVICE_IS_DOWN));
+                    return Err(tonic::Status::new(
+                        tonic::Code::Unavailable,
+                        SERVICE_IS_DOWN,
+                    ));
                 }
             },
             Err(err) => {
@@ -293,11 +340,16 @@ impl Rpc for ConnectionHandler {
                     "GRPC, Refusing incoming message stream from {:?} - failed to contact connection manager, error {}",
                     remote_address, err
                 );
-                return Err(tonic::Status::new(tonic::Code::Unavailable, SERVICE_IS_DOWN));
+                return Err(tonic::Status::new(
+                    tonic::Code::Unavailable,
+                    SERVICE_IS_DOWN,
+                ));
             }
         }
 
         // Give tonic a receiver stream (messages sent to it will be forwarded to the client)
-        Ok(Response::new(Box::pin(ReceiverStream::new(outgoing_receiver).map(Ok)) as Self::MessageStreamStream))
+        Ok(Response::new(
+            Box::pin(ReceiverStream::new(outgoing_receiver).map(Ok)) as Self::MessageStreamStream,
+        ))
     }
 }

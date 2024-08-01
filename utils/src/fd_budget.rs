@@ -43,7 +43,12 @@ pub fn acquire_guard(value: i32) -> Result<FDGuard, Error> {
             return Err(Error { acquired, limit });
         }
         // todo ordering??
-        match ACQUIRED_FD.compare_exchange(acquired, acquired + value, Ordering::SeqCst, Ordering::SeqCst) {
+        match ACQUIRED_FD.compare_exchange(
+            acquired,
+            acquired + value,
+            Ordering::SeqCst,
+            Ordering::SeqCst,
+        ) {
             Ok(_) => return Ok(FDGuard(value)),
             Err(_) => continue, // The global counter was updated by another thread, retry
         }
@@ -93,7 +98,13 @@ mod tests {
         assert_eq!(ACQUIRED_FD.load(Ordering::Relaxed), 30);
 
         let err = acquire_guard(80).unwrap_err();
-        assert_eq!(err, Error { acquired: 30, limit: 100 });
+        assert_eq!(
+            err,
+            Error {
+                acquired: 30,
+                limit: 100
+            }
+        );
         assert_eq!(ACQUIRED_FD.load(Ordering::Relaxed), 30);
 
         drop(guard);
@@ -106,6 +117,12 @@ mod tests {
         assert_eq!(ACQUIRED_FD.load(Ordering::Relaxed), 0);
 
         let err = acquire_guard(101).unwrap_err();
-        assert_eq!(err, Error { acquired: 0, limit: 100 });
+        assert_eq!(
+            err,
+            Error {
+                acquired: 0,
+                limit: 100
+            }
+        );
     }
 }

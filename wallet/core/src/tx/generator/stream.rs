@@ -15,7 +15,9 @@ pub struct PendingTransactionStream {
 
 impl PendingTransactionStream {
     pub fn new(generator: &Generator) -> Self {
-        Self { generator: generator.clone() }
+        Self {
+            generator: generator.clone(),
+        }
     }
 }
 

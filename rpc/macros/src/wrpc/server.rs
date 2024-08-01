@@ -33,7 +33,13 @@ impl Parse for RpcTable {
         let rpc_api_ops = iter.next().unwrap().clone();
         let handlers = get_handlers(iter.next().unwrap().clone())?;
 
-        Ok(RpcTable { server_ctx, server_ctx_type, connection_ctx_type, rpc_api_ops, handlers })
+        Ok(RpcTable {
+            server_ctx,
+            server_ctx_type,
+            connection_ctx_type,
+            rpc_api_ops,
+            handlers,
+        })
     }
 }
 
@@ -46,7 +52,12 @@ impl ToTokens for RpcTable {
         let rpc_api_ops = &self.rpc_api_ops;
 
         for handler in self.handlers.elems.iter() {
-            let Handler { fn_call, request_type, response_type, .. } = Handler::new(handler);
+            let Handler {
+                fn_call,
+                request_type,
+                response_type,
+                ..
+            } = Handler::new(handler);
 
             targets.push(quote! {
                 #rpc_api_ops::#handler => {

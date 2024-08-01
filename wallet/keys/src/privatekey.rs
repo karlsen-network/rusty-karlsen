@@ -37,13 +37,17 @@ impl PrivateKey {
     /// Create a new [`PrivateKey`] from a hex-encoded string.
     #[wasm_bindgen(constructor)]
     pub fn try_new(key: &str) -> Result<PrivateKey> {
-        Ok(Self { inner: secp256k1::SecretKey::from_str(key)? })
+        Ok(Self {
+            inner: secp256k1::SecretKey::from_str(key)?,
+        })
     }
 }
 
 impl PrivateKey {
     pub fn try_from_slice(data: &[u8]) -> Result<PrivateKey> {
-        Ok(Self { inner: secp256k1::SecretKey::from_slice(data)? })
+        Ok(Self {
+            inner: secp256k1::SecretKey::from_slice(data)?,
+        })
     }
 }
 
@@ -64,7 +68,9 @@ impl PrivateKey {
 
     #[wasm_bindgen(js_name = toPublicKey)]
     pub fn to_public_key(&self) -> Result<PublicKey, JsError> {
-        Ok(PublicKey::from(secp256k1::PublicKey::from_secret_key_global(&self.inner)))
+        Ok(PublicKey::from(
+            secp256k1::PublicKey::from_secret_key_global(&self.inner),
+        ))
     }
 
     /// Get the [`Address`] of the PublicKey generated from this PrivateKey.

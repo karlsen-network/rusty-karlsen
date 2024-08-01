@@ -75,7 +75,9 @@ where
 
     pub fn into_encrypted(&self, secret: &Secret, encryption_kind: EncryptionKind) -> Result<Self> {
         match self {
-            Self::Plain(v) => Ok(Self::XChaCha20Poly1305(Decrypted::new(v.clone()).encrypt(secret, encryption_kind)?)),
+            Self::Plain(v) => Ok(Self::XChaCha20Poly1305(
+                Decrypted::new(v.clone()).encrypt(secret, encryption_kind)?,
+            )),
             Self::XChaCha20Poly1305(v) => Ok(Self::XChaCha20Poly1305(v.clone())),
         }
     }
@@ -148,7 +150,9 @@ where
     pub fn encrypt(&self, secret: &Secret, encryption_kind: EncryptionKind) -> Result<Encrypted> {
         let bytes = self.0.try_to_vec()?;
         let encrypted = match encryption_kind {
-            EncryptionKind::XChaCha20Poly1305 => encrypt_xchacha20poly1305(bytes.as_slice(), secret)?,
+            EncryptionKind::XChaCha20Poly1305 => {
+                encrypt_xchacha20poly1305(bytes.as_slice(), secret)?
+            }
         };
         Ok(Encrypted::new(encryption_kind, encrypted))
     }
@@ -173,13 +177,19 @@ impl Zeroize for Encrypted {
 
 impl std::fmt::Debug for Encrypted {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Encrypted").field("encryption_kind", &self.encryption_kind).field("payload", &self.payload.to_hex()).finish()
+        f.debug_struct("Encrypted")
+            .field("encryption_kind", &self.encryption_kind)
+            .field("payload", &self.payload.to_hex())
+            .finish()
     }
 }
 
 impl Encrypted {
     pub fn new(encryption_kind: EncryptionKind, payload: Vec<u8>) -> Self {
-        Encrypted { encryption_kind, payload }
+        Encrypted {
+            encryption_kind,
+            payload,
+        }
     }
 
     pub fn replace(&mut self, from: Encrypted) {
@@ -262,7 +272,10 @@ mod tests {
         let hash = argon2_sha256iv_hash(password, 32).unwrap();
         let hash_hex = hash.as_ref().to_hex();
         // println!("argon2hash: {:?}", hash_hex);
-        assert_eq!(hash_hex, "a79b661f0defd1960a4770889e19da0ce2fde1e98ca040f84ab9b2519ca46234");
+        assert_eq!(
+            hash_hex,
+            "a79b661f0defd1960a4770889e19da0ce2fde1e98ca040f84ab9b2519ca46234"
+        );
     }
 
     #[test]

@@ -17,7 +17,10 @@ impl Default for Core {
 
 impl Core {
     pub fn new() -> Core {
-        Core { keep_running: AtomicBool::new(true), services: Mutex::new(Vec::new()) }
+        Core {
+            keep_running: AtomicBool::new(true),
+            services: Mutex::new(Vec::new()),
+        }
     }
 
     pub fn bind<T>(&self, service: Arc<T>)
@@ -28,7 +31,12 @@ impl Core {
     }
 
     pub fn find(&self, ident: &'static str) -> Option<Arc<dyn Service>> {
-        self.services.lock().unwrap().iter().find(|s| (*s).clone().ident() == ident).cloned()
+        self.services
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|s| (*s).clone().ident() == ident)
+            .cloned()
     }
 
     /// Starts all services and blocks waiting to join them. For performing other operations in between
@@ -67,7 +75,11 @@ impl Core {
 
 impl Shutdown for Core {
     fn shutdown(self: &Arc<Core>) {
-        if self.keep_running.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst).is_err() {
+        if self
+            .keep_running
+            .compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
             return;
         }
 
