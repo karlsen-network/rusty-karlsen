@@ -589,6 +589,17 @@ impl FlowContext {
         consensus: &ConsensusProxy,
         block: Block,
     ) -> Result<(), ProtocolError> {
+        //TODO : switch to debug level
+        info!("NEW BLOCK ADDED ***************************************");
+        info!(
+            "BlueWork[{}] BlueScore[{}] DAAScore[{}] Bits[{}] Version[{}]",
+            block.header.blue_work,
+            block.header.blue_score,
+            block.header.daa_score,
+            block.header.bits,
+            block.header.version
+        );
+
         if block.transactions.is_empty() {
             return Err(RuleError::NoTransactions)?;
         }

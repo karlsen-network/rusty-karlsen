@@ -6,6 +6,7 @@ use crate::{
         },
         storage::ConsensusStorage,
     },
+    //constants::BLOCK_VERSION,
     constants::BLOCK_VERSION_KHASHV1,
     constants::BLOCK_VERSION_KHASHV2,
     errors::RuleError,
@@ -1223,6 +1224,13 @@ impl VirtualStateProcessor {
         } else {
             BLOCK_VERSION_KHASHV1
         };
+        // todo: check bits to lower difficulty
+        let mut bits = virtual_state.bits;
+        if virtual_state.daa_score <= (self.hf_daa_score + 10)
+            && virtual_state.daa_score >= self.hf_daa_score
+        {
+            bits = self.genesis.bits;
+        }
         let parents_by_level = self
             .parents_manager
             .calc_block_parents(pruning_info.pruning_point, &virtual_state.parents);
@@ -1245,7 +1253,7 @@ impl VirtualStateProcessor {
             accepted_id_merkle_root,
             utxo_commitment,
             u64::max(min_block_time, unix_now()),
-            virtual_state.bits,
+            bits,
             0,
             virtual_state.daa_score,
             virtual_state.ghostdag_data.blue_work,
