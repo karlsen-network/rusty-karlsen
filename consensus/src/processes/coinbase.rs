@@ -73,7 +73,7 @@ impl CoinbaseManager {
 
         // Precomputed subsidy by month table for the actual block per second rate
         // Here values are rounded up so that we keep the same number of rewarding months as in the original 1 BPS table.
-        // In a 10 BPS network, the induced increase in total rewards is 51 KAS (see tests::calc_high_bps_total_rewards_delta())
+        // In a 10 BPS network, the induced increase in total rewards is 51 KLS (see tests::calc_high_bps_total_rewards_delta())
         let subsidy_by_month_table: SubsidyByMonthTable =
             core::array::from_fn(|i| (SUBSIDY_BY_MONTH_TABLE[i] + bps - 1) / bps);
         Self {
@@ -410,17 +410,17 @@ mod tests {
         let delta = total_high_bps_rewards as i64 - total_rewards as i64;
 
         println!(
-            "Total rewards: {} sompi => {} KAS",
+            "Total rewards: {} sompi => {} KLS",
             total_rewards,
             total_rewards / SOMPI_PER_KARLSEN
         );
         println!(
-            "Total high bps rewards: {} sompi => {} KAS",
+            "Total high bps rewards: {} sompi => {} KLS",
             total_high_bps_rewards,
             total_high_bps_rewards / SOMPI_PER_KARLSEN
         );
         println!(
-            "Delta: {} sompi => {} KAS",
+            "Delta: {} sompi => {} KLS",
             delta,
             delta / SOMPI_PER_KARLSEN as i64
         );

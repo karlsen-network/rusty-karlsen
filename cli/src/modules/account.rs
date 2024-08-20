@@ -139,7 +139,7 @@ impl Account {
                                         if let Some(txid) = txid {
                                             tprintln!(
                                                 ctx_,
-                                                "Scan detected {} KAS at index {}; transfer txid: {}",
+                                                "Scan detected {} KLS at index {}; transfer txid: {}",
                                                 sompi_to_karlsen_string(balance),
                                                 processed,
                                                 txid
@@ -147,7 +147,7 @@ impl Account {
                                         } else if processed > 0 {
                                             tprintln!(
                                                 ctx_,
-                                                "Scanned {} derivations, found {} KAS",
+                                                "Scanned {} derivations, found {} KLS",
                                                 processed,
                                                 sompi_to_karlsen_string(balance)
                                             );
@@ -296,7 +296,7 @@ impl Account {
                     if let Some(txid) = txid {
                         tprintln!(
                             ctx_,
-                            "Scan detected {} KAS at index {}; transfer txid: {}",
+                            "Scan detected {} KLS at index {}; transfer txid: {}",
                             sompi_to_karlsen_string(balance),
                             processed,
                             txid
@@ -304,7 +304,7 @@ impl Account {
                     } else {
                         tprintln!(
                             ctx_,
-                            "Scanned {} derivations, found {} KAS",
+                            "Scanned {} derivations, found {} KLS",
                             processed,
                             sompi_to_karlsen_string(balance)
                         );

@@ -61,9 +61,9 @@ pub fn karlsen_suffix(network_type: &NetworkType) -> &'static str {
 
 #[inline]
 pub fn sompi_to_karlsen_string_with_suffix(sompi: u64, network_type: &NetworkType) -> String {
-    let kas = sompi_to_karlsen_string(sompi);
+    let kls = sompi_to_karlsen_string(sompi);
     let suffix = karlsen_suffix(network_type);
-    format!("{kas} {suffix}")
+    format!("{kls} {suffix}")
 }
 
 #[inline]
@@ -71,9 +71,9 @@ pub fn sompi_to_karlsen_string_with_trailing_zeroes_and_suffix(
     sompi: u64,
     network_type: &NetworkType,
 ) -> String {
-    let kas = sompi_to_karlsen_string_with_trailing_zeroes(sompi);
+    let kls = sompi_to_karlsen_string_with_trailing_zeroes(sompi);
     let suffix = karlsen_suffix(network_type);
-    format!("{kas} {suffix}")
+    format!("{kls} {suffix}")
 }
 
 pub fn format_address_colors(address: &Address, range: Option<usize>) -> String {

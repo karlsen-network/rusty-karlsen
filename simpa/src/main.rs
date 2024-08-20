@@ -330,7 +330,7 @@ fn apply_args_to_consensus_params(args: &Args, params: &mut Params) {
     params.genesis.timestamp = 0;
     if args.testnet11 {
         info!(
-            "Using kaspa-testnet-11 configuration (GHOSTDAG K={}, DAA window size={}, Median time window size={})",
+            "Using karlsen-testnet-11 configuration (GHOSTDAG K={}, DAA window size={}, Median time window size={})",
             params.ghostdag_k,
             params.difficulty_window_size(0),
             params.past_median_time_window_size(0),
