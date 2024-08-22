@@ -521,7 +521,7 @@ async fn header_in_isolation_validation_test() {
             .virtual_state_task
             .await
         {
-            Err(RuleError::WrongBlockVersion(wrong_version, block_version)) => {
+            Err(RuleError::WrongBlockVersion(wrong_version, _wanted_block_version)) => {
                 assert_eq!(wrong_version, block_version)
             }
             res => {
