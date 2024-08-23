@@ -521,7 +521,7 @@ pub(crate) fn change_address(network_type: NetworkType) -> Address {
         )
         .unwrap(),
         NetworkType::Testnet => Address::try_from(
-            "karlsentest:qqz22l98sf8jun72rwh5rqe2tm8lhwtdxdmynrz4ypwak427qed5juktjt7ju",
+            "karlsentest:qqz22l98sf8jun72rwh5rqe2tm8lhwtdxdmynrz4ypwak427qed5jyaya6qh8",
         )
         .unwrap(),
         _ => unreachable!("network type not supported"),
@@ -531,11 +531,11 @@ pub(crate) fn change_address(network_type: NetworkType) -> Address {
 pub(crate) fn output_address(network_type: NetworkType) -> Address {
     match network_type {
         NetworkType::Mainnet => Address::try_from(
-            "karlsen:qrd9efkvg3pg34sgp6ztwyv3r569qlc43wa5w8nfs302532dzj47knu04aftm",
+            "karlsen:qrd9efkvg3pg34sgp6ztwyv3r569qlc43wa5w8nfs302532dzj47ketxznyts",
         )
         .unwrap(),
         NetworkType::Testnet => Address::try_from(
-            "karlsentest:qqrewmx4gpuekvk8grenkvj2hp7xt0c35rxgq383f6gy223c4ud5s58ptm6er",
+            "karlsentest:qqrewmx4gpuekvk8grenkvj2hp7xt0c35rxgq383f6gy223c4ud5svvwy2yuc",
         )
         .unwrap(),
         _ => unreachable!("network type not supported"),

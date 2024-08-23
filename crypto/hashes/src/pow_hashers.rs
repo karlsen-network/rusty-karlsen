@@ -577,7 +577,6 @@ mod keccak256 {
 
 #[cfg(test)]
 mod tests {
-    use std::ptr::null;
 
     use super::{KHeavyHash, PowHash};
     use crate::Hash;

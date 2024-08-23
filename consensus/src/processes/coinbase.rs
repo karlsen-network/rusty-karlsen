@@ -495,35 +495,47 @@ mod tests {
                     expected: deflationary_phase_initial_subsidy,
                 },
                 Test {
-                    name: "after one halving",
+                    name: "after 1 year",
                     daa_score: params.deflationary_phase_daa_score + blocks_per_halving,
-                    expected: deflationary_phase_initial_subsidy / 2,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4).trunc() as u64
+                        + params.bps() / 10,
                 },
                 Test {
-                    name: "after 2 halvings",
-                    daa_score: params.deflationary_phase_daa_score + 2 * blocks_per_halving,
-                    expected: deflationary_phase_initial_subsidy / 4,
+                    name: "after 2 years",
+                    daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 2,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(2)).trunc()
+                        as u64
+                        + params.bps() / 10,
                 },
                 Test {
-                    name: "after 5 halvings",
-                    daa_score: params.deflationary_phase_daa_score + 5 * blocks_per_halving,
-                    expected: deflationary_phase_initial_subsidy / 32,
+                    name: "after 5 years",
+                    daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 5,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(5)).trunc()
+                        as u64
+                        + params.bps() / 10,
                 },
                 Test {
-                    name: "after 32 halvings",
-                    daa_score: params.deflationary_phase_daa_score + 32 * blocks_per_halving,
-                    expected: ((DEFLATIONARY_PHASE_INITIAL_SUBSIDY / 2_u64.pow(32)) + cbm.bps()
-                        - 1)
-                        / cbm.bps(),
+                    name: "after 32 years",
+                    daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 32,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(32)).trunc()
+                        as u64
+                        + params.bps() / 10,
+                },
+                Test {
+                    name: "after 64 years",
+                    daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 64,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(64)).trunc()
+                        as u64
+                        + params.bps() / 10,
                 },
                 Test {
                     name: "just before subsidy depleted",
-                    daa_score: params.deflationary_phase_daa_score + 35 * blocks_per_halving,
+                    daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 65,
                     expected: 1,
                 },
                 Test {
                     name: "after subsidy depleted",
-                    daa_score: params.deflationary_phase_daa_score + 36 * blocks_per_halving,
+                    daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 66,
                     expected: 0,
                 },
             ];
