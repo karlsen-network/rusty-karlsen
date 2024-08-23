@@ -45,7 +45,9 @@ impl HeaderProcessor {
                 header.version,
                 constants::BLOCK_VERSION_KHASHV2,
             ));
-        } else if header.daa_score < hf_daa_score && header.version != constants::BLOCK_VERSION_KHASHV1 {
+        } else if header.daa_score < hf_daa_score
+            && header.version != constants::BLOCK_VERSION_KHASHV1
+        {
             return Err(RuleError::WrongBlockVersion(
                 header.version,
                 constants::BLOCK_VERSION_KHASHV1,
