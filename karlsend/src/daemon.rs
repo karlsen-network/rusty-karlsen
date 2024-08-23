@@ -415,7 +415,7 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
 
     let grpc_server_addr = args
         .rpclisten
-        .unwrap_or(ContextualNetAddress::loopback())
+        .unwrap_or(ContextualNetAddress::unspecified())
         .normalize(config.default_rpc_port());
 
     let core = Arc::new(Core::new());
