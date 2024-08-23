@@ -75,10 +75,10 @@ mod test {
 
         let file = SingleWalletFileV1{
             encrypted_mnemonic: EncryptedMnemonic {
-                cipher: hex!("2022041df1a5bdcc26445952c53f96518641118bf0f990a01747d631d4607e5b53af3c9f4c07d6e3b84bc766445191b13d1f1fdf7ac96eae9c8859a9add660ac15b938356f936fdf614640d89627d368c57b22cf62844b1e1bcf3feceecbc6bf655df9519d7e3cfede6fe19d87a49e5709211b0b95c8d68781c70c4722bd8e25361492ef38d5cca21664a7f0838e4a1e2994d30c6d4b81d1397169570375ce56608439ae00e84c1f6acdd805f0ee22d4ba7b354c7f7cd4b2d18ce4fd6b8af785f95ed2a69361f318bc").as_slice(),
-                salt: hex!("044f5b890e48af4a7dcd7e7766af9380").as_slice(),
+                cipher: hex!("5b43771961ee14528d89180ccab46b1a46b1aca990f37db438dfbc50f3ba9c5085d83bd054c65c4b4f39e0eb8e3589eed7e08ee96296913f02597adacbeaa8d2d0859ce81672289a6c863a6fc4c7785c23e7b1daf3d0c7a4e4f2d9cc0c407f19a7aff0eaff1db46ca4ff95efa3b51fc4c821afee787b410416d10f5d84e37d41b637f6caceb5665f590d981d4a82f6c274ee9a1472d2a7a8aa40abe56e397bfbc0d71f9525a1cad8b14d56826f9e62ed4e059eff68164fa2910212801718").as_slice(),
+                salt: hex!("fb5b17235cf9715e4767918eeeac5cbc").as_slice(),
             },
-            xpublic_key: "kpub2KUE88roSn5peP1rEZnbRuKYw1fEPbhqBoXVWW7mLfkrLvQBAjUqwx7m1ezeSfqfecv9RUYePuHf99iW51i31WjwWjnzKDCUcTucBSiBbJA",
+            xpublic_key: "kpub2JaMf1axRw1z6qUAdE1w4SqA6XD2FUfLmMhboWnq59S2SyfjzCgkhptpMVz1LeZhArB33NWinZaTwTprCC42moeUdHhsET3B6fFdExZMepb",
             ecdsa: false,
         };
         let import_secret = Secret::new(vec![]);
@@ -90,7 +90,7 @@ mod test {
         assert_eq!(
             acc.receive_address().unwrap(),
             Address::try_from(
-                "karlsen:qpuvlauc6a5syze9g70dnxzzvykhkuatsjrx87mxqccqh7kf9kcssdkp9ec7w"
+                "karlsen:qzgcs94t04fwkhxcedjqgrpmlavstkyz8mjh2n5e5xg9caqltjyns0kkhmazh"
             )
             .unwrap(), // taken from golang impl
         );
@@ -135,7 +135,7 @@ mod test {
                 },
             ],
             xpublic_keys: vec![
-                "kpub2J937qL9n85s7HrhYyYYdMkzq1kaMiAf9PAcJzRW3jV7NgntNfGGrNgut7ZxcVrJqH42BCT2WyjfnxJh3SBDjLhXHe3UC2RJUu5tcjsViuK",
+                "kpub2JENkWcT3bcTZjAviacFXMBhVhVHW3xCya1Ucc6Ztf1AAvqicejHNG19TJzVqf2bwRAvKiGQhtL8ens9S5aHoRpnyVWh2fMXL3x6XrXx2PE",
                 "kpub2Jtuqt6WJWZv3fQUnKhuEaCxbAyzLsFn3UEEaM4g7CXa2LZjQZH4o6tpj83tFaewMEyX56qrAF4Q64uqunVyBayuuRNwjru5DWchDEcq5vz",
                 "kpub2JZg9pofE54nqvkhFRRx18pAMhYDPL2CpYqBx2AkzvsEknCh8V4rtez9ZYeab3HCW1Xsm9f4d6J5dfJVg9NADWN7rtqNft21batcii1SjXy",
                 "kpub2HuRXjAmhs3KwQ9WpHVaiHRjBP37TQUiUGFQBTwp7cdbArCo5s2MT6415nd3ZYaELvNbZ4qTJjCGTavExv514tWftaGQzCK8gQz6BQJNySp",
@@ -154,7 +154,7 @@ mod test {
         assert_eq!(
             acc.receive_address().unwrap(),
             Address::try_from(
-                "karlsen:pqvgkyjeuxmd8k70egrrzpdz5rqj0acmr6y94mwsltxfp6nc50742295c3998"
+                "karlsen:pquyzxdc66ycj9ejkymsk6swjxdfs8kdst6232nt3wkktqzccvpvvjl5h2pxc"
             )
             .unwrap(), // taken from golang impl
         );

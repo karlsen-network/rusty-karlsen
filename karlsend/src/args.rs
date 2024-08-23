@@ -632,7 +632,7 @@ fn arg_match_many_unwrap_or<T: Clone + Send + Sync + 'static>(
                                             individual subsystems -- Use show to list available subsystems (default:
                                             info)
       --upnp                                Use UPnP to map our listening port outside of NAT
-      --minrelaytxfee=                      The minimum transaction fee in KAS/kB to be considered a non-zero fee.
+      --minrelaytxfee=                      The minimum transaction fee in KLS/kB to be considered a non-zero fee.
                                             (default: 1e-05)
       --maxorphantx=                        Max number of orphan transactions to keep in memory (default: 100)
       --blockmaxmass=                       Maximum transaction mass to be used when creating a block (default:

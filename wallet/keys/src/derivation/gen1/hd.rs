@@ -544,52 +544,52 @@ mod tests {
     // these addresses are not karlsen valid addresses (batch replaced)
     fn gen1_receive_addresses() -> Vec<&'static str> {
         vec![
-            "karlsen:qz7ulu4c25dh7fzec9zjyrmlhnkzrg4wmf89q7gzr3gfrsj3uz6xjellj43pf",
-            "karlsen:qzn3qjzf2nzyd3zj303nk4sgv0aae42v3ufutk5xsxckfels57dxjjed4qvlx",
-            "karlsen:qpakxqlesqywgkq7rg4wyhjd93kmw7trkl3gpa3vd5flyt59a43yyjp28qsku",
-            "karlsen:qz0skffpert8cav6h2c9nfndmhzzfhvkrjexclmwgjjwt0sutysnw6lp55ak0",
-            "karlsen:qrmzemw6sm67svltul0qsk3974ema4auhrja3k68f4sfhxe4mxjwx0cj353df",
-            "karlsen:qpe4apax5dquy600py9rprmukhq8fqyqv9qu072twkvgse0glhqa74ynxmvfr",
-            "karlsen:qrptdge6ykdq672xqjd4rv2cedwdcz030jngsr2xhaxrn5l8pfhc294x9c7x6",
-            "karlsen:qqnys5nyennjkvyl77vwneq5j2vmjss57zerd88ptzaeqhm998smxw28uth8l",
-            "karlsen:qztckuvk02885rdazvj9w079qujg5qpxcdnmsvxqx0q8z7l483prkszjqwwff",
-            "karlsen:qrp53krck4m0x6n0dxs7vzf5mg0x6we8e06xjpmu8xr8p4du6f89khqdzw6uw",
-            "karlsen:qr4l3mahqe0jeeu6c474q5tywz08mudhddgtdneeq46unv0qx0j77kdtr52uu",
-            "karlsen:qzatdsueklx7pkfzanh9u0pwr47sd3a25gfm8wypsevdejhhpj8ck3v74v54j",
-            "karlsen:qqk3g5l6ymdkjfmzezx4zrv9fhr5rh0d8tm07udkqxq79n6t60tzu3fa7lnqg",
-            "karlsen:qqasa6d590u6875hsese68fa9f8mnedzesn2udehp0s73ggt5cklw2ge393eq",
-            "karlsen:qpuzq5jc757uxue9fradme33jd6egxr9fdznd8qysqcc5xy8k7alqpjgpdgrn",
-            "karlsen:qqygznwmkl56vprrnvyvnta9qql43yv52m3qz2462vxskn32axl0xccnpsqx9",
-            "karlsen:qqk974yml6uuustenwu57hn8n7d202luvn4dum0txvzjgg60g2jzsknngheak",
-            "karlsen:qpxqat995cxnjla8nm0dwnneesqnk5enc6hqrua7jztels0eqjg8vsm032lww",
-            "karlsen:qpyzkjs2a6k8ljx2qt4pwscj6jccr6k7pmru9k7r2t25teajjuzaz7zkesu0e",
-            "karlsen:qzf5mxtvk8wgp8gr3dcj3dkzdu6w4dgpvp2f0gm9pepv9vazxrhy577fy87rt",
+            "karlsen:qzf4vvzvpj9j4frquf4tkd6cwetxx0w9qe2fy8dq26ff2fyhn2wvj46xff3nm",
+            "karlsen:qpn9uxfqpjjvm3ejnhz6l28gq3npqwqjfc5efga6r2czz928zae3646rjzf07",
+            "karlsen:qrycvrel0y8n5xsrekjtw40qxsfz9qvscxcw7huhv6vuluaje2gzuvq2nzk5m",
+            "karlsen:qzuac0fy5k5lg3d55s6q04w49ksaqgngt66cztdujtw77tatkmwngm6gn9l26",
+            "karlsen:qqskad0sxl205x2rfgp2ma6h4k0kllwjrvaytrc2wymr39ewfcgpkpzmsv7st",
+            "karlsen:qzart5rv9q3h3s4evcvdz2y3xg8gxa92hqez36y4rculdl4vtr5x2hekx2ynr",
+            "karlsen:qqu02lxjpsdfwcfmqw8amuw8unqyxurz2g385ujd6fzcud96xh49g9l2wzdh8",
+            "karlsen:qrv5mp9afw5h7qdet9mm0v2kxzfcyuxrv5wy6xadljajnfz4zwr37k9xukrvm",
+            "karlsen:qrjzdevtzg8mjmk60ymqlcfetyquvkpzs8cx8ler6ylnvdrlnew5ues8cy7x6",
+            "karlsen:qzc5h3eheh4wl9juj65t6xsvj4fnecushhjrexnrxe6n8c0pxh996f4gg0lsz",
+            "karlsen:qzg63c8fexda24x8a58xsvvnaw772u5hruggvshvutn4wl3lynptzuw6s8ud6",
+            "karlsen:qr3jv4fqnscj6hccy0g577mmv6eq3jra8fhve6hvqyzah6rs049wx2dzw0lx2",
+            "karlsen:qqvxwx448zz93cm0q5ynesrypfzjy82sp9ju7tsrz7pyk3wn9rlpjzlrytuca",
+            "karlsen:qqj0xm5qjn6u42tds24pq4mxqh27847qas25c9u6mfa0gravcj2f2pz2euujn",
+            "karlsen:qpp0umu0f6gqaa8j6xd57yj459m2c5g4upaztu5qwqp4qvc2ccpcgk9pu6d66",
+            "karlsen:qz3f95hw54nrj8pv4xzxve7leuxvjwtnvu5zj8c579z6f9uzjv6lucsyq6w4v",
+            "karlsen:qp8huvhxanvvd8er93g2epff9flhh6aemm82r3mfa8zla0n3xf05k8yf5yd52",
+            "karlsen:qrhrlxqnd72jcc6zekflx692qpjyf03zr9ufrp0kr5xqc6gpy273zzjwv83ux",
+            "karlsen:qzndcxx23c7w00u3msvhlf763ht7ex56waxjhqn5w7kdp9755y20ulfq60m85",
+            "karlsen:qqyfxkl2w724e0a9wz8xx2lwe0v2r2c8y784nn5kvrjd3dz3tx0mylpdm8xv3",
             "karlsen:qz44rhjkrddak9vf5z4swlmenxtfhmqc47d0lyf0j7ednyjln0u824ue33gvr",
         ]
     }
 
     fn gen1_change_addresses() -> Vec<&'static str> {
         vec![
-            "karlsen:qrqrnyzdwh9ec2q05guzy3vv33f86nvdyw52qwlmk0mewzx3dgdss3pmcd692",
-            "karlsen:qqx8jlz0hh0wun5ru4glt9za3v8wj3jn7v3w55a0lyud74ppetqfqny4yhw87",
-            "karlsen:qzpa69mrh2nj6xk6gq38vcnzu64necp0jwaxxyusr9xcy5udhu2m7uvql8rnd",
-            "karlsen:qqxddf76hr39dc7k7lpdzg065ajtvrhlm5p3edm4gyen0waneryss2c0la85t",
-            "karlsen:qps4qh9dtskwvf923yl9utl74r8sdm9h2wv3mftuxcfc2cshwswc6txj0k2kl",
-            "karlsen:qrds58d6nw9uz7z93ds4l6x9cgw3rquqzr69dtch6n4d8fxum8c65f7nqmhzx",
-            "karlsen:qrajjrpj0krqkww7rymwuwzcd36grjr6688ynvna649q26zukhcq6eqf4jmnx",
-            "karlsen:qrumkgz7hlsa748tnzvpztmf6wu9zsgqh6rppw4gzw2mvyq4ccj0y3ms9ju5l",
-            "karlsen:qz2g3cj3jcklk4w95djwnm9dffcwg75aqct2pefsxujrldgs08wac99rz70rc",
-            "karlsen:qznmzsvk0srfkur8l9pf55st0hnh3x8tmdyskjl9570w99lxsgs7cwrhxap2r",
-            "karlsen:qptamza95k7tchmukulldps4kl6wk853dnwa52t4azzm76h588qjufmnu3rn7",
-            "karlsen:qqt9h5cjqu9an68cn9k9jc2ywqmqu6kswjzeu09tqulswxkuccaxg6wz45f5r",
-            "karlsen:qphr6uy46ad3ca7rerzkx7kkzfzsvfe0xanh4u5mrh538cexs4yjkww0pa4dh",
-            "karlsen:qzv3qlh5q4fpy6eu5s4wj080l64del4lvg986z5uh0c3g7wf6n8pvsgm3c9e0",
-            "karlsen:qp2dd6y4szgyhcendh7ncxws0qvx8k3s92tg7lvy8eel5npg4pd2ks0ctx4hl",
-            "karlsen:qpkqvnkler4rwlpt720unepf3q8cayv0shx0vzydrae7a6u7ryy8zdvnmncyc",
-            "karlsen:qr4v33jupxv9h6juqads0znrnw6g7an2ajuzusthnjqujquz66rewtjekhz4l",
-            "karlsen:qz5pq2yzpz8ce5avrsa4uzzwrlr5a86rvs74afd6qdm3h649v08nk0qxhrl9n",
-            "karlsen:qrajmn035raezl6rcvd0wvnfmdnc0qzwr686ccsrn3z5x8aqnpt8qa0e954jk",
-            "karlsen:qrqg7r05nk7syxjh8rdz8wanzmyh8sdts9uexxnnwkq8fplrjammvcnrdggw0",
+            "karlsen:qp7yp6h0mm3qculcldu6wm5x4l27p68rvy5kdsc4xd423uyhr7wt6sf4vsjdq",
+            "karlsen:qp3gvvff294etymr3dyftvllre4drq7d824a7yhq58hqvkpskx3rcq7m3fswk",
+            "karlsen:qzw5t9wxz9le3mjejdhrlmtd0uuhn8m4ml4cm244lc9jhjs8vk3n2hnhk4khs",
+            "karlsen:qpht3rv8fdc6unjsduw9jfv4cf0xgd9npcrlg2pkayjrr23j4ljdkz2ny0ld6",
+            "karlsen:qz4q6stt5hm5gqh6fgr05j8jf0gm7yrzmhkhw04w7twv7sm539j96vc5lnqur",
+            "karlsen:qqjlrpxz5wq4j8amhrxesf9qgtn7kfwnjn33sz9d8e9fpjskqawzcuqdgdh6v",
+            "karlsen:qz32h7jwasm85yjjac5xcrsxvpwwyfjs459cx04sur2dqxsw5we5cwfn6aznz",
+            "karlsen:qze4wtaz88ve5hm2k0av80jcwrevh8ctuzhz9rnrasdpr0xucn4fsp5lqrd29",
+            "karlsen:qzc9lk6whnq3jd09dxfnva9art5d98qqywulam5r2w5lqkvdr4lhkqtxq3xz2",
+            "karlsen:qp65xkdn7clpj0vwwnp9jpa22mu549vqe4yyq3wertlzhnsnhl2f7ycuyfvvw",
+            "karlsen:qqghlnh2w4pvmrn38fdznnmyc6fyp2udctnl6u3tse8nmz2jk6th559xltvsp",
+            "karlsen:qpnac3sms4ev20xtllnm99yxc6xq7z75c6rhwsrkhzexkakft73yjle853n0e",
+            "karlsen:qrtg907zyk84vj20z3e2mtxea76npzjak4e9ee7sg87a7p6s20ev7v32k63l3",
+            "karlsen:qp94692m3kczqmq4kg9aauh9wlfskckmknjut6hkaezxuvv7dz0v6ue3m79rt",
+            "karlsen:qr2pc0vfjm5e6jpexjyvspdf0epj84a9nn906hgsyqgpn0lxnvm92twf28lmv",
+            "karlsen:qpfyd49luugxx0hdhclz4sf4r9jelk7r7lcu7nqzu4f353kcuvq6538f50y0m",
+            "karlsen:qzeyz98cz43vw5el4dlphdwhqckfxtx0239u42f4qtcv52cgy67hjaced2uv4",
+            "karlsen:qzrwzjs45me0ug72g7jc8hf4phjsvstaxa2ea0gja2ejqrg4w25d5xnuaxh3q",
+            "karlsen:qz0uujjwyqkj9mmez3732yvtksuerqwv8w0gwp65lenl68ts773cjruuw4tkx",
+            "karlsen:qz0wgh8erjjmckxwufwm96u0vmgs34f7axlgasvt2mm9rmxw8c6tkmqthfj0u",
         ]
     }
 
@@ -649,7 +649,7 @@ mod tests {
             .to_string();
         assert_eq!(
             xpub_str,
-            "kpub2HtoTgsG6e1c7ixJ6JY49otNSzhEKkwnH6bsPHLAXUdYnfEuYw9LnhT7uRzaS4LSeit2rzutV6z8Fs9usdEGKnNe6p1JxfP71mK8rbUfYWo",
+            "kpub2JM2C9Uh4skDYaLVRddpZBkECgWyRW9kKjgag8MK12X1LACkKR9pAzFzS5hVmWT1oEwxHZxY2AaGg5upMni3HZxoVoAaBQdfPv4UeniLbSx",
             "drived kpub not matched"
         );
 
@@ -678,7 +678,7 @@ mod tests {
             .to_string();
         assert_eq!(
             ktub_str,
-            "ktub23beJLczbxoS4emYHxm5H2rPnXJPGTwjNLAc8JyjHnSFLPMJBj5h3U8oWbn1x1jayZRov6uhvGd4zUGrWH6PkYZMWsykUsQWYqjbLnHrzUE",
+            "ktub22zXLBKpG25xeHA8v3ZV9AmhegMZ4SbSXTbMbZiipKSY3uiU914nMjoFPJgfqQ44Hp2XKdsDFKDBDSEhzFmYfnu4nJiot8SQbwY2MfQSEPQ",
             "drived ktub not matched"
         );
 
@@ -688,7 +688,7 @@ mod tests {
             .to_string();
         assert_eq!(
             address,
-            "karlsentest:qrc2959g0pqda53glnfd238cdnmk24zxzkj8n5x83rkktx4h73dkc4ave6wyg"
+            "karlsentest:qp5xfqdaewr6w0rxs5lrhkzxmjjflkytr9ry0ustmhz0nx46hr3lghvaf7qyt"
         )
     }
 
@@ -744,26 +744,26 @@ mod tests {
     #[tokio::test]
     async fn generate_karlsentest_addresses() {
         let receive_addresses = [
-            "karlsentest:qz7ulu4c25dh7fzec9zjyrmlhnkzrg4wmf89q7gzr3gfrsj3uz6xjceef60sd",
-            "karlsentest:qzn3qjzf2nzyd3zj303nk4sgv0aae42v3ufutk5xsxckfels57dxjnltw0jwz",
-            "karlsentest:qpakxqlesqywgkq7rg4wyhjd93kmw7trkl3gpa3vd5flyt59a43yyn8vu0w8c",
-            "karlsentest:qz0skffpert8cav6h2c9nfndmhzzfhvkrjexclmwgjjwt0sutysnwme80mr8t",
-            "karlsentest:qrmzemw6sm67svltul0qsk3974ema4auhrja3k68f4sfhxe4mxjwxw752m0ud",
-            "karlsentest:qpe4apax5dquy600py9rprmukhq8fqyqv9qu072twkvgse0glhqa75z4a5jc8",
-            "karlsentest:qrptdge6ykdq672xqjd4rv2cedwdcz030jngsr2xhaxrn5l8pfhc2ynq7hqh7",
-            "karlsentest:qqnys5nyennjkvyl77vwneq5j2vmjss57zerd88ptzaeqhm998smx0vp8yfkm",
-            "karlsentest:qztckuvk02885rdazvj9w079qujg5qpxcdnmsvxqx0q8z7l483prk3y5mpscd",
-            "karlsentest:qrp53krck4m0x6n0dxs7vzf5mg0x6we8e06xjpmu8xr8p4du6f89kkxtepyd2",
-            "karlsentest:qr4l3mahqe0jeeu6c474q5tywz08mudhddgtdneeq46unv0qx0j77htdcm5dc",
-            "karlsentest:qzatdsueklx7pkfzanh9u0pwr47sd3a25gfm8wypsevdejhhpj8cks2cwr2yk",
-            "karlsentest:qqk3g5l6ymdkjfmzezx4zrv9fhr5rh0d8tm07udkqxq79n6t60tzus0m9sd3v",
-            "karlsentest:qqasa6d590u6875hsese68fa9f8mnedzesn2udehp0s73ggt5cklwtwl220gy",
-            "karlsentest:qpuzq5jc757uxue9fradme33jd6egxr9fdznd8qysqcc5xy8k7alqq5w6zkjh",
-            "karlsentest:qqygznwmkl56vprrnvyvnta9qql43yv52m3qz2462vxskn32axl0xe746l7hp",
-            "karlsentest:qqk974yml6uuustenwu57hn8n7d202luvn4dum0txvzjgg60g2jzsh44nc8vj",
-            "karlsentest:qpxqat995cxnjla8nm0dwnneesqnk5enc6hqrua7jztels0eqjg8v3af29pl2",
-            "karlsentest:qpyzkjs2a6k8ljx2qt4pwscj6jccr6k7pmru9k7r2t25teajjuzazlyszlz7a",
-            "karlsentest:qzf5mxtvk8wgp8gr3dcj3dkzdu6w4dgpvp2f0gm9pepv9vazxrhy5lc0lgqj0",
+            "karlsentest:qzf4vvzvpj9j4frquf4tkd6cwetxx0w9qe2fy8dq26ff2fyhn2wvjxqx2eu80",
+            "karlsentest:qpn9uxfqpjjvm3ejnhz6l28gq3npqwqjfc5efga6r2czz928zae36xqr3jym2",
+            "karlsentest:qrycvrel0y8n5xsrekjtw40qxsfz9qvscxcw7huhv6vuluaje2gzul62sjmq0",
+            "karlsentest:qzuac0fy5k5lg3d55s6q04w49ksaqgngt66cztdujtw77tatkmwnggqgs4j7w",
+            "karlsentest:qqskad0sxl205x2rfgp2ma6h4k0kllwjrvaytrc2wymr39ewfcgpkjcmnunyl",
+            "karlsentest:qzart5rv9q3h3s4evcvdz2y3xg8gxa92hqez36y4rculdl4vtr5x2yrk96f8h",
+            "karlsentest:qqu02lxjpsdfwcfmqw8amuw8unqyxurz2g385ujd6fzcud96xh49gk92djqrn",
+            "karlsentest:qrv5mp9afw5h7qdet9mm0v2kxzfcyuxrv5wy6xadljajnfz4zwr379lxlxwc0",
+            "karlsentest:qrjzdevtzg8mjmk60ymqlcfetyquvkpzs8cx8ler6ylnvdrlnew5u228m5njw",
+            "karlsentest:qzc5h3eheh4wl9juj65t6xsvj4fnecushhjrexnrxe6n8c0pxh99660gtljyk",
+            "karlsentest:qzg63c8fexda24x8a58xsvvnaw772u5hruggvshvutn4wl3lynptz056nh3ew",
+            "karlsentest:qr3jv4fqnscj6hccy0g577mmv6eq3jra8fhve6hvqyzah6rs049wxehzdljj7",
+            "karlsentest:qqvxwx448zz93cm0q5ynesrypfzjy82sp9ju7tsrz7pyk3wn9rlpj39r8m3vf",
+            "karlsentest:qqj0xm5qjn6u42tds24pq4mxqh27847qas25c9u6mfa0gravcj2f2jc26v3x8",
+            "karlsentest:qpp0umu0f6gqaa8j6xd57yj459m2c5g4upaztu5qwqp4qvc2ccpcg9lpl2qww",
+            "karlsentest:qz3f95hw54nrj8pv4xzxve7leuxvjwtnvu5zj8c579z6f9uzjv6lut2yr2rpc",
+            "karlsentest:qp8huvhxanvvd8er93g2epff9flhh6aemm82r3mfa8zla0n3xf05k57fh5qq7",
+            "karlsentest:qrhrlxqnd72jcc6zekflx692qpjyf03zr9ufrp0kr5xqc6gpy273z3gw0hugj",
+            "karlsentest:qzndcxx23c7w00u3msvhlf763ht7ex56waxjhqn5w7kdp9755y20uvnqelknq",
+            "karlsentest:qqyfxkl2w724e0a9wz8xx2lwe0v2r2c8y784nn5kvrjd3dz3tx0myvmdchtc9",
         ];
 
         let master_xprv =

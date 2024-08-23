@@ -1,9 +1,5 @@
 [[resolver]]
-url = "https://beacon.kaspa-ng.org"
-enable = true
-
-[[resolver]]
-url = "https://beacon.kaspa-ng.io"
+url = "https://ping.karlsencoin.com"
 enable = true
 
 [[resolver]]

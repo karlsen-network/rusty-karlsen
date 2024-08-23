@@ -101,7 +101,7 @@ impl HashData for Hash512 {
     //Todo check if filled with 0
     fn from_hash(hash: &Hash) -> Self {
         let mut result = Self::new();
-        let (first_half, second_half) = result.0.split_at_mut(hash.0.len());
+        let (first_half, _) = result.0.split_at_mut(hash.0.len());
         first_half.copy_from_slice(&hash.0);
         result
     }
@@ -140,7 +140,7 @@ impl HashData for Hash1024 {
     //Todo check if filled with 0
     fn from_hash(hash: &Hash) -> Self {
         let mut result = Self::new();
-        let (first_half, second_half) = result.0.split_at_mut(hash.0.len());
+        let (first_half, _) = result.0.split_at_mut(hash.0.len());
         first_half.copy_from_slice(&hash.0);
         result
     }
@@ -164,7 +164,7 @@ impl Hash1024 {
         hash
     }
 
-    fn from_256s(first: &Hash256, second: &Hash256) -> Self {
+    /*fn from_256s(first: &Hash256, second: &Hash256) -> Self {
         //filled with 0 by default
         let mut hash = Self::new();
         let (first_half, second_half) = hash.0.split_at_mut(first.0.len() * 2);
@@ -172,7 +172,7 @@ impl Hash1024 {
         second_half.copy_from_slice(&second.0);
 
         hash
-    }
+    }*/
 }
 
 #[derive(Clone)]
@@ -200,7 +200,7 @@ lazy_static! {
 }
 
 impl Context {
-    pub fn new(full: bool) -> Self {
+    /*pub fn new(full: bool) -> Self {
         // Vec into boxed sliced, because you can't allocate an array directly on
         // the heap in rust
         // https://stackoverflow.com/questions/25805174/creating-a-fixed-size-array-on-heap-in-rust/68122278#68122278
@@ -209,7 +209,7 @@ impl Context {
             //light_cache : *LIGHT_CACHE ,
             //full_dataset,
         }
-    }
+    }*/
 
     fn build_light_cache(cache: &mut [Hash512]) {
         let mut item: Hash512 = Hash512::new();
@@ -277,9 +277,9 @@ impl PowFishHash {
             let mut fetch1 = PowFishHash::lookup(context, p1 as usize);
             let mut fetch2 = PowFishHash::lookup(context, p2 as usize);
             */
-            let fetch0 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, p0 as usize);
-            let mut fetch1 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, p1 as usize);
-            let mut fetch2 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, p2 as usize);
+            let fetch0 = PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, p0 as usize);
+            let mut fetch1 = PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, p1 as usize);
+            let mut fetch2 = PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, p2 as usize);
 
             // Modify fetch1 and fetch2
             for j in 0..32 {
@@ -350,9 +350,9 @@ impl PowFishHash {
             let mut fetch1 = PowFishHash::lookup(context, p1 as usize);
             let mut fetch2 = PowFishHash::lookup(context, p2 as usize);
             */
-            let fetch0 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, p0 as usize);
-            let mut fetch1 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, p1 as usize);
-            let mut fetch2 = PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, p2 as usize);
+            let fetch0 = PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, p0 as usize);
+            let mut fetch1 = PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, p1 as usize);
+            let mut fetch2 = PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, p2 as usize);
 
             // Modify fetch1 and fetch2
             for j in 0..32 {
@@ -451,9 +451,9 @@ impl PowFishHash {
         PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, index)
     }*/
 
-    fn lookup(context: &mut Context, index: usize) -> Hash1024 {
+    /*fn lookup(context: &mut Context, index: usize) -> Hash1024 {
         //PowFishHash::calculate_dataset_item_1024(&context.light_cache, index);
-        PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, index)
+        PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, index)
         /*
         match &mut context.full_dataset {
             Some(dataset) => {
@@ -467,7 +467,7 @@ impl PowFishHash {
             None => PowFishHash::calculate_dataset_item_1024(&context.light_cache, index),
         }
         */
-    }
+    }*/
 }
 
 impl PowB3Hash {
@@ -577,7 +577,6 @@ mod keccak256 {
 
 #[cfg(test)]
 mod tests {
-    use std::ptr::null;
 
     use super::{KHeavyHash, PowHash};
     use crate::Hash;
@@ -589,8 +588,6 @@ mod tests {
 
     #[test]
     fn test_pow_hash() {
-        let pre_pow_hash = Hash([42; 32]);
-
         let timestamp: u64 = 5435345234;
         let nonce: u64 = 432432432;
         let pre_pow_hash = Hash([42; 32]);

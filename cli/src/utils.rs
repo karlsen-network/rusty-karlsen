@@ -9,7 +9,7 @@ pub fn try_parse_required_nonzero_karlsen_as_sompi_u64<S: ToString + Display>(
     if let Some(karlsen_amount) = karlsen_amount {
         let sompi_amount = karlsen_amount.to_string().parse::<f64>().map_err(|_| {
             Error::custom(format!(
-                "Supplied Kasapa amount is not valid: '{karlsen_amount}'"
+                "Supplied Karlsen amount is not valid: '{karlsen_amount}'"
             ))
         })? * SOMPI_PER_KARLSEN as f64;
         if sompi_amount < 0.0 {
@@ -37,7 +37,7 @@ pub fn try_parse_required_karlsen_as_sompi_u64<S: ToString + Display>(
     if let Some(karlsen_amount) = karlsen_amount {
         let sompi_amount = karlsen_amount.to_string().parse::<f64>().map_err(|_| {
             Error::custom(format!(
-                "Supplied Kasapa amount is not valid: '{karlsen_amount}'"
+                "Supplied Karlsen amount is not valid: '{karlsen_amount}'"
             ))
         })? * SOMPI_PER_KARLSEN as f64;
         if sompi_amount < 0.0 {
@@ -58,7 +58,7 @@ pub fn try_parse_optional_karlsen_as_sompi_i64<S: ToString + Display>(
     if let Some(karlsen_amount) = karlsen_amount {
         let sompi_amount = karlsen_amount.to_string().parse::<f64>().map_err(|_e| {
             Error::custom(format!(
-                "Supplied Kasapa amount is not valid: '{karlsen_amount}'"
+                "Supplied Karlsen amount is not valid: '{karlsen_amount}'"
             ))
         })? * SOMPI_PER_KARLSEN as f64;
         if sompi_amount < 0.0 {
