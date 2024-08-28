@@ -356,8 +356,7 @@ pub const MAINNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 225,
     pruning_proof_m: 1000,
-    // todo: define the fork date DAAscore
-    hf_daa_score: 42000042,
+    hf_daa_score: 26962009, // HF DAAscore to switch to khashv2 (Fri Sep 13 01:37:00 PM UTC 2024)
 };
 
 pub const TESTNET_PARAMS: Params = Params {
