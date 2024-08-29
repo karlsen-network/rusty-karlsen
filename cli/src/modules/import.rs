@@ -40,7 +40,7 @@ impl Import {
                 } else if application_runtime::is_web() {
                     return Err("'karlsen-network' web wallet storage not found at this domain name".into());
                 } else {
-                    return Err("KDX/karlsen-network keydata file not found".into());
+                    return Err("Karlsen-Desktop/karlsen-network keydata file not found".into());
                 }
             }
             // todo "read-only" => {}
@@ -61,7 +61,7 @@ impl Import {
                     "mnemonic [<type>] [<additional xpub keys>] ",
                     "Import a 24 or 12 word mnemonic (types: 'bip32' (default), 'legacy', 'multisig'), ",
                 ),
-                ("legacy", "Import a legacy (local KDX) wallet"),
+                ("legacy", "Import a legacy (local Karlsen-Desktop) wallet"),
                 // ("purge", "Purge an account from the wallet"),
             ],
             None,

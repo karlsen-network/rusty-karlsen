@@ -1,5 +1,5 @@
 //!
-//! Legacy (KDX, karlsen-network.io Web Wallet) account implementation
+//! Legacy (Karlsen-Desktop, wallet.karlsencoin.com Web Wallet) account implementation
 //!
 
 use crate::account::{AsLegacyAccount, Inner};
@@ -20,7 +20,7 @@ impl Factory for Ctor {
     }
 
     fn description(&self) -> String {
-        "Karlsen Legacy Account (KDX, karlsen-network.io Web Wallet)".to_string()
+        "Karlsen Legacy Account (Karlsen-Desktop, wallet.karlsencoin.com Web Wallet)".to_string()
     }
 
     async fn try_load(

@@ -325,7 +325,7 @@ pub struct ContextualNetAddress {
 }
 
 impl ContextualNetAddress {
-    fn new(ip: IpAddress, port: Option<u16>) -> Self {
+    pub fn new(ip: IpAddress, port: Option<u16>) -> Self {
         Self { ip, port }
     }
 
@@ -344,6 +344,17 @@ impl ContextualNetAddress {
         Self {
             ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)).into(),
             port: None,
+        }
+    }
+
+    pub fn port_not_specified(&self) -> bool {
+        self.port.is_none()
+    }
+
+    pub fn with_port(&self, port: u16) -> Self {
+        Self {
+            ip: self.ip,
+            port: Some(port),
         }
     }
 }

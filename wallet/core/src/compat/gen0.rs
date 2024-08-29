@@ -1,5 +1,5 @@
 //!
-//! v0 (KDX-style) account data decryption
+//! v0 (Karlsen-Desktop-style) account data decryption
 //!
 
 use crate::error::Error;

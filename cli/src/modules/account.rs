@@ -80,14 +80,14 @@ impl Account {
                     tprintln!(ctx, "");
                     ctx.term().help(
                         &[
-                            ("account import legacy-data", "Import KDX keydata file or karlsen-network web wallet data on the same domain"),
+                            ("account import legacy-data", "Import Karlsen-Desktop keydata file or Web Wallet data on the same domain"),
                             (
                                 "account import mnemonic bip32",
-                                "Import Bip32 (12 or 24 word mnemonics used by karlsenwallet, kaspium, onekey, tangem etc.)",
+                                "Import Bip32 (12 or 24 word mnemonics used by karlsenwallet or karlsen-mobile)",
                             ),
                             (
                                 "account import mnemonic legacy",
-                                "Import accounts 12 word mnemonic used by legacy applications (KDX and karlsen-network web wallet)",
+                                "Import accounts 12 word mnemonic used by legacy applications (Karlsen-Desktop and Web Wallet)",
                             ),
                             (
                                 "account import mnemonic multisig [additional keys]",
@@ -139,7 +139,7 @@ impl Account {
                                         if let Some(txid) = txid {
                                             tprintln!(
                                                 ctx_,
-                                                "Scan detected {} KAS at index {}; transfer txid: {}",
+                                                "Scan detected {} KLS at index {}; transfer txid: {}",
                                                 sompi_to_karlsen_string(balance),
                                                 processed,
                                                 txid
@@ -147,7 +147,7 @@ impl Account {
                                         } else if processed > 0 {
                                             tprintln!(
                                                 ctx_,
-                                                "Scanned {} derivations, found {} KAS",
+                                                "Scanned {} derivations, found {} KLS",
                                                 processed,
                                                 sompi_to_karlsen_string(balance)
                                             );
@@ -160,7 +160,7 @@ impl Account {
                         } else if application_runtime::is_web() {
                             return Err("'karlsen-network' web wallet storage not found at this domain name".into());
                         } else {
-                            return Err("KDX keydata file not found".into());
+                            return Err("Karlsen-Desktop keydata file not found".into());
                         }
                     }
                     "mnemonic" => {
@@ -170,7 +170,7 @@ impl Account {
                                 "usage: 'account import mnemonic <bip32|legacy|multisig>'"
                             );
                             tprintln!(ctx, "please specify the mnemonic type");
-                            tprintln!(ctx, "please use 'legacy' for 12-word KDX and karlsen-network web wallet mnemonics\r\n");
+                            tprintln!(ctx, "please use 'legacy' for 12-word Karlsen-Desktop and Web Wallet mnemonics\r\n");
                             return Ok(());
                         }
 
@@ -251,7 +251,7 @@ impl Account {
                 (
                     "import <import-type> [<key-type> [extra keys]]",
                     "Import accounts from a private key using 24 or 12 word mnemonic or legacy data \
-                (KDX and karlsen-network web wallet). Use 'account import' for additional help.",
+                (Karlsen-Desktop and Web Wallet). Use 'account import' for additional help.",
                 ),
                 ("name <name>", "Name or rename the selected account (use 'remove' to remove the name"),
                 ("scan [<derivations>] or scan [<start>] [<derivations>]", "Scan extended address derivation chain (legacy accounts)"),
@@ -296,7 +296,7 @@ impl Account {
                     if let Some(txid) = txid {
                         tprintln!(
                             ctx_,
-                            "Scan detected {} KAS at index {}; transfer txid: {}",
+                            "Scan detected {} KLS at index {}; transfer txid: {}",
                             sompi_to_karlsen_string(balance),
                             processed,
                             txid
@@ -304,7 +304,7 @@ impl Account {
                     } else {
                         tprintln!(
                             ctx_,
-                            "Scanned {} derivations, found {} KAS",
+                            "Scanned {} derivations, found {} KLS",
                             processed,
                             sompi_to_karlsen_string(balance)
                         );

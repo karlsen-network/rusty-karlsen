@@ -79,7 +79,7 @@ pub struct Params {
     pub mass_per_sig_op: u64,
     pub max_block_mass: u64,
 
-    /// The parameter for scaling inverse KAS value to mass units (unpublished KIP-0009)
+    /// The parameter for scaling inverse KLS value to mass units (unpublished KIP-0009)
     pub storage_mass_parameter: u64,
 
     /// DAA score from which storage mass calculation and transaction mass field are activated as a consensus rule
@@ -356,8 +356,7 @@ pub const MAINNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 225,
     pruning_proof_m: 1000,
-    // todo: define the fork date DAAscore
-    hf_daa_score: 42000042,
+    hf_daa_score: 26962009, // HF DAAscore to switch to khashv2 (Fri Sep 13 01:37:00 PM UTC 2024)
 };
 
 pub const TESTNET_PARAMS: Params = Params {
@@ -414,7 +413,7 @@ pub const TESTNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
-    hf_daa_score: 0,
+    hf_daa_score: 6000000,
 };
 
 pub const TESTNET11_PARAMS: Params = Params {
@@ -519,7 +518,7 @@ pub const SIMNET_PARAMS: Params = Params {
 
     skip_proof_of_work: true, // For simnet only, PoW can be simulated by default
     max_block_level: 250,
-    hf_daa_score: 0,
+    hf_daa_score: 50,
 };
 
 pub const DEVNET_PARAMS: Params = Params {
