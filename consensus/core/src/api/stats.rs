@@ -10,7 +10,10 @@ pub struct BlockCount {
 
 impl BlockCount {
     pub fn new(block_count: u64, header_count: u64) -> Self {
-        Self { block_count, header_count }
+        Self {
+            block_count,
+            header_count,
+        }
     }
 }
 

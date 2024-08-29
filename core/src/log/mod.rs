@@ -32,20 +32,39 @@ pub fn init_logger(log_dir: Option<&str>, filters: &str) {
     const ERR_LOG_FILE_APPENDER: &str = "err_log_file";
 
     let level = LevelFilter::Info;
-    let loggers = logger::Builder::new().root_level(level).parse_env(DEFAULT_LOGGER_ENV).parse_expression(filters).build();
+    let loggers = logger::Builder::new()
+        .root_level(level)
+        .parse_env(DEFAULT_LOGGER_ENV)
+        .parse_expression(filters)
+        .build();
 
     let mut stdout_appender = AppenderSpec::console(CONSOLE_APPENDER, None);
-    let mut file_appender = log_dir.map(|x| AppenderSpec::roller(LOG_FILE_APPENDER, None, x, LOG_FILE_NAME));
-    let mut err_file_appender =
-        log_dir.map(|x| AppenderSpec::roller(ERR_LOG_FILE_APPENDER, Some(LevelFilter::Warn), x, ERR_LOG_FILE_NAME));
-    let appenders = once(&mut stdout_appender).chain(&mut file_appender).chain(&mut err_file_appender).map(|x| x.appender());
+    let mut file_appender =
+        log_dir.map(|x| AppenderSpec::roller(LOG_FILE_APPENDER, None, x, LOG_FILE_NAME));
+    let mut err_file_appender = log_dir.map(|x| {
+        AppenderSpec::roller(
+            ERR_LOG_FILE_APPENDER,
+            Some(LevelFilter::Warn),
+            x,
+            ERR_LOG_FILE_NAME,
+        )
+    });
+    let appenders = once(&mut stdout_appender)
+        .chain(&mut file_appender)
+        .chain(&mut err_file_appender)
+        .map(|x| x.appender());
 
     let config = Config::builder()
         .appenders(appenders)
         .loggers(loggers.items())
         .build(
             Root::builder()
-                .appenders(once(&stdout_appender).chain(&file_appender).chain(&err_file_appender).map(|x| x.name))
+                .appenders(
+                    once(&stdout_appender)
+                        .chain(&file_appender)
+                        .chain(&err_file_appender)
+                        .map(|x| x.name),
+                )
                 .build(loggers.root_level()),
         )
         .unwrap();
@@ -64,12 +83,20 @@ pub fn try_init_logger(filters: &str) {
 
     const CONSOLE_APPENDER: &str = "stdout";
 
-    let loggers = logger::Builder::new().root_level(LevelFilter::Info).parse_env(DEFAULT_LOGGER_ENV).parse_expression(filters).build();
+    let loggers = logger::Builder::new()
+        .root_level(LevelFilter::Info)
+        .parse_env(DEFAULT_LOGGER_ENV)
+        .parse_expression(filters)
+        .build();
     let mut stdout_appender = AppenderSpec::console(CONSOLE_APPENDER, None);
     let config = Config::builder()
         .appender(stdout_appender.appender())
         .loggers(loggers.items())
-        .build(Root::builder().appender(CONSOLE_APPENDER).build(loggers.root_level()))
+        .build(
+            Root::builder()
+                .appender(CONSOLE_APPENDER)
+                .build(loggers.root_level()),
+        )
         .unwrap();
     let _ = log4rs::init_config(config);
 }

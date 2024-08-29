@@ -96,7 +96,7 @@ fn build_dummy_version_message() -> VersionMessage {
         services: 0,
         timestamp: unix_now() as i64,
         address: None,
-        id: Vec::from(Uuid::new_v4().as_ref()),
+        id: Vec::from(Uuid::new_v4().as_bytes()),
         user_agent: String::new(),
         disable_relay_tx: false,
         subnetwork_id: None,
@@ -128,7 +128,10 @@ impl ConnectionInitializer for EchoFlowInitializer {
 
         // Perform the handshake
         let peer_version_message = handshake.handshake(self_version_message).await?;
-        debug!("protocol versions - self: {}, peer: {}", 5, peer_version_message.protocol_version);
+        debug!(
+            "protocol versions - self: {}, peer: {}",
+            5, peer_version_message.protocol_version
+        );
 
         // Subscribe to remaining messages. In this example we simply subscribe to all messages with a single echo flow
         EchoFlow::register(router.clone()).await;
@@ -157,10 +160,22 @@ mod tests {
         karlsen_core::log::try_init_logger("debug");
 
         let address1 = NetAddress::from_str("[::1]:50053").unwrap();
-        let adaptor1 = Adaptor::bidirectional(address1, Hub::new(), Arc::new(EchoFlowInitializer::new()), Default::default()).unwrap();
+        let adaptor1 = Adaptor::bidirectional(
+            address1,
+            Hub::new(),
+            Arc::new(EchoFlowInitializer::new()),
+            Default::default(),
+        )
+        .unwrap();
 
         let address2 = NetAddress::from_str("[::1]:50054").unwrap();
-        let adaptor2 = Adaptor::bidirectional(address2, Hub::new(), Arc::new(EchoFlowInitializer::new()), Default::default()).unwrap();
+        let adaptor2 = Adaptor::bidirectional(
+            address2,
+            Hub::new(),
+            Arc::new(EchoFlowInitializer::new()),
+            Default::default(),
+        )
+        .unwrap();
 
         // Initiate the connection from `adaptor1` (outbound) to `adaptor2` (inbound)
         let peer2_id = adaptor1
@@ -175,8 +190,16 @@ mod tests {
         let adaptor2_initial_peers = adaptor2.active_peers();
 
         // For now assert the handshake by checking the peer exists (since peer is removed on handshake error)
-        assert_eq!(adaptor1_initial_peers.len(), 1, "handshake failed -- outbound peer is missing");
-        assert_eq!(adaptor2_initial_peers.len(), 1, "handshake failed -- inbound peer is missing");
+        assert_eq!(
+            adaptor1_initial_peers.len(),
+            1,
+            "handshake failed -- outbound peer is missing"
+        );
+        assert_eq!(
+            adaptor2_initial_peers.len(),
+            1,
+            "handshake failed -- inbound peer is missing"
+        );
 
         assert!(adaptor1_initial_peers[0].is_outbound());
         assert!(!adaptor2_initial_peers[0].is_outbound());
@@ -185,17 +208,37 @@ mod tests {
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
         // Make sure the peers are cleaned-up on both sides
-        assert_eq!(adaptor1.active_peers().len(), 0, "peer termination failed -- outbound peer was not removed");
-        assert_eq!(adaptor2.active_peers().len(), 0, "peer termination failed -- inbound peer was not removed");
+        assert_eq!(
+            adaptor1.active_peers().len(),
+            0,
+            "peer termination failed -- outbound peer was not removed"
+        );
+        assert_eq!(
+            adaptor2.active_peers().len(),
+            0,
+            "peer termination failed -- inbound peer was not removed"
+        );
 
         adaptor1.close().await;
         adaptor2.close().await;
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
         // Make sure that all internal loops exit and adaptors are ready to be dropped
-        debug!("{} {}", Arc::strong_count(&adaptor1), Arc::strong_count(&adaptor2));
-        assert_eq!(Arc::strong_count(&adaptor1), 1, "some adaptor resources did not cleanup");
-        assert_eq!(Arc::strong_count(&adaptor2), 1, "some adaptor resources did not cleanup");
+        debug!(
+            "{} {}",
+            Arc::strong_count(&adaptor1),
+            Arc::strong_count(&adaptor2)
+        );
+        assert_eq!(
+            Arc::strong_count(&adaptor1),
+            1,
+            "some adaptor resources did not cleanup"
+        );
+        assert_eq!(
+            Arc::strong_count(&adaptor2),
+            1,
+            "some adaptor resources did not cleanup"
+        );
 
         drop(adaptor1);
         drop(adaptor2);

@@ -3,7 +3,19 @@ use separator::{separated_float, separated_int, separated_uint_with_output, Sepa
 use serde::{Deserialize, Serialize};
 use workflow_core::enums::Describe;
 
-#[derive(Describe, Debug, Clone, Copy, Eq, PartialEq, Hash, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(
+    Describe,
+    Debug,
+    Clone,
+    Copy,
+    Eq,
+    PartialEq,
+    Hash,
+    BorshDeserialize,
+    BorshSerialize,
+    Serialize,
+    Deserialize,
+)]
 pub enum MetricGroup {
     System,
     Storage,
@@ -38,7 +50,13 @@ impl MetricGroup {
 
 impl MetricGroup {
     pub fn iter() -> impl Iterator<Item = MetricGroup> {
-        [MetricGroup::System, MetricGroup::Storage, MetricGroup::Connections, MetricGroup::Network].into_iter()
+        [
+            MetricGroup::System,
+            MetricGroup::Storage,
+            MetricGroup::Connections,
+            MetricGroup::Network,
+        ]
+        .into_iter()
     }
 
     pub fn metrics(&self) -> impl Iterator<Item = &Metric> {
@@ -180,7 +198,19 @@ impl From<Metric> for MetricGroup {
     }
 }
 
-#[derive(Describe, Debug, Clone, Copy, Eq, PartialEq, Hash, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(
+    Describe,
+    Debug,
+    Clone,
+    Copy,
+    Eq,
+    PartialEq,
+    Hash,
+    BorshDeserialize,
+    BorshSerialize,
+    Serialize,
+    Deserialize,
+)]
 #[serde(rename_all = "kebab-case")]
 pub enum Metric {
     // NodeCpuCores is used to normalize NodeCpuUsage metric
@@ -545,7 +575,10 @@ pub struct MetricsData {
 
 impl MetricsData {
     pub fn new(unixtime: f64) -> Self {
-        Self { unixtime_millis: unixtime, ..Default::default() }
+        Self {
+            unixtime_millis: unixtime,
+            ..Default::default()
+        }
     }
 }
 
@@ -683,9 +716,17 @@ impl MetricsSnapshot {
 
     pub fn format(&self, metric: &Metric, si: bool, short: bool) -> String {
         if short {
-            format!("{}: {}", metric.title().1, metric.format(self.get(metric), si, short))
+            format!(
+                "{}: {}",
+                metric.title().1,
+                metric.format(self.get(metric), si, short)
+            )
         } else {
-            format!("{}: {}", metric.title().0, metric.format(self.get(metric), si, short))
+            format!(
+                "{}: {}",
+                metric.title().0,
+                metric.format(self.get(metric), si, short)
+            )
         }
     }
 }
@@ -699,18 +740,49 @@ impl From<(&MetricsData, &MetricsData)> for MetricsSnapshot {
     fn from((a, b): (&MetricsData, &MetricsData)) -> Self {
         let duration_millis = b.unixtime_millis - a.unixtime_millis;
 
-        let network_transactions_per_second =
-            per_sec(a.node_transactions_processed_count, b.node_transactions_processed_count, duration_millis);
-        let node_borsh_bytes_tx_per_second = per_sec(a.node_borsh_bytes_tx, b.node_borsh_bytes_tx, duration_millis);
-        let node_borsh_bytes_rx_per_second = per_sec(a.node_borsh_bytes_rx, b.node_borsh_bytes_rx, duration_millis);
-        let node_json_bytes_tx_per_second = per_sec(a.node_json_bytes_tx, b.node_json_bytes_tx, duration_millis);
-        let node_json_bytes_rx_per_second = per_sec(a.node_json_bytes_rx, b.node_json_bytes_rx, duration_millis);
-        let node_p2p_bytes_tx_per_second = per_sec(a.node_p2p_bytes_tx, b.node_p2p_bytes_tx, duration_millis);
-        let node_p2p_bytes_rx_per_second = per_sec(a.node_p2p_bytes_rx, b.node_p2p_bytes_rx, duration_millis);
-        let node_grpc_user_bytes_tx_per_second = per_sec(a.node_grpc_user_bytes_tx, b.node_grpc_user_bytes_tx, duration_millis);
-        let node_grpc_user_bytes_rx_per_second = per_sec(a.node_grpc_user_bytes_rx, b.node_grpc_user_bytes_rx, duration_millis);
-        let node_total_bytes_tx_per_second = per_sec(a.node_total_bytes_tx, b.node_total_bytes_tx, duration_millis);
-        let node_total_bytes_rx_per_second = per_sec(a.node_total_bytes_rx, b.node_total_bytes_rx, duration_millis);
+        let network_transactions_per_second = per_sec(
+            a.node_transactions_processed_count,
+            b.node_transactions_processed_count,
+            duration_millis,
+        );
+        let node_borsh_bytes_tx_per_second = per_sec(
+            a.node_borsh_bytes_tx,
+            b.node_borsh_bytes_tx,
+            duration_millis,
+        );
+        let node_borsh_bytes_rx_per_second = per_sec(
+            a.node_borsh_bytes_rx,
+            b.node_borsh_bytes_rx,
+            duration_millis,
+        );
+        let node_json_bytes_tx_per_second =
+            per_sec(a.node_json_bytes_tx, b.node_json_bytes_tx, duration_millis);
+        let node_json_bytes_rx_per_second =
+            per_sec(a.node_json_bytes_rx, b.node_json_bytes_rx, duration_millis);
+        let node_p2p_bytes_tx_per_second =
+            per_sec(a.node_p2p_bytes_tx, b.node_p2p_bytes_tx, duration_millis);
+        let node_p2p_bytes_rx_per_second =
+            per_sec(a.node_p2p_bytes_rx, b.node_p2p_bytes_rx, duration_millis);
+        let node_grpc_user_bytes_tx_per_second = per_sec(
+            a.node_grpc_user_bytes_tx,
+            b.node_grpc_user_bytes_tx,
+            duration_millis,
+        );
+        let node_grpc_user_bytes_rx_per_second = per_sec(
+            a.node_grpc_user_bytes_rx,
+            b.node_grpc_user_bytes_rx,
+            duration_millis,
+        );
+        let node_total_bytes_tx_per_second = per_sec(
+            a.node_total_bytes_tx,
+            b.node_total_bytes_tx,
+            duration_millis,
+        );
+        let node_total_bytes_rx_per_second = per_sec(
+            a.node_total_bytes_rx,
+            b.node_total_bytes_rx,
+            duration_millis,
+        );
 
         Self {
             unixtime_millis: b.unixtime_millis,

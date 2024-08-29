@@ -13,7 +13,9 @@ use rand::thread_rng;
 use rand_distr::{Distribution, Exp};
 use std::{cmp::max, collections::HashMap, sync::Arc, time::Duration};
 use tokio::{
-    sync::oneshot::{channel as oneshot_channel, Receiver as OneshotReceiver, Sender as OneshotSender},
+    sync::oneshot::{
+        channel as oneshot_channel, Receiver as OneshotReceiver, Sender as OneshotSender,
+    },
     task::JoinHandle,
     time::sleep,
 };
@@ -89,7 +91,12 @@ impl SubscriptionSubmitterTask {
     pub fn new(workers: usize, distribution_channel_capacity: usize, bps: u64) -> Self {
         let distribution_channel = Channel::bounded(distribution_channel_capacity);
         let register = Default::default();
-        Self { workers, distribution_channel, bps, register }
+        Self {
+            workers,
+            distribution_channel,
+            bps,
+            register,
+        }
     }
 
     pub fn build(workers: usize, distribution_channel_capacity: usize, bps: u64) -> Arc<Self> {

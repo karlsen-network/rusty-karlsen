@@ -30,10 +30,19 @@ impl TransactionSubmitterTask {
     const MAX_ATTEMPTS: usize = 5;
 
     pub fn new(pool: ClientPool<IndexedTransaction>, allow_orphan: bool, stopper: Stopper) -> Self {
-        Self { pool, allow_orphan, stopper }
+        Self {
+            pool,
+            allow_orphan,
+            stopper,
+        }
     }
 
-    pub async fn build(client_manager: Arc<ClientManager>, pool_size: usize, allow_orphan: bool, stopper: Stopper) -> Arc<Self> {
+    pub async fn build(
+        client_manager: Arc<ClientManager>,
+        pool_size: usize,
+        allow_orphan: bool,
+        stopper: Stopper,
+    ) -> Arc<Self> {
         let pool = client_manager.new_client_pool(pool_size, 100).await;
         Arc::new(Self::new(pool, allow_orphan, stopper))
     }
@@ -62,7 +71,10 @@ impl Task for TransactionSubmitterTask {
                         Err(e) => panic!("{e}"),
                     }
                 }
-                panic!("Failed to submit transaction {i} after {} attempts", Self::MAX_ATTEMPTS);
+                panic!(
+                    "Failed to submit transaction {i} after {} attempts",
+                    Self::MAX_ATTEMPTS
+                );
             }),
             true => self.pool.start(|c, (_, tx)| async move {
                 match c.submit_transaction(tx.as_ref().into(), true).await {

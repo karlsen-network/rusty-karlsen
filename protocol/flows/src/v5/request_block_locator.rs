@@ -28,21 +28,33 @@ impl Flow for RequestBlockLocatorFlow {
 
 impl RequestBlockLocatorFlow {
     pub fn new(ctx: FlowContext, router: Arc<Router>, incoming_route: IncomingRoute) -> Self {
-        Self { ctx, router, incoming_route }
+        Self {
+            ctx,
+            router,
+            incoming_route,
+        }
     }
 
     async fn start_impl(&mut self) -> Result<(), ProtocolError> {
         loop {
-            let (msg, request_id) = dequeue_with_request_id!(self.incoming_route, Payload::RequestBlockLocator)?;
+            let (msg, request_id) =
+                dequeue_with_request_id!(self.incoming_route, Payload::RequestBlockLocator)?;
             let (high, limit) = msg.try_into()?;
 
-            let locator =
-                self.ctx.consensus().session().await.async_create_block_locator_from_pruning_point(high, limit as usize).await?;
+            let locator = self
+                .ctx
+                .consensus()
+                .session()
+                .await
+                .async_create_block_locator_from_pruning_point(high, limit as usize)
+                .await?;
 
             self.router
                 .enqueue(make_response!(
                     Payload::BlockLocator,
-                    BlockLocatorMessage { hashes: locator.into_iter().map(|hash| hash.into()).collect() },
+                    BlockLocatorMessage {
+                        hashes: locator.into_iter().map(|hash| hash.into()).collect()
+                    },
                     request_id
                 ))
                 .await?;

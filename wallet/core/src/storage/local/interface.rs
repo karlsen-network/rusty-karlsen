@@ -6,7 +6,8 @@
 
 use crate::imports::*;
 use crate::storage::interface::{
-    AddressBookStore, CreateArgs, OpenArgs, StorageDescriptor, StorageStream, WalletDescriptor, WalletExportOptions,
+    AddressBookStore, CreateArgs, OpenArgs, StorageDescriptor, StorageStream, WalletDescriptor,
+    WalletExportOptions,
 };
 use crate::storage::local::cache::*;
 use crate::storage::local::streams::*;
@@ -58,9 +59,18 @@ pub(crate) struct LocalStoreInner {
 }
 
 impl LocalStoreInner {
-    async fn try_create(wallet_secret: &Secret, folder: &str, args: CreateArgs, is_resident: bool) -> Result<Self> {
+    async fn try_create(
+        wallet_secret: &Secret,
+        folder: &str,
+        args: CreateArgs,
+        is_resident: bool,
+    ) -> Result<Self> {
         let (store, wallet_title, filename) = if is_resident {
-            (Store::Resident, Some("Resident Wallet".to_string()), "resident".to_string())
+            (
+                Store::Resident,
+                Some("Resident Wallet".to_string()),
+                "resident".to_string(),
+            )
         } else {
             // log_info!("LocalStoreInner::try_create: folder: {}, args: {:?}, is_resident: {}", folder, args, is_resident);
 
@@ -75,8 +85,13 @@ impl LocalStoreInner {
         };
 
         let payload = Payload::default();
-        let cache =
-            Arc::new(RwLock::new(Cache::from_payload(wallet_title, args.user_hint, payload, wallet_secret, args.encryption_kind)?));
+        let cache = Arc::new(RwLock::new(Cache::from_payload(
+            wallet_title,
+            args.user_hint,
+            payload,
+            wallet_secret,
+            args.encryption_kind,
+        )?));
         let is_modified = AtomicBool::new(false);
         let transactions: Arc<dyn TransactionRecordStore> = if !is_web() {
             Arc::new(fsio::TransactionStore::new(folder, &filename))
@@ -84,7 +99,12 @@ impl LocalStoreInner {
             Arc::new(indexdb::TransactionStore::new(&filename))
         };
 
-        Ok(Self { cache, store: RwLock::new(Arc::new(store)), is_modified, transactions })
+        Ok(Self {
+            cache,
+            store: RwLock::new(Arc::new(store)),
+            is_modified,
+            transactions,
+        })
     }
 
     async fn try_load(wallet_secret: &Secret, folder: &str, args: OpenArgs) -> Result<Self> {
@@ -101,10 +121,19 @@ impl LocalStoreInner {
             Arc::new(indexdb::TransactionStore::new(&filename))
         };
 
-        Ok(Self { cache, store: RwLock::new(Arc::new(Store::Storage(storage))), is_modified, transactions })
+        Ok(Self {
+            cache,
+            store: RwLock::new(Arc::new(Store::Storage(storage))),
+            is_modified,
+            transactions,
+        })
     }
 
-    async fn try_import(wallet_secret: &Secret, folder: &str, serialized_wallet_storage: &[u8]) -> Result<Self> {
+    async fn try_import(
+        wallet_secret: &Secret,
+        folder: &str,
+        serialized_wallet_storage: &[u8],
+    ) -> Result<Self> {
         let wallet = WalletStorage::try_from_slice(serialized_wallet_storage)?;
         // Try to decrypt the wallet payload with the provided
         // secret. This will block import if the secret is
@@ -126,10 +155,19 @@ impl LocalStoreInner {
             Arc::new(indexdb::TransactionStore::new(&filename))
         };
 
-        Ok(Self { cache, store: RwLock::new(Arc::new(Store::Storage(storage))), is_modified, transactions })
+        Ok(Self {
+            cache,
+            store: RwLock::new(Arc::new(Store::Storage(storage))),
+            is_modified,
+            transactions,
+        })
     }
 
-    async fn try_export(&self, wallet_secret: &Secret, _options: WalletExportOptions) -> Result<Vec<u8>> {
+    async fn try_export(
+        &self,
+        wallet_secret: &Secret,
+        _options: WalletExportOptions,
+    ) -> Result<Vec<u8>> {
         let wallet = self.cache.read().unwrap().to_wallet(None, wallet_secret)?;
         Ok(wallet.try_to_vec()?)
     }
@@ -155,8 +193,10 @@ impl LocalStoreInner {
         match &*self.storage() {
             Store::Resident => {
                 let mut cache = self.cache.write().unwrap();
-                let old_prv_key_data: Decrypted<PrvKeyDataMap> = cache.prv_key_data.decrypt(old_secret)?;
-                let new_prv_key_data = Decrypted::new(old_prv_key_data.unwrap()).encrypt(new_secret, cache.encryption_kind)?;
+                let old_prv_key_data: Decrypted<PrvKeyDataMap> =
+                    cache.prv_key_data.decrypt(old_secret)?;
+                let new_prv_key_data = Decrypted::new(old_prv_key_data.unwrap())
+                    .encrypt(new_secret, cache.encryption_kind)?;
                 cache.prv_key_data.replace(new_prv_key_data);
 
                 Ok(())
@@ -164,8 +204,10 @@ impl LocalStoreInner {
             Store::Storage(ref storage) => {
                 let wallet = {
                     let mut cache = self.cache.write().unwrap();
-                    let old_prv_key_data: Decrypted<PrvKeyDataMap> = cache.prv_key_data.decrypt(old_secret)?;
-                    let new_prv_key_data = Decrypted::new(old_prv_key_data.unwrap()).encrypt(new_secret, cache.encryption_kind)?;
+                    let old_prv_key_data: Decrypted<PrvKeyDataMap> =
+                        cache.prv_key_data.decrypt(old_secret)?;
+                    let new_prv_key_data = Decrypted::new(old_prv_key_data.unwrap())
+                        .encrypt(new_secret, cache.encryption_kind)?;
                     cache.prv_key_data.replace(new_prv_key_data);
 
                     cache.to_wallet(None, new_secret)?
@@ -183,7 +225,8 @@ impl LocalStoreInner {
             Store::Storage(ref storage) => {
                 // take current metadata, load wallet, replace metadata, store wallet
                 // this bypasses the cache payload and wallet encryption
-                let metadata: Vec<AccountMetadata> = (&self.cache.read().unwrap().metadata).try_into()?;
+                let metadata: Vec<AccountMetadata> =
+                    (&self.cache.read().unwrap().metadata).try_into()?;
                 let mut wallet = WalletStorage::try_load(storage).await?;
                 wallet.replace_metadata(metadata);
                 wallet.try_store(storage).await?;
@@ -242,16 +285,25 @@ impl LocalStoreInner {
         let filename = self
             .storage()
             .filename()
-            .and_then(|f| PathBuf::from(f).file_stem().and_then(|f| f.to_str().map(String::from)))
+            .and_then(|f| {
+                PathBuf::from(f)
+                    .file_stem()
+                    .and_then(|f| f.to_str().map(String::from))
+            })
             .unwrap_or_else(|| "resident".to_string());
-        WalletDescriptor { title: self.cache.read().unwrap().wallet_title.clone(), filename }
+        WalletDescriptor {
+            title: self.cache.read().unwrap().wallet_title.clone(),
+            filename,
+        }
     }
 
     fn location(&self) -> Result<StorageDescriptor> {
         let store = self.storage();
         match &*store {
             Store::Resident => Ok(StorageDescriptor::Resident),
-            Store::Storage(storage) => Ok(StorageDescriptor::Internal(storage.filename_as_string())),
+            Store::Storage(storage) => {
+                Ok(StorageDescriptor::Internal(storage.filename_as_string()))
+            }
         }
     }
 }
@@ -270,13 +322,17 @@ pub struct Location {
 
 impl Location {
     pub fn new(folder: &str) -> Self {
-        Self { folder: folder.to_string() }
+        Self {
+            folder: folder.to_string(),
+        }
     }
 }
 
 impl Default for Location {
     fn default() -> Self {
-        Self { folder: super::default_storage_folder().to_string() }
+        Self {
+            folder: super::default_storage_folder().to_string(),
+        }
     }
 }
 
@@ -299,7 +355,12 @@ impl LocalStore {
     }
 
     pub fn inner(&self) -> Result<Arc<LocalStoreInner>> {
-        self.inner.lock().unwrap().as_ref().cloned().ok_or(Error::WalletNotOpen)
+        self.inner
+            .lock()
+            .unwrap()
+            .as_ref()
+            .cloned()
+            .ok_or(Error::WalletNotOpen)
     }
 
     fn location(&self) -> Option<Arc<Location>> {
@@ -307,13 +368,25 @@ impl LocalStore {
     }
 
     #[allow(dead_code)]
-    async fn wallet_export_impl(&self, wallet_secret: &Secret, _options: WalletExportOptions) -> Result<Vec<u8>> {
+    async fn wallet_export_impl(
+        &self,
+        wallet_secret: &Secret,
+        _options: WalletExportOptions,
+    ) -> Result<Vec<u8>> {
         self.inner()?.try_export(wallet_secret, _options).await
     }
 
-    async fn wallet_import_impl(&self, wallet_secret: &Secret, serialized_wallet_storage: &[u8]) -> Result<WalletDescriptor> {
-        let location = self.location().expect("initialized wallet storage location");
-        let inner = LocalStoreInner::try_import(wallet_secret, &location.folder, serialized_wallet_storage).await?;
+    async fn wallet_import_impl(
+        &self,
+        wallet_secret: &Secret,
+        serialized_wallet_storage: &[u8],
+    ) -> Result<WalletDescriptor> {
+        let location = self
+            .location()
+            .expect("initialized wallet storage location");
+        let inner =
+            LocalStoreInner::try_import(wallet_secret, &location.folder, serialized_wallet_storage)
+                .await?;
         inner.store(wallet_secret).await?;
         let wallet_descriptor = inner.descriptor();
         Ok(wallet_descriptor)
@@ -339,15 +412,29 @@ impl Interface for LocalStore {
     }
 
     fn descriptor(&self) -> Option<WalletDescriptor> {
-        self.inner.lock().unwrap().as_ref().map(|inner| inner.descriptor())
+        self.inner
+            .lock()
+            .unwrap()
+            .as_ref()
+            .map(|inner| inner.descriptor())
     }
 
     fn encryption_kind(&self) -> Result<EncryptionKind> {
         Ok(self.inner()?.cache.read().unwrap().encryption_kind)
     }
 
-    async fn rename(&self, wallet_secret: &Secret, title: Option<&str>, filename: Option<&str>) -> Result<()> {
-        let inner = self.inner.lock().unwrap().clone().ok_or(Error::WalletNotOpen)?;
+    async fn rename(
+        &self,
+        wallet_secret: &Secret,
+        title: Option<&str>,
+        filename: Option<&str>,
+    ) -> Result<()> {
+        let inner = self
+            .inner
+            .lock()
+            .unwrap()
+            .clone()
+            .ok_or(Error::WalletNotOpen)?;
         if let Some(title) = title {
             inner.cache.write().unwrap().wallet_title = Some(title.to_string());
             self.commit(wallet_secret).await?;
@@ -360,23 +447,41 @@ impl Interface for LocalStore {
     }
 
     /// change the secret of the currently open wallet
-    async fn change_secret(&self, old_wallet_secret: &Secret, new_wallet_secret: &Secret) -> Result<()> {
-        let inner = self.inner.lock().unwrap().clone().ok_or(Error::WalletNotOpen)?;
-        inner.change_secret(old_wallet_secret, new_wallet_secret).await?;
+    async fn change_secret(
+        &self,
+        old_wallet_secret: &Secret,
+        new_wallet_secret: &Secret,
+    ) -> Result<()> {
+        let inner = self
+            .inner
+            .lock()
+            .unwrap()
+            .clone()
+            .ok_or(Error::WalletNotOpen)?;
+        inner
+            .change_secret(old_wallet_secret, new_wallet_secret)
+            .await?;
         Ok(())
     }
 
     async fn exists(&self, name: Option<&str>) -> Result<bool> {
         let location = self.location.lock().unwrap().clone().unwrap();
-        let store =
-            Storage::try_new_with_folder(&location.folder, &format!("{}.wallet", name.unwrap_or(super::default_wallet_file())))?;
+        let store = Storage::try_new_with_folder(
+            &location.folder,
+            &format!("{}.wallet", name.unwrap_or(super::default_wallet_file())),
+        )?;
         store.exists().await
     }
 
     async fn create(&self, wallet_secret: &Secret, args: CreateArgs) -> Result<WalletDescriptor> {
-        let location = self.location().expect("initialized wallet storage location");
+        let location = self
+            .location()
+            .expect("initialized wallet storage location");
 
-        let inner = Arc::new(LocalStoreInner::try_create(wallet_secret, &location.folder, args, self.is_resident).await?);
+        let inner = Arc::new(
+            LocalStoreInner::try_create(wallet_secret, &location.folder, args, self.is_resident)
+                .await?,
+        );
         let descriptor = inner.descriptor();
         self.inner.lock().unwrap().replace(inner);
 
@@ -391,7 +496,8 @@ impl Interface for LocalStore {
         }
 
         let location = self.location.lock().unwrap().clone().unwrap();
-        let inner = Arc::new(LocalStoreInner::try_load(wallet_secret, &location.folder, args).await?);
+        let inner =
+            Arc::new(LocalStoreInner::try_load(wallet_secret, &location.folder, args).await?);
         self.inner.lock().unwrap().replace(inner);
         Ok(())
     }
@@ -405,7 +511,9 @@ impl Interface for LocalStore {
             .iter()
             .filter_map(|de| {
                 let file_name = de.file_name();
-                file_name.ends_with(".wallet").then(|| file_name.trim_end_matches(".wallet").to_string())
+                file_name
+                    .ends_with(".wallet")
+                    .then(|| file_name.trim_end_matches(".wallet").to_string())
             })
             .collect::<Vec<_>>();
 
@@ -414,8 +522,10 @@ impl Interface for LocalStore {
             let path = folder.join(format!("{}.wallet", filename));
             // TODO - refactor on native to read directly from file (skip temporary buffer creation)
             let wallet_data = fs::read(&path).await;
-            let title =
-                wallet_data.ok().and_then(|data| WalletStorage::try_from_slice(data.as_slice()).ok()).and_then(|wallet| wallet.title);
+            let title = wallet_data
+                .ok()
+                .and_then(|data| WalletStorage::try_from_slice(data.as_slice()).ok())
+                .and_then(|wallet| wallet.title);
             descriptors.push(WalletDescriptor { title, filename });
         }
 
@@ -476,12 +586,21 @@ impl Interface for LocalStore {
         Ok(())
     }
 
-    async fn wallet_export(&self, wallet_secret: &Secret, options: WalletExportOptions) -> Result<Vec<u8>> {
+    async fn wallet_export(
+        &self,
+        wallet_secret: &Secret,
+        options: WalletExportOptions,
+    ) -> Result<Vec<u8>> {
         self.wallet_export_impl(wallet_secret, options).await
     }
 
-    async fn wallet_import(&self, wallet_secret: &Secret, serialized_wallet_storage: &[u8]) -> Result<WalletDescriptor> {
-        self.wallet_import_impl(wallet_secret, serialized_wallet_storage).await
+    async fn wallet_import(
+        &self,
+        wallet_secret: &Secret,
+        serialized_wallet_storage: &[u8],
+    ) -> Result<WalletDescriptor> {
+        self.wallet_import_impl(wallet_secret, serialized_wallet_storage)
+            .await
     }
 }
 
@@ -495,23 +614,47 @@ impl PrvKeyDataStore for LocalStoreInner {
         Ok(Box::pin(PrvKeyDataInfoStream::new(self.cache.clone())))
     }
 
-    async fn load_key_info(&self, prv_key_data_id: &PrvKeyDataId) -> Result<Option<Arc<PrvKeyDataInfo>>> {
-        Ok(self.cache.read().unwrap().prv_key_data_info.map.get(prv_key_data_id).cloned())
+    async fn load_key_info(
+        &self,
+        prv_key_data_id: &PrvKeyDataId,
+    ) -> Result<Option<Arc<PrvKeyDataInfo>>> {
+        Ok(self
+            .cache
+            .read()
+            .unwrap()
+            .prv_key_data_info
+            .map
+            .get(prv_key_data_id)
+            .cloned())
     }
 
-    async fn load_key_data(&self, wallet_secret: &Secret, prv_key_data_id: &PrvKeyDataId) -> Result<Option<PrvKeyData>> {
-        let prv_key_data_map: Decrypted<PrvKeyDataMap> = self.cache.read().unwrap().prv_key_data.decrypt(wallet_secret)?;
+    async fn load_key_data(
+        &self,
+        wallet_secret: &Secret,
+        prv_key_data_id: &PrvKeyDataId,
+    ) -> Result<Option<PrvKeyData>> {
+        let prv_key_data_map: Decrypted<PrvKeyDataMap> = self
+            .cache
+            .read()
+            .unwrap()
+            .prv_key_data
+            .decrypt(wallet_secret)?;
         Ok(prv_key_data_map.get(prv_key_data_id).cloned())
     }
 
     async fn store(&self, wallet_secret: &Secret, prv_key_data: PrvKeyData) -> Result<()> {
         let mut cache = self.cache.write().unwrap();
         let encryption_kind = cache.encryption_kind;
-        let mut prv_key_data_map: Decrypted<PrvKeyDataMap> = cache.prv_key_data.decrypt(wallet_secret)?;
+        let mut prv_key_data_map: Decrypted<PrvKeyDataMap> =
+            cache.prv_key_data.decrypt(wallet_secret)?;
         let prv_key_data_info = Arc::new((&prv_key_data).into());
-        cache.prv_key_data_info.insert(prv_key_data.id, prv_key_data_info)?;
+        cache
+            .prv_key_data_info
+            .insert(prv_key_data.id, prv_key_data_info)?;
         prv_key_data_map.insert(prv_key_data.id, prv_key_data);
-        cache.prv_key_data.replace(prv_key_data_map.encrypt(wallet_secret, encryption_kind)?);
+        cache
+            .prv_key_data
+            .replace(prv_key_data_map.encrypt(wallet_secret, encryption_kind)?);
         self.set_modified(true);
         Ok(())
     }
@@ -519,9 +662,12 @@ impl PrvKeyDataStore for LocalStoreInner {
     async fn remove(&self, wallet_secret: &Secret, prv_key_data_id: &PrvKeyDataId) -> Result<()> {
         let mut cache = self.cache.write().unwrap();
         let encryption_kind = cache.encryption_kind;
-        let mut prv_key_data_map: Decrypted<PrvKeyDataMap> = cache.prv_key_data.decrypt(wallet_secret)?;
+        let mut prv_key_data_map: Decrypted<PrvKeyDataMap> =
+            cache.prv_key_data.decrypt(wallet_secret)?;
         prv_key_data_map.remove(prv_key_data_id);
-        cache.prv_key_data.replace(prv_key_data_map.encrypt(wallet_secret, encryption_kind)?);
+        cache
+            .prv_key_data
+            .replace(prv_key_data_map.encrypt(wallet_secret, encryption_kind)?);
         self.set_modified(true);
         Ok(())
     }
@@ -537,21 +683,33 @@ impl AccountStore for LocalStoreInner {
         &self,
         prv_key_data_id_filter: Option<PrvKeyDataId>,
     ) -> Result<StorageStream<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>> {
-        Ok(Box::pin(AccountStream::new(self.cache.clone(), prv_key_data_id_filter)))
+        Ok(Box::pin(AccountStream::new(
+            self.cache.clone(),
+            prv_key_data_id_filter,
+        )))
     }
 
     async fn len(&self, prv_key_data_id_filter: Option<PrvKeyDataId>) -> Result<usize> {
         let len = match prv_key_data_id_filter {
-            Some(filter) => {
-                self.cache.read().unwrap().accounts.vec.iter().filter(|account| account.prv_key_data_ids.contains(&filter)).count()
-            }
+            Some(filter) => self
+                .cache
+                .read()
+                .unwrap()
+                .accounts
+                .vec
+                .iter()
+                .filter(|account| account.prv_key_data_ids.contains(&filter))
+                .count(),
             None => self.cache.read().unwrap().accounts.vec.len(),
         };
 
         Ok(len)
     }
 
-    async fn load_single(&self, ids: &AccountId) -> Result<Option<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>> {
+    async fn load_single(
+        &self,
+        ids: &AccountId,
+    ) -> Result<Option<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>> {
         let cache = self.cache.read().unwrap();
         if let Some(account) = cache.accounts.load_single(ids)? {
             Ok(Some((account, cache.metadata.load_single(ids)?)))
@@ -560,18 +718,29 @@ impl AccountStore for LocalStoreInner {
         }
     }
 
-    async fn load_multiple(&self, ids: &[AccountId]) -> Result<Vec<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>> {
+    async fn load_multiple(
+        &self,
+        ids: &[AccountId],
+    ) -> Result<Vec<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>> {
         let cache = self.cache.read().unwrap();
         let accounts = cache.accounts.load_multiple(ids)?;
         accounts
             .into_iter()
             .map(|account| {
-                cache.metadata.load_single(account.id()).map(|metadata| (account.clone(), metadata)).or_else(|_| Ok((account, None)))
+                cache
+                    .metadata
+                    .load_single(account.id())
+                    .map(|metadata| (account.clone(), metadata))
+                    .or_else(|_| Ok((account, None)))
             })
             .collect::<Result<Vec<_>>>()
     }
 
-    async fn store_single(&self, account: &AccountStorage, metadata: Option<&AccountMetadata>) -> Result<()> {
+    async fn store_single(
+        &self,
+        account: &AccountStorage,
+        metadata: Option<&AccountMetadata>,
+    ) -> Result<()> {
         let mut cache = self.cache.write().unwrap();
         cache.accounts.store_single(account)?;
         if let Some(metadata) = metadata {
@@ -581,11 +750,16 @@ impl AccountStore for LocalStoreInner {
         Ok(())
     }
 
-    async fn store_multiple(&self, data: Vec<(AccountStorage, Option<AccountMetadata>)>) -> Result<()> {
+    async fn store_multiple(
+        &self,
+        data: Vec<(AccountStorage, Option<AccountMetadata>)>,
+    ) -> Result<()> {
         let mut cache = self.cache.write().unwrap();
         let (accounts, metadata): (Vec<_>, Vec<_>) = data.into_iter().unzip();
         cache.accounts.store_multiple(accounts)?;
-        cache.metadata.store_multiple(metadata.into_iter().flatten().collect())?;
+        cache
+            .metadata
+            .store_multiple(metadata.into_iter().flatten().collect())?;
         self.set_modified(true);
         Ok(())
     }
@@ -601,7 +775,11 @@ impl AccountStore for LocalStoreInner {
     }
 
     async fn update_metadata(&self, metadata: Vec<AccountMetadata>) -> Result<()> {
-        self.cache.write().unwrap().metadata.store_multiple(metadata)?;
+        self.cache
+            .write()
+            .unwrap()
+            .metadata
+            .store_multiple(metadata)?;
         self.update_stored_metadata().await?;
         Ok(())
     }
@@ -620,7 +798,13 @@ impl AddressBookStore for LocalStoreInner {
             .unwrap()
             .address_book
             .iter()
-            .filter_map(|entry| if entry.alias.contains(search) { Some(Arc::new(entry.clone())) } else { None })
+            .filter_map(|entry| {
+                if entry.alias.contains(search) {
+                    Some(Arc::new(entry.clone()))
+                } else {
+                    None
+                }
+            })
             .collect();
 
         Ok(matches)

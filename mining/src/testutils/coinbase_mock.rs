@@ -16,26 +16,52 @@ impl CoinbaseManagerMock {
         Self {}
     }
 
-    pub(super) fn expected_coinbase_transaction(&self, miner_data: MinerData) -> CoinbaseTransactionTemplate {
+    pub(super) fn expected_coinbase_transaction(
+        &self,
+        miner_data: MinerData,
+    ) -> CoinbaseTransactionTemplate {
         const SUBSIDY: u64 = 500 * SOMPI_PER_KARLSEN;
         let output = TransactionOutput::new(SUBSIDY, miner_data.script_public_key.clone());
 
-        let payload = self.serialize_coinbase_payload(&CoinbaseData { blue_score: 1, subsidy: SUBSIDY, miner_data });
+        let payload = self.serialize_coinbase_payload(&CoinbaseData {
+            blue_score: 1,
+            subsidy: SUBSIDY,
+            miner_data,
+        });
 
         CoinbaseTransactionTemplate {
-            tx: Transaction::new(TX_VERSION, vec![], vec![output], 0, SUBNETWORK_ID_COINBASE, 0, payload),
+            tx: Transaction::new(
+                TX_VERSION,
+                vec![],
+                vec![output],
+                0,
+                SUBNETWORK_ID_COINBASE,
+                0,
+                payload,
+            ),
             has_red_reward: false,
         }
     }
 
     pub(super) fn serialize_coinbase_payload(&self, data: &CoinbaseData) -> Vec<u8> {
         let script_pub_key_len = data.miner_data.script_public_key.script().len();
-        let payload: Vec<u8> = data.blue_score.to_le_bytes().iter().copied()                    // Blue score                   (u64)
-            .chain(data.subsidy.to_le_bytes().iter().copied())                                  // Subsidy                      (u64)
-            .chain(data.miner_data.script_public_key.version().to_le_bytes().iter().copied())   // Script public key version    (u16)
-            .chain((script_pub_key_len as u8).to_le_bytes().iter().copied())                    // Script public key length     (u8)
-            .chain(data.miner_data.script_public_key.script().iter().copied())                  // Script public key            
-            .chain(data.miner_data.extra_data.iter().copied())                                  // Extra data
+        let payload: Vec<u8> = data
+            .blue_score
+            .to_le_bytes()
+            .iter()
+            .copied() // Blue score                   (u64)
+            .chain(data.subsidy.to_le_bytes().iter().copied()) // Subsidy                      (u64)
+            .chain(
+                data.miner_data
+                    .script_public_key
+                    .version()
+                    .to_le_bytes()
+                    .iter()
+                    .copied(),
+            ) // Script public key version    (u16)
+            .chain((script_pub_key_len as u8).to_le_bytes().iter().copied()) // Script public key length     (u8)
+            .chain(data.miner_data.script_public_key.script().iter().copied()) // Script public key
+            .chain(data.miner_data.extra_data.iter().copied()) // Extra data
             .collect();
 
         payload
@@ -45,9 +71,14 @@ impl CoinbaseManagerMock {
         let script_pub_key_len = miner_data.script_public_key.script().len();
         payload.truncate(LENGTH_OF_BLUE_SCORE + LENGTH_OF_SUBSIDY);
         payload.extend(
-            miner_data.script_public_key.version().to_le_bytes().iter().copied() // Script public key version (u16)
+            miner_data
+                .script_public_key
+                .version()
+                .to_le_bytes()
+                .iter()
+                .copied() // Script public key version (u16)
                 .chain((script_pub_key_len as u8).to_le_bytes().iter().copied()) // Script public key length  (u8)
-                .chain(miner_data.script_public_key.script().iter().copied())    // Script public key
+                .chain(miner_data.script_public_key.script().iter().copied()) // Script public key
                 .chain(miner_data.extra_data.iter().copied()), // Extra data
         );
 

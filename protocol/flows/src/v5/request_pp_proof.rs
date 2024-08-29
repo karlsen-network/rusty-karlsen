@@ -29,18 +29,30 @@ impl Flow for RequestPruningPointProofFlow {
 
 impl RequestPruningPointProofFlow {
     pub fn new(ctx: FlowContext, router: Arc<Router>, incoming_route: IncomingRoute) -> Self {
-        Self { ctx, router, incoming_route }
+        Self {
+            ctx,
+            router,
+            incoming_route,
+        }
     }
 
     async fn start_impl(&mut self) -> Result<(), ProtocolError> {
         loop {
-            let (_, request_id) = dequeue_with_request_id!(self.incoming_route, Payload::RequestPruningPointProof)?;
+            let (_, request_id) =
+                dequeue_with_request_id!(self.incoming_route, Payload::RequestPruningPointProof)?;
             debug!("Got pruning point proof request");
-            let proof = self.ctx.consensus().unguarded_session().async_get_pruning_point_proof().await;
+            let proof = self
+                .ctx
+                .consensus()
+                .unguarded_session()
+                .async_get_pruning_point_proof()
+                .await;
             self.router
                 .enqueue(make_response!(
                     Payload::PruningPointProof,
-                    PruningPointProofMessage { headers: proof.iter().map(|headers| headers.into()).collect() },
+                    PruningPointProofMessage {
+                        headers: proof.iter().map(|headers| headers.into()).collect()
+                    },
                     request_id
                 ))
                 .await?;

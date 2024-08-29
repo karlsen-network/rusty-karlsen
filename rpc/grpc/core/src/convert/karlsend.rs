@@ -2,7 +2,10 @@ use crate::protowire::{karlsend_request, KarlsendRequest, KarlsendResponse};
 
 impl From<karlsend_request::Payload> for KarlsendRequest {
     fn from(item: karlsend_request::Payload) -> Self {
-        KarlsendRequest { id: 0, payload: Some(item) }
+        KarlsendRequest {
+            id: 0,
+            payload: Some(item),
+        }
     }
 }
 
@@ -92,7 +95,10 @@ pub mod karlsend_request_convert {
 
             impl From<&$core_struct> for KarlsendRequest {
                 fn from(item: &$core_struct) -> Self {
-                    Self { id: 0, payload: Some(item.into()) }
+                    Self {
+                        id: 0,
+                        payload: Some(item.into()),
+                    }
                 }
             }
 
@@ -104,7 +110,10 @@ pub mod karlsend_request_convert {
 
             impl From<$core_struct> for KarlsendRequest {
                 fn from(item: $core_struct) -> Self {
-                    Self { id: 0, payload: Some((&item).into()) }
+                    Self {
+                        id: 0,
+                        payload: Some((&item).into()),
+                    }
                 }
             }
 
@@ -118,7 +127,10 @@ pub mod karlsend_request_convert {
                     if let karlsend_request::Payload::$variant(request) = item {
                         request.try_into()
                     } else {
-                        Err(RpcError::MissingRpcFieldError("Payload".to_string(), stringify!($variant).to_string()))
+                        Err(RpcError::MissingRpcFieldError(
+                            "Payload".to_string(),
+                            stringify!($variant).to_string(),
+                        ))
                     }
                 }
             }
@@ -128,14 +140,20 @@ pub mod karlsend_request_convert {
                 fn try_from(item: &KarlsendRequest) -> RpcResult<Self> {
                     item.payload
                         .as_ref()
-                        .ok_or(RpcError::MissingRpcFieldError("KarlsenRequest".to_string(), "Payload".to_string()))?
+                        .ok_or(RpcError::MissingRpcFieldError(
+                            "KarlsenRequest".to_string(),
+                            "Payload".to_string(),
+                        ))?
                         .try_into()
                 }
             }
 
             impl From<$protowire_struct> for KarlsendRequest {
                 fn from(item: $protowire_struct) -> Self {
-                    Self { id: 0, payload: Some(karlsend_request::Payload::$variant(item)) }
+                    Self {
+                        id: 0,
+                        payload: Some(karlsend_request::Payload::$variant(item)),
+                    }
                 }
             }
 
@@ -199,7 +217,10 @@ pub mod karlsend_response_convert {
     impl_into_karlsend_notify_response!(NotifySinkBlueScoreChanged);
 
     impl_into_karlsend_notify_response!(NotifyUtxosChanged, StopNotifyingUtxosChanged);
-    impl_into_karlsend_notify_response!(NotifyPruningPointUtxoSetOverride, StopNotifyingPruningPointUtxoSetOverride);
+    impl_into_karlsend_notify_response!(
+        NotifyPruningPointUtxoSetOverride,
+        StopNotifyingPruningPointUtxoSetOverride
+    );
 
     macro_rules! impl_into_karlsend_response {
         ($name:tt) => {
@@ -242,7 +263,10 @@ pub mod karlsend_response_convert {
 
             impl From<$protowire_struct> for KarlsendResponse {
                 fn from(item: $protowire_struct) -> Self {
-                    Self { id: 0, payload: Some(karlsend_response::Payload::$variant(item)) }
+                    Self {
+                        id: 0,
+                        payload: Some(karlsend_response::Payload::$variant(item)),
+                    }
                 }
             }
         };
@@ -263,7 +287,10 @@ pub mod karlsend_response_convert {
 
             impl From<RpcResult<&$core_struct>> for KarlsendResponse {
                 fn from(item: RpcResult<&$core_struct>) -> Self {
-                    Self { id: 0, payload: Some(item.into()) }
+                    Self {
+                        id: 0,
+                        payload: Some(item.into()),
+                    }
                 }
             }
 
@@ -275,7 +302,10 @@ pub mod karlsend_response_convert {
 
             impl From<RpcResult<$core_struct>> for KarlsendResponse {
                 fn from(item: RpcResult<$core_struct>) -> Self {
-                    Self { id: 0, payload: Some(item.into()) }
+                    Self {
+                        id: 0,
+                        payload: Some(item.into()),
+                    }
                 }
             }
 
@@ -291,7 +321,10 @@ pub mod karlsend_response_convert {
                     if let karlsend_response::Payload::$variant(response) = item {
                         response.try_into()
                     } else {
-                        Err(RpcError::MissingRpcFieldError("Payload".to_string(), stringify!($variant).to_string()))
+                        Err(RpcError::MissingRpcFieldError(
+                            "Payload".to_string(),
+                            stringify!($variant).to_string(),
+                        ))
                     }
                 }
             }
@@ -301,7 +334,10 @@ pub mod karlsend_response_convert {
                 fn try_from(item: &KarlsendResponse) -> RpcResult<Self> {
                     item.payload
                         .as_ref()
-                        .ok_or(RpcError::MissingRpcFieldError("KarlsenResponse".to_string(), "Payload".to_string()))?
+                        .ok_or(RpcError::MissingRpcFieldError(
+                            "KarlsenResponse".to_string(),
+                            "Payload".to_string(),
+                        ))?
                         .try_into()
                 }
             }

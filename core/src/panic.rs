@@ -22,7 +22,10 @@ pub fn configure_panic() {
         let current_thread = thread::current();
         let thread_name = current_thread.name().unwrap_or("<unnamed>");
         // Log the panic
-        error!("thread '{}' panicked at {}:{}:{}: {}", thread_name, file, line, column, message);
+        error!(
+            "thread '{}' panicked at {}:{}:{}: {}",
+            thread_name, file, line, column, message
+        );
         // Invoke the default hook as well, since it might include additional info such as the full backtrace
         default_hook(panic_info);
         println!("Exiting...");

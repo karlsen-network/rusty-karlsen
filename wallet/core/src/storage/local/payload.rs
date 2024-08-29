@@ -19,8 +19,17 @@ impl Payload {
     const STORAGE_MAGIC: u32 = 0x41544144;
     const STORAGE_VERSION: u32 = 0;
 
-    pub fn new(prv_key_data: Vec<PrvKeyData>, accounts: Vec<AccountStorage>, address_book: Vec<AddressBookEntry>) -> Self {
-        Self { prv_key_data, accounts, address_book, encrypt_transactions: None }
+    pub fn new(
+        prv_key_data: Vec<PrvKeyData>,
+        accounts: Vec<AccountStorage>,
+        address_book: Vec<AddressBookEntry>,
+    ) -> Self {
+        Self {
+            prv_key_data,
+            accounts,
+            address_book,
+            encrypt_transactions: None,
+        }
     }
 }
 
@@ -39,18 +48,27 @@ impl Payload {
         payment_secret: Option<&Secret>,
         encryption_kind: EncryptionKind,
     ) -> Result<PrvKeyData> {
-        let prv_key_data = PrvKeyData::try_new_from_mnemonic(mnemonic, payment_secret, encryption_kind)?;
+        let prv_key_data =
+            PrvKeyData::try_new_from_mnemonic(mnemonic, payment_secret, encryption_kind)?;
 
-        if !self.prv_key_data.iter().any(|existing_key_data| prv_key_data.id == existing_key_data.id) {
+        if !self
+            .prv_key_data
+            .iter()
+            .any(|existing_key_data| prv_key_data.id == existing_key_data.id)
+        {
             self.prv_key_data.push(prv_key_data.clone());
             Ok(prv_key_data)
         } else {
-            Err(Error::custom("private key data id already exists in the wallet"))
+            Err(Error::custom(
+                "private key data id already exists in the wallet",
+            ))
         }
     }
 
     pub fn find_prv_key_data(&self, id: &PrvKeyDataId) -> Option<&PrvKeyData> {
-        self.prv_key_data.iter().find(|prv_key_data| prv_key_data.id == *id)
+        self.prv_key_data
+            .iter()
+            .find(|prv_key_data| prv_key_data.id == *id)
     }
 }
 
@@ -68,14 +86,20 @@ impl BorshSerialize for Payload {
 
 impl BorshDeserialize for Payload {
     fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
-        let StorageHeader { version: _, .. } =
-            StorageHeader::deserialize(buf)?.try_magic(Self::STORAGE_MAGIC)?.try_version(Self::STORAGE_VERSION)?;
+        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?
+            .try_magic(Self::STORAGE_MAGIC)?
+            .try_version(Self::STORAGE_VERSION)?;
         let prv_key_data = BorshDeserialize::deserialize(buf)?;
         let accounts = BorshDeserialize::deserialize(buf)?;
         let address_book = BorshDeserialize::deserialize(buf)?;
         let encrypt_transactions = BorshDeserialize::deserialize(buf)?;
 
-        Ok(Self { prv_key_data, accounts, address_book, encrypt_transactions })
+        Ok(Self {
+            prv_key_data,
+            accounts,
+            address_book,
+            encrypt_transactions,
+        })
     }
 }
 

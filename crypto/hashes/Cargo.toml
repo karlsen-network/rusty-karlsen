@@ -13,6 +13,7 @@ repository.workspace = true
 no-asm = ["keccak"]
 
 [dependencies]
+lazy_static = "1.4.0"
 blake2b_simd.workspace = true
 borsh.workspace = true
 faster-hex.workspace = true
@@ -20,6 +21,7 @@ js-sys.workspace = true
 karlsen-utils.workspace = true
 keccak = { workspace = true, optional = true }
 blake3.workspace = true
+tiny-keccak.workspace = true
 once_cell.workspace = true
 serde.workspace = true
 sha2.workspace = true

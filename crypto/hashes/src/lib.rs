@@ -22,7 +22,9 @@ pub use hashers::*;
 
 // TODO: Check if we use hash more as an array of u64 or of bytes and change the default accordingly
 /// @category General
-#[derive(Eq, Clone, Copy, Default, PartialOrd, Ord, BorshSerialize, BorshDeserialize, CastFromJs)]
+#[derive(
+    Eq, Clone, Copy, Default, PartialOrd, Ord, BorshSerialize, BorshDeserialize, CastFromJs,
+)]
 #[wasm_bindgen]
 pub struct Hash([u8; HASH_SIZE]);
 
@@ -69,19 +71,25 @@ impl Hash {
     #[inline(always)]
     pub fn to_le_u64(self) -> [u64; 4] {
         let mut out = [0u64; 4];
-        out.iter_mut().zip(self.iter_le_u64()).for_each(|(out, word)| *out = word);
+        out.iter_mut()
+            .zip(self.iter_le_u64())
+            .for_each(|(out, word)| *out = word);
         out
     }
 
     #[inline(always)]
     pub fn iter_le_u64(&self) -> impl ExactSizeIterator<Item = u64> + '_ {
-        self.0.chunks_exact(8).map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
+        self.0
+            .chunks_exact(8)
+            .map(|chunk| u64::from_le_bytes(chunk.try_into().unwrap()))
     }
 
     #[inline(always)]
     pub fn from_le_u64(arr: [u64; 4]) -> Self {
         let mut ret = [0; HASH_SIZE];
-        ret.chunks_exact_mut(8).zip(arr.iter()).for_each(|(bytes, word)| bytes.copy_from_slice(&word.to_le_bytes()));
+        ret.chunks_exact_mut(8)
+            .zip(arr.iter())
+            .for_each(|(bytes, word)| bytes.copy_from_slice(&word.to_le_bytes()));
         Self(ret)
     }
 
@@ -113,7 +121,8 @@ impl Display for Hash {
     #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut hex = [0u8; HASH_SIZE * 2];
-        faster_hex::hex_encode(&self.0, &mut hex).expect("The output is exactly twice the size of the input");
+        faster_hex::hex_encode(&self.0, &mut hex)
+            .expect("The output is exactly twice the size of the input");
         f.write_str(unsafe { str::from_utf8_unchecked(&hex) })
     }
 }
@@ -190,10 +199,9 @@ impl TryCastFromJs for Hash {
     fn try_cast_from(value: impl AsRef<JsValue>) -> Result<Cast<Self>, Self::Error> {
         Self::resolve(&value, || {
             let bytes = value.as_ref().try_as_vec_u8()?;
-            Ok(Hash(
-                <[u8; HASH_SIZE]>::try_from(bytes)
-                    .map_err(|_| TryFromError::WrongSize("Slice must have the length of Hash".into()))?,
-            ))
+            Ok(Hash(<[u8; HASH_SIZE]>::try_from(bytes).map_err(|_| {
+                TryFromError::WrongSize("Slice must have the length of Hash".into())
+            })?))
         })
     }
 }
@@ -213,13 +221,19 @@ mod tests {
         let hash2 = Hash::from_str(hash_str).unwrap();
         assert_eq!(hash, hash2);
 
-        let hash3 = Hash::from_str("8e40af02265360d59f4ecf9ae9ebf8f00a3118408f5a9cdcbcc9c0f93642f3ab").unwrap();
+        let hash3 =
+            Hash::from_str("8e40af02265360d59f4ecf9ae9ebf8f00a3118408f5a9cdcbcc9c0f93642f3ab")
+                .unwrap();
         assert_ne!(hash2, hash3);
 
         let odd_str = "8e40af02265360d59f4ecf9ae9ebf8f00a3118408f5a9cdcbcc9c0f93642f3a";
         let short_str = "8e40af02265360d59f4ecf9ae9ebf8f00a3118408f5a9cdcbcc9c0f93642f3";
 
-        assert!(matches!(dbg!(Hash::from_str(odd_str)), Err(faster_hex::Error::InvalidLength(len)) if len == 64));
-        assert!(matches!(dbg!(Hash::from_str(short_str)), Err(faster_hex::Error::InvalidLength(len)) if len == 64));
+        assert!(
+            matches!(dbg!(Hash::from_str(odd_str)), Err(faster_hex::Error::InvalidLength(len)) if len == 64)
+        );
+        assert!(
+            matches!(dbg!(Hash::from_str(short_str)), Err(faster_hex::Error::InvalidLength(len)) if len == 64)
+        );
     }
 }

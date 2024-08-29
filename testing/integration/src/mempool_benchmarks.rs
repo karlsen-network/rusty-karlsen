@@ -6,7 +6,10 @@ use crate::{
         daemon::{ClientManager, Daemon},
         utils::CONTRACT_FACTOR,
     },
-    tasks::{block::group::MinerGroupTask, daemon::DaemonTask, tx::group::TxSenderGroupTask, Stopper, TasksRunner},
+    tasks::{
+        block::group::MinerGroupTask, daemon::DaemonTask, tx::group::TxSenderGroupTask, Stopper,
+        TasksRunner,
+    },
 };
 use futures_util::future::join_all;
 use karlsen_addresses::Address;
@@ -39,7 +42,9 @@ use tokio::join;
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_bbt_latency() {
-    karlsen_core::log::try_init_logger("info,karlsen_core::time=debug,karlsen_mining::monitor=debug");
+    karlsen_core::log::try_init_logger(
+        "info,karlsen_core::time=debug,karlsen_mining::monitor=debug",
+    );
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();
 
@@ -76,8 +81,11 @@ async fn bench_bbt_latency() {
     // Setup
     //
     let (prealloc_sk, prealloc_pk) = secp256k1::generate_keypair(&mut thread_rng());
-    let prealloc_address =
-        Address::new(NetworkType::Simnet.into(), karlsen_addresses::Version::PubKey, &prealloc_pk.x_only_public_key().0.serialize());
+    let prealloc_address = Address::new(
+        NetworkType::Simnet.into(),
+        karlsen_addresses::Version::PubKey,
+        &prealloc_pk.x_only_public_key().0.serialize(),
+    );
     let schnorr_key = secp256k1::Keypair::from_secret_key(secp256k1::SECP256K1, &prealloc_sk);
     let spk = pay_to_address_script(&prealloc_address);
 
@@ -95,7 +103,13 @@ async fn bench_bbt_latency() {
     let params: Params = network.into();
 
     let utxoset = args.generate_prealloc_utxos(args.num_prealloc_utxos.unwrap());
-    let txs = common::utils::generate_tx_dag(utxoset.clone(), schnorr_key, spk, TX_COUNT / TX_LEVEL_WIDTH, TX_LEVEL_WIDTH);
+    let txs = common::utils::generate_tx_dag(
+        utxoset.clone(),
+        schnorr_key,
+        spk,
+        TX_COUNT / TX_LEVEL_WIDTH,
+        TX_LEVEL_WIDTH,
+    );
     common::utils::verify_tx_dag(&utxoset, &txs);
     info!("Generated overall {} txs", txs.len());
 
@@ -110,27 +124,52 @@ async fn bench_bbt_latency() {
 
     // Mining key and address
     let (sk, pk) = &secp256k1::generate_keypair(&mut thread_rng());
-    let pay_address =
-        Address::new(network.network_type().into(), karlsen_addresses::Version::PubKey, &pk.x_only_public_key().0.serialize());
-    debug!("Generated private key {} and address {}", sk.display_secret(), pay_address);
+    let pay_address = Address::new(
+        network.network_type().into(),
+        karlsen_addresses::Version::PubKey,
+        &pk.x_only_public_key().0.serialize(),
+    );
+    debug!(
+        "Generated private key {} and address {}",
+        sk.display_secret(),
+        pay_address
+    );
 
-    let current_template = Arc::new(Mutex::new(bbt_client.get_block_template(pay_address.clone(), vec![]).await.unwrap()));
+    let current_template = Arc::new(Mutex::new(
+        bbt_client
+            .get_block_template(pay_address.clone(), vec![])
+            .await
+            .unwrap(),
+    ));
     let current_template_consume = current_template.clone();
 
     let executing = Arc::new(AtomicBool::new(true));
     let (sender, receiver) = async_channel::unbounded();
-    bbt_client.start(Some(Arc::new(ChannelNotify::new(sender)))).await;
-    bbt_client.start_notify(ListenerId::default(), Scope::NewBlockTemplate(NewBlockTemplateScope {})).await.unwrap();
+    bbt_client
+        .start(Some(Arc::new(ChannelNotify::new(sender))))
+        .await;
+    bbt_client
+        .start_notify(
+            ListenerId::default(),
+            Scope::NewBlockTemplate(NewBlockTemplateScope {}),
+        )
+        .await
+        .unwrap();
 
     let submit_block_pool = daemon.new_client_pool(SUBMIT_BLOCK_CLIENTS, 100).await;
     let submit_block_pool_tasks = submit_block_pool.start(|c, block| async move {
         let _sw = karlsen_core::time::Stopwatch::<500>::with_threshold("sb");
         let response = c.submit_block(block, false).await.unwrap();
-        assert_eq!(response.report, karlsen_rpc_core::SubmitBlockReport::Success);
+        assert_eq!(
+            response.report,
+            karlsen_rpc_core::SubmitBlockReport::Success
+        );
         false
     });
 
-    let submit_tx_pool = daemon.new_client_pool::<(usize, Arc<Transaction>)>(SUBMIT_TX_CLIENTS, 100).await;
+    let submit_tx_pool = daemon
+        .new_client_pool::<(usize, Arc<Transaction>)>(SUBMIT_TX_CLIENTS, 100)
+        .await;
     let submit_tx_pool_tasks = submit_tx_pool.start(|c, (i, tx)| async move {
         match c.submit_transaction(tx.as_ref().into(), false).await {
             Ok(_) => {}
@@ -156,7 +195,8 @@ async fn bench_bbt_latency() {
                         // Drain the channel
                     }
                     // let _sw = karlsen_core::time::Stopwatch::<500>::with_threshold("bbt");
-                    *current_template.lock() = cc.get_block_template(pac.clone(), vec![]).await.unwrap();
+                    *current_template.lock() =
+                        cc.get_block_template(pac.clone(), vec![]).await.unwrap();
                 }
                 _ => panic!(),
             }
@@ -203,7 +243,13 @@ async fn bench_bbt_latency() {
             }
         }
         exec.store(false, Ordering::Relaxed);
-        bbt_client.stop_notify(ListenerId::default(), Scope::NewBlockTemplate(NewBlockTemplateScope {})).await.unwrap();
+        bbt_client
+            .stop_notify(
+                ListenerId::default(),
+                Scope::NewBlockTemplate(NewBlockTemplateScope {}),
+            )
+            .await
+            .unwrap();
         bbt_client.disconnect().await.unwrap();
         karlsen_core::warn!("Miner loop task exited");
     });
@@ -211,13 +257,20 @@ async fn bench_bbt_latency() {
     let tx_sender = submit_tx_pool.sender();
     let exec = executing.clone();
     let cc = client.clone();
-    let mut tps_pressure = if MEMPOOL_TARGET < u64::MAX { u64::MAX } else { TPS_PRESSURE };
+    let mut tps_pressure = if MEMPOOL_TARGET < u64::MAX {
+        u64::MAX
+    } else {
+        TPS_PRESSURE
+    };
     let mut last_log_time = Instant::now() - Duration::from_secs(5);
     let mut log_index = 0;
     let tx_sender_task = tokio::spawn(async move {
         for (i, tx) in txs.into_iter().enumerate() {
             if tps_pressure != u64::MAX {
-                tokio::time::sleep(std::time::Duration::from_secs_f64(1.0 / tps_pressure as f64)).await;
+                tokio::time::sleep(std::time::Duration::from_secs_f64(
+                    1.0 / tps_pressure as f64,
+                ))
+                .await;
             }
             if last_log_time.elapsed() > Duration::from_millis(200) {
                 let mut mempool_size = cc.get_info().await.unwrap().mempool_size;
@@ -257,7 +310,9 @@ async fn bench_bbt_latency() {
             }
             let mempool_size = cc.get_info().await.unwrap().mempool_size;
             info!("Mempool size: {:#?}", mempool_size);
-            if mempool_size == 0 || (TX_COUNT as u64 > MEMPOOL_TARGET && mempool_size < MEMPOOL_TARGET) {
+            if mempool_size == 0
+                || (TX_COUNT as u64 > MEMPOOL_TARGET && mempool_size < MEMPOOL_TARGET)
+            {
                 break;
             }
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -287,7 +342,9 @@ async fn bench_bbt_latency() {
 #[tokio::test]
 #[ignore = "bmk"]
 async fn bench_bbt_latency_2() {
-    karlsen_core::log::try_init_logger("info,karlsen_core::time=debug,karlsen_mining::monitor=debug");
+    karlsen_core::log::try_init_logger(
+        "info,karlsen_core::time=debug,karlsen_mining::monitor=debug",
+    );
     // As we log the panic, we want to set it up after the logger
     karlsen_core::panic::configure_panic();
 
@@ -324,8 +381,11 @@ async fn bench_bbt_latency_2() {
     // Setup
     //
     let (prealloc_sk, prealloc_pk) = secp256k1::generate_keypair(&mut thread_rng());
-    let prealloc_address =
-        Address::new(NetworkType::Simnet.into(), karlsen_addresses::Version::PubKey, &prealloc_pk.x_only_public_key().0.serialize());
+    let prealloc_address = Address::new(
+        NetworkType::Simnet.into(),
+        karlsen_addresses::Version::PubKey,
+        &prealloc_pk.x_only_public_key().0.serialize(),
+    );
     let schnorr_key = secp256k1::Keypair::from_secret_key(secp256k1::SECP256K1, &prealloc_sk);
     let spk = pay_to_address_script(&prealloc_address);
 
@@ -338,7 +398,13 @@ async fn bench_bbt_latency_2() {
     let params: Params = network.into();
 
     let utxoset = args.generate_prealloc_utxos(args.num_prealloc_utxos.unwrap());
-    let txs = common::utils::generate_tx_dag(utxoset.clone(), schnorr_key, spk, TX_COUNT / TX_LEVEL_WIDTH, TX_LEVEL_WIDTH);
+    let txs = common::utils::generate_tx_dag(
+        utxoset.clone(),
+        schnorr_key,
+        spk,
+        TX_COUNT / TX_LEVEL_WIDTH,
+        TX_LEVEL_WIDTH,
+    );
     common::utils::verify_tx_dag(&utxoset, &txs);
     info!("Generated overall {} txs", txs.len());
 
@@ -347,8 +413,15 @@ async fn bench_bbt_latency_2() {
         .launch()
         .await
         .task(
-            MinerGroupTask::build(network, client_manager.clone(), SUBMIT_BLOCK_CLIENTS, params.bps(), BLOCK_COUNT, Stopper::Signal)
-                .await,
+            MinerGroupTask::build(
+                network,
+                client_manager.clone(),
+                SUBMIT_BLOCK_CLIENTS,
+                params.bps(),
+                BLOCK_COUNT,
+                Stopper::Signal,
+            )
+            .await,
         )
         .task(
             TxSenderGroupTask::build(

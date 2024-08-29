@@ -507,8 +507,18 @@ pub struct TransactionsDataGetRequest {
 }
 
 impl TransactionsDataGetRequest {
-    pub fn with_range(account_id: AccountId, network_id: NetworkId, range: std::ops::Range<u64>) -> Self {
-        Self { account_id, network_id, filter: None, start: range.start, end: range.end }
+    pub fn with_range(
+        account_id: AccountId,
+        network_id: NetworkId,
+        range: std::ops::Range<u64>,
+    ) -> Self {
+        Self {
+            account_id,
+            network_id,
+            filter: None,
+            start: range.start,
+            end: range.end,
+        }
     }
 }
 

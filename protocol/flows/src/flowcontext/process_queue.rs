@@ -12,7 +12,10 @@ impl<T: Copy + PartialEq + Eq + std::hash::Hash> ProcessQueue<T> {
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
-        Self { deque: VecDeque::with_capacity(capacity), set: HashSet::with_capacity(capacity) }
+        Self {
+            deque: VecDeque::with_capacity(capacity),
+            set: HashSet::with_capacity(capacity),
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -24,7 +27,10 @@ impl<T: Copy + PartialEq + Eq + std::hash::Hash> ProcessQueue<T> {
     }
 
     pub fn from(set: HashSet<T>) -> Self {
-        Self { deque: set.iter().copied().collect(), set }
+        Self {
+            deque: set.iter().copied().collect(),
+            set,
+        }
     }
 
     pub fn enqueue_chunk<I: IntoIterator<Item = T>>(&mut self, iter: I) {
@@ -44,8 +50,13 @@ impl<T: Copy + PartialEq + Eq + std::hash::Hash> ProcessQueue<T> {
         }
     }
 
-    pub fn dequeue_chunk(&mut self, max_chunk_size: usize) -> impl ExactSizeIterator<Item = T> + '_ {
-        self.deque.drain(0..max_chunk_size.min(self.deque.len())).inspect(|x| assert!(self.set.remove(x)))
+    pub fn dequeue_chunk(
+        &mut self,
+        max_chunk_size: usize,
+    ) -> impl ExactSizeIterator<Item = T> + '_ {
+        self.deque
+            .drain(0..max_chunk_size.min(self.deque.len()))
+            .inspect(|x| assert!(self.set.remove(x)))
     }
 }
 

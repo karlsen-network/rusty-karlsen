@@ -29,24 +29,38 @@ impl AsyncRuntime {
 
     pub fn new(threads: usize) -> Self {
         trace!("Creating the async-runtime service");
-        Self { threads, services: Mutex::new(Vec::new()) }
+        Self {
+            threads,
+            services: Mutex::new(Vec::new()),
+        }
     }
 
     pub fn register<T>(&self, service: Arc<T>)
     where
         T: AsyncService,
     {
-        trace!("async-runtime registering service {}", service.clone().ident());
+        trace!(
+            "async-runtime registering service {}",
+            service.clone().ident()
+        );
         self.services.lock().unwrap().push(service);
     }
 
     pub fn find(&self, ident: &'static str) -> Option<Arc<dyn AsyncService>> {
-        self.services.lock().unwrap().iter().find(|s| (*s).clone().ident() == ident).cloned()
+        self.services
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|s| (*s).clone().ident() == ident)
+            .cloned()
     }
 
     pub fn init(self: Arc<AsyncRuntime>, core: Arc<Core>) -> Vec<ThreadJoinHandle<()>> {
         trace!("initializing async-runtime service");
-        vec![thread::Builder::new().name(Self::IDENT.to_string()).spawn(move || self.worker(core)).unwrap()]
+        vec![thread::Builder::new()
+            .name(Self::IDENT.to_string())
+            .spawn(move || self.worker(core))
+            .unwrap()]
     }
 
     /// Launch a tokio Runtime and run the top-level async objects
@@ -84,7 +98,10 @@ impl AsyncRuntime {
 
         // wait for at least one service to return
         let (result, idx, remaining_futures) = select_all(futures).await;
-        trace!("async-runtime worker had service {} returning", self.services.lock().unwrap()[idx].clone().ident());
+        trace!(
+            "async-runtime worker had service {} returning",
+            self.services.lock().unwrap()[idx].clone().ident()
+        );
         // if at least one service yields an error, initiate global shutdown
         // this will cause signal_exit() to be executed externally (by Core invoking `stop()`)
         match result {
@@ -96,7 +113,10 @@ impl AsyncRuntime {
         }
 
         // wait for remaining services to finish
-        trace!("async-runtime worker joining remaining {} services", remaining_futures.len());
+        trace!(
+            "async-runtime worker joining remaining {} services",
+            remaining_futures.len()
+        );
         try_join_all(remaining_futures).await.unwrap();
 
         // Stop all async services

@@ -12,7 +12,11 @@ pub(crate) mod matcher;
 pub(crate) mod queue;
 
 pub(crate) trait Resolver: Send + Sync + Debug {
-    fn register_request(&self, op: KarlsendPayloadOps, request: &KarlsendRequest) -> KarlsendResponseReceiver;
+    fn register_request(
+        &self,
+        op: KarlsendPayloadOps,
+        request: &KarlsendRequest,
+    ) -> KarlsendResponseReceiver;
     fn handle_response(&self, response: KarlsendResponse);
     fn remove_expired_requests(&self, timeout: Duration);
 }

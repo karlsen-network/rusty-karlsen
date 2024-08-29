@@ -62,7 +62,7 @@ If you want to transmit transactions, first create a Rothschild wallet
 
 Like karlsend, the Rothschild window should remain open and undisturbed.
 
-For mining, grab `kaspa-miner` from within the latest [Release](https://github.com/elichai/kaspa-miner/releases) and run it with the following flags (**this is currently the only miner that supports testnet-11**):
+For mining, grab `karlsen-miner` from within the latest [Release](https://github.com/karlsen-network/karlsen-miner/releases) and run it with the following flags (**this is currently the only miner that supports testnet-11**):
     ```
     karlsen-miner --testnet --mining-address <address> -p 42210 -t 1
     ```

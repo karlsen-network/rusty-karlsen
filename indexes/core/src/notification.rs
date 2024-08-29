@@ -24,7 +24,11 @@ pub enum Notification {
 }
 
 impl NotificationTrait for Notification {
-    fn apply_overall_subscription(&self, subscription: &OverallSubscription, _context: &SubscriptionContext) -> Option<Self> {
+    fn apply_overall_subscription(
+        &self,
+        subscription: &OverallSubscription,
+        _context: &SubscriptionContext,
+    ) -> Option<Self> {
         match subscription.active() {
             true => Some(self.clone()),
             false => None,
@@ -46,8 +50,12 @@ impl NotificationTrait for Notification {
     ) -> Option<Self> {
         match subscription.active() {
             true => {
-                let Self::UtxosChanged(notification) = self else { return None };
-                notification.apply_utxos_changed_subscription(subscription, context).map(Self::UtxosChanged)
+                let Self::UtxosChanged(notification) = self else {
+                    return None;
+                };
+                notification
+                    .apply_utxos_changed_subscription(subscription, context)
+                    .map(Self::UtxosChanged)
             }
             false => None,
         }
@@ -69,13 +77,19 @@ pub struct UtxosChangedNotification {
 
 impl From<UtxoChanges> for UtxosChangedNotification {
     fn from(item: UtxoChanges) -> Self {
-        Self { added: Arc::new(item.added), removed: Arc::new(item.removed) }
+        Self {
+            added: Arc::new(item.added),
+            removed: Arc::new(item.removed),
+        }
     }
 }
 
 impl UtxosChangedNotification {
     pub fn from_utxos_changed(utxos_changed: UtxoChanges) -> Self {
-        Self { added: Arc::new(utxos_changed.added), removed: Arc::new(utxos_changed.removed) }
+        Self {
+            added: Arc::new(utxos_changed.added),
+            removed: Arc::new(utxos_changed.removed),
+        }
     }
 
     pub(crate) fn apply_utxos_changed_subscription(
@@ -91,7 +105,10 @@ impl UtxosChangedNotification {
             if added.is_empty() && removed.is_empty() {
                 None
             } else {
-                Some(Self { added: Arc::new(added), removed: Arc::new(removed) })
+                Some(Self {
+                    added: Arc::new(added),
+                    removed: Arc::new(removed),
+                })
             }
         }
     }

@@ -41,16 +41,31 @@ pub struct Adaptor {
 }
 
 impl Adaptor {
-    pub(crate) fn new(server_termination: Option<OneshotSender<()>>, connection_handler: ConnectionHandler, hub: Hub) -> Self {
-        Self { _server_termination: server_termination, connection_handler, hub }
+    pub(crate) fn new(
+        server_termination: Option<OneshotSender<()>>,
+        connection_handler: ConnectionHandler,
+        hub: Hub,
+    ) -> Self {
+        Self {
+            _server_termination: server_termination,
+            connection_handler,
+            hub,
+        }
     }
 
     /// Creates a P2P adaptor with only client-side support. Typical Karlsen nodes should use `Adaptor::bidirectional`
-    pub fn client_only(hub: Hub, initializer: Arc<dyn ConnectionInitializer>, counters: Arc<TowerConnectionCounters>) -> Arc<Self> {
+    pub fn client_only(
+        hub: Hub,
+        initializer: Arc<dyn ConnectionInitializer>,
+        counters: Arc<TowerConnectionCounters>,
+    ) -> Arc<Self> {
         let (hub_sender, hub_receiver) = mpsc_channel(Self::hub_channel_size());
         let connection_handler = ConnectionHandler::new(hub_sender, initializer.clone(), counters);
         let adaptor = Arc::new(Adaptor::new(None, connection_handler, hub));
-        adaptor.hub.clone().start_event_loop(hub_receiver, initializer);
+        adaptor
+            .hub
+            .clone()
+            .start_event_loop(hub_receiver, initializer);
         adaptor
     }
 
@@ -64,14 +79,24 @@ impl Adaptor {
         let (hub_sender, hub_receiver) = mpsc_channel(Self::hub_channel_size());
         let connection_handler = ConnectionHandler::new(hub_sender, initializer.clone(), counters);
         let server_termination = connection_handler.serve(serve_address)?;
-        let adaptor = Arc::new(Adaptor::new(Some(server_termination), connection_handler, hub));
-        adaptor.hub.clone().start_event_loop(hub_receiver, initializer);
+        let adaptor = Arc::new(Adaptor::new(
+            Some(server_termination),
+            connection_handler,
+            hub,
+        ));
+        adaptor
+            .hub
+            .clone()
+            .start_event_loop(hub_receiver, initializer);
         Ok(adaptor)
     }
 
     /// Connect to a new peer (no retries)
     pub async fn connect_peer(&self, peer_address: String) -> Result<PeerKey, ConnectionError> {
-        self.connection_handler.connect_with_retry(peer_address, 1, Default::default()).await.map(|r| r.key())
+        self.connection_handler
+            .connect_with_retry(peer_address, 1, Default::default())
+            .await
+            .map(|r| r.key())
     }
 
     /// Connect to a new peer (with params controlling retry behavior)
@@ -81,7 +106,10 @@ impl Adaptor {
         retry_attempts: u8,
         retry_interval: Duration,
     ) -> Result<PeerKey, ConnectionError> {
-        self.connection_handler.connect_with_retry(peer_address, retry_attempts, retry_interval).await.map(|r| r.key())
+        self.connection_handler
+            .connect_with_retry(peer_address, retry_attempts, retry_interval)
+            .await
+            .map(|r| r.key())
     }
 
     /// Terminates all peers and cleans up any additional async resources

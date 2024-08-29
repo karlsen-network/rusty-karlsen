@@ -16,11 +16,13 @@ use karlsen_consensus::{
     params::{Params, Testnet11Bps, DEVNET_PARAMS, NETWORK_DELAY_BOUND, TESTNET11_PARAMS},
 };
 use karlsen_consensus_core::{
-    api::ConsensusApi, block::Block, blockstatus::BlockStatus, config::bps::calculate_ghostdag_k, errors::block::BlockProcessResult,
-    BlockHashSet, BlockLevel, HashMapCustomHasher,
+    api::ConsensusApi, block::Block, blockstatus::BlockStatus, config::bps::calculate_ghostdag_k,
+    errors::block::BlockProcessResult, BlockHashSet, BlockLevel, HashMapCustomHasher,
 };
 use karlsen_consensus_notify::root::ConsensusNotificationRoot;
-use karlsen_core::{info, task::service::AsyncService, task::tick::TickService, time::unix_now, trace, warn};
+use karlsen_core::{
+    info, task::service::AsyncService, task::tick::TickService, time::unix_now, trace, warn,
+};
 use karlsen_database::prelude::ConnBuilder;
 use karlsen_database::{create_temp_db, load_existing_db};
 use karlsen_hashes::Hash;
@@ -125,7 +127,9 @@ static ALLOC: dhat::Alloc = dhat::Alloc;
 
 fn main() {
     #[cfg(feature = "heap")]
-    let _profiler = dhat::Profiler::builder().file_name("simpa-heap.json").build();
+    let _profiler = dhat::Profiler::builder()
+        .file_name("simpa-heap.json")
+        .build();
 
     init_allocator_with_default_settings();
 
@@ -152,8 +156,16 @@ fn main_impl(mut args: Args) {
         let ts = Arc::new(TickService::new());
 
         let cb = move |counters: CountersSnapshot| {
-            trace!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_process_metrics_display());
-            trace!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_io_metrics_display());
+            trace!(
+                "[{}] {}",
+                karlsen_perf_monitor::SERVICE_NAME,
+                counters.to_process_metrics_display()
+            );
+            trace!(
+                "[{}] {}",
+                karlsen_perf_monitor::SERVICE_NAME,
+                counters.to_io_metrics_display()
+            );
             #[cfg(feature = "heap")]
             trace!("heap stats: {:?}", dhat::HeapStats::get());
         };
@@ -176,8 +188,16 @@ fn main_impl(mut args: Args) {
             args.miners
         );
     }
-    args.bps = if args.testnet11 { Testnet11Bps::bps() as f64 } else { args.bps };
-    let mut params = if args.testnet11 { TESTNET11_PARAMS } else { DEVNET_PARAMS };
+    args.bps = if args.testnet11 {
+        Testnet11Bps::bps() as f64
+    } else {
+        args.bps
+    };
+    let mut params = if args.testnet11 {
+        TESTNET11_PARAMS
+    } else {
+        DEVNET_PARAMS
+    };
     params.storage_mass_activation_daa_score = 400;
     params.storage_mass_parameter = 10_000;
     let mut builder = ConfigBuilder::new(params)
@@ -192,7 +212,9 @@ fn main_impl(mut args: Args) {
     }
     let config = Arc::new(builder.build());
     let default_fd = fd_budget::limit() / 2;
-    let mut conn_builder = ConnBuilder::default().with_parallelism(num_cpus::get()).with_files_limit(default_fd);
+    let mut conn_builder = ConnBuilder::default()
+        .with_parallelism(num_cpus::get())
+        .with_files_limit(default_fd);
     if let Some(rocksdb_files_limit) = args.rocksdb_files_limit {
         conn_builder = conn_builder.with_files_limit(rocksdb_files_limit);
     }
@@ -206,7 +228,12 @@ fn main_impl(mut args: Args) {
         let config = Arc::new(config);
         let (lifetime, db) = match (args.rocksdb_stats, args.rocksdb_stats_period_sec) {
             (true, Some(rocksdb_stats_period_sec)) => {
-                load_existing_db!(input_dir, conn_builder.enable_stats().with_stats_period(rocksdb_stats_period_sec))
+                load_existing_db!(
+                    input_dir,
+                    conn_builder
+                        .enable_stats()
+                        .with_stats_period(rocksdb_stats_period_sec)
+                )
             }
             (true, None) => load_existing_db!(input_dir, conn_builder.enable_stats()),
             (false, _) => load_existing_db!(input_dir, conn_builder),
@@ -224,8 +251,18 @@ fn main_impl(mut args: Args) {
         ));
         (consensus, lifetime)
     } else {
-        let until = if args.target_blocks.is_none() { config.genesis.timestamp + args.sim_time * 1000 } else { u64::MAX }; // milliseconds
-        let mut sim = KarlsenNetworkSimulator::new(args.delay, args.bps, args.target_blocks, config.clone(), args.output_dir);
+        let until = if args.target_blocks.is_none() {
+            config.genesis.timestamp + args.sim_time * 1000
+        } else {
+            u64::MAX
+        }; // milliseconds
+        let mut sim = KarlsenNetworkSimulator::new(
+            args.delay,
+            args.bps,
+            args.target_blocks,
+            config.clone(),
+            args.output_dir,
+        );
         let (consensus, handles, lifetime) = sim
             .init(
                 args.miners,
@@ -246,7 +283,9 @@ fn main_impl(mut args: Args) {
     }
 
     // Benchmark the DAG validation time
-    let (_lifetime2, db2) = create_temp_db!(ConnBuilder::default().with_parallelism(num_cpus::get()).with_files_limit(default_fd));
+    let (_lifetime2, db2) = create_temp_db!(ConnBuilder::default()
+        .with_parallelism(num_cpus::get())
+        .with_files_limit(default_fd));
     let (dummy_notification_sender, _) = unbounded();
     let notification_root = Arc::new(ConsensusNotificationRoot::new(dummy_notification_sender));
     let consensus2 = Arc::new(Consensus::new(
@@ -260,9 +299,23 @@ fn main_impl(mut args: Args) {
     ));
     let handles2 = consensus2.run_processors();
     if args.headers_first {
-        rt.block_on(validate(&consensus, &consensus2, &config, args.delay, args.bps, true));
+        rt.block_on(validate(
+            &consensus,
+            &consensus2,
+            &config,
+            args.delay,
+            args.bps,
+            true,
+        ));
     }
-    rt.block_on(validate(&consensus, &consensus2, &config, args.delay, args.bps, false));
+    rt.block_on(validate(
+        &consensus,
+        &consensus2,
+        &config,
+        args.delay,
+        args.bps,
+        false,
+    ));
     consensus2.shutdown(handles2);
     if let Some(stop_perf_monitor) = stop_perf_monitor {
         _ = rt.block_on(stop_perf_monitor);
@@ -277,27 +330,33 @@ fn apply_args_to_consensus_params(args: &Args, params: &mut Params) {
     params.genesis.timestamp = 0;
     if args.testnet11 {
         info!(
-            "Using kaspa-testnet-11 configuration (GHOSTDAG K={}, DAA window size={}, Median time window size={})",
+            "Using karlsen-testnet-11 configuration (GHOSTDAG K={}, DAA window size={}, Median time window size={})",
             params.ghostdag_k,
             params.difficulty_window_size(0),
             params.past_median_time_window_size(0),
         );
     } else {
         let max_delay = args.delay.max(NETWORK_DELAY_BOUND as f64);
-        let k = u64::max(calculate_ghostdag_k(2.0 * max_delay * args.bps, 0.05), params.ghostdag_k as u64);
+        let k = u64::max(
+            calculate_ghostdag_k(2.0 * max_delay * args.bps, 0.05),
+            params.ghostdag_k as u64,
+        );
         let k = u64::min(k, KType::MAX as u64) as KType; // Clamp to KType::MAX
         params.ghostdag_k = k;
         params.mergeset_size_limit = k as u64 * 10;
         params.max_block_parents = u8::max((0.66 * k as f64) as u8, 10);
         params.target_time_per_block = (1000.0 / args.bps) as u64;
         params.merge_depth = (params.merge_depth as f64 * args.bps) as u64;
-        params.coinbase_maturity = (params.coinbase_maturity as f64 * f64::max(1.0, args.bps * args.delay * 0.25)) as u64;
+        params.coinbase_maturity =
+            (params.coinbase_maturity as f64 * f64::max(1.0, args.bps * args.delay * 0.25)) as u64;
 
         if args.daa_legacy {
             // Scale DAA and median-time windows linearly with BPS
             params.sampling_activation_daa_score = u64::MAX;
-            params.legacy_timestamp_deviation_tolerance = (params.legacy_timestamp_deviation_tolerance as f64 * args.bps) as u64;
-            params.legacy_difficulty_window_size = (params.legacy_difficulty_window_size as f64 * args.bps) as usize;
+            params.legacy_timestamp_deviation_tolerance =
+                (params.legacy_timestamp_deviation_tolerance as f64 * args.bps) as u64;
+            params.legacy_difficulty_window_size =
+                (params.legacy_difficulty_window_size as f64 * args.bps) as usize;
         } else {
             // Use the new sampling algorithms
             params.sampling_activation_daa_score = 0;
@@ -306,7 +365,12 @@ fn apply_args_to_consensus_params(args: &Args, params: &mut Params) {
             params.difficulty_sample_rate = (2.0 * args.bps) as u64;
         }
 
-        info!("2Dλ={}, GHOSTDAG K={}, DAA window size={}", 2.0 * args.delay * args.bps, k, params.difficulty_window_size(0));
+        info!(
+            "2Dλ={}, GHOSTDAG K={}, DAA window size={}",
+            2.0 * args.delay * args.bps,
+            k,
+            params.difficulty_window_size(0)
+        );
     }
     if args.test_pruning {
         params.pruning_proof_m = 16;
@@ -331,7 +395,14 @@ fn apply_args_to_perf_params(args: &Args, perf_params: &mut PerfParams) {
     }
 }
 
-async fn validate(src_consensus: &Consensus, dst_consensus: &Consensus, params: &Params, delay: f64, bps: f64, header_only: bool) {
+async fn validate(
+    src_consensus: &Consensus,
+    dst_consensus: &Consensus,
+    params: &Params,
+    delay: f64,
+    bps: f64,
+    header_only: bool,
+) {
     let hashes = topologically_ordered_hashes(src_consensus, params.genesis.hash);
     let num_blocks = hashes.len();
     let num_txs = print_stats(src_consensus, &hashes, delay, bps, params.ghostdag_k);
@@ -367,7 +438,11 @@ async fn validate(src_consensus: &Consensus, dst_consensus: &Consensus, params: 
     }
 
     // Assert that at least one body tip was resolved with valid UTXO
-    assert!(dst_consensus.body_tips().iter().copied().any(|h| dst_consensus.block_status(h) == BlockStatus::StatusUTXOValid));
+    assert!(dst_consensus
+        .body_tips()
+        .iter()
+        .copied()
+        .any(|h| dst_consensus.block_status(h) == BlockStatus::StatusUTXOValid));
     let elapsed = start.elapsed();
     info!(
         "Total validation time: {:?}, {} processing rate: {:.2} (b/s), transaction processing rate: {:.2} (t/s)",
@@ -388,9 +463,15 @@ fn submit_chunk(
     for hash in chunk {
         let block = Block::from_arcs(
             src_consensus.headers_store.get_header(hash).unwrap(),
-            if header_only { Default::default() } else { src_consensus.block_transactions_store.get(hash).unwrap() },
+            if header_only {
+                Default::default()
+            } else {
+                src_consensus.block_transactions_store.get(hash).unwrap()
+            },
         );
-        let f = dst_consensus.validate_and_insert_block(block).virtual_state_task;
+        let f = dst_consensus
+            .validate_and_insert_block(block)
+            .virtual_state_task;
         futures.push(f);
     }
     futures
@@ -413,17 +494,53 @@ fn topologically_ordered_hashes(src_consensus: &Consensus, genesis_hash: Hash) -
     vec
 }
 
-fn print_stats(src_consensus: &Consensus, hashes: &[Hash], delay: f64, bps: f64, k: KType) -> usize {
-    let blues_mean =
-        hashes.iter().map(|&h| src_consensus.ghostdag_primary_store.get_data(h).unwrap().mergeset_blues.len()).sum::<usize>() as f64
-            / hashes.len() as f64;
-    let reds_mean =
-        hashes.iter().map(|&h| src_consensus.ghostdag_primary_store.get_data(h).unwrap().mergeset_reds.len()).sum::<usize>() as f64
-            / hashes.len() as f64;
-    let parents_mean = hashes.iter().map(|&h| src_consensus.headers_store.get_header(h).unwrap().direct_parents().len()).sum::<usize>()
-        as f64
+fn print_stats(
+    src_consensus: &Consensus,
+    hashes: &[Hash],
+    delay: f64,
+    bps: f64,
+    k: KType,
+) -> usize {
+    let blues_mean = hashes
+        .iter()
+        .map(|&h| {
+            src_consensus
+                .ghostdag_primary_store
+                .get_data(h)
+                .unwrap()
+                .mergeset_blues
+                .len()
+        })
+        .sum::<usize>() as f64
         / hashes.len() as f64;
-    let num_txs = hashes.iter().map(|&h| src_consensus.block_transactions_store.get(h).unwrap().len()).sum::<usize>();
+    let reds_mean = hashes
+        .iter()
+        .map(|&h| {
+            src_consensus
+                .ghostdag_primary_store
+                .get_data(h)
+                .unwrap()
+                .mergeset_reds
+                .len()
+        })
+        .sum::<usize>() as f64
+        / hashes.len() as f64;
+    let parents_mean = hashes
+        .iter()
+        .map(|&h| {
+            src_consensus
+                .headers_store
+                .get_header(h)
+                .unwrap()
+                .direct_parents()
+                .len()
+        })
+        .sum::<usize>() as f64
+        / hashes.len() as f64;
+    let num_txs = hashes
+        .iter()
+        .map(|&h| src_consensus.block_transactions_store.get(h).unwrap().len())
+        .sum::<usize>();
     let txs_mean = num_txs as f64 / hashes.len() as f64;
     info!("[DELAY={delay}, BPS={bps}, GHOSTDAG K={k}]");
     info!("[Average stats of generated DAG] blues: {blues_mean}, reds: {reds_mean}, parents: {parents_mean}, txs: {txs_mean}");

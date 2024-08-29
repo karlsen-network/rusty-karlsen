@@ -1,7 +1,12 @@
 use async_channel::Receiver;
 use karlsen_grpc_client::GrpcClient;
-use karlsen_notify::{connection::ChannelType, events::EventType, listener::ListenerId, scope::Scope, subscription::Command};
-use karlsen_rpc_core::{api::rpc::RpcApi, notify::connection::ChannelConnection, Notification, RpcResult};
+use karlsen_notify::{
+    connection::ChannelType, events::EventType, listener::ListenerId, scope::Scope,
+    subscription::Command,
+};
+use karlsen_rpc_core::{
+    api::rpc::RpcApi, notify::connection::ChannelConnection, Notification, RpcResult,
+};
 
 /// An event type bound notification listener
 #[derive(Clone)]
@@ -19,13 +24,20 @@ impl Listener {
         let id = client.register_new_listener(connection);
         let event = scope.event_type();
         client.start_notify(id, scope).await?;
-        let listener = Listener { client, id, event, receiver };
+        let listener = Listener {
+            client,
+            id,
+            event,
+            receiver,
+        };
         Ok(listener)
     }
 
     pub async fn execute_subscribe_command(&self, scope: Scope, command: Command) -> RpcResult<()> {
         assert_eq!(self.event, (&scope).into());
-        self.client.execute_subscribe_command(self.id, scope, command).await
+        self.client
+            .execute_subscribe_command(self.id, scope, command)
+            .await
     }
 
     pub fn drain(&self) {

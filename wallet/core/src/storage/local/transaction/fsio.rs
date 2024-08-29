@@ -27,8 +27,11 @@ pub struct TransactionStore {
 impl TransactionStore {
     pub fn new<P: AsRef<Path>>(folder: P, name: &str) -> TransactionStore {
         TransactionStore {
-            inner: Arc::new(Mutex::new(Inner { known_folders: HashSet::default() })),
-            folder: fs::resolve_path(folder.as_ref().to_str().unwrap()).expect("transaction store folder is invalid"),
+            inner: Arc::new(Mutex::new(Inner {
+                known_folders: HashSet::default(),
+            })),
+            folder: fs::resolve_path(folder.as_ref().to_str().unwrap())
+                .expect("transaction store folder is invalid"),
             name: name.to_string(),
         }
     }
@@ -59,7 +62,11 @@ impl TransactionStore {
         Ok(folder)
     }
 
-    async fn enumerate(&self, binding: &Binding, network_id: &NetworkId) -> Result<VecDeque<TransactionId>> {
+    async fn enumerate(
+        &self,
+        binding: &Binding,
+        network_id: &NetworkId,
+    ) -> Result<VecDeque<TransactionId>> {
         let folder = self.make_folder(binding, network_id);
         let mut transactions = VecDeque::new();
         match fs::readdir(folder, true).await {
@@ -81,7 +88,10 @@ impl TransactionStore {
                 if e.code() == Some("ENOENT") {
                     Err(Error::NoRecordsFound)
                 } else {
-                    log_info!("TransactionStore::enumerate(): error reading folder: {:?}", e);
+                    log_info!(
+                        "TransactionStore::enumerate(): error reading folder: {:?}",
+                        e
+                    );
                     Err(e.into())
                 }
             }
@@ -91,15 +101,32 @@ impl TransactionStore {
 
 #[async_trait]
 impl TransactionRecordStore for TransactionStore {
-    async fn transaction_id_iter(&self, binding: &Binding, network_id: &NetworkId) -> Result<StorageStream<Arc<TransactionId>>> {
-        Ok(Box::pin(TransactionIdStream::try_new(self, binding, network_id).await?))
+    async fn transaction_id_iter(
+        &self,
+        binding: &Binding,
+        network_id: &NetworkId,
+    ) -> Result<StorageStream<Arc<TransactionId>>> {
+        Ok(Box::pin(
+            TransactionIdStream::try_new(self, binding, network_id).await?,
+        ))
     }
 
-    async fn transaction_data_iter(&self, binding: &Binding, network_id: &NetworkId) -> Result<StorageStream<Arc<TransactionRecord>>> {
-        Ok(Box::pin(TransactionRecordStream::try_new(self, binding, network_id).await?))
+    async fn transaction_data_iter(
+        &self,
+        binding: &Binding,
+        network_id: &NetworkId,
+    ) -> Result<StorageStream<Arc<TransactionRecord>>> {
+        Ok(Box::pin(
+            TransactionRecordStream::try_new(self, binding, network_id).await?,
+        ))
     }
 
-    async fn load_single(&self, binding: &Binding, network_id: &NetworkId, id: &TransactionId) -> Result<Arc<TransactionRecord>> {
+    async fn load_single(
+        &self,
+        binding: &Binding,
+        network_id: &NetworkId,
+        id: &TransactionId,
+    ) -> Result<Arc<TransactionRecord>> {
         let folder = self.make_folder(binding, network_id);
         let path = folder.join(id.to_hex());
         Ok(Arc::new(read(&path, None).await?))
@@ -115,7 +142,7 @@ impl TransactionRecordStore for TransactionStore {
         let mut transactions = vec![];
 
         for id in ids {
-            let path = folder.join(&id.to_hex());
+            let path = folder.join(id.to_hex());
             match read(&path, None).await {
                 Ok(tx) => {
                     transactions.push(Arc::new(tx));
@@ -144,7 +171,7 @@ impl TransactionRecordStore for TransactionStore {
             let mut located = 0;
 
             for id in ids {
-                let path = folder.join(&id.to_hex());
+                let path = folder.join(id.to_hex());
 
                 match read(&path, None).await {
                     Ok(tx) => {
@@ -167,7 +194,7 @@ impl TransactionRecordStore for TransactionStore {
             let iter = ids.iter().skip(range.start).take(range.len());
 
             for id in iter {
-                let path = folder.join(&id.to_hex());
+                let path = folder.join(id.to_hex());
                 match read(&path, None).await {
                     Ok(tx) => {
                         transactions.push(Arc::new(tx));
@@ -181,7 +208,10 @@ impl TransactionRecordStore for TransactionStore {
             ids.len()
         };
 
-        Ok(TransactionRangeResult { transactions, total: total as u64 })
+        Ok(TransactionRangeResult {
+            transactions,
+            total: total as u64,
+        })
     }
 
     async fn store(&self, transaction_records: &[&TransactionRecord]) -> Result<()> {
@@ -194,7 +224,12 @@ impl TransactionRecordStore for TransactionStore {
         Ok(())
     }
 
-    async fn remove(&self, binding: &Binding, network_id: &NetworkId, ids: &[&TransactionId]) -> Result<()> {
+    async fn remove(
+        &self,
+        binding: &Binding,
+        network_id: &NetworkId,
+        ids: &[&TransactionId],
+    ) -> Result<()> {
         let folder = self.ensure_folder(binding, network_id).await?;
         for id in ids {
             let filename = folder.join(id.to_hex());
@@ -240,7 +275,11 @@ pub struct TransactionIdStream {
 }
 
 impl TransactionIdStream {
-    pub(crate) async fn try_new(store: &TransactionStore, binding: &Binding, network_id: &NetworkId) -> Result<Self> {
+    pub(crate) async fn try_new(
+        store: &TransactionStore,
+        binding: &Binding,
+        network_id: &NetworkId,
+    ) -> Result<Self> {
         let transactions = store.enumerate(binding, network_id).await?;
         Ok(Self { transactions })
     }
@@ -253,7 +292,11 @@ impl Stream for TransactionIdStream {
         if self.transactions.is_empty() {
             Poll::Ready(None)
         } else {
-            Poll::Ready(Some(Ok(self.transactions.pop_front().map(Arc::new).unwrap())))
+            Poll::Ready(Some(Ok(self
+                .transactions
+                .pop_front()
+                .map(Arc::new)
+                .unwrap())))
         }
     }
 
@@ -269,10 +312,17 @@ pub struct TransactionRecordStream {
 }
 
 impl TransactionRecordStream {
-    pub(crate) async fn try_new(store: &TransactionStore, binding: &Binding, network_id: &NetworkId) -> Result<Self> {
+    pub(crate) async fn try_new(
+        store: &TransactionStore,
+        binding: &Binding,
+        network_id: &NetworkId,
+    ) -> Result<Self> {
         let folder = store.make_folder(binding, network_id);
         let transactions = store.enumerate(binding, network_id).await?;
-        Ok(Self { transactions, folder })
+        Ok(Self {
+            transactions,
+            folder,
+        })
     }
 }
 
@@ -309,7 +359,12 @@ fn read_sync(path: &Path, secret: Option<&Secret>) -> Result<TransactionRecord> 
     Ok(encryptable.decrypt(secret)?.unwrap())
 }
 
-async fn write(path: &Path, record: &TransactionRecord, secret: Option<&Secret>, encryption_kind: EncryptionKind) -> Result<()> {
+async fn write(
+    path: &Path,
+    record: &TransactionRecord,
+    secret: Option<&Secret>,
+    encryption_kind: EncryptionKind,
+) -> Result<()> {
     let data = if let Some(secret) = secret {
         Encryptable::from(record.clone()).into_encrypted(secret, encryption_kind)?
     } else {

@@ -82,9 +82,15 @@ impl PendingTransaction {
         kind: DataKind,
     ) -> Result<Self> {
         let id = transaction.id();
-        let entries = utxo_entries.iter().map(|e| e.utxo.as_ref().into()).collect::<Vec<_>>();
+        let entries = utxo_entries
+            .iter()
+            .map(|e| e.utxo.as_ref().into())
+            .collect::<Vec<_>>();
         let signable_tx = Mutex::new(SignableTransaction::with_entries(transaction, entries));
-        let utxo_entries = utxo_entries.into_iter().map(|entry| (entry.id(), entry)).collect::<AHashMap<_, _>>();
+        let utxo_entries = utxo_entries
+            .into_iter()
+            .map(|entry| (entry.id(), entry))
+            .collect::<AHashMap<_, _>>();
         Ok(Self {
             inner: Arc::new(PendingTransactionInner {
                 generator: generator.clone(),
@@ -217,8 +223,14 @@ impl PendingTransaction {
     }
 
     pub fn try_sign(&self) -> Result<()> {
-        let signer = self.inner.generator.signer().as_ref().expect("no signer in tx generator");
-        let signed_tx = signer.try_sign(self.inner.signable_tx.lock()?.clone(), self.addresses())?;
+        let signer = self
+            .inner
+            .generator
+            .signer()
+            .as_ref()
+            .expect("no signer in tx generator");
+        let signed_tx =
+            signer.try_sign(self.inner.signable_tx.lock()?.clone(), self.addresses())?;
         *self.inner.signable_tx.lock().unwrap() = signed_tx;
         Ok(())
     }

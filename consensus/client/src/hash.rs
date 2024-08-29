@@ -15,7 +15,9 @@ pub struct TransactionSigningHash {
 impl TransactionSigningHash {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        Self { hasher: native::TransactionSigningHash::new() }
+        Self {
+            hasher: native::TransactionSigningHash::new(),
+        }
     }
 
     pub fn update(&mut self, data: BinaryT) -> Result<()> {
@@ -40,7 +42,9 @@ pub struct TransactionSigningHashECDSA {
 impl TransactionSigningHashECDSA {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        Self { hasher: native::TransactionSigningHashECDSA::new() }
+        Self {
+            hasher: native::TransactionSigningHashECDSA::new(),
+        }
     }
 
     pub fn update(&mut self, data: BinaryT) -> Result<()> {

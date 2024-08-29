@@ -32,7 +32,14 @@ impl TransactionSenderTask {
         sender: Sender<IndexedTransaction>,
         stopper: Stopper,
     ) -> Self {
-        Self { client, txs, tps_pressure, mempool_target, sender, stopper }
+        Self {
+            client,
+            txs,
+            tps_pressure,
+            mempool_target,
+            sender,
+            stopper,
+        }
     }
 
     pub async fn build(
@@ -43,7 +50,14 @@ impl TransactionSenderTask {
         sender: Sender<IndexedTransaction>,
         stopper: Stopper,
     ) -> Arc<Self> {
-        Arc::new(Self::new(client, txs, tps_pressure, mempool_target, sender, stopper))
+        Arc::new(Self::new(
+            client,
+            txs,
+            tps_pressure,
+            mempool_target,
+            sender,
+            stopper,
+        ))
     }
 
     pub fn sender(&self) -> Sender<IndexedTransaction> {
@@ -58,7 +72,11 @@ impl Task for TransactionSenderTask {
         let txs = self.txs.clone();
         let regulated_tps_pressure = self.tps_pressure;
         let mempool_target = self.mempool_target;
-        let mut tps_pressure = if mempool_target < u64::MAX { Self::UNREGULATED_TPS } else { regulated_tps_pressure };
+        let mut tps_pressure = if mempool_target < u64::MAX {
+            Self::UNREGULATED_TPS
+        } else {
+            regulated_tps_pressure
+        };
         // let mut tps_pressure = regulated_tps_pressure;
         let sender = self.sender();
         let stopper = self.stopper;
@@ -87,7 +105,10 @@ impl Task for TransactionSenderTask {
                             sleep(Duration::from_millis(100)).await;
                             mempool_size = client.get_info().await.unwrap().mempool_size;
                             if log_index % 10 == 0 {
-                                info!("Mempool size: {:#?} (targeting {:#?}), txs submitted: {}", mempool_size, mempool_target, i);
+                                info!(
+                                    "Mempool size: {:#?} (targeting {:#?}), txs submitted: {}",
+                                    mempool_size, mempool_target, i
+                                );
                             }
                             log_index += 1;
                         }

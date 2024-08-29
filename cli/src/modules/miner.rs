@@ -18,12 +18,18 @@ pub enum MinerSettings {
 #[async_trait]
 impl DefaultSettings for MinerSettings {
     async fn defaults() -> Vec<(Self, Value)> {
-        let mut settings = vec![(Self::Server, to_value("127.0.0.1").unwrap()), (Self::Mute, to_value(true).unwrap())];
+        let mut settings = vec![
+            (Self::Server, to_value("127.0.0.1").unwrap()),
+            (Self::Mute, to_value(true).unwrap()),
+        ];
 
         let root = nw_sys::app::folder();
         if let Ok(binaries) = locate_binaries(&root, "karlsen-cpu-miner").await {
             if let Some(path) = binaries.first() {
-                settings.push((Self::Location, to_value(path.to_string_lossy().to_string()).unwrap()));
+                settings.push((
+                    Self::Location,
+                    to_value(path.to_string_lossy().to_string()).unwrap(),
+                ));
             }
         }
 
@@ -40,7 +46,8 @@ pub struct Miner {
 impl Default for Miner {
     fn default() -> Self {
         Miner {
-            settings: SettingsStore::try_new("miner").expect("Failed to create miner settings store"),
+            settings: SettingsStore::try_new("miner")
+                .expect("Failed to create miner settings store"),
             mute: Arc::new(AtomicBool::new(true)),
             is_running: Arc::new(AtomicBool::new(false)),
         }
@@ -70,7 +77,12 @@ impl Handler for Miner {
         Ok(())
     }
 
-    async fn handle(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, cmd: &str) -> cli::Result<()> {
+    async fn handle(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        argv: Vec<String>,
+        cmd: &str,
+    ) -> cli::Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         self.main(ctx, argv, cmd).await.map_err(|e| e.into())
     }
@@ -82,20 +94,36 @@ impl Miner {
     }
 
     async fn create_config(&self, ctx: &Arc<KarlsenCli>) -> Result<CpuMinerConfig> {
-        let location: String = self
-            .settings
-            .get(MinerSettings::Location)
-            .ok_or_else(|| Error::Custom("No miner binary specified, please use `miner select` to select a binary.".into()))?;
+        let location: String = self.settings.get(MinerSettings::Location).ok_or_else(|| {
+            Error::Custom(
+                "No miner binary specified, please use `miner select` to select a binary.".into(),
+            )
+        })?;
         let network_id = ctx.wallet().network_id()?;
         let address = ctx.account().await?.receive_address()?;
-        let server: String = self.settings.get(MinerSettings::Server).unwrap_or("127.0.0.1".to_string());
+        let server: String = self
+            .settings
+            .get(MinerSettings::Server)
+            .unwrap_or("127.0.0.1".to_string());
         let throttle: usize = self.settings.get(MinerSettings::Throttle).unwrap_or(5_000);
         let mute = self.mute.load(Ordering::SeqCst);
-        let config = CpuMinerConfig::new(location.as_str(), network_id.into(), address, server, throttle, mute);
+        let config = CpuMinerConfig::new(
+            location.as_str(),
+            network_id.into(),
+            address,
+            server,
+            throttle,
+            mute,
+        );
         Ok(config)
     }
 
-    async fn main(self: Arc<Self>, ctx: Arc<KarlsenCli>, mut argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: Arc<KarlsenCli>,
+        mut argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         if argv.is_empty() {
             return self.display_help(ctx, argv).await;
         }
@@ -104,9 +132,17 @@ impl Miner {
             "start" => {
                 let mute = self.mute.load(Ordering::SeqCst);
                 if mute {
-                    tprintln!(ctx, "starting miner... {}", style("(logs are muted, use 'miner mute' to toggle)").dim());
+                    tprintln!(
+                        ctx,
+                        "starting miner... {}",
+                        style("(logs are muted, use 'miner mute' to toggle)").dim()
+                    );
                 } else {
-                    tprintln!(ctx, "starting miner... {}", style("(use 'miner mute' to mute logging)").dim());
+                    tprintln!(
+                        ctx,
+                        "starting miner... {}",
+                        style("(use 'miner mute' to mute logging)").dim()
+                    );
                 }
 
                 cpu_miner.configure(self.create_config(&ctx).await?).await?;
@@ -116,10 +152,11 @@ impl Miner {
                 cpu_miner.stop().await?;
             }
             "throttle" => {
-                let throttle: u64 = argv
-                    .remove(0)
-                    .parse()
-                    .map_err(|_| Error::Custom("Invalid throttle value, please specify a number of milliseconds".into()))?;
+                let throttle: u64 = argv.remove(0).parse().map_err(|_| {
+                    Error::Custom(
+                        "Invalid throttle value, please specify a number of milliseconds".into(),
+                    )
+                })?;
                 self.settings.set(MinerSettings::Throttle, throttle).await?;
                 cpu_miner.configure(self.create_config(&ctx).await?).await?;
                 cpu_miner.restart().await?;
@@ -171,7 +208,10 @@ impl Miner {
     async fn display_help(self: Arc<Self>, ctx: Arc<KarlsenCli>, _argv: Vec<String>) -> Result<()> {
         ctx.term().help(
             &[
-                ("select [<path>]", "Select CPU miner executable (binary) location"),
+                (
+                    "select [<path>]",
+                    "Select CPU miner executable (binary) location",
+                ),
                 ("start", "Start the local CPU miner instance"),
                 ("stop", "Stop the local CPU miner instance"),
                 ("restart", "Restart the local CPU miner instance"),
@@ -193,10 +233,19 @@ impl Miner {
         if binaries.is_empty() {
             tprintln!(ctx, "No karlsen-cpu-miner binaries found");
         } else {
-            let binaries = binaries.iter().map(|p| p.display().to_string()).collect::<Vec<_>>();
-            if let Some(selection) = ctx.term().select("Please select karlsen-cpu-miner binary", &binaries).await? {
+            let binaries = binaries
+                .iter()
+                .map(|p| p.display().to_string())
+                .collect::<Vec<_>>();
+            if let Some(selection) = ctx
+                .term()
+                .select("Please select karlsen-cpu-miner binary", &binaries)
+                .await?
+            {
                 tprintln!(ctx, "selecting: {}", selection);
-                self.settings.set(MinerSettings::Location, selection.as_str()).await?;
+                self.settings
+                    .set(MinerSettings::Location, selection.as_str())
+                    .await?;
             } else {
                 tprintln!(ctx, "no selection is made");
             }

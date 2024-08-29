@@ -17,7 +17,11 @@ where
 }
 
 fn bench_many_readers(c: &mut Criterion) {
-    let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(24).enable_all().build().unwrap();
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(24)
+        .enable_all()
+        .build()
+        .unwrap();
     let n = 100;
 
     c.bench_function("readers-preferred-rw-lock-non-fair-semaphore", |b| {
@@ -32,7 +36,9 @@ fn bench_many_readers(c: &mut Criterion) {
 
     c.bench_function("readers-preferred-rw-lock-mutex-reference", |b| {
         #[allow(clippy::unit_arg)]
-        b.iter(|| black_box(rt.block_on(run_many_readers::<ref_lock::RefReadersFirstRwLock<()>>(n))))
+        b.iter(|| {
+            black_box(rt.block_on(run_many_readers::<ref_lock::RefReadersFirstRwLock<()>>(n)))
+        })
     });
 }
 
@@ -89,8 +95,8 @@ mod ref_lock {
     use crate::RwLockTrait;
     use std::sync::{Arc, Weak};
     use tokio::sync::{
-        Mutex as TokioMutex, OwnedRwLockReadGuard as TokioOwnedRwLockReadGuard, OwnedRwLockWriteGuard as OwnedTokioRwLockWriteGuard,
-        RwLock as TokioRwLock,
+        Mutex as TokioMutex, OwnedRwLockReadGuard as TokioOwnedRwLockReadGuard,
+        OwnedRwLockWriteGuard as OwnedTokioRwLockWriteGuard, RwLock as TokioRwLock,
     };
 
     type RefReadersFirstRwLockReadGuard<T> = Arc<TokioOwnedRwLockReadGuard<T>>;
@@ -102,7 +108,10 @@ mod ref_lock {
 
     impl<T> RefReadersFirstRwLock<T> {
         pub fn new(value: T) -> RefReadersFirstRwLock<T> {
-            RefReadersFirstRwLock { inner: Arc::new(TokioRwLock::new(value)), cached_readers_guard: Default::default() }
+            RefReadersFirstRwLock {
+                inner: Arc::new(TokioRwLock::new(value)),
+                cached_readers_guard: Default::default(),
+            }
         }
 
         pub async fn read(&self) -> RefReadersFirstRwLockReadGuard<T> {

@@ -22,7 +22,10 @@ impl DefaultSettings for KarlsendSettings {
         let root = nw_sys::app::folder();
         if let Ok(binaries) = karlsen_daemon::locate_binaries(&root, "karlsend").await {
             if let Some(path) = binaries.first() {
-                settings.push((Self::Location, to_value(path.to_string_lossy().to_string()).unwrap()));
+                settings.push((
+                    Self::Location,
+                    to_value(path.to_string_lossy().to_string()).unwrap(),
+                ));
             }
         }
 
@@ -39,7 +42,8 @@ pub struct Node {
 impl Default for Node {
     fn default() -> Self {
         Node {
-            settings: SettingsStore::try_new("karlsend").expect("Failed to create node settings store"),
+            settings: SettingsStore::try_new("karlsend")
+                .expect("Failed to create node settings store"),
             mute: Arc::new(AtomicBool::new(true)),
             is_running: Arc::new(AtomicBool::new(false)),
         }
@@ -68,7 +72,12 @@ impl Handler for Node {
         Ok(())
     }
 
-    async fn handle(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, cmd: &str) -> cli::Result<()> {
+    async fn handle(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        argv: Vec<String>,
+        cmd: &str,
+    ) -> cli::Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         self.main(ctx, argv, cmd).await.map_err(|e| e.into())
     }
@@ -83,7 +92,12 @@ impl Node {
         let location: String = self
             .settings
             .get(KarlsendSettings::Location)
-            .ok_or_else(|| Error::Custom("No miner binary specified, please use `miner select` to select a binary.".into()))?;
+            .ok_or_else(|| {
+                Error::Custom(
+                    "No miner binary specified, please use `miner select` to select a binary."
+                        .into(),
+                )
+            })?;
         let network_id = ctx.wallet().network_id()?;
         // disabled for prompt update (until progress events are implemented)
         // let mute = self.mute.load(Ordering::SeqCst);
@@ -92,7 +106,12 @@ impl Node {
         Ok(config)
     }
 
-    async fn main(self: Arc<Self>, ctx: Arc<KarlsenCli>, mut argv: Vec<String>, cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: Arc<KarlsenCli>,
+        mut argv: Vec<String>,
+        cmd: &str,
+    ) -> Result<()> {
         if argv.is_empty() {
             return self.display_help(ctx, argv).await;
         }
@@ -101,12 +120,23 @@ impl Node {
             "start" => {
                 let mute = self.mute.load(Ordering::SeqCst);
                 if mute {
-                    tprintln!(ctx, "starting karlsen node... {}", style("(logs are muted, use 'node mute' to toggle)").dim());
+                    tprintln!(
+                        ctx,
+                        "starting karlsen node... {}",
+                        style("(logs are muted, use 'node mute' to toggle)").dim()
+                    );
                 } else {
-                    tprintln!(ctx, "starting karlsen node... {}", style("(use 'node mute' to mute logging)").dim());
+                    tprintln!(
+                        ctx,
+                        "starting karlsen node... {}",
+                        style("(use 'node mute' to mute logging)").dim()
+                    );
                 }
 
-                let wrpc_client = ctx.wallet().try_wrpc_client().ok_or(Error::custom("Unable to start node with non-wRPC client"))?;
+                let wrpc_client = ctx
+                    .wallet()
+                    .try_wrpc_client()
+                    .ok_or(Error::custom("Unable to start node with non-wRPC client"))?;
 
                 karlsend.configure(self.create_config(&ctx).await?).await?;
                 karlsend.start().await?;
@@ -115,7 +145,11 @@ impl Node {
                 let url = ctx.wallet().settings().get(WalletSettings::Server);
                 let network_type = ctx.wallet().network_id()?;
                 if let Some(url) = url
-                    .map(|url| wrpc_client.parse_url_with_network_type(url, network_type.into()).map_err(|e| e.to_string()))
+                    .map(|url| {
+                        wrpc_client
+                            .parse_url_with_network_type(url, network_type.into())
+                            .map_err(|e| e.to_string())
+                    })
                     .transpose()?
                 {
                     // log_info!("connecting to url: {}", url);
@@ -165,7 +199,8 @@ impl Node {
             "select" => {
                 let regex = Regex::new(r"(?i)^\s*node\s+select\s+").unwrap();
                 let path = regex.replace(cmd, "").trim().to_string();
-                self.select(ctx, path.is_not_empty().then_some(path)).await?;
+                self.select(ctx, path.is_not_empty().then_some(path))
+                    .await?;
             }
             "version" => {
                 karlsend.configure(self.create_config(&ctx).await?).await?;
@@ -191,7 +226,10 @@ impl Node {
                 ("stop", "Stop the local Karlsen node instance"),
                 ("restart", "Restart the local Karlsen node instance"),
                 ("kill", "Kill the local Karlsen node instance"),
-                ("status", "Get the status of the local Karlsen node instance"),
+                (
+                    "status",
+                    "Get the status of the local Karlsen node instance",
+                ),
                 ("mute", "Toggle log output"),
             ],
             None,
@@ -210,10 +248,19 @@ impl Node {
                 if binaries.is_empty() {
                     tprintln!(ctx, "No karlsend binaries found");
                 } else {
-                    let binaries = binaries.iter().map(|p| p.display().to_string()).collect::<Vec<_>>();
-                    if let Some(selection) = ctx.term().select("Please select a karlsend binary", &binaries).await? {
+                    let binaries = binaries
+                        .iter()
+                        .map(|p| p.display().to_string())
+                        .collect::<Vec<_>>();
+                    if let Some(selection) = ctx
+                        .term()
+                        .select("Please select a karlsend binary", &binaries)
+                        .await?
+                    {
                         tprintln!(ctx, "selecting: {}", selection);
-                        self.settings.set(KarlsendSettings::Location, selection.as_str()).await?;
+                        self.settings
+                            .set(KarlsendSettings::Location, selection.as_str())
+                            .await?;
                     } else {
                         tprintln!(ctx, "no selection is made");
                     }
@@ -224,7 +271,9 @@ impl Node {
                     let version = process::version(&path).await?;
                     tprintln!(ctx, "detected binary version: {}", version);
                     tprintln!(ctx, "selecting: {path}");
-                    self.settings.set(KarlsendSettings::Location, path.as_str()).await?;
+                    self.settings
+                        .set(KarlsendSettings::Location, path.as_str())
+                        .await?;
                 } else {
                     twarnln!(ctx, "destination binary not found, please specify full path including the binary name");
                     twarnln!(ctx, "example: 'node select /home/user/testnet/karlsend'");
@@ -256,7 +305,11 @@ impl Node {
             }
             Event::Stdout(text) | Event::Stderr(text) => {
                 if !ctx.wallet().utxo_processor().is_synced() {
-                    ctx.wallet().utxo_processor().sync_proc().handle_stdout(&text).await?;
+                    ctx.wallet()
+                        .utxo_processor()
+                        .sync_proc()
+                        .handle_stdout(&text)
+                        .await?;
                 }
 
                 if !self.mute.load(Ordering::SeqCst) {
@@ -275,14 +328,20 @@ impl Node {
 
                                     match kind {
                                         "WARN " => {
-                                            term.writeln(format!("{time} {}", style(text).yellow()));
+                                            term.writeln(format!(
+                                                "{time} {}",
+                                                style(text).yellow()
+                                            ));
                                         }
                                         "ERROR" => {
                                             term.writeln(format!("{time} {}", style(text).red()));
                                         }
                                         _ => {
                                             if text.starts_with("Processed") {
-                                                term.writeln(format!("{time} {}", style(text).blue()));
+                                                term.writeln(format!(
+                                                    "{time} {}",
+                                                    style(text).blue()
+                                                ));
                                             } else {
                                                 term.writeln(format!("{time} {text}"));
                                             }

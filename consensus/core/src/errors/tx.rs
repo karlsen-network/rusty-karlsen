@@ -53,19 +53,28 @@ pub enum TxRuleError {
     #[error("transaction total inputs spending amount overflowed u64")]
     InputAmountOverflow,
 
-    #[error("transaction total inputs spending amount is higher than the max allowed of {}", MAX_SOMPI)]
+    #[error(
+        "transaction total inputs spending amount is higher than the max allowed of {}",
+        MAX_SOMPI
+    )]
     InputAmountTooHigh,
 
     #[error("transaction output {0} has zero value")]
     TxOutZero(usize),
 
-    #[error("transaction output {0} value is higher than the max allowed of {}", MAX_SOMPI)]
+    #[error(
+        "transaction output {0} value is higher than the max allowed of {}",
+        MAX_SOMPI
+    )]
     TxOutTooHigh(usize),
 
     #[error("transaction total outputs value overflowed u64")]
     OutputsValueOverflow,
 
-    #[error("transaction total outputs value is higher than the max allowed of {}", MAX_SOMPI)]
+    #[error(
+        "transaction total outputs value is higher than the max allowed of {}",
+        MAX_SOMPI
+    )]
     TotalTxOutTooHigh,
 
     #[error("transaction tries to spend {0} while its total inputs amount is {1}")]
@@ -74,7 +83,9 @@ pub enum TxRuleError {
     #[error("one of the transaction sequence locks conditions was not met")]
     SequenceLockConditionsAreNotMet,
 
-    #[error("outpoints corresponding to some transaction inputs are missing from current utxo context")]
+    #[error(
+        "outpoints corresponding to some transaction inputs are missing from current utxo context"
+    )]
     MissingTxOutpoints,
 
     #[error("failed to verify the signature script: {0}")]

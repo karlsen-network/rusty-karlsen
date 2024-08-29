@@ -25,7 +25,11 @@ impl PrvKeyDataInfo {
 
     #[wasm_bindgen(getter)]
     pub fn name(&self) -> JsValue {
-        self.inner.name.clone().map(JsValue::from).unwrap_or(JsValue::UNDEFINED)
+        self.inner
+            .name
+            .clone()
+            .map(JsValue::from)
+            .unwrap_or(JsValue::UNDEFINED)
     }
 
     #[wasm_bindgen(getter, js_name = "isEncrypted")]

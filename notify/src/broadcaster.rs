@@ -33,15 +33,30 @@ impl<C> Plan<C>
 where
     C: Connection,
 {
-    fn insert(&mut self, subscription: DynSubscription, id: ListenerId, connection: C) -> Option<C> {
+    fn insert(
+        &mut self,
+        subscription: DynSubscription,
+        id: ListenerId,
+        connection: C,
+    ) -> Option<C> {
         // Make sure only one instance of ìd` is registered in the whole object
         let result = self.remove(&id);
         let encoding = connection.encoding();
-        self.0.entry(subscription.clone()).or_default().entry(encoding).or_default().entry(id).or_insert_with(|| {
-            #[cfg(test)]
-            trace!("Broadcasting plan: insert listener {} with {:?}", id, subscription);
-            connection
-        });
+        self.0
+            .entry(subscription.clone())
+            .or_default()
+            .entry(encoding)
+            .or_default()
+            .entry(id)
+            .or_insert_with(|| {
+                #[cfg(test)]
+                trace!(
+                    "Broadcasting plan: insert listener {} with {:?}",
+                    id,
+                    subscription
+                );
+                connection
+            });
         result
     }
 
@@ -143,7 +158,11 @@ where
 
     fn spawn_notification_broadcasting_task(self: Arc<Self>) {
         // The task can only be spawned once
-        if self.started.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
+        if self
+            .started
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
             return;
         }
         trace!("[{}] Starting notification broadcasting task", self);
@@ -221,9 +240,15 @@ where
         });
     }
 
-    pub fn register(&self, subscription: DynSubscription, id: ListenerId, connection: C) -> Result<()> {
+    pub fn register(
+        &self,
+        subscription: DynSubscription,
+        id: ListenerId,
+        connection: C,
+    ) -> Result<()> {
         assert!(subscription.active());
-        self.ctl.try_send(Ctl::Register(subscription, id, connection))?;
+        self.ctl
+            .try_send(Ctl::Register(subscription, id, connection))?;
         Ok(())
     }
 
@@ -262,7 +287,8 @@ mod tests {
         listener::Listener,
         notification::test_helpers::*,
         notifier::test_helpers::{
-            overall_test_steps, utxos_changed_test_steps, virtual_chain_changed_test_steps, Step, TestConnection, SYNC_MAX_DELAY,
+            overall_test_steps, utxos_changed_test_steps, virtual_chain_changed_test_steps, Step,
+            TestConnection, SYNC_MAX_DELAY,
         },
         subscription::context::SubscriptionContext,
     };
@@ -290,8 +316,13 @@ mod tests {
             let subscription_context = SubscriptionContext::new();
             let (sync_sender, sync_receiver) = unbounded();
             let (notification_sender, notification_receiver) = unbounded();
-            let broadcaster =
-                Arc::new(TestBroadcaster::new(IDENT, 0, subscription_context.clone(), notification_receiver, Some(sync_sender)));
+            let broadcaster = Arc::new(TestBroadcaster::new(
+                IDENT,
+                0,
+                subscription_context.clone(),
+                notification_receiver,
+                Some(sync_sender),
+            ));
             let mut listeners = Vec::with_capacity(listener_count);
             let mut notification_receivers = Vec::with_capacity(listener_count);
             for i in 0..listener_count {
@@ -320,13 +351,30 @@ mod tests {
             // Execute the test steps
             for (step_idx, step) in self.steps.iter().enumerate() {
                 // Apply the subscription mutations and register the changes into the broadcaster
-                trace!("{} #{} - Initial Subscription Context {}", self.name, step_idx, self.subscription_context.address_tracker);
+                trace!(
+                    "{} #{} - Initial Subscription Context {}",
+                    self.name,
+                    step_idx,
+                    self.subscription_context.address_tracker
+                );
                 for (idx, mutation) in step.mutations.iter().enumerate() {
                     if let Some(ref mutation) = mutation {
-                        trace!("{} #{} - {}: L{} {:?}", self.name, step_idx, step.name, idx, mutation);
+                        trace!(
+                            "{} #{} - {}: L{} {:?}",
+                            self.name,
+                            step_idx,
+                            step.name,
+                            idx,
+                            mutation
+                        );
                         let event = mutation.event_type();
-                        let outcome =
-                            self.listeners[idx].mutate(mutation.clone(), Default::default(), &self.subscription_context).unwrap();
+                        let outcome = self.listeners[idx]
+                            .mutate(
+                                mutation.clone(),
+                                Default::default(),
+                                &self.subscription_context,
+                            )
+                            .unwrap();
                         if outcome.has_new_state() {
                             trace!(
                                 "{} #{} - {}: - L{} has the new state {:?}",
@@ -352,7 +400,10 @@ mod tests {
                                 step.name
                             );
                             assert!(
-                                timeout(SYNC_MAX_DELAY, self.sync_receiver.recv()).await.unwrap().is_ok(),
+                                timeout(SYNC_MAX_DELAY, self.sync_receiver.recv())
+                                    .await
+                                    .unwrap()
+                                    .is_ok(),
                                 "{} #{} - {}: receiving a sync message failed",
                                 self.name,
                                 step_idx,
@@ -384,17 +435,32 @@ mod tests {
                 if step_idx == 8 {
                     trace!("#8");
                 }
-                trace!("{} #{} - {}: sending a notification...", self.name, step_idx, step.name);
+                trace!(
+                    "{} #{} - {}: sending a notification...",
+                    self.name,
+                    step_idx,
+                    step.name
+                );
                 assert!(
-                    self.notification_sender.send_blocking(step.notification.clone()).is_ok(),
+                    self.notification_sender
+                        .send_blocking(step.notification.clone())
+                        .is_ok(),
                     "{} #{} - {}: sending the notification failed",
                     self.name,
                     step_idx,
                     step.name
                 );
-                trace!("{} #{} - {}: receiving sync signal...", self.name, step_idx, step.name);
+                trace!(
+                    "{} #{} - {}: receiving sync signal...",
+                    self.name,
+                    step_idx,
+                    step.name
+                );
                 assert!(
-                    timeout(SYNC_MAX_DELAY, self.sync_receiver.recv()).await.unwrap().is_ok(),
+                    timeout(SYNC_MAX_DELAY, self.sync_receiver.recv())
+                        .await
+                        .unwrap()
+                        .is_ok(),
                     "{} #{} - {}: receiving a sync message failed",
                     self.name,
                     step_idx,
@@ -431,21 +497,32 @@ mod tests {
                 }
             }
             self.notification_sender.close();
-            assert!(self.broadcaster.join().await.is_ok(), "broadcaster failed to stop");
+            assert!(
+                self.broadcaster.join().await.is_ok(),
+                "broadcaster failed to stop"
+            );
         }
     }
 
     #[tokio::test]
     async fn test_overall() {
         karlsen_core::log::try_init_logger("trace,karlsen_notify=trace");
-        let mut test = Test::new("BlockAdded broadcast (OverallSubscription type)", 2, overall_test_steps(0));
+        let mut test = Test::new(
+            "BlockAdded broadcast (OverallSubscription type)",
+            2,
+            overall_test_steps(0),
+        );
         test.run().await;
     }
 
     #[tokio::test]
     async fn test_virtual_chain_changed() {
         karlsen_core::log::try_init_logger("trace,karlsen_notify=trace");
-        let mut test = Test::new("VirtualChainChanged broadcast", 2, virtual_chain_changed_test_steps(0));
+        let mut test = Test::new(
+            "VirtualChainChanged broadcast",
+            2,
+            virtual_chain_changed_test_steps(0),
+        );
         test.run().await;
     }
 

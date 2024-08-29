@@ -66,7 +66,13 @@ fn create_client_addresses(index: usize, network_id: &NetworkId) -> Vec<Address>
         max_address.max(WALLET_ADDRESSES) - WALLET_ADDRESSES
     };
     (min_address..max_address)
-        .map(|x| Address::new((*network_id).into(), karlsen_addresses::Version::PubKey, &Uint256::from_u64(x as u64).to_le_bytes()))
+        .map(|x| {
+            Address::new(
+                (*network_id).into(),
+                karlsen_addresses::Version::PubKey,
+                &Uint256::from_u64(x as u64).to_le_bytes(),
+            )
+        })
         .collect_vec()
 }
 
@@ -98,7 +104,10 @@ async fn utxos_changed_subscriptions_sanity_check() {
     );
     let server_start_time = std::time::Instant::now();
     let mut daemon_process = tokio::process::Command::new("cargo")
-        .args(daemon_args.to_command_args("subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon"))
+        .args(
+            daemon_args
+                .to_command_args("subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon"),
+        )
         .spawn()
         .expect("failed to start daemon process");
 
@@ -121,10 +130,13 @@ async fn utxos_changed_subscriptions_sanity_check() {
     drop(client);
 
     karlsen_core::warn!("Waiting for the daemon to exit...");
-    daemon_process.wait().await.expect("failed to wait for the daemon process");
+    daemon_process
+        .wait()
+        .await
+        .expect("failed to wait for the daemon process");
 }
 
-/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon --exact --nocapture --ignored -- --rpc=16610 --p2p=16611 --private-key=a2760251adb5b6e8d4514d23397f1631893e168c33f92ff8a7a24f397d355d62 --max-tracked-addresses=1000000 --utxoindex`
+/// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon --exact --nocapture --ignored -- --rpc=42610 --p2p=42611 --private-key=a2760251adb5b6e8d4514d23397f1631893e168c33f92ff8a7a24f397d355d62 --max-tracked-addresses=1000000 --utxoindex`
 ///
 /// This test is designed to be run as a child process, with the parent process eventually shutting it down.
 /// Do not run it directly.
@@ -139,12 +151,19 @@ async fn bench_utxos_changed_subscriptions_daemon() {
     karlsen_core::panic::configure_panic();
 
     let daemon_args = DaemonArgs::from_env_args();
-    let args = ArgsBuilder::simnet(TX_LEVEL_WIDTH as u64 * CONTRACT_FACTOR, PREALLOC_AMOUNT).apply_daemon_args(&daemon_args).build();
+    let args = ArgsBuilder::simnet(TX_LEVEL_WIDTH as u64 * CONTRACT_FACTOR, PREALLOC_AMOUNT)
+        .apply_daemon_args(&daemon_args)
+        .build();
     let tick_service = Arc::new(TickService::new());
 
     let mut tasks = TasksRunner::new(Some(DaemonTask::with_args(args.clone())))
         .task(TickTask::build(tick_service.clone()))
-        .task(MemoryMonitorTask::build(tick_service, "daemon", Duration::from_secs(5), MAX_MEMORY))
+        .task(MemoryMonitorTask::build(
+            tick_service,
+            "daemon",
+            Duration::from_secs(5),
+            MAX_MEMORY,
+        ))
         .optional_task(StatRecorderTask::optional(
             Duration::from_secs(5),
             STAT_FOLDER.to_owned(),
@@ -174,8 +193,11 @@ async fn utxos_changed_subscriptions_client(address_cycle_seconds: u64, address_
     // Setup
     //
     let (prealloc_sk, prealloc_pk) = secp256k1::generate_keypair(&mut thread_rng());
-    let prealloc_address =
-        Address::new(NetworkType::Simnet.into(), karlsen_addresses::Version::PubKey, &prealloc_pk.x_only_public_key().0.serialize());
+    let prealloc_address = Address::new(
+        NetworkType::Simnet.into(),
+        karlsen_addresses::Version::PubKey,
+        &prealloc_pk.x_only_public_key().0.serialize(),
+    );
     let schnorr_key = secp256k1::Keypair::from_secret_key(secp256k1::SECP256K1, &prealloc_sk);
     let spk = pay_to_address_script(&prealloc_address);
 
@@ -211,7 +233,10 @@ async fn utxos_changed_subscriptions_client(address_cycle_seconds: u64, address_
     );
     let server_start_time = std::time::Instant::now();
     let mut daemon_process = tokio::process::Command::new("cargo")
-        .args(daemon_args.to_command_args("subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon"))
+        .args(
+            daemon_args
+                .to_command_args("subscribe_benchmarks::bench_utxos_changed_subscriptions_daemon"),
+        )
         .spawn()
         .expect("failed to start daemon process");
 
@@ -222,17 +247,31 @@ async fn utxos_changed_subscriptions_client(address_cycle_seconds: u64, address_
     }
 
     // Initial objects
-    let subscribing_addresses = (0..NOTIFY_CLIENTS).map(|i| Arc::new(create_client_addresses(i, &params.net))).collect_vec();
+    let subscribing_addresses = (0..NOTIFY_CLIENTS)
+        .map(|i| Arc::new(create_client_addresses(i, &params.net)))
+        .collect_vec();
     let client_manager = Arc::new(ClientManager::new(args));
     let client = client_manager.new_client().await;
     let tick_service = Arc::new(TickService::new());
 
     let mut tasks = TasksRunner::new(None)
         .task(TickTask::build(tick_service.clone()))
-        .task(MemoryMonitorTask::build(tick_service.clone(), "client", Duration::from_secs(5), MAX_MEMORY))
+        .task(MemoryMonitorTask::build(
+            tick_service.clone(),
+            "client",
+            Duration::from_secs(5),
+            MAX_MEMORY,
+        ))
         .task(
-            MinerGroupTask::build(network, client_manager.clone(), SUBMIT_BLOCK_CLIENTS, params.bps(), BLOCK_COUNT, Stopper::Signal)
-                .await,
+            MinerGroupTask::build(
+                network,
+                client_manager.clone(),
+                SUBMIT_BLOCK_CLIENTS,
+                params.bps(),
+                BLOCK_COUNT,
+                Stopper::Signal,
+            )
+            .await,
         )
         .task(
             TxSenderGroupTask::build(
@@ -273,7 +312,10 @@ async fn utxos_changed_subscriptions_client(address_cycle_seconds: u64, address_
     drop(client);
 
     karlsen_core::warn!("Waiting for the daemon to exit...");
-    daemon_process.wait().await.expect("failed to wait for the daemon process");
+    daemon_process
+        .wait()
+        .await
+        .expect("failed to wait for the daemon process");
 }
 
 /// `cargo test --package karlsen-testing-integration --lib --features devnet-prealloc -- subscribe_benchmarks::bench_utxos_changed_subscriptions_footprint_a --exact --nocapture --ignored`

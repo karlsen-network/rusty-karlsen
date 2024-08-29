@@ -4,8 +4,8 @@ use hmac::Mac;
 use karlsen_addresses::{Address, Prefix as AddressPrefix, Version as AddressVersion};
 use karlsen_bip32::types::{ChainCode, HmacSha512, KeyFingerprint, PublicKeyBytes, KEY_SIZE};
 use karlsen_bip32::{
-    AddressType, ChildNumber, DerivationPath, ExtendedKey, ExtendedKeyAttrs, ExtendedPrivateKey, ExtendedPublicKey, Prefix,
-    PrivateKey, PublicKey, SecretKey, SecretKeyExt,
+    AddressType, ChildNumber, DerivationPath, ExtendedKey, ExtendedKeyAttrs, ExtendedPrivateKey,
+    ExtendedPublicKey, Prefix, PrivateKey, PublicKey, SecretKey, SecretKeyExt,
 };
 use ripemd::Ripemd160;
 use sha2::{Digest, Sha256};
@@ -33,7 +33,12 @@ struct Inner {
 
 impl Inner {
     fn new(public_key: secp256k1::PublicKey, attrs: ExtendedKeyAttrs, hmac: HmacSha512) -> Self {
-        Self { public_key, fingerprint: public_key.fingerprint(), hmac, attrs }
+        Self {
+            public_key,
+            fingerprint: public_key.fingerprint(),
+            hmac,
+            attrs,
+        }
     }
 }
 
@@ -56,7 +61,12 @@ impl PubkeyDerivationManagerV0 {
     ) -> Result<Self> {
         let wallet = Self {
             index: Arc::new(Mutex::new(index)),
-            inner: Arc::new(Mutex::new(Some(Inner { public_key, attrs, fingerprint, hmac }))),
+            inner: Arc::new(Mutex::new(Some(Inner {
+                public_key,
+                attrs,
+                fingerprint,
+                hmac,
+            }))),
             cache: Arc::new(Mutex::new(HashMap::new())),
             use_cache: Arc::new(AtomicBool::new(use_cache)),
         };
@@ -64,7 +74,13 @@ impl PubkeyDerivationManagerV0 {
         Ok(wallet)
     }
 
-    fn set_key(&self, public_key: secp256k1::PublicKey, attrs: ExtendedKeyAttrs, hmac: HmacSha512, index: Option<u32>) {
+    fn set_key(
+        &self,
+        public_key: secp256k1::PublicKey,
+        attrs: ExtendedKeyAttrs,
+        hmac: HmacSha512,
+        index: Option<u32>,
+    ) {
         *self.cache.lock().unwrap() = HashMap::new();
         let new_inner = Inner::new(public_key, attrs, hmac);
         {
@@ -91,9 +107,9 @@ impl PubkeyDerivationManagerV0 {
 
     fn public_key_(&self) -> Result<secp256k1::PublicKey> {
         let locked = self.opt_inner();
-        let inner = locked
-            .as_ref()
-            .ok_or(crate::error::Error::Custom("PubkeyDerivationManagerV0 initialization is pending (Error: 101).".into()))?;
+        let inner = locked.as_ref().ok_or(crate::error::Error::Custom(
+            "PubkeyDerivationManagerV0 initialization is pending (Error: 101).".into(),
+        ))?;
         Ok(inner.public_key)
     }
     fn index_(&self) -> Result<u32> {
@@ -119,11 +135,16 @@ impl PubkeyDerivationManagerV0 {
     //     Ok(keys)
     // }
 
-    pub fn derive_pubkey_range(&self, indexes: std::ops::Range<u32>) -> Result<Vec<secp256k1::PublicKey>> {
+    pub fn derive_pubkey_range(
+        &self,
+        indexes: std::ops::Range<u32>,
+    ) -> Result<Vec<secp256k1::PublicKey>> {
         let use_cache = self.use_cache();
         let mut cache = self.cache.lock()?;
         let locked = self.opt_inner();
-        let list: Vec<Result<secp256k1::PublicKey, crate::error::Error>> = if let Some(inner) = locked.as_ref() {
+        let list: Vec<Result<secp256k1::PublicKey, crate::error::Error>> = if let Some(inner) =
+            locked.as_ref()
+        {
             indexes
                 .map(|index| {
                     let (key, _chain_code) = WalletDerivationManagerV0::derive_public_key_child(
@@ -145,7 +166,10 @@ impl PubkeyDerivationManagerV0 {
                     if let Some(key) = cache.get(&index) {
                         Ok(*key)
                     } else {
-                        Err(crate::error::Error::Custom("PubkeyDerivationManagerV0 initialization is pending  (Error: 102).".into()))
+                        Err(crate::error::Error::Custom(
+                            "PubkeyDerivationManagerV0 initialization is pending  (Error: 102)."
+                                .into(),
+                        ))
                     }
                 })
                 .collect::<Vec<_>>()
@@ -176,10 +200,16 @@ impl PubkeyDerivationManagerV0 {
             return Ok(*key);
         }
 
-        Err(crate::error::Error::Custom("PubkeyDerivationManagerV0 initialization is pending  (Error: 102).".into()))
+        Err(crate::error::Error::Custom(
+            "PubkeyDerivationManagerV0 initialization is pending  (Error: 102).".into(),
+        ))
     }
 
-    pub fn create_address(key: &secp256k1::PublicKey, prefix: AddressPrefix, _ecdsa: bool) -> Result<Address> {
+    pub fn create_address(
+        key: &secp256k1::PublicKey,
+        prefix: AddressPrefix,
+        _ecdsa: bool,
+    ) -> Result<Address> {
         let payload = &key.to_bytes()[1..];
         let address = Address::new(prefix, AddressVersion::PubKey, payload);
 
@@ -192,7 +222,9 @@ impl PubkeyDerivationManagerV0 {
 
     pub fn attrs(&self) -> ExtendedKeyAttrs {
         let locked = self.opt_inner();
-        let inner = locked.as_ref().expect("PubkeyDerivationManagerV0 initialization is pending (Error: 103).");
+        let inner = locked
+            .as_ref()
+            .expect("PubkeyDerivationManagerV0 initialization is pending (Error: 103).");
         inner.attrs.clone()
     }
 
@@ -205,7 +237,11 @@ impl PubkeyDerivationManagerV0 {
     pub fn to_extended_key(&self, prefix: Prefix) -> ExtendedKey {
         let mut key_bytes = [0u8; KEY_SIZE + 1];
         key_bytes[..].copy_from_slice(&self.to_bytes());
-        ExtendedKey { prefix, attrs: self.attrs().clone(), key_bytes }
+        ExtendedKey {
+            prefix,
+            attrs: self.attrs().clone(),
+            key_bytes,
+        }
     }
 
     pub fn to_string(&self) -> Zeroizing<String> {
@@ -223,7 +259,10 @@ impl PubkeyDerivationManagerV0 {
 
 impl From<&PubkeyDerivationManagerV0> for ExtendedPublicKey<secp256k1::PublicKey> {
     fn from(inner: &PubkeyDerivationManagerV0) -> ExtendedPublicKey<secp256k1::PublicKey> {
-        ExtendedPublicKey { public_key: inner.public_key_().unwrap(), attrs: inner.attrs().clone() }
+        ExtendedPublicKey {
+            public_key: inner.public_key_().unwrap(),
+            attrs: inner.attrs().clone(),
+        }
     }
 }
 
@@ -280,7 +319,11 @@ pub struct WalletDerivationManagerV0 {
 }
 
 impl WalletDerivationManagerV0 {
-    pub fn create_extended_key_from_xprv(xprv: &str, is_multisig: bool, account_index: u64) -> Result<(SecretKey, ExtendedKeyAttrs)> {
+    pub fn create_extended_key_from_xprv(
+        xprv: &str,
+        is_multisig: bool,
+        account_index: u64,
+    ) -> Result<(SecretKey, ExtendedKeyAttrs)> {
         let xprv_key = ExtendedPrivateKey::<SecretKey>::from_str(xprv)?;
         Self::derive_extended_key_from_master_key(xprv_key, is_multisig, account_index)
     }
@@ -292,7 +335,8 @@ impl WalletDerivationManagerV0 {
     ) -> Result<(SecretKey, ExtendedKeyAttrs)> {
         let attrs = xprv_key.attrs();
 
-        let (extended_private_key, attrs) = Self::create_extended_key(*xprv_key.private_key(), attrs.clone(), account_index)?;
+        let (extended_private_key, attrs) =
+            Self::create_extended_key(*xprv_key.private_key(), attrs.clone(), account_index)?;
 
         Ok((extended_private_key, attrs))
     }
@@ -316,14 +360,18 @@ impl WalletDerivationManagerV0 {
         //println!("path: {path}");
         let children = path.split('/');
         for child in children {
-            (private_key, attrs) = Self::derive_private_key(&private_key, &attrs, child.parse::<ChildNumber>()?)?;
+            (private_key, attrs) =
+                Self::derive_private_key(&private_key, &attrs, child.parse::<ChildNumber>()?)?;
             //println!("ccc: {child}, public_key : {:?}, attrs: {:?}", private_key.get_public_key(), attrs);
         }
 
         Ok((private_key, attrs))
     }
 
-    pub fn build_derivate_path(account_index: u64, address_type: Option<AddressType>) -> Result<DerivationPath> {
+    pub fn build_derivate_path(
+        account_index: u64,
+        address_type: Option<AddressType>,
+    ) -> Result<DerivationPath> {
         let purpose = 44;
         let mut path = format!("m/{purpose}'/972/{account_index}'");
         if let Some(address_type) = address_type {
@@ -345,7 +393,8 @@ impl WalletDerivationManagerV0 {
         address_type: AddressType,
         attrs: &ExtendedKeyAttrs,
     ) -> Result<PubkeyDerivationManagerV0> {
-        let (private_key, attrs, hmac) = Self::create_pubkey_manager_data(private_key, address_type, attrs)?;
+        let (private_key, attrs, hmac) =
+            Self::create_pubkey_manager_data(private_key, address_type, attrs)?;
         PubkeyDerivationManagerV0::new(
             private_key.get_public_key(),
             attrs.clone(),
@@ -361,7 +410,11 @@ impl WalletDerivationManagerV0 {
         address_type: AddressType,
         attrs: &ExtendedKeyAttrs,
     ) -> Result<(secp256k1::SecretKey, ExtendedKeyAttrs, HmacSha512)> {
-        let (private_key, attrs) = Self::derive_private_key(private_key, attrs, ChildNumber::new(address_type.index(), true)?)?;
+        let (private_key, attrs) = Self::derive_private_key(
+            private_key,
+            attrs,
+            ChildNumber::new(address_type.index(), true)?,
+        )?;
         let hmac = Self::create_hmac(&private_key, &attrs, true)?;
 
         Ok((private_key, attrs, hmac))
@@ -376,14 +429,23 @@ impl WalletDerivationManagerV0 {
         let digest = Ripemd160::digest(Sha256::digest(&public_key.to_bytes()[1..]));
         let fingerprint = digest[..4].try_into().expect("digest truncated");
 
-        let mut hmac = HmacSha512::new_from_slice(&attrs.chain_code).map_err(karlsen_bip32::Error::Hmac)?;
+        let mut hmac =
+            HmacSha512::new_from_slice(&attrs.chain_code).map_err(karlsen_bip32::Error::Hmac)?;
         hmac.update(&public_key.to_bytes());
 
         let (key, chain_code) = Self::derive_public_key_child(public_key, child_number, hmac)?;
 
-        let depth = attrs.depth.checked_add(1).ok_or(karlsen_bip32::Error::Depth)?;
+        let depth = attrs
+            .depth
+            .checked_add(1)
+            .ok_or(karlsen_bip32::Error::Depth)?;
 
-        let attrs = ExtendedKeyAttrs { parent_fingerprint: fingerprint, child_number, chain_code, depth };
+        let attrs = ExtendedKeyAttrs {
+            parent_fingerprint: fingerprint,
+            child_number,
+            chain_code,
+            depth,
+        };
 
         Ok((key, attrs))
     }
@@ -436,14 +498,26 @@ impl WalletDerivationManagerV0 {
 
         let (private_key, chain_code) = Self::derive_key(private_key, child_number, hmac)?;
 
-        let depth = attrs.depth.checked_add(1).ok_or(karlsen_bip32::Error::Depth)?;
+        let depth = attrs
+            .depth
+            .checked_add(1)
+            .ok_or(karlsen_bip32::Error::Depth)?;
 
-        let attrs = ExtendedKeyAttrs { parent_fingerprint: fingerprint, child_number, chain_code, depth };
+        let attrs = ExtendedKeyAttrs {
+            parent_fingerprint: fingerprint,
+            child_number,
+            chain_code,
+            depth,
+        };
 
         Ok((private_key, attrs))
     }
 
-    fn derive_key(private_key: &SecretKey, child_number: ChildNumber, mut hmac: HmacSha512) -> Result<(SecretKey, ChainCode)> {
+    fn derive_key(
+        private_key: &SecretKey,
+        child_number: ChildNumber,
+        mut hmac: HmacSha512,
+    ) -> Result<(SecretKey, ChainCode)> {
         hmac.update(&child_number.to_bytes());
 
         let result = hmac.finalize().into_bytes();
@@ -463,11 +537,16 @@ impl WalletDerivationManagerV0 {
         Ok((private_key, chain_code.try_into()?))
     }
 
-    pub fn create_hmac<K>(private_key: &K, attrs: &ExtendedKeyAttrs, hardened: bool) -> Result<HmacSha512>
+    pub fn create_hmac<K>(
+        private_key: &K,
+        attrs: &ExtendedKeyAttrs,
+        hardened: bool,
+    ) -> Result<HmacSha512>
     where
         K: PrivateKey<PublicKey = secp256k1::PublicKey>,
     {
-        let mut hmac = HmacSha512::new_from_slice(&attrs.chain_code).map_err(karlsen_bip32::Error::Hmac)?;
+        let mut hmac =
+            HmacSha512::new_from_slice(&attrs.chain_code).map_err(karlsen_bip32::Error::Hmac)?;
         if hardened {
             hmac.update(&[0]);
             hmac.update(&private_key.to_bytes());
@@ -479,7 +558,9 @@ impl WalletDerivationManagerV0 {
     }
 
     fn extended_public_key(&self) -> ExtendedPublicKey<secp256k1::PublicKey> {
-        self.extended_public_key.clone().expect("WalletDerivationManagerV0 initialization is pending (Error: 104)")
+        self.extended_public_key
+            .clone()
+            .expect("WalletDerivationManagerV0 initialization is pending (Error: 104)")
     }
 
     /// Serialize the raw public key as a byte array.
@@ -497,11 +578,19 @@ impl WalletDerivationManagerV0 {
         Zeroizing::new(key)
     }
 
-    fn from_extended_private_key(private_key: secp256k1::SecretKey, account_index: u64, attrs: ExtendedKeyAttrs) -> Result<Self> {
-        let receive_wallet = Self::create_pubkey_manager(&private_key, AddressType::Receive, &attrs)?;
+    fn from_extended_private_key(
+        private_key: secp256k1::SecretKey,
+        account_index: u64,
+        attrs: ExtendedKeyAttrs,
+    ) -> Result<Self> {
+        let receive_wallet =
+            Self::create_pubkey_manager(&private_key, AddressType::Receive, &attrs)?;
         let change_wallet = Self::create_pubkey_manager(&private_key, AddressType::Change, &attrs)?;
 
-        let extended_public_key = ExtendedPublicKey { public_key: private_key.get_public_key(), attrs };
+        let extended_public_key = ExtendedPublicKey {
+            public_key: private_key.get_public_key(),
+            attrs,
+        };
         let wallet: WalletDerivationManagerV0 = Self {
             extended_public_key: Some(extended_public_key),
             account_index,
@@ -541,13 +630,18 @@ impl WalletDerivationManagerV0 {
 
     // set master key "xprvxxxxxx"
     pub fn set_key(&self, key: String, index: Option<u32>) -> Result<()> {
-        let (private_key, attrs) = Self::create_extended_key_from_xprv(&key, false, self.account_index)?;
+        let (private_key, attrs) =
+            Self::create_extended_key_from_xprv(&key, false, self.account_index)?;
 
-        let (private_key_, attrs_, hmac_) = Self::create_pubkey_manager_data(&private_key, AddressType::Receive, &attrs)?;
-        self.receive_pubkey_manager.set_key(private_key_.get_public_key(), attrs_, hmac_, index);
+        let (private_key_, attrs_, hmac_) =
+            Self::create_pubkey_manager_data(&private_key, AddressType::Receive, &attrs)?;
+        self.receive_pubkey_manager
+            .set_key(private_key_.get_public_key(), attrs_, hmac_, index);
 
-        let (private_key_, attrs_, hmac_) = Self::create_pubkey_manager_data(&private_key, AddressType::Change, &attrs)?;
-        self.change_pubkey_manager.set_key(private_key_.get_public_key(), attrs_, hmac_, index);
+        let (private_key_, attrs_, hmac_) =
+            Self::create_pubkey_manager_data(&private_key, AddressType::Change, &attrs)?;
+        self.change_pubkey_manager
+            .set_key(private_key_.get_public_key(), attrs_, hmac_, index);
 
         Ok(())
     }
@@ -564,7 +658,10 @@ impl Debug for WalletDerivationManagerV0 {
         f.debug_struct("WalletAccount")
             .field("depth", &self.attrs().depth)
             .field("child_number", &self.attrs().child_number)
-            .field("chain_code", &faster_hex::hex_string(&self.attrs().chain_code))
+            .field(
+                "chain_code",
+                &faster_hex::hex_string(&self.attrs().chain_code),
+            )
             .field("public_key", &faster_hex::hex_string(&self.to_bytes()))
             .field("parent_fingerprint", &self.attrs().parent_fingerprint)
             .finish()
@@ -574,11 +671,17 @@ impl Debug for WalletDerivationManagerV0 {
 #[async_trait]
 impl WalletDerivationManagerTrait for WalletDerivationManagerV0 {
     /// build wallet from root/master private key
-    fn from_master_xprv(xprv: &str, _is_multisig: bool, account_index: u64, _cosigner_index: Option<u32>) -> Result<Self> {
+    fn from_master_xprv(
+        xprv: &str,
+        _is_multisig: bool,
+        account_index: u64,
+        _cosigner_index: Option<u32>,
+    ) -> Result<Self> {
         let xprv_key = ExtendedPrivateKey::<SecretKey>::from_str(xprv)?;
         let attrs = xprv_key.attrs();
 
-        let (extended_private_key, attrs) = Self::create_extended_key(*xprv_key.private_key(), attrs.clone(), account_index)?;
+        let (extended_private_key, attrs) =
+            Self::create_extended_key(*xprv_key.private_key(), attrs.clone(), account_index)?;
 
         let wallet = Self::from_extended_private_key(extended_private_key, account_index, attrs)?;
 
@@ -651,32 +754,34 @@ impl WalletDerivationManagerTrait for WalletDerivationManagerV0 {
 #[cfg(test)]
 mod tests {
     //use super::hd_;
-    use super::{PubkeyDerivationManagerV0, WalletDerivationManagerTrait, WalletDerivationManagerV0};
+    use super::{
+        PubkeyDerivationManagerV0, WalletDerivationManagerTrait, WalletDerivationManagerV0,
+    };
     use karlsen_addresses::Prefix;
 
     // these addresses are not karlsen valid addresses (batch replaced)
     fn gen0_receive_addresses() -> Vec<&'static str> {
         vec![
-            "karlsen:qqnklfz9safc78p30y5c9q6p2rvxhj35uhnh96uunklak0tjn2x5w5jqzqtwp",
-            "karlsen:qrd9efkvg3pg34sgp6ztwyv3r569qlc43wa5w8nfs302532dzj47knu04aftm",
-            "karlsen:qq9k5qju48zv4wuw6kjxdktyhm602enshpjzhp0lssdm73n7tl7l2fgc4utt4",
-            "karlsen:qprpml6ytf4g85tgfhz63vks3hxq5mmc3ezxg5kc2aq3f7pmzedxx6a4h8j0f",
-            "karlsen:qq7dzqep3elaf0hrqjg4t265px8k2eh2u4lmt78w4ph022gze2ahu64cg5tqa",
-            "karlsen:qrx0uzsnagrzw259amacvae8lrlx2kl2h4dy8lg9p4dze2e5zkn0w8facwwnh",
-            "karlsen:qr86w2yky258lrqxfc3w55hua6vsf6rshs3jq20ka00pvze34umek35m9ealc",
-            "karlsen:qq6gaad4ul2akwg3dz4jlqvmy3vjtkvdmfsfx6gxs76xafh2drwyv5dm54xaz",
-            "karlsen:qq9x43w57fg3l6jpyl9ytqf5k2czxqmtttecwfw6nu657hcsuf8zjfveld7yj",
-            "karlsen:qr9pzwfce8va3c23m2lwc3up7xl2ngpqjwscs5wwu02nc0wlwgamjuma2j7qs",
-            "karlsen:qr3spcpku68mk9mjcq5qfk4at47aawxl2gz4kzndvu5jn4vzz79djffeqhjnl",
-            "karlsen:qp4v6d6lyn8k025fkal869sh6w7csw85gj930u9r5ml7anncqz6s7u7fy7fpf",
-            "karlsen:qzuas3nekcyl3uv6p8y5jrstchfweue0tpryttn6v0k4vc305rreje5tvf0t6",
-            "karlsen:qpy00e8t4zd5ju8069zwsml2m7z3t607s87k0c66ud338ge682qwqlv7xj64c",
-            "karlsen:qrs04ra3yl33ejhx6dneqhm29ztdgmwrxw7ugatmecqqm9x5xvmrx499qn2mh",
-            "karlsen:qq5qertse2y6p7vpjcef59ezuvhtdu028ucvvsn90htxvxycavreg506hx2r4",
-            "karlsen:qrv30p7gatspj5x4u6drdux2ns5k08qxa3jmvh64ffxcqnxz925gsl203p008",
-            "karlsen:qqfupvd2mm6rwswkxs0zp9lzttn690grhjx922wtpt7gfnsjdhk0zhhp07mhr",
-            "karlsen:qq2un0yhn4npc0rt2yjkp4aepz4j2rkryp59xlp6cvh0l5rqsndewr9zth6h8",
-            "karlsen:qzams4ymck03wfqj4xzvj39ufxl080h4jp32wa8hna2hua9kj6t6cldumhm2p",
+            "karlsen:qqnklfz9safc78p30y5c9q6p2rvxhj35uhnh96uunklak0tjn2x5w79f4wxw2",
+            "karlsen:qrd9efkvg3pg34sgp6ztwyv3r569qlc43wa5w8nfs302532dzj47ketxznyts",
+            "karlsen:qq9k5qju48zv4wuw6kjxdktyhm602enshpjzhp0lssdm73n7tl7l2rl3zjxt7",
+            "karlsen:qprpml6ytf4g85tgfhz63vks3hxq5mmc3ezxg5kc2aq3f7pmzedxxs2uqfl0z",
+            "karlsen:qq7dzqep3elaf0hrqjg4t265px8k2eh2u4lmt78w4ph022gze2ahusz3l6xqk",
+            "karlsen:qrx0uzsnagrzw259amacvae8lrlx2kl2h4dy8lg9p4dze2e5zkn0wd750qrnu",
+            "karlsen:qr86w2yky258lrqxfc3w55hua6vsf6rshs3jq20ka00pvze34umekmrjjhsln",
+            "karlsen:qq6gaad4ul2akwg3dz4jlqvmy3vjtkvdmfsfx6gxs76xafh2drwyv76jrmtaf",
+            "karlsen:qq9x43w57fg3l6jpyl9ytqf5k2czxqmtttecwfw6nu657hcsuf8zjrmsgrnye",
+            "karlsen:qr9pzwfce8va3c23m2lwc3up7xl2ngpqjwscs5wwu02nc0wlwgamjkv5aunqm",
+            "karlsen:qr3spcpku68mk9mjcq5qfk4at47aawxl2gz4kzndvu5jn4vzz79djr7sheln5",
+            "karlsen:qp4v6d6lyn8k025fkal869sh6w7csw85gj930u9r5ml7anncqz6s7kfqnsypz",
+            "karlsen:qzuas3nekcyl3uv6p8y5jrstchfweue0tpryttn6v0k4vc305rrejnrzm8zt3",
+            "karlsen:qpy00e8t4zd5ju8069zwsml2m7z3t607s87k0c66ud338ge682qwq4mh3uh4n",
+            "karlsen:qrs04ra3yl33ejhx6dneqhm29ztdgmwrxw7ugatmecqqm9x5xvmrxljvha8mu",
+            "karlsen:qq5qertse2y6p7vpjcef59ezuvhtdu028ucvvsn90htxvxycavreg7cnqg8r7",
+            "karlsen:qrv30p7gatspj5x4u6drdux2ns5k08qxa3jmvh64ffxcqnxz925gs4axx0z0v",
+            "karlsen:qqfupvd2mm6rwswkxs0zp9lzttn690grhjx922wtpt7gfnsjdhk0zaqgcskhg",
+            "karlsen:qq2un0yhn4npc0rt2yjkp4aepz4j2rkryp59xlp6cvh0l5rqsndewfjtuehhv",
+            "karlsen:qzams4ymck03wfqj4xzvj39ufxl080h4jp32wa8hna2hua9kj6t6c464vek22",
             "karlsen:qrzngzau800s9esxr5kq5kytp5l2enttf8xaag2pfz8s0e4k535767arhku9w",
             "karlsen:qpkpfagtqaxgzp8ngd3mwqf5n3pnqprp0dljukq0srlv4h0z09ckx9wfl9qsg",
             "karlsen:qqgxfpgzthxq4t2grv7jcshc0r9szsqttffh5cq7500lnxmpagvr6duvmfhqe",
@@ -762,26 +867,26 @@ mod tests {
 
     fn gen0_change_addresses() -> Vec<&'static str> {
         vec![
-            "karlsen:qrp03wulr8z7cnr3lmwhpeuv5arthvnaydafgay8y3fg35fazclpc6zngq6zh",
-            "karlsen:qpyum9jfp5ryf0wt9a36cpvp0tnj54kfnuqxjyad6eyn59qtg0cn606fkklpu",
-            "karlsen:qp8p7vy9gtt6r5e77zaelgag68dvdf8kw4hts0mtmrcxm28sgjqdqvrtmua56",
-            "karlsen:qzsyzlp0xega2u82s5l235lschekxkpexju9jsrqscak2393wjkdcnltaa0et",
-            "karlsen:qpxvpdfpr5jxlz3szrhdc8ggh33asyvg4w9lgvc207ju8zflmxsmgnt3fqdq6",
-            "karlsen:qz28qjteugexrat7c437hzv2wky5dwve862r2ahjuz8ry0m3jhd9z72v4h8w9",
-            "karlsen:qz8cus3d2l4l4g3um93cy9nccmquvq62st2aan3xnet88cakhtljuk69seejg",
-            "karlsen:qzczlu9crsn9f5n74sx3hnjv2aag83asrndc4crzg2eazngzlt0wq90zqsfm7",
-            "karlsen:qqemqezzrgg99jp0tr8egwgnalqwma4z7jdnxjqqlyp6da0yktg5x9qfe9mwx",
-            "karlsen:qr0nfhyhqx6lt95lr0nf59lgskjqlsnq4tk4uwlxejxzj63f2g2acs7c3nvtv",
-            "karlsen:qqp0s3dacp46fvcaq5v2zl43smk2apzslawjqml6fhudfczp5d9n2p0s34t0s",
-            "karlsen:qzac4rjzem4rvzr6kt2yjlq7whawzj9ra9calpw0euf507fdwuskq567ej2yt",
-            "karlsen:qrupjagxeqqzahlxtpraj5u4fd7x3p6l97npplge87pgeywkju47zqcdua4yg",
-            "karlsen:qz208ms8heafvt90d28cpm3x7qvav87e3a2hgcz0e5t3d84xmlvcqqx9wg9pg",
-            "karlsen:qq5357axc5ag8hzytf66p3fzw8d578h7xyfm4x4cpr3lp0wallglk6sfmklua",
-            "karlsen:qzsjhgefa98e4fsk58znu03mwzw7ymj7t4392l69kp0pgml2ymqm63njk5vxf",
-            "karlsen:qplnwp0lxzwykmxrqphu62drmem2d09kfzplfek8z7cwt4s3vkkakvek89fhv",
-            "karlsen:qr4cm8smzgt8gzg33csv9mrsnvj9809ffun89cqsw65q3a37vmqx5ng67x8h4",
-            "karlsen:qpj0d7nznxp3nn2kyqsvm0ns38hzdk7dhj8g90cnrv9jda8xw5q2y8v8q7yh3",
-            "karlsen:qp4qt5cjrq73nuatnlwnk90lz5kqpd4mpqm53x7h3lpu74phz6zm5g9qmy00m",
+            "karlsen:qrp03wulr8z7cnr3lmwhpeuv5arthvnaydafgay8y3fg35fazclpcs46lwhzu",
+            "karlsen:qpyum9jfp5ryf0wt9a36cpvp0tnj54kfnuqxjyad6eyn59qtg0cn69dqpcjph",
+            "karlsen:qp8p7vy9gtt6r5e77zaelgag68dvdf8kw4hts0mtmrcxm28sgjqdqx5zvjs53",
+            "karlsen:qzsyzlp0xega2u82s5l235lschekxkpexju9jsrqscak2393wjkdcegz2nzeq",
+            "karlsen:qpxvpdfpr5jxlz3szrhdc8ggh33asyvg4w9lgvc207ju8zflmxsmgeuc7wqq3",
+            "karlsen:qz28qjteugexrat7c437hzv2wky5dwve862r2ahjuz8ry0m3jhd9z5a9ze2ww",
+            "karlsen:qz8cus3d2l4l4g3um93cy9nccmquvq62st2aan3xnet88cakhtljuudv8h5jr",
+            "karlsen:qzczlu9crsn9f5n74sx3hnjv2aag83asrndc4crzg2eazngzlt0wq0cth7ym4",
+            "karlsen:qqemqezzrgg99jp0tr8egwgnalqwma4z7jdnxjqqlyp6da0yktg5x0hqwtkwd",
+            "karlsen:qr0nfhyhqx6lt95lr0nf59lgskjqlsnq4tk4uwlxejxzj63f2g2ac6f3xapt8",
+            "karlsen:qqp0s3dacp46fvcaq5v2zl43smk2apzslawjqml6fhudfczp5d9n2tcexmx0m",
+            "karlsen:qzac4rjzem4rvzr6kt2yjlq7whawzj9ra9calpw0euf507fdwuskq7dhwu8yq",
+            "karlsen:qrupjagxeqqzahlxtpraj5u4fd7x3p6l97npplge87pgeywkju47z20ytncyr",
+            "karlsen:qz208ms8heafvt90d28cpm3x7qvav87e3a2hgcz0e5t3d84xmlvcq23vexgpr",
+            "karlsen:qq5357axc5ag8hzytf66p3fzw8d578h7xyfm4x4cpr3lp0wallglks8qvcjuk",
+            "karlsen:qzsjhgefa98e4fsk58znu03mwzw7ymj7t4392l69kp0pgml2ymqm6mymp6pxz",
+            "karlsen:qplnwp0lxzwykmxrqphu62drmem2d09kfzplfek8z7cwt4s3vkkakxwlstyh8",
+            "karlsen:qr4cm8smzgt8gzg33csv9mrsnvj9809ffun89cqsw65q3a37vmqx5elnfg2h7",
+            "karlsen:qpj0d7nznxp3nn2kyqsvm0ns38hzdk7dhj8g90cnrv9jda8xw5q2ydmwhsfh6",
+            "karlsen:qp4qt5cjrq73nuatnlwnk90lz5kqpd4mpqm53x7h3lpu74phz6zm5zjfv2z0s",
             "karlsen:qzjrlcwkl2mssucyyemnxs95ezruv04m8yyek65fyxzavntm9dxtkva30sv3u",
             "karlsen:qz24dfwl08naydszahrppkfmkp2ztsh5frylgwr0wqvjqwnuscvmwg2u0raml",
             "karlsen:qqy8pv5sv9quqce26fhn0lygjmuzrprlt90qz6d4k2afg0uaefptgva6l52ee",
@@ -886,10 +991,16 @@ mod tests {
 
         for index in 0..20 {
             let pubkey = hd_wallet.derive_receive_pubkey(index).unwrap();
-            let address1: String = PubkeyDerivationManagerV0::create_address(&pubkey, Prefix::Mainnet, false).unwrap().into();
+            let address1: String =
+                PubkeyDerivationManagerV0::create_address(&pubkey, Prefix::Mainnet, false)
+                    .unwrap()
+                    .into();
 
             let pubkey = hd_wallet_test.derive_receive_pubkey(index).unwrap();
-            let address2: String = PubkeyDerivationManagerV0::create_address(&pubkey, Prefix::Mainnet, false).unwrap().into();
+            let address2: String =
+                PubkeyDerivationManagerV0::create_address(&pubkey, Prefix::Mainnet, false)
+                    .unwrap()
+                    .into();
             assert_eq!(address1, address2, "receive address at {index} failed");
         }
 
@@ -897,7 +1008,10 @@ mod tests {
         assert!(res.is_ok(), "wallet_test.remove_key() failed");
 
         let pubkey = hd_wallet_test.derive_receive_pubkey(0);
-        assert!(pubkey.is_ok(), "Should be ok, as cache should return upto 0..20 keys");
+        assert!(
+            pubkey.is_ok(),
+            "Should be ok, as cache should return upto 0..20 keys"
+        );
 
         let pubkey = hd_wallet_test.derive_receive_pubkey(21);
         assert!(pubkey.is_err(), "Should be error here");
@@ -931,11 +1045,23 @@ mod tests {
 
         for index in 0..20 {
             let pubkey = hd_wallet.derive_receive_pubkey(index).unwrap();
-            let address: String = PubkeyDerivationManagerV0::create_address(&pubkey, Prefix::Mainnet, false).unwrap().into();
-            assert_eq!(receive_addresses[index as usize], address, "receive address at {index} failed");
+            let address: String =
+                PubkeyDerivationManagerV0::create_address(&pubkey, Prefix::Mainnet, false)
+                    .unwrap()
+                    .into();
+            assert_eq!(
+                receive_addresses[index as usize], address,
+                "receive address at {index} failed"
+            );
             let pubkey = hd_wallet.derive_change_pubkey(index).unwrap();
-            let address: String = PubkeyDerivationManagerV0::create_address(&pubkey, Prefix::Mainnet, false).unwrap().into();
-            assert_eq!(change_addresses[index as usize], address, "change address at {index} failed");
+            let address: String =
+                PubkeyDerivationManagerV0::create_address(&pubkey, Prefix::Mainnet, false)
+                    .unwrap()
+                    .into();
+            assert_eq!(
+                change_addresses[index as usize], address,
+                "change address at {index} failed"
+            );
         }
     }
 
@@ -947,73 +1073,93 @@ mod tests {
         let hd_wallet = WalletDerivationManagerV0::from_master_xprv(master_xprv, false, 0, None);
         assert!(hd_wallet.is_ok(), "Could not parse key");
         let hd_wallet = hd_wallet.unwrap();
-        let pubkeys = hd_wallet.receive_pubkey_manager().derive_pubkey_range(0..20).unwrap();
+        let pubkeys = hd_wallet
+            .receive_pubkey_manager()
+            .derive_pubkey_range(0..20)
+            .unwrap();
         let addresses_receive = pubkeys
             .into_iter()
-            .map(|k| PubkeyDerivationManagerV0::create_address(&k, Prefix::Mainnet, false).unwrap().to_string())
+            .map(|k| {
+                PubkeyDerivationManagerV0::create_address(&k, Prefix::Mainnet, false)
+                    .unwrap()
+                    .to_string()
+            })
             .collect::<Vec<String>>();
 
-        let pubkeys = hd_wallet.change_pubkey_manager().derive_pubkey_range(0..20).unwrap();
+        let pubkeys = hd_wallet
+            .change_pubkey_manager()
+            .derive_pubkey_range(0..20)
+            .unwrap();
         let addresses_change = pubkeys
             .into_iter()
-            .map(|k| PubkeyDerivationManagerV0::create_address(&k, Prefix::Mainnet, false).unwrap().to_string())
+            .map(|k| {
+                PubkeyDerivationManagerV0::create_address(&k, Prefix::Mainnet, false)
+                    .unwrap()
+                    .to_string()
+            })
             .collect::<Vec<String>>();
         println!("receive addresses: {addresses_receive:#?}");
         println!("change addresses: {addresses_change:#?}");
         let receive_addresses = gen0_receive_addresses();
         let change_addresses = gen0_change_addresses();
         for index in 0..20 {
-            assert_eq!(receive_addresses[index], addresses_receive[index], "receive address at {index} failed");
-            assert_eq!(change_addresses[index], addresses_change[index], "change address at {index} failed");
+            assert_eq!(
+                receive_addresses[index], addresses_receive[index],
+                "receive address at {index} failed"
+            );
+            assert_eq!(
+                change_addresses[index], addresses_change[index],
+                "change address at {index} failed"
+            );
         }
     }
 
     #[tokio::test]
     async fn generate_karlsentest_addresses() {
         let receive_addresses = [
-            "karlsentest:qqz22l98sf8jun72rwh5rqe2tm8lhwtdxdmynrz4ypwak427qed5juktjt7ju",
-            "karlsentest:qz880h6s4fwyumlslklt4jjwm7y5lcqyy8v5jc88gsncpuza0y76xuktmrx75",
-            "karlsentest:qrxa994gjclvhnluxfet3056wwhrs02ptaj7gx04jlknjmlkmp9dx0tdchl42",
-            "karlsentest:qpqecy54rahaj4xadjm6my2a20fqmjysgrva3ya0nk2azhr90yrzyce6mpfps",
-            "karlsentest:qzq3sc6jkr946fh3ycs0zg0vfz2jts54aa27rwy4ncqz9tm9ytnxsyns7ad6e",
-            "karlsentest:qq4vl7f82y2snr9warpy85f46sde0m0s8874p2rsq6p77fzccyflyuvcez6mr",
-            "karlsentest:qq5kqzu76363zptuwt7kysqq9rmslcfypnyckqr4zjxfljx7p8mlwthe5q26v",
-            "karlsentest:qqad0qrj6y032jqxuygcyayvu2z8cza9hlvn8m89z3u6s6s8hg3dyav40hczu",
-            "karlsentest:qpwkdpyf766ny56zuj47ax63l689wgg27rv90xr2pruk5px8sstcg9g7hkdsf",
-            "karlsentest:qpn0vug0j36xfdycq7nl6wczvqnhc22d6ayvhs646h76rv3pdpa87vj9rycuc",
-            "karlsentest:qz4c7eg9uernmsqmt429lvj5f85qsqzt6dgy8r53aefz39m77w2mgm3najzyr",
-            "karlsentest:qqzfgqmmxrznec9hl35xwa8h6hs5mcr7lt7ep6j6373lxfq9jpj464sazd05p",
-            "karlsentest:qr9033gap4pscrhkwyp0cpmpy62a9pmcpqm2y4k29qqlktceulm7y4dru7f0h",
-            "karlsentest:qq3ktnql8uxwyj0kq6gq4vp8gm5ftnlvq0aphr55hl6u0u8dp49mqul4l4zc4",
-            "karlsentest:qqrewmx4gpuekvk8grenkvj2hp7xt0c35rxgq383f6gy223c4ud5s58ptm6er",
-            "karlsentest:qrhck7qaem2g2wtpqvjxtkpf87vd0ul8d8x70tu2zes3amcz70reghy0tlheh",
-            "karlsentest:qq4lnkxy9cdylkwnkhmz9z0cctfcqx8rzd4agdhzdvkmllrvc34nw0feewtj2",
-            "karlsentest:qzdt4wh0k63ndsv3m7t4n7flxu28qh3zdgh6ag684teervsfzzkcu32fmyva4",
-            "karlsentest:qqqng97tn6lfex3je7n0tr64e36zmzfyhpck2jeqts2ruatz3r5aswcy4yuxu",
-            "karlsentest:qq2je8w0ltztef0ygljpcqx055kcxgxtsffwu7ujxzjfhk5p5rqlwxearwav4",
+            "karlsentest:qqz22l98sf8jun72rwh5rqe2tm8lhwtdxdmynrz4ypwak427qed5jyaya6qh8",
+            "karlsentest:qz880h6s4fwyumlslklt4jjwm7y5lcqyy8v5jc88gsncpuza0y76xyay5jcm0",
+            "karlsentest:qrxa994gjclvhnluxfet3056wwhrs02ptaj7gx04jlknjmlkmp9dxhqzhxps3",
+            "karlsentest:qpqecy54rahaj4xadjm6my2a20fqmjysgrva3ya0nk2azhr90yrzyqj45shyt",
+            "karlsentest:qzq3sc6jkr946fh3ycs0zg0vfz2jts54aa27rwy4ncqz9tm9ytnxsucl3vnlz",
+            "karlsentest:qq4vl7f82y2snr9warpy85f46sde0m0s8874p2rsq6p77fzccyflyy8hkny7c",
+            "karlsentest:qq5kqzu76363zptuwt7kysqq9rmslcfypnyckqr4zjxfljx7p8mlwnukm35lh",
+            "karlsentest:qqad0qrj6y032jqxuygcyayvu2z8cza9hlvn8m89z3u6s6s8hg3dy986qxx88",
+            "karlsentest:qpwkdpyf766ny56zuj47ax63l689wgg27rv90xr2pruk5px8sstcgar3c8n4j",
+            "karlsentest:qpn0vug0j36xfdycq7nl6wczvqnhc22d6ayvhs646h76rv3pdpa875e2v4xer",
+            "karlsentest:qz4c7eg9uernmsqmt429lvj5f85qsqzt6dgy8r53aefz39m77w2mgr6ujrupc",
+            "karlsentest:qqzfgqmmxrznec9hl35xwa8h6hs5mcr7lt7ep6j6373lxfq9jpj46dmjdu336",
+            "karlsentest:qr9033gap4pscrhkwyp0cpmpy62a9pmcpqm2y4k29qqlktceulm7ydxvn0h2v",
+            "karlsentest:qq3ktnql8uxwyj0kq6gq4vp8gm5ftnlvq0aphr55hl6u0u8dp49mqy56syuaw",
+            "karlsentest:qqrewmx4gpuekvk8grenkvj2hp7xt0c35rxgq383f6gy223c4ud5svvwy2yuc",
+            "karlsentest:qrhck7qaem2g2wtpqvjxtkpf87vd0ul8d8x70tu2zes3amcz70reg00qywfuv",
+            "karlsentest:qq4lnkxy9cdylkwnkhmz9z0cctfcqx8rzd4agdhzdvkmllrvc34nwhzkkl4h3",
+            "karlsentest:qzdt4wh0k63ndsv3m7t4n7flxu28qh3zdgh6ag684teervsfzzkcufpx54jcw",
+            "karlsentest:qqqng97tn6lfex3je7n0tr64e36zmzfyhpck2jeqts2ruatz3r5asknt64zr8",
+            "karlsentest:qq2je8w0ltztef0ygljpcqx055kcxgxtsffwu7ujxzjfhk5p5rqlw7jjvlrfw",
         ];
 
         let change_addresses = vec![
-            "karlsentest:qq3p8lvqyhzh37qgh2vf9u79l7h85pnmypg8z0tmp0tfl70zjm2cv2hgkfmnl",
-            "karlsentest:qpl00d5thmm3c5w3lj9cwx94dejjjx667rh3ey4sp0tkrmhsyd7rg9p27me7m",
-            "karlsentest:qq407023vckl5u85u6w698fqu3ungs598z3xucc2mhr9vy0hug5vvxuyqvcnq",
-            "karlsentest:qzl0qcvjfuwrrgzz83fuu272j7n9g03xfzp0g0f9jq5kll4rjfct536mv55uq",
-            "karlsentest:qp6l8n5meyut2yvpyw2dqrrcgc3t6jxflheh9j8s2f75quepdl4qvg4hnfexd",
-            "karlsentest:qqw0uhr54kpyna0zrya6q7w2kya84ydgcvsdwaehayk8pn40d4y6sxpp3g3hh",
-            "karlsentest:qr5kjerrvnru7w49umrc0jtws6hpf7s22ur9nav0fsazs8kyy8ydwgrafxpw9",
-            "karlsentest:qqd8lyeya58hjym2xlw7th2wuenlptydmvzrzu53gxft0e2d844sv8cu3ymac",
-            "karlsentest:qr0cs9lrdwjesuw5vf0x5rj78ecayphu60vt29smjerusqmec9w96acyggwv0",
-            "karlsentest:qq089gr7p4rggwjqwh34mmdlsa357vprzl4q0dzn9c92egfs5aj5xc8h3j7rg",
-            "karlsentest:qzs6m6nmkqczmxtjzptzzyl46nwwgq6hymk8jz3csg2h0lh0rpqjk28hxgr9t",
-            "karlsentest:qr4k0fs6z47chukqv82walvyjmztd6czaqlk0kfdwr90rv3zwu5hjnlcldh2e",
-            "karlsentest:qpgcua8savrpy7ggdxm0cq2uqgcd4a9skc39fld5avy3dvdcdsjssh3g72sun",
-            "karlsentest:qq2hllm2ff2rwgq3cyaczvusw5tr5ugfz2dtaedqxhuktz6sywves25p4nkn7",
-            "karlsentest:qrr2a2lttpx8uaj0qtd80cl90h5qx7c9xgsdqzcfm2rntme9vuxpzjc5zwl3z",
-            "karlsentest:qqa8tjjr9ngudgh2gxyjevjazmgpx3v6zc3zn3aka38gm3erl6xx59pmcm6l8",
-            "karlsentest:qqllkscqj7jd8tugj3rsl9r67evgandgnznekwl48cwp80jx6cut2e3aht768",
-            "karlsentest:qq83n9wrk2ujn2hayyt74qfrctjp803csz5lsdzp0dslu7wue2ps5d5dd6aj2",
-            "karlsentest:qz5qk6nvffsgdcujma3gq5rr2lr2q6yjw87n3w6asc0uj3rr8z8pk7sl927wk",
-            "karlsentest:qr55n5vkaq6lxcwzl6522nz86dj7ntl76nergy0u2j99v8w8lhyv6gshlq3wz",
+            "karlsentest:qq3p8lvqyhzh37qgh2vf9u79l7h85pnmypg8z0tmp0tfl70zjm2cvju8ec9ky",
+            "karlsentest:qpl00d5thmm3c5w3lj9cwx94dejjjx667rh3ey4sp0tkrmhsyd7rga29328mq",
+            "karlsentest:qq407023vckl5u85u6w698fqu3ungs598z3xucc2mhr9vy0hug5vv7ht0axkm",
+            "karlsentest:qzl0qcvjfuwrrgzz83fuu272j7n9g03xfzp0g0f9jq5kll4rjfct5f35r92em",
+            "karlsentest:qp6l8n5meyut2yvpyw2dqrrcgc3t6jxflheh9j8s2f75quepdl4qvs7cuc8rk",
+            "karlsentest:qqw0uhr54kpyna0zrya6q7w2kya84ydgcvsdwaehayk8pn40d4y6s72w7e0jv",
+            "karlsentest:qr5kjerrvnru7w49umrc0jtws6hpf7s22ur9nav0fsazs8kyy8ydwsgjxhlt7",
+            "karlsentest:qqd8lyeya58hjym2xlw7th2wuenlptydmvzrzu53gxft0e2d844svlnn749cr",
+            "karlsentest:qr0cs9lrdwjesuw5vf0x5rj78ecayphu60vt29smjerusqmec9w969nt8esf5",
+            "karlsentest:qq089gr7p4rggwjqwh34mmdlsa357vprzl4q0dzn9c92egfs5aj5xqvc7rqxn",
+            "karlsentest:qzs6m6nmkqczmxtjzptzzyl46nwwgq6hymk8jz3csg2h0lh0rpqjkjvcfeaqs",
+            "karlsentest:qr4k0fs6z47chukqv82walvyjmztd6czaqlk0kfdwr90rv3zwu5hjt5hsuf0z",
+            "karlsentest:qpgcua8savrpy7ggdxm0cq2uqgcd4a9skc39fld5avy3dvdcdsjss0683mweg",
+            "karlsentest:qq2hllm2ff2rwgq3cyaczvusw5tr5ugfz2dtaedqxhuktz6sywvesjlw6zgk9",
+            "karlsentest:qrr2a2lttpx8uaj0qtd80cl90h5qx7c9xgsdqzcfm2rntme9vuxpz2nmdlp5e",
+            "karlsentest:qqa8tjjr9ngudgh2gxyjevjazmgpx3v6zc3zn3aka38gm3erl6xx5a25h2y6u",
+            "karlsentest:qqllkscqj7jd8tugj3rsl9r67evgandgnznekwl48cwp80jx6cut2p6jc6qlu",
+            "karlsentest:qq83n9wrk2ujn2hayyt74qfrctjp803csz5lsdzp0dslu7wue2ps54lzztrh3",
+            "karlsentest:qz5qk6nvffsgdcujma3gq5rr2lr2q6yjw87n3w6asc0uj3rr8z8pkxms2mqtd",
+            "karlsentest:qr55n5vkaq6lxcwzl6522nz86dj7ntl76nergy0u2j99v8w8lhyv6smcs30te",
         ];
 
         let master_xprv =
@@ -1026,12 +1172,22 @@ mod tests {
         for index in 0..20 {
             let key = hd_wallet.derive_receive_pubkey(index).unwrap();
             //let address = Address::new(Prefix::Testnet, karlsen_addresses::Version::PubKey, key.to_bytes());
-            let address = PubkeyDerivationManagerV0::create_address(&key, Prefix::Testnet, false).unwrap();
+            let address =
+                PubkeyDerivationManagerV0::create_address(&key, Prefix::Testnet, false).unwrap();
             //receive_addresses.push(String::from(address));
-            assert_eq!(receive_addresses[index as usize], address.to_string(), "receive address at {index} failed");
+            assert_eq!(
+                receive_addresses[index as usize],
+                address.to_string(),
+                "receive address at {index} failed"
+            );
             let key = hd_wallet.derive_change_pubkey(index).unwrap();
-            let address = PubkeyDerivationManagerV0::create_address(&key, Prefix::Testnet, false).unwrap();
-            assert_eq!(change_addresses[index as usize], address.to_string(), "change address at {index} failed");
+            let address =
+                PubkeyDerivationManagerV0::create_address(&key, Prefix::Testnet, false).unwrap();
+            assert_eq!(
+                change_addresses[index as usize],
+                address.to_string(),
+                "change address at {index} failed"
+            );
         }
 
         println!("receive_addresses: {receive_addresses:#?}");

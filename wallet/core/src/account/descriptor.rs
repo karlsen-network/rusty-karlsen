@@ -33,16 +33,40 @@ impl AccountDescriptor {
         receive_address: Option<Address>,
         change_address: Option<Address>,
     ) -> Self {
-        Self { kind, account_id, account_name, prv_key_data_ids, receive_address, change_address, properties: BTreeMap::default() }
+        Self {
+            kind,
+            account_id,
+            account_name,
+            prv_key_data_ids,
+            receive_address,
+            change_address,
+            properties: BTreeMap::default(),
+        }
     }
 
-    pub fn with_property(mut self, property: AccountDescriptorProperty, value: AccountDescriptorValue) -> Self {
+    pub fn with_property(
+        mut self,
+        property: AccountDescriptorProperty,
+        value: AccountDescriptorValue,
+    ) -> Self {
         self.properties.insert(property, value);
         self
     }
 }
 
-#[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Clone,
+    Debug,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum AccountDescriptorProperty {
     AccountIndex,
@@ -241,7 +265,8 @@ impl TryFrom<AccountDescriptor> for IAccountDescriptor {
         object.set("receiveAddress", &descriptor.receive_address.into())?;
         object.set("changeAddress", &descriptor.change_address.into())?;
 
-        let prv_key_data_ids = js_sys::Array::from_iter(descriptor.prv_key_data_ids.into_iter().map(JsValue::from));
+        let prv_key_data_ids =
+            js_sys::Array::from_iter(descriptor.prv_key_data_ids.into_iter().map(JsValue::from));
         object.set("prvKeyDataIds", &prv_key_data_ids)?;
 
         // let properties = Object::new();

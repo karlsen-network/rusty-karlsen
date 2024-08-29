@@ -18,7 +18,12 @@ pub trait DepthStoreReader {
 
 pub trait DepthStore: DepthStoreReader {
     // This is append only
-    fn insert(&self, hash: Hash, merge_depth_root: Hash, finality_point: Hash) -> Result<(), StoreError>;
+    fn insert(
+        &self,
+        hash: Hash,
+        merge_depth_root: Hash,
+        finality_point: Hash,
+    ) -> Result<(), StoreError>;
     fn delete(&self, hash: Hash) -> Result<(), StoreError>;
 }
 
@@ -39,7 +44,10 @@ pub struct DbDepthStore {
 
 impl DbDepthStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::BlockDepth.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::BlockDepth.into()),
+        }
     }
 
     pub fn clone_with_new_cache(&self, cache_policy: CachePolicy) -> Self {
@@ -56,7 +64,14 @@ impl DbDepthStore {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access.write(BatchDbWriter::new(batch), hash, BlockDepthInfo { merge_depth_root, finality_point })?;
+        self.access.write(
+            BatchDbWriter::new(batch),
+            hash,
+            BlockDepthInfo {
+                merge_depth_root,
+                finality_point,
+            },
+        )?;
         Ok(())
     }
 
@@ -76,11 +91,23 @@ impl DepthStoreReader for DbDepthStore {
 }
 
 impl DepthStore for DbDepthStore {
-    fn insert(&self, hash: Hash, merge_depth_root: Hash, finality_point: Hash) -> Result<(), StoreError> {
+    fn insert(
+        &self,
+        hash: Hash,
+        merge_depth_root: Hash,
+        finality_point: Hash,
+    ) -> Result<(), StoreError> {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access.write(DirectDbWriter::new(&self.db), hash, BlockDepthInfo { merge_depth_root, finality_point })?;
+        self.access.write(
+            DirectDbWriter::new(&self.db),
+            hash,
+            BlockDepthInfo {
+                merge_depth_root,
+                finality_point,
+            },
+        )?;
         Ok(())
     }
 

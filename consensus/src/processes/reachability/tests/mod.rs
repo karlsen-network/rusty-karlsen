@@ -11,7 +11,9 @@ use crate::{
     processes::{
         ghostdag::mergeset::unordered_mergeset_without_selected_parent,
         reachability::interval::Interval,
-        relations::{delete_reachability_relations, init as relations_init, RelationsStoreExtensions},
+        relations::{
+            delete_reachability_relations, init as relations_init, RelationsStoreExtensions,
+        },
     },
 };
 use itertools::Itertools;
@@ -47,7 +49,9 @@ impl<'a, T: ReachabilityStore + ?Sized> StoreBuilder<'a, T> {
         } else {
             0
         };
-        self.store.insert(hash, parent, Interval::empty(), parent_height + 1).unwrap();
+        self.store
+            .insert(hash, parent, Interval::empty(), parent_height + 1)
+            .unwrap();
         self
     }
 }
@@ -69,7 +73,11 @@ impl<'a, T: ReachabilityStore + ?Sized> TreeBuilder<'a, T> {
     }
 
     pub fn new_with_params(store: &'a mut T, reindex_depth: u64, reindex_slack: u64) -> Self {
-        Self { store, reindex_depth, reindex_slack }
+        Self {
+            store,
+            reindex_depth,
+            reindex_slack,
+        }
     }
 
     pub fn init(&mut self) -> &mut Self {
@@ -83,8 +91,16 @@ impl<'a, T: ReachabilityStore + ?Sized> TreeBuilder<'a, T> {
     }
 
     pub fn add_block(&mut self, hash: Hash, parent: Hash) -> &mut Self {
-        add_tree_block(self.store, hash, parent, self.reindex_depth, self.reindex_slack).unwrap();
-        try_advancing_reindex_root(self.store, hash, self.reindex_depth, self.reindex_slack).unwrap();
+        add_tree_block(
+            self.store,
+            hash,
+            parent,
+            self.reindex_depth,
+            self.reindex_slack,
+        )
+        .unwrap();
+        try_advancing_reindex_root(self.store, hash, self.reindex_depth, self.reindex_slack)
+            .unwrap();
         self
     }
 
@@ -106,14 +122,20 @@ impl DagBlock {
 }
 
 /// A struct with fluent API to streamline DAG building
-pub struct DagBuilder<'a, T: ReachabilityStore + ?Sized, S: RelationsStore + ChildrenStore + ?Sized> {
+pub struct DagBuilder<'a, T: ReachabilityStore + ?Sized, S: RelationsStore + ChildrenStore + ?Sized>
+{
     reachability: &'a mut T,
     relations: &'a mut S,
 }
 
-impl<'a, T: ReachabilityStore + ?Sized, S: RelationsStore + ChildrenStore + ?Sized> DagBuilder<'a, T, S> {
+impl<'a, T: ReachabilityStore + ?Sized, S: RelationsStore + ChildrenStore + ?Sized>
+    DagBuilder<'a, T, S>
+{
     pub fn new(reachability: &'a mut T, relations: &'a mut S) -> Self {
-        Self { reachability, relations }
+        Self {
+            reachability,
+            relations,
+        }
     }
 
     pub fn init(&mut self) -> &mut Self {
@@ -127,18 +149,37 @@ impl<'a, T: ReachabilityStore + ?Sized, S: RelationsStore + ChildrenStore + ?Siz
     }
 
     pub fn delete_block_with_writer(&mut self, writer: impl DirectWriter, hash: Hash) -> &mut Self {
-        let mergeset = delete_reachability_relations(writer, self.relations, self.reachability, hash);
+        let mergeset =
+            delete_reachability_relations(writer, self.relations, self.reachability, hash);
         delete_block(self.reachability, hash, &mut mergeset.iter().cloned()).unwrap();
         self
     }
 
     pub fn add_block(&mut self, block: DagBlock) -> &mut Self {
         // Select by height (longest chain) just for the sake of internal isolated tests
-        let selected_parent = block.parents.iter().cloned().max_by_key(|p| self.reachability.get_height(*p).unwrap()).unwrap();
-        let mergeset = unordered_mergeset_without_selected_parent(self.relations, self.reachability, selected_parent, &block.parents);
-        add_block(self.reachability, block.hash, selected_parent, &mut mergeset.iter().cloned()).unwrap();
+        let selected_parent = block
+            .parents
+            .iter()
+            .cloned()
+            .max_by_key(|p| self.reachability.get_height(*p).unwrap())
+            .unwrap();
+        let mergeset = unordered_mergeset_without_selected_parent(
+            self.relations,
+            self.reachability,
+            selected_parent,
+            &block.parents,
+        );
+        add_block(
+            self.reachability,
+            block.hash,
+            selected_parent,
+            &mut mergeset.iter().cloned(),
+        )
+        .unwrap();
         hint_virtual_selected_parent(self.reachability, block.hash).unwrap();
-        self.relations.insert(block.hash, BlockHashes::new(block.parents)).unwrap();
+        self.relations
+            .insert(block.hash, BlockHashes::new(block.parents))
+            .unwrap();
         self
     }
 
@@ -148,18 +189,38 @@ impl<'a, T: ReachabilityStore + ?Sized, S: RelationsStore + ChildrenStore + ?Siz
 }
 
 /// Validates that relations are consistent and do not contain any dangling hash etc
-pub fn validate_relations<S: RelationsStoreReader + ?Sized>(relations: &S) -> std::result::Result<(), TestError> {
+pub fn validate_relations<S: RelationsStoreReader + ?Sized>(
+    relations: &S,
+) -> std::result::Result<(), TestError> {
     let mut queue = VecDeque::<Hash>::from([ORIGIN]);
     let mut visited: BlockHashSet = queue.iter().copied().collect();
     while let Some(current) = queue.pop_front() {
         let parents = relations.get_parents(current)?;
-        assert_eq!(parents.len(), parents.iter().copied().unique_by(|&h| h).count(), "duplicate hashes in parents array");
+        assert_eq!(
+            parents.len(),
+            parents.iter().copied().unique_by(|&h| h).count(),
+            "duplicate hashes in parents array"
+        );
         for parent in parents.iter().copied() {
-            let parent_children = relations.get_children(parent)?.read().iter().copied().collect_vec();
+            let parent_children = relations
+                .get_children(parent)?
+                .read()
+                .iter()
+                .copied()
+                .collect_vec();
             assert!(parent_children.contains(&current), "missing child entry");
         }
-        let children = relations.get_children(current)?.read().iter().copied().collect_vec();
-        assert_eq!(children.len(), children.iter().copied().unique_by(|&h| h).count(), "duplicate hashes in children array");
+        let children = relations
+            .get_children(current)?
+            .read()
+            .iter()
+            .copied()
+            .collect_vec();
+        assert_eq!(
+            children.len(),
+            children.iter().copied().unique_by(|&h| h).count(),
+            "duplicate hashes in children array"
+        );
         for child in children.iter().copied() {
             if visited.insert(child) {
                 queue.push_back(child);
@@ -208,7 +269,10 @@ pub fn inclusive_past<S: RelationsStoreReader + ?Sized>(relations: &S, hash: Has
 
 /// Builds a full DAG reachability matrix of all block pairs (B, C) ∈ G x G. The returned matrix is built
 /// using explicit past traversals so it can be used as reference for testing the reachability oracle
-pub fn build_transitive_closure_ref<S: RelationsStoreReader + ?Sized>(relations: &S, hashes: &[Hash]) -> TransitiveClosure {
+pub fn build_transitive_closure_ref<S: RelationsStoreReader + ?Sized>(
+    relations: &S,
+    hashes: &[Hash],
+) -> TransitiveClosure {
     let mut closure = TransitiveClosure::new();
     for x in hashes.iter().copied() {
         let past = inclusive_past(relations, x);
@@ -221,7 +285,10 @@ pub fn build_transitive_closure_ref<S: RelationsStoreReader + ?Sized>(relations:
 
 /// Builds a full DAG reachability matrix of all block pairs (B, C) ∈ G x G by querying the reachability oracle.
 /// The function also asserts this matrix against a closure reference obtained by explicit past traversals
-pub fn build_transitive_closure<S: RelationsStoreReader + ?Sized, V: ReachabilityStoreReader + ?Sized>(
+pub fn build_transitive_closure<
+    S: RelationsStoreReader + ?Sized,
+    V: ReachabilityStoreReader + ?Sized,
+>(
     relations: &S,
     reachability: &V,
     hashes: &[Hash],
@@ -239,7 +306,10 @@ pub fn build_transitive_closure<S: RelationsStoreReader + ?Sized, V: Reachabilit
 
 /// Builds a full chain reachability matrix of all block pairs (B, C) ∈ G x G. The returned matrix is built
 /// using explicit subtree traversals so it can be used as reference for testing the reachability oracle
-pub fn build_chain_closure_ref<S: ReachabilityStoreReader + ?Sized>(reachability: &S, hashes: &[Hash]) -> TransitiveClosure {
+pub fn build_chain_closure_ref<S: ReachabilityStoreReader + ?Sized>(
+    reachability: &S,
+    hashes: &[Hash],
+) -> TransitiveClosure {
     let mut closure = TransitiveClosure::new();
     for x in hashes.iter().copied() {
         let subtree = subtree(reachability, x);
@@ -252,7 +322,10 @@ pub fn build_chain_closure_ref<S: ReachabilityStoreReader + ?Sized>(reachability
 
 /// Builds a full chain reachability matrix of all block pairs (B, C) ∈ G x G by querying the reachability oracle.
 /// The function also asserts this matrix against a chain closure reference obtained by explicit subtree traversals
-pub fn build_chain_closure<V: ReachabilityStoreReader + ?Sized>(reachability: &V, hashes: &[Hash]) -> TransitiveClosure {
+pub fn build_chain_closure<V: ReachabilityStoreReader + ?Sized>(
+    reachability: &V,
+    hashes: &[Hash],
+) -> TransitiveClosure {
     let mut closure = TransitiveClosure::new();
     for x in hashes.iter().copied() {
         for y in hashes.iter().copied() {
@@ -275,7 +348,10 @@ pub fn validate_closures<S: RelationsStoreReader + ?Sized, V: ReachabilityStoreR
     hashes_ref: &BlockHashSet,
 ) {
     let hashes = subtree(reachability, ORIGIN).into_iter().collect_vec();
-    assert_eq!(hashes_ref, &hashes.iter().copied().collect::<BlockHashSet>());
+    assert_eq!(
+        hashes_ref,
+        &hashes.iter().copied().collect::<BlockHashSet>()
+    );
     let chain_closure = build_chain_closure(reachability, &hashes);
     let dag_closure = build_transitive_closure(relations, reachability, &hashes);
     assert!(chain_closure.subset_of(chain_closure_ref));
@@ -293,7 +369,9 @@ pub struct TransitiveClosure {
 
 impl TransitiveClosure {
     pub fn new() -> Self {
-        Self { matrix: Default::default() }
+        Self {
+            matrix: Default::default(),
+        }
     }
 
     pub fn set(&mut self, x: Hash, y: Hash, b: bool) {
@@ -345,7 +423,12 @@ pub enum TestError {
     NonOrderedFutureCoveringItems(Interval, Interval),
 
     #[error("child interval out of parent bounds")]
-    IntervalOutOfParentBounds { parent: Hash, child: Hash, parent_interval: Interval, child_interval: Interval },
+    IntervalOutOfParentBounds {
+        parent: Hash,
+        child: Hash,
+        parent_interval: Interval,
+        child_interval: Interval,
+    },
 
     #[error("expected store counts: {0:?}, but got: {1:?}")]
     WrongCounts((usize, usize), (usize, usize)),
@@ -396,7 +479,12 @@ impl<T: ReachabilityStoreReader + ?Sized> StoreValidationExtensions for T {
             for child in children.iter().cloned() {
                 let child_interval = self.get_interval(child)?;
                 if !parent_interval.strictly_contains(child_interval) {
-                    return Err(TestError::IntervalOutOfParentBounds { parent, child, parent_interval, child_interval });
+                    return Err(TestError::IntervalOutOfParentBounds {
+                        parent,
+                        child,
+                        parent_interval,
+                        child_interval,
+                    });
                 }
             }
 
@@ -405,7 +493,10 @@ impl<T: ReachabilityStoreReader + ?Sized> StoreValidationExtensions for T {
                 let sibling_interval = self.get_interval(siblings[0])?;
                 let current_interval = self.get_interval(siblings[1])?;
                 if sibling_interval.end + 1 != current_interval.start {
-                    return Err(TestError::NonConsecutiveSiblingIntervals(sibling_interval, current_interval));
+                    return Err(TestError::NonConsecutiveSiblingIntervals(
+                        sibling_interval,
+                        current_interval,
+                    ));
                 }
             }
 
@@ -421,7 +512,10 @@ impl<T: ReachabilityStoreReader + ?Sized> StoreValidationExtensions for T {
                     return Err(TestError::EmptyInterval(neighbors[1], right_interval));
                 }
                 if left_interval.end >= right_interval.start {
-                    return Err(TestError::NonOrderedFutureCoveringItems(left_interval, right_interval));
+                    return Err(TestError::NonOrderedFutureCoveringItems(
+                        left_interval,
+                        right_interval,
+                    ));
                 }
             }
         }

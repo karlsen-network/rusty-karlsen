@@ -25,7 +25,10 @@ pub(crate) struct RegistrationRequest {
 
 impl RegistrationRequest {
     pub fn new(connection: Connection, response_sender: OneshotSender<RegistrationResult>) -> Self {
-        Self { connection, response_sender }
+        Self {
+            connection,
+            response_sender,
+        }
     }
 }
 
@@ -42,7 +45,10 @@ pub struct Manager {
 
 impl Manager {
     pub fn new(max_connections: usize) -> Self {
-        Self { connections: Default::default(), max_connections }
+        Self {
+            connections: Default::default(),
+            max_connections,
+        }
     }
 
     /// Starts a loop for receiving central manager events from all connections. This mechanism is used for
@@ -52,15 +58,19 @@ impl Manager {
         tokio::spawn(async move {
             while let Some(new_event) = manager_receiver.recv().await {
                 match new_event {
-                    ManagerEvent::NewConnection(RegistrationRequest { connection, response_sender }) => {
-                        match response_sender.send(self.register(connection.clone())) {
-                            Ok(()) => {}
-                            Err(_) => {
-                                warn!("GRPC, registration of incoming connection {} failed", connection);
-                                self.unregister(connection);
-                            }
+                    ManagerEvent::NewConnection(RegistrationRequest {
+                        connection,
+                        response_sender,
+                    }) => match response_sender.send(self.register(connection.clone())) {
+                        Ok(()) => {}
+                        Err(_) => {
+                            warn!(
+                                "GRPC, registration of incoming connection {} failed",
+                                connection
+                            );
+                            self.unregister(connection);
                         }
-                    }
+                    },
                     ManagerEvent::ConnectionClosing(connection) => {
                         self.unregister(connection);
                     }
@@ -79,8 +89,13 @@ impl Manager {
         }
 
         debug!("GRPC, Registering a new connection from {connection}");
-        let previous_connection = connections_write.insert(connection.identity(), connection.clone());
-        info!("GRPC, new incoming connection {} #{}", connection, connections_write.len());
+        let previous_connection =
+            connections_write.insert(connection.identity(), connection.clone());
+        info!(
+            "GRPC, new incoming connection {} #{}",
+            connection,
+            connections_write.len()
+        );
 
         // Release the write lock to prevent a deadlock if a previous connection exists and must be closed
         drop(connections_write);
@@ -88,7 +103,10 @@ impl Manager {
         // A previous connection with the same id is VERY unlikely to occur but just in case, we close it cleanly
         if let Some(previous_connection) = previous_connection {
             previous_connection.close();
-            warn!("GRPC, removing connection with duplicate identity: {}", previous_connection.identity());
+            warn!(
+                "GRPC, removing connection with duplicate identity: {}",
+                previous_connection.identity()
+            );
         }
 
         Ok(())
@@ -132,7 +150,11 @@ impl Manager {
     /// Returns a list of all currently active connections (for unit tests only)
     #[cfg(test)]
     pub(crate) fn active_connections(&self) -> Vec<std::net::SocketAddr> {
-        self.connections.read().values().map(|r| r.net_address()).collect()
+        self.connections
+            .read()
+            .values()
+            .map(|r| r.net_address())
+            .collect()
     }
 
     /// Returns whether there are currently active connections (for unit tests only)
@@ -144,6 +166,9 @@ impl Manager {
 
 impl Drop for Manager {
     fn drop(&mut self) {
-        debug!("GRPC, Dropping Manager, refs count {}", Arc::strong_count(&self.connections));
+        debug!(
+            "GRPC, Dropping Manager, refs count {}",
+            Arc::strong_count(&self.connections)
+        );
     }
 }

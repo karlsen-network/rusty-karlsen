@@ -6,7 +6,9 @@ use crate::imports::*;
 use faster_hex::{hex_decode, hex_string};
 use serde::Serializer;
 
-#[derive(Default, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Default, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, BorshSerialize, BorshDeserialize,
+)]
 pub struct KeyDataId(pub(crate) [u8; 8]);
 
 impl KeyDataId {
@@ -37,7 +39,9 @@ impl FromHex for KeyDataId {
 impl TryFrom<&JsValue> for KeyDataId {
     type Error = Error;
     fn try_from(value: &JsValue) -> Result<Self> {
-        let string = value.as_string().ok_or(Error::InvalidKeyDataId(format!("{value:?}")))?;
+        let string = value
+            .as_string()
+            .ok_or(Error::InvalidKeyDataId(format!("{value:?}")))?;
         Self::from_hex(&string)
     }
 }

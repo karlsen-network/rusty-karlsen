@@ -21,7 +21,10 @@ pub struct Theme {
 
 impl Default for Theme {
     fn default() -> Self {
-        Theme { settings: SettingsStore::try_new("theme").expect("Failed to create theme settings store") }
+        Theme {
+            settings: SettingsStore::try_new("theme")
+                .expect("Failed to create theme settings store"),
+        }
     }
 }
 
@@ -43,14 +46,24 @@ impl Handler for Theme {
         Ok(())
     }
 
-    async fn handle(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, cmd: &str) -> cli::Result<()> {
+    async fn handle(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        argv: Vec<String>,
+        cmd: &str,
+    ) -> cli::Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         self.main(ctx, argv, cmd).await.map_err(|e| e.into())
     }
 }
 
 impl Theme {
-    async fn main(self: Arc<Self>, ctx: Arc<KarlsenCli>, argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: Arc<KarlsenCli>,
+        argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         if argv.is_empty() {
             return self.display_help(ctx, argv).await;
         }

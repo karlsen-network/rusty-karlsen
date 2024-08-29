@@ -15,7 +15,11 @@ struct Event<T> {
 
 impl<T> Event<T> {
     pub fn new(timestamp: u64, dest: u64, msg: Option<T>) -> Self {
-        Self { timestamp, dest, msg }
+        Self {
+            timestamp,
+            dest,
+            msg,
+        }
     }
 }
 
@@ -36,7 +40,10 @@ impl<T> PartialOrd for Event<T> {
 impl<T> Ord for Event<T> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // Reversing so that min timestamp is scheduled first
-        other.timestamp.cmp(&self.timestamp).then_with(|| other.dest.cmp(&self.dest))
+        other
+            .timestamp
+            .cmp(&self.timestamp)
+            .then_with(|| other.dest.cmp(&self.dest))
     }
 }
 
@@ -76,7 +83,12 @@ impl<T: Clone> Environment<T> {
     }
 
     pub fn with_start_time(delay: u64, start_time: u64) -> Self {
-        Self { now: start_time, broadcast_delay: delay, event_queue: BinaryHeap::new(), process_ids: HashSet::new() }
+        Self {
+            now: start_time,
+            broadcast_delay: delay,
+            event_queue: BinaryHeap::new(),
+            process_ids: HashSet::new(),
+        }
     }
 
     pub fn now(&self) -> u64 {
@@ -84,16 +96,22 @@ impl<T: Clone> Environment<T> {
     }
 
     pub fn send(&mut self, delay: u64, dest: u64, msg: T) {
-        self.event_queue.push(Event::new(self.now + delay, dest, Some(msg)))
+        self.event_queue
+            .push(Event::new(self.now + delay, dest, Some(msg)))
     }
 
     pub fn timeout(&mut self, timeout: u64, dest: u64) {
-        self.event_queue.push(Event::new(self.now + timeout, dest, None))
+        self.event_queue
+            .push(Event::new(self.now + timeout, dest, None))
     }
 
     pub fn broadcast(&mut self, _sender: u64, msg: T) {
         for &id in self.process_ids.iter() {
-            self.event_queue.push(Event::new(self.now + self.broadcast_delay, id, Some(msg.clone())));
+            self.event_queue.push(Event::new(
+                self.now + self.broadcast_delay,
+                id,
+                Some(msg.clone()),
+            ));
         }
     }
 
@@ -113,11 +131,17 @@ pub struct Simulation<T> {
 
 impl<T: Clone> Simulation<T> {
     pub fn new(delay: u64) -> Self {
-        Self { env: Environment::new(delay), processes: HashMap::new() }
+        Self {
+            env: Environment::new(delay),
+            processes: HashMap::new(),
+        }
     }
 
     pub fn with_start_time(delay: u64, start_time: u64) -> Self {
-        Self { env: Environment::with_start_time(delay, start_time), processes: HashMap::new() }
+        Self {
+            env: Environment::with_start_time(delay, start_time),
+            processes: HashMap::new(),
+        }
     }
 
     pub fn register(&mut self, id: u64, process: BoxedProcess<T>) {
@@ -128,7 +152,11 @@ impl<T: Clone> Simulation<T> {
     pub fn step(&mut self) -> bool {
         let event = self.env.next_event();
         let process = self.processes.get_mut(&event.dest).unwrap();
-        let op = if let Some(msg) = event.msg { Resumption::Message(msg) } else { Resumption::Scheduled };
+        let op = if let Some(msg) = event.msg {
+            Resumption::Message(msg)
+        } else {
+            Resumption::Scheduled
+        };
         match process.resume(op, &mut self.env) {
             Suspension::Timeout(timeout) => {
                 self.env.timeout(timeout, event.dest);

@@ -11,21 +11,33 @@ use std::{
 };
 
 #[derive(Clone)]
-pub struct Cache<TKey: Clone + std::hash::Hash + Eq + Send + Sync, TData: Clone + Send + Sync, S = RandomState> {
+pub struct Cache<
+    TKey: Clone + std::hash::Hash + Eq + Send + Sync,
+    TData: Clone + Send + Sync,
+    S = RandomState,
+> {
     // We use IndexMap and not HashMap, because it makes it cheaper to remove a random element when the cache is full.
     map: Arc<RwLock<IndexMap<TKey, TData, S>>>,
     size: usize,
     counters: Arc<TxScriptCacheCounters>,
 }
 
-impl<TKey: Clone + std::hash::Hash + Eq + Send + Sync, TData: Clone + Send + Sync, S: BuildHasher + Default> Cache<TKey, TData, S> {
+impl<
+        TKey: Clone + std::hash::Hash + Eq + Send + Sync,
+        TData: Clone + Send + Sync,
+        S: BuildHasher + Default,
+    > Cache<TKey, TData, S>
+{
     pub fn new(size: u64) -> Self {
         Self::with_counters(size, Default::default())
     }
 
     pub fn with_counters(size: u64, counters: Arc<TxScriptCacheCounters>) -> Self {
         Self {
-            map: Arc::new(RwLock::new(IndexMap::with_capacity_and_hasher(size as usize, S::default()))),
+            map: Arc::new(RwLock::new(IndexMap::with_capacity_and_hasher(
+                size as usize,
+                S::default(),
+            ))),
             size: size as usize,
             counters,
         }
@@ -87,8 +99,14 @@ impl core::ops::Sub for &TxScriptCacheCountersSnapshot {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self::Output {
-            insert_counts: self.insert_counts.checked_sub(rhs.insert_counts).unwrap_or_default(),
-            get_counts: self.get_counts.checked_sub(rhs.get_counts).unwrap_or_default(),
+            insert_counts: self
+                .insert_counts
+                .checked_sub(rhs.insert_counts)
+                .unwrap_or_default(),
+            get_counts: self
+                .get_counts
+                .checked_sub(rhs.get_counts)
+                .unwrap_or_default(),
         }
     }
 }

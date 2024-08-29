@@ -3,7 +3,9 @@ use karlsen_consensus_core::config::Config;
 use karlsen_index_core::indexed_utxos::UtxoSetByScriptPublicKey;
 use karlsen_index_core::notification::{self as index_notify, Notification as IndexNotification};
 use karlsen_notify::converter::Converter;
-use karlsen_rpc_core::{utxo_set_into_rpc, Notification, RpcUtxosByAddressesEntry, UtxosChangedNotification};
+use karlsen_rpc_core::{
+    utxo_set_into_rpc, Notification, RpcUtxosByAddressesEntry, UtxosChangedNotification,
+};
 use std::sync::Arc;
 
 /// Conversion of consensus_core to rpc_core structures
@@ -17,14 +19,20 @@ impl IndexConverter {
         Self { config }
     }
 
-    pub fn get_utxo_changed_notification(&self, utxo_changed: index_notify::UtxosChangedNotification) -> UtxosChangedNotification {
+    pub fn get_utxo_changed_notification(
+        &self,
+        utxo_changed: index_notify::UtxosChangedNotification,
+    ) -> UtxosChangedNotification {
         UtxosChangedNotification {
             added: Arc::new(self.get_utxos_by_addresses_entries(&utxo_changed.added)),
             removed: Arc::new(self.get_utxos_by_addresses_entries(&utxo_changed.removed)),
         }
     }
 
-    pub fn get_utxos_by_addresses_entries(&self, item: &UtxoSetByScriptPublicKey) -> Vec<RpcUtxosByAddressesEntry> {
+    pub fn get_utxos_by_addresses_entries(
+        &self,
+        item: &UtxoSetByScriptPublicKey,
+    ) -> Vec<RpcUtxosByAddressesEntry> {
         utxo_set_into_rpc(item, Some(self.config.prefix()))
     }
 }
@@ -36,7 +44,9 @@ impl Converter for IndexConverter {
 
     async fn convert(&self, incoming: IndexNotification) -> Notification {
         match incoming {
-            index_notify::Notification::UtxosChanged(msg) => Notification::UtxosChanged(self.get_utxo_changed_notification(msg)),
+            index_notify::Notification::UtxosChanged(msg) => {
+                Notification::UtxosChanged(self.get_utxo_changed_notification(msg))
+            }
             _ => (&incoming).into(),
         }
     }

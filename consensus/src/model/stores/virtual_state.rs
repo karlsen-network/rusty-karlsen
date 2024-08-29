@@ -4,10 +4,12 @@ use std::sync::Arc;
 use arc_swap::ArcSwap;
 use karlsen_consensus_core::api::stats::VirtualStateStats;
 use karlsen_consensus_core::{
-    block::VirtualStateApproxId, coinbase::BlockRewardData, config::genesis::GenesisBlock, tx::TransactionId,
-    utxo::utxo_diff::UtxoDiff, BlockHashMap, BlockHashSet, HashMapCustomHasher,
+    block::VirtualStateApproxId, coinbase::BlockRewardData, config::genesis::GenesisBlock,
+    tx::TransactionId, utxo::utxo_diff::UtxoDiff, BlockHashMap, BlockHashSet, HashMapCustomHasher,
 };
-use karlsen_database::prelude::{BatchDbWriter, CachedDbItem, DirectDbWriter, StoreResultExtensions};
+use karlsen_database::prelude::{
+    BatchDbWriter, CachedDbItem, DirectDbWriter, StoreResultExtensions,
+};
 use karlsen_database::prelude::{CachePolicy, StoreResult};
 use karlsen_database::prelude::{StoreError, DB};
 use karlsen_database::registry::DatabaseStorePrefixes;
@@ -69,14 +71,22 @@ impl VirtualState {
             past_median_time: genesis.timestamp,
             multiset: MuHash::new(),
             utxo_diff: UtxoDiff::default(), // Virtual diff is initially empty since genesis receives no reward
-            accepted_tx_ids: genesis.build_genesis_transactions().into_iter().map(|tx| tx.id()).collect(),
+            accepted_tx_ids: genesis
+                .build_genesis_transactions()
+                .into_iter()
+                .map(|tx| tx.id())
+                .collect(),
             mergeset_rewards: BlockHashMap::new(),
             mergeset_non_daa: BlockHashSet::from_iter(std::iter::once(genesis.hash)),
         }
     }
 
     pub fn to_virtual_state_approx_id(&self) -> VirtualStateApproxId {
-        VirtualStateApproxId::new(self.daa_score, self.ghostdag_data.blue_work, self.ghostdag_data.selected_parent)
+        VirtualStateApproxId::new(
+            self.daa_score,
+            self.ghostdag_data.blue_work,
+            self.ghostdag_data.selected_parent,
+        )
     }
 }
 
@@ -134,10 +144,18 @@ pub struct VirtualStores {
 }
 
 impl VirtualStores {
-    pub fn new(db: Arc<DB>, lkg_virtual_state: LkgVirtualState, utxoset_cache_policy: CachePolicy) -> Self {
+    pub fn new(
+        db: Arc<DB>,
+        lkg_virtual_state: LkgVirtualState,
+        utxoset_cache_policy: CachePolicy,
+    ) -> Self {
         Self {
             state: DbVirtualStateStore::new(db.clone(), lkg_virtual_state),
-            utxo_set: DbUtxoSetStore::new(db, utxoset_cache_policy, DatabaseStorePrefixes::VirtualUtxoset.into()),
+            utxo_set: DbUtxoSetStore::new(
+                db,
+                utxoset_cache_policy,
+                DatabaseStorePrefixes::VirtualUtxoset.into(),
+            ),
         }
     }
 }
@@ -165,7 +183,11 @@ impl DbVirtualStateStore {
         let access = CachedDbItem::new(db.clone(), DatabaseStorePrefixes::VirtualState.into());
         // Init the LKG cache from DB store data
         lkg_virtual_state.store(access.read().unwrap_option().unwrap_or_default());
-        Self { db, access, lkg_virtual_state }
+        Self {
+            db,
+            access,
+            lkg_virtual_state,
+        }
     }
 
     pub fn clone_with_new_cache(&self) -> Self {
@@ -180,7 +202,11 @@ impl DbVirtualStateStore {
         }
     }
 
-    pub fn set_batch(&mut self, batch: &mut WriteBatch, state: Arc<VirtualState>) -> StoreResult<()> {
+    pub fn set_batch(
+        &mut self,
+        batch: &mut WriteBatch,
+        state: Arc<VirtualState>,
+    ) -> StoreResult<()> {
         self.lkg_virtual_state.store(state.clone()); // Keep the LKG cache up-to-date
         self.access.write(BatchDbWriter::new(batch), &state)
     }

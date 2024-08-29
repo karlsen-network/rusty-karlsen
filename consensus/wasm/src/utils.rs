@@ -11,7 +11,12 @@ pub fn script_hashes(mut mutable_tx: tx::SignableTransaction) -> Result<Vec<karl
 
     let mut reused_values = SigHashReusedValues::new();
     for i in 0..mutable_tx.tx.inputs.len() {
-        let sig_hash = calc_schnorr_signature_hash(&mutable_tx.as_verifiable(), i, SIG_HASH_ALL, &mut reused_values);
+        let sig_hash = calc_schnorr_signature_hash(
+            &mutable_tx.as_verifiable(),
+            i,
+            SIG_HASH_ALL,
+            &mut reused_values,
+        );
         list.push(sig_hash);
     }
     Ok(list)

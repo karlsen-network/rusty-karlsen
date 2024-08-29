@@ -22,10 +22,20 @@ impl Cache {
     pub fn from_wallet(wallet: WalletStorage, secret: &Secret) -> Result<Self> {
         let payload = wallet.payload(secret)?;
 
-        let prv_key_data_info =
-            payload.0.prv_key_data.iter().map(|pkdata| pkdata.into()).collect::<Vec<PrvKeyDataInfo>>().try_into()?;
+        let prv_key_data_info = payload
+            .0
+            .prv_key_data
+            .iter()
+            .map(|pkdata| pkdata.into())
+            .collect::<Vec<PrvKeyDataInfo>>()
+            .try_into()?;
 
-        let prv_key_data_map = payload.0.prv_key_data.into_iter().map(|pkdata| (pkdata.id, pkdata)).collect::<HashMap<_, _>>();
+        let prv_key_data_map = payload
+            .0
+            .prv_key_data
+            .into_iter()
+            .map(|pkdata| (pkdata.id, pkdata))
+            .collect::<HashMap<_, _>>();
         let prv_key_data: Decrypted<PrvKeyDataMap> = Decrypted::new(prv_key_data_map);
         let encryption_kind = wallet.encryption_kind;
         let prv_key_data = prv_key_data.encrypt(secret, encryption_kind)?;
@@ -35,7 +45,16 @@ impl Cache {
         let wallet_title = wallet.title;
         let address_book = payload.0.address_book.into_iter().collect();
 
-        Ok(Cache { wallet_title, user_hint, encryption_kind, prv_key_data, prv_key_data_info, accounts, metadata, address_book })
+        Ok(Cache {
+            wallet_title,
+            user_hint,
+            encryption_kind,
+            prv_key_data,
+            prv_key_data_info,
+            accounts,
+            metadata,
+            address_book,
+        })
     }
 
     pub fn from_payload(
@@ -45,16 +64,34 @@ impl Cache {
         secret: &Secret,
         encryption_kind: EncryptionKind,
     ) -> Result<Self> {
-        let prv_key_data_info = payload.prv_key_data.iter().map(|pkdata| pkdata.into()).collect::<Vec<PrvKeyDataInfo>>().try_into()?;
+        let prv_key_data_info = payload
+            .prv_key_data
+            .iter()
+            .map(|pkdata| pkdata.into())
+            .collect::<Vec<PrvKeyDataInfo>>()
+            .try_into()?;
 
-        let prv_key_data_map = payload.prv_key_data.into_iter().map(|pkdata| (pkdata.id, pkdata)).collect::<HashMap<_, _>>();
+        let prv_key_data_map = payload
+            .prv_key_data
+            .into_iter()
+            .map(|pkdata| (pkdata.id, pkdata))
+            .collect::<HashMap<_, _>>();
         let prv_key_data: Decrypted<PrvKeyDataMap> = Decrypted::new(prv_key_data_map);
         let prv_key_data = prv_key_data.encrypt(secret, encryption_kind)?;
         let accounts: Collection<AccountId, AccountStorage> = payload.accounts.try_into()?;
         let metadata: Collection<AccountId, AccountMetadata> = Collection::default();
         let address_book = payload.address_book.into_iter().collect();
 
-        Ok(Cache { wallet_title, user_hint, encryption_kind, prv_key_data, prv_key_data_info, accounts, metadata, address_book })
+        Ok(Cache {
+            wallet_title,
+            user_hint,
+            encryption_kind,
+            prv_key_data,
+            prv_key_data_info,
+            accounts,
+            metadata,
+            address_book,
+        })
     }
 
     pub fn to_wallet(

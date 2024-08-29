@@ -13,7 +13,11 @@ pub enum CachePolicy {
     /// Items are tracked by size with a `max_size` limit overall. The cache will pass this limit
     /// if there are no more than `min_items` items in the cache. `mem_mode` determines whether
     /// items are tracked by bytes or by units
-    Tracked { max_size: usize, min_items: usize, mem_mode: MemMode },
+    Tracked {
+        max_size: usize,
+        min_items: usize,
+        mem_mode: MemMode,
+    },
 }
 
 #[derive(Clone)]
@@ -32,11 +36,28 @@ struct CachePolicyInner {
 impl From<CachePolicy> for CachePolicyInner {
     fn from(policy: CachePolicy) -> Self {
         match policy {
-            CachePolicy::Empty => CachePolicyInner { tracked: false, max_size: 0, min_items: 0, mem_mode: MemMode::Undefined },
-            CachePolicy::Count(max_size) => CachePolicyInner { tracked: false, max_size, min_items: 0, mem_mode: MemMode::Undefined },
-            CachePolicy::Tracked { max_size, min_items, mem_mode } => {
-                CachePolicyInner { tracked: true, max_size, min_items, mem_mode }
-            }
+            CachePolicy::Empty => CachePolicyInner {
+                tracked: false,
+                max_size: 0,
+                min_items: 0,
+                mem_mode: MemMode::Undefined,
+            },
+            CachePolicy::Count(max_size) => CachePolicyInner {
+                tracked: false,
+                max_size,
+                min_items: 0,
+                mem_mode: MemMode::Undefined,
+            },
+            CachePolicy::Tracked {
+                max_size,
+                min_items,
+                mem_mode,
+            } => CachePolicyInner {
+                tracked: true,
+                max_size,
+                min_items,
+                mem_mode,
+            },
         }
     }
 }
@@ -61,7 +82,10 @@ where
     fn tracked_evict(&mut self, policy: &CachePolicyInner) {
         // We allow passing tracked size limit as long as there are no more than min_items items
         while self.tracked_size > policy.max_size && self.map.len() > policy.min_items {
-            if let Some((_, v)) = self.map.swap_remove_index(rand::thread_rng().gen_range(0..self.map.len())) {
+            if let Some((_, v)) = self
+                .map
+                .swap_remove_index(rand::thread_rng().gen_range(0..self.map.len()))
+            {
                 self.tracked_size -= v.estimate_size(policy.mem_mode)
             }
         }
@@ -77,7 +101,8 @@ where
             self.tracked_evict(policy);
         } else {
             if self.map.len() == policy.max_size {
-                self.map.swap_remove_index(rand::thread_rng().gen_range(0..policy.max_size));
+                self.map
+                    .swap_remove_index(rand::thread_rng().gen_range(0..policy.max_size));
             }
             self.map.insert(key, data);
         }
@@ -119,7 +144,10 @@ where
     S: BuildHasher + Default,
 {
     pub fn new(prealloc_size: usize) -> Self {
-        Self { map: IndexMap::with_capacity_and_hasher(prealloc_size, S::default()), tracked_size: 0 }
+        Self {
+            map: IndexMap::with_capacity_and_hasher(prealloc_size, S::default()),
+            tracked_size: 0,
+        }
     }
 }
 
@@ -142,7 +170,10 @@ where
     pub fn new(policy: CachePolicy) -> Self {
         let policy: CachePolicyInner = policy.into();
         let prealloc_size = if policy.tracked { 0 } else { policy.max_size }; // TODO: estimate prealloc also in tracked mode
-        Self { inner: Arc::new(RwLock::new(Inner::new(prealloc_size))), policy }
+        Self {
+            inner: Arc::new(RwLock::new(Inner::new(prealloc_size))),
+            policy,
+        }
     }
 
     pub fn get(&self, key: &TKey) -> Option<TData> {
@@ -178,7 +209,9 @@ where
         if self.policy.max_size == 0 {
             return;
         }
-        self.inner.write().update_if_entry_exists(&self.policy, key, op);
+        self.inner
+            .write()
+            .update_if_entry_exists(&self.policy, key, op);
     }
 
     pub fn remove(&self, key: &TKey) -> Option<TData> {

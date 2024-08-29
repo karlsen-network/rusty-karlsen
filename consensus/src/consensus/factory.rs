@@ -9,7 +9,8 @@ use karlsen_consensusmanager::{ConsensusFactory, ConsensusInstance, DynConsensus
 use karlsen_core::{debug, time::unix_now, warn};
 use karlsen_database::{
     prelude::{
-        BatchDbWriter, CachePolicy, CachedDbAccess, CachedDbItem, DirectDbWriter, StoreError, StoreResult, StoreResultExtensions, DB,
+        BatchDbWriter, CachePolicy, CachedDbAccess, CachedDbItem, DirectDbWriter, StoreError,
+        StoreResult, StoreResultExtensions, DB,
     },
     registry::DatabaseStorePrefixes,
 };
@@ -32,11 +33,19 @@ impl MemSizeEstimator for ConsensusEntry {}
 
 impl ConsensusEntry {
     pub fn new(key: u64, directory_name: String, creation_timestamp: u64) -> Self {
-        Self { key, directory_name, creation_timestamp }
+        Self {
+            key,
+            directory_name,
+            creation_timestamp,
+        }
     }
 
     pub fn from_key(key: u64) -> Self {
-        Self { key, directory_name: format!("consensus-{:0>3}", key), creation_timestamp: unix_now() }
+        Self {
+            key,
+            directory_name: format!("consensus-{:0>3}", key),
+            creation_timestamp: unix_now(),
+        }
     }
 }
 
@@ -84,7 +93,11 @@ impl MultiConsensusManagementStore {
     pub fn new(db: Arc<DB>) -> Self {
         let mut store = Self {
             db: db.clone(),
-            entries: CachedDbAccess::new(db.clone(), CachePolicy::Count(16), DatabaseStorePrefixes::ConsensusEntries.into()),
+            entries: CachedDbAccess::new(
+                db.clone(),
+                CachePolicy::Count(16),
+                DatabaseStorePrefixes::ConsensusEntries.into(),
+            ),
             metadata: CachedDbItem::new(db, DatabaseStorePrefixes::MultiConsensusMetadata.into()),
         };
         store.init();
@@ -95,7 +108,9 @@ impl MultiConsensusManagementStore {
         if self.metadata.read().unwrap_option().is_none() {
             let mut batch = WriteBatch::default();
             let metadata = MultiConsensusMetadata::default();
-            self.metadata.write(BatchDbWriter::new(&mut batch), &metadata).unwrap();
+            self.metadata
+                .write(BatchDbWriter::new(&mut batch), &metadata)
+                .unwrap();
             self.db.write(batch).unwrap();
         }
     }
@@ -117,7 +132,8 @@ impl MultiConsensusManagementStore {
             None => {
                 metadata.max_key_used += 1; // Capture the slot
                 let key = metadata.max_key_used;
-                self.metadata.write(DirectDbWriter::new(&self.db), &metadata)?;
+                self.metadata
+                    .write(DirectDbWriter::new(&self.db), &metadata)?;
                 Ok(ConsensusEntryType::New(ConsensusEntry::from_key(key)))
             }
         }
@@ -138,11 +154,13 @@ impl MultiConsensusManagementStore {
             return Err(StoreError::KeyAlreadyExists(format!("{key}")));
         }
         let mut batch = WriteBatch::default();
-        self.entries.write(BatchDbWriter::new(&mut batch), key.into(), entry)?;
-        self.metadata.update(BatchDbWriter::new(&mut batch), |mut data| {
-            data.current_consensus_key = Some(key);
-            data
-        })?;
+        self.entries
+            .write(BatchDbWriter::new(&mut batch), key.into(), entry)?;
+        self.metadata
+            .update(BatchDbWriter::new(&mut batch), |mut data| {
+                data.current_consensus_key = Some(key);
+                data
+            })?;
         self.db.write(batch)?;
         Ok(())
     }
@@ -156,38 +174,49 @@ impl MultiConsensusManagementStore {
         let new_entry = ConsensusEntry::from_key(new_key);
 
         let mut batch = WriteBatch::default();
-        self.metadata.write(BatchDbWriter::new(&mut batch), &metadata)?;
-        self.entries.write(BatchDbWriter::new(&mut batch), new_key.into(), new_entry.clone())?;
+        self.metadata
+            .write(BatchDbWriter::new(&mut batch), &metadata)?;
+        self.entries.write(
+            BatchDbWriter::new(&mut batch),
+            new_key.into(),
+            new_entry.clone(),
+        )?;
         self.db.write(batch)?;
 
         Ok(new_entry)
     }
 
     pub fn commit_staging_consensus(&mut self) -> StoreResult<()> {
-        self.metadata.update(DirectDbWriter::new(&self.db), |mut data| {
-            assert!(data.staging_consensus_key.is_some());
-            data.current_consensus_key = data.staging_consensus_key.take();
-            data
-        })?;
+        self.metadata
+            .update(DirectDbWriter::new(&self.db), |mut data| {
+                assert!(data.staging_consensus_key.is_some());
+                data.current_consensus_key = data.staging_consensus_key.take();
+                data
+            })?;
         Ok(())
     }
 
     pub fn cancel_staging_consensus(&mut self) -> StoreResult<()> {
-        self.metadata.update(DirectDbWriter::new(&self.db), |mut data| {
-            data.staging_consensus_key = None;
-            data
-        })?;
+        self.metadata
+            .update(DirectDbWriter::new(&self.db), |mut data| {
+                data.staging_consensus_key = None;
+                data
+            })?;
         Ok(())
     }
 
     fn iterator(&self) -> impl Iterator<Item = Result<ConsensusEntry, Box<dyn Error>>> + '_ {
-        self.entries.iterator().map(|iter_result| match iter_result {
-            Ok((_, entry)) => Ok(entry),
-            Err(e) => Err(e),
-        })
+        self.entries
+            .iterator()
+            .map(|iter_result| match iter_result {
+                Ok((_, entry)) => Ok(entry),
+                Err(e) => Err(e),
+            })
     }
 
-    fn iterate_inactive_entries(&self) -> impl Iterator<Item = Result<ConsensusEntry, Box<dyn Error>>> + '_ {
+    fn iterate_inactive_entries(
+        &self,
+    ) -> impl Iterator<Item = Result<ConsensusEntry, Box<dyn Error>>> + '_ {
         let current_consensus_key = self.metadata.read().unwrap().current_consensus_key;
         self.iterator().filter(move |entry_result| {
             if let Ok(entry) = entry_result {
@@ -199,7 +228,8 @@ impl MultiConsensusManagementStore {
     }
 
     fn delete_entry(&mut self, entry: ConsensusEntry) -> StoreResult<()> {
-        self.entries.delete(DirectDbWriter::new(&self.db), entry.key.into())
+        self.entries
+            .delete(DirectDbWriter::new(&self.db), entry.key.into())
     }
 
     pub fn is_archival_node(&self) -> StoreResult<bool> {
@@ -215,7 +245,9 @@ impl MultiConsensusManagementStore {
         if metadata.is_archival_node != is_archival_node {
             metadata.is_archival_node = is_archival_node;
             let mut batch = WriteBatch::default();
-            self.metadata.write(BatchDbWriter::new(&mut batch), &metadata).unwrap();
+            self.metadata
+                .write(BatchDbWriter::new(&mut batch), &metadata)
+                .unwrap();
         }
     }
 
@@ -255,8 +287,12 @@ impl Factory {
         #[cfg(feature = "devnet-prealloc")]
         set_genesis_utxo_commitment_from_config(&mut config);
         config.process_genesis = false;
-        let management_store = Arc::new(RwLock::new(MultiConsensusManagementStore::new(management_db)));
-        management_store.write().set_is_archival_node(config.is_archival);
+        let management_store = Arc::new(RwLock::new(MultiConsensusManagementStore::new(
+            management_db,
+        )));
+        management_store
+            .write()
+            .set_is_archival_node(config.is_archival);
         let factory = Self {
             management_store,
             config,
@@ -278,7 +314,12 @@ impl ConsensusFactory for Factory {
 
         let mut config = self.config.clone();
         let mut is_new_consensus = false;
-        let entry = match self.management_store.write().active_consensus_entry().unwrap() {
+        let entry = match self
+            .management_store
+            .write()
+            .active_consensus_entry()
+            .unwrap()
+        {
             ConsensusEntryType::Existing(entry) => {
                 config.process_genesis = false;
                 entry
@@ -314,17 +355,31 @@ impl ConsensusFactory for Factory {
         // This way we can safely avoid processing genesis in future process runs
         if is_new_consensus {
             #[cfg(feature = "devnet-prealloc")]
-            set_initial_utxo_set(&self.config.initial_utxo_set, consensus.clone(), self.config.params.genesis.hash);
-            self.management_store.write().save_new_active_consensus(entry).unwrap();
+            set_initial_utxo_set(
+                &self.config.initial_utxo_set,
+                consensus.clone(),
+                self.config.params.genesis.hash,
+            );
+            self.management_store
+                .write()
+                .save_new_active_consensus(entry)
+                .unwrap();
         }
 
-        (ConsensusInstance::new(session_lock, consensus.clone()), Arc::new(Ctl::new(self.management_store.clone(), db, consensus)))
+        (
+            ConsensusInstance::new(session_lock, consensus.clone()),
+            Arc::new(Ctl::new(self.management_store.clone(), db, consensus)),
+        )
     }
 
     fn new_staging_consensus(&self) -> (ConsensusInstance, DynConsensusCtl) {
         assert!(!self.notification_root.is_closed());
 
-        let entry = self.management_store.write().new_staging_consensus_entry().unwrap();
+        let entry = self
+            .management_store
+            .write()
+            .new_staging_consensus_entry()
+            .unwrap();
         let dir = self.db_root_dir.join(entry.directory_name);
         let db = karlsen_database::prelude::ConnBuilder::default()
             .with_db_path(dir)
@@ -344,7 +399,10 @@ impl ConsensusFactory for Factory {
             entry.creation_timestamp,
         ));
 
-        (ConsensusInstance::new(session_lock, consensus.clone()), Arc::new(Ctl::new(self.management_store.clone(), db, consensus)))
+        (
+            ConsensusInstance::new(session_lock, consensus.clone()),
+            Arc::new(Ctl::new(self.management_store.clone(), db, consensus)),
+        )
     }
 
     fn close(&self) {
@@ -394,7 +452,10 @@ impl ConsensusFactory for Factory {
                     write_guard.delete_entry(entry).unwrap();
                 }
                 Err(e) => {
-                    warn!("Error deleting staging consensus entry {}: {}", entry.key, e);
+                    warn!(
+                        "Error deleting staging consensus entry {}: {}",
+                        entry.key, e
+                    );
                 }
             };
             write_guard.cancel_staging_consensus().unwrap();

@@ -15,7 +15,10 @@ pub struct DB {
 
 impl DB {
     pub fn new(inner: DBWithThreadMode<MultiThreaded>, fd_guard: FDGuard) -> Self {
-        Self { inner, _fd_guard: fd_guard }
+        Self {
+            inner,
+            _fd_guard: fd_guard,
+        }
     }
 }
 
@@ -40,5 +43,6 @@ pub fn delete_db(db_dir: PathBuf) {
     }
     let options = rocksdb::Options::default();
     let path = db_dir.to_str().unwrap();
-    <DBWithThreadMode<MultiThreaded>>::destroy(&options, path).expect("DB is expected to be deletable");
+    <DBWithThreadMode<MultiThreaded>>::destroy(&options, path)
+        .expect("DB is expected to be deletable");
 }

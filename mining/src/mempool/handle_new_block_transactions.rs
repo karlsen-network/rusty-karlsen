@@ -34,47 +34,90 @@ impl Mempool {
                 self.remove_transaction(&transaction_id, false, TxRemovalReason::Accepted, "")?;
             }
             self.remove_double_spends(transaction)?;
-            self.orphan_pool.remove_orphan(&transaction_id, false, TxRemovalReason::Accepted, "")?;
-            if self.accepted_transactions.add(transaction_id, block_daa_score) {
+            self.orphan_pool.remove_orphan(
+                &transaction_id,
+                false,
+                TxRemovalReason::Accepted,
+                "",
+            )?;
+            if self
+                .accepted_transactions
+                .add(transaction_id, block_daa_score)
+            {
                 tx_accepted_counts += 1;
                 input_counts += transaction.inputs.len();
                 output_counts += transaction.outputs.len();
             }
-            unorphaned_transactions.extend(self.get_unorphaned_transactions_after_accepted_transaction(transaction));
+            unorphaned_transactions
+                .extend(self.get_unorphaned_transactions_after_accepted_transaction(transaction));
         }
-        self.counters.block_tx_counts.fetch_add(block_transactions.len() as u64 - 1, Ordering::Relaxed);
-        self.counters.tx_accepted_counts.fetch_add(tx_accepted_counts, Ordering::Relaxed);
-        self.counters.input_counts.fetch_add(input_counts as u64, Ordering::Relaxed);
-        self.counters.output_counts.fetch_add(output_counts as u64, Ordering::Relaxed);
-        self.counters.ready_txs_sample.store(self.transaction_pool.ready_transaction_count() as u64, Ordering::Relaxed);
-        self.counters.txs_sample.store(self.transaction_pool.len() as u64, Ordering::Relaxed);
-        self.counters.orphans_sample.store(self.orphan_pool.len() as u64, Ordering::Relaxed);
-        self.counters.accepted_sample.store(self.accepted_transactions.len() as u64, Ordering::Relaxed);
+        self.counters
+            .block_tx_counts
+            .fetch_add(block_transactions.len() as u64 - 1, Ordering::Relaxed);
+        self.counters
+            .tx_accepted_counts
+            .fetch_add(tx_accepted_counts, Ordering::Relaxed);
+        self.counters
+            .input_counts
+            .fetch_add(input_counts as u64, Ordering::Relaxed);
+        self.counters
+            .output_counts
+            .fetch_add(output_counts as u64, Ordering::Relaxed);
+        self.counters.ready_txs_sample.store(
+            self.transaction_pool.ready_transaction_count() as u64,
+            Ordering::Relaxed,
+        );
+        self.counters
+            .txs_sample
+            .store(self.transaction_pool.len() as u64, Ordering::Relaxed);
+        self.counters
+            .orphans_sample
+            .store(self.orphan_pool.len() as u64, Ordering::Relaxed);
+        self.counters
+            .accepted_sample
+            .store(self.accepted_transactions.len() as u64, Ordering::Relaxed);
 
         Ok(unorphaned_transactions)
     }
 
-    pub(crate) fn expire_orphan_low_priority_transactions(&mut self, consensus: &dyn ConsensusApi) -> RuleResult<()> {
-        self.orphan_pool.expire_low_priority_transactions(consensus.get_virtual_daa_score())
+    pub(crate) fn expire_orphan_low_priority_transactions(
+        &mut self,
+        consensus: &dyn ConsensusApi,
+    ) -> RuleResult<()> {
+        self.orphan_pool
+            .expire_low_priority_transactions(consensus.get_virtual_daa_score())
     }
 
     pub(crate) fn expire_accepted_transactions(&mut self, consensus: &dyn ConsensusApi) {
-        self.accepted_transactions.expire(consensus.get_virtual_daa_score());
+        self.accepted_transactions
+            .expire(consensus.get_virtual_daa_score());
     }
 
-    pub(crate) fn collect_expired_low_priority_transactions(&mut self, consensus: &dyn ConsensusApi) -> Vec<TransactionId> {
-        self.transaction_pool.collect_expired_low_priority_transactions(consensus.get_virtual_daa_score())
+    pub(crate) fn collect_expired_low_priority_transactions(
+        &mut self,
+        consensus: &dyn ConsensusApi,
+    ) -> Vec<TransactionId> {
+        self.transaction_pool
+            .collect_expired_low_priority_transactions(consensus.get_virtual_daa_score())
     }
 
     fn remove_double_spends(&mut self, transaction: &Transaction) -> RuleResult<()> {
         let mut transactions_to_remove = HashSet::new();
         for input in transaction.inputs.iter() {
-            if let Some(redeemer_id) = self.transaction_pool.get_outpoint_owner_id(&input.previous_outpoint) {
+            if let Some(redeemer_id) = self
+                .transaction_pool
+                .get_outpoint_owner_id(&input.previous_outpoint)
+            {
                 transactions_to_remove.insert(*redeemer_id);
             }
         }
         transactions_to_remove.iter().try_for_each(|x| {
-            self.remove_transaction(x, true, TxRemovalReason::DoubleSpend, format!(" favouring {}", transaction.id()).as_str())
+            self.remove_transaction(
+                x,
+                true,
+                TxRemovalReason::DoubleSpend,
+                format!(" favouring {}", transaction.id()).as_str(),
+            )
         })
     }
 }

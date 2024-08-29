@@ -18,6 +18,9 @@ impl From<&UtxoEntry> for protowire::UtxoEntry {
 
 impl From<(&TransactionOutpoint, &UtxoEntry)> for protowire::OutpointAndUtxoEntryPair {
     fn from((outpoint, entry): (&TransactionOutpoint, &UtxoEntry)) -> Self {
-        Self { outpoint: Some(outpoint.into()), utxo_entry: Some(entry.into()) }
+        Self {
+            outpoint: Some(outpoint.into()),
+            utxo_entry: Some(entry.into()),
+        }
     }
 }

@@ -29,7 +29,10 @@ impl std::fmt::Display for TransactionOutpointInner {
 
 impl TransactionOutpointInner {
     pub fn new(transaction_id: TransactionId, index: TransactionIndexType) -> Self {
-        Self { transaction_id, index }
+        Self {
+            transaction_id,
+            index,
+        }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -41,7 +44,10 @@ impl TransactionOutpointInner {
 
 impl From<cctx::TransactionOutpoint> for TransactionOutpointInner {
     fn from(outpoint: cctx::TransactionOutpoint) -> Self {
-        TransactionOutpointInner { transaction_id: outpoint.transaction_id, index: outpoint.index }
+        TransactionOutpointInner {
+            transaction_id: outpoint.transaction_id,
+            index: outpoint.index,
+        }
     }
 }
 
@@ -58,7 +64,8 @@ impl TryFrom<&JsValue> for TransactionOutpointInner {
                 Err(Error::InvalidTransactionOutpoint(string))
             }
         } else if let Some(object) = js_sys::Object::try_from(js_value) {
-            let transaction_id: TransactionId = object.get_value("transactionId")?.try_into_owned()?;
+            let transaction_id: TransactionId =
+                object.get_value("transactionId")?.try_into_owned()?;
             let index = object.get_u32("index")?;
             Ok(TransactionOutpointInner::new(transaction_id, index))
         } else {
@@ -81,7 +88,12 @@ pub struct TransactionOutpoint {
 
 impl TransactionOutpoint {
     pub fn new(transaction_id: TransactionId, index: u32) -> TransactionOutpoint {
-        Self { inner: Arc::new(TransactionOutpointInner { transaction_id, index }) }
+        Self {
+            inner: Arc::new(TransactionOutpointInner {
+                transaction_id,
+                index,
+            }),
+        }
     }
 
     #[inline(always)]
@@ -114,12 +126,21 @@ impl TransactionOutpoint {
 impl TransactionOutpoint {
     #[cfg_attr(feature = "wasm32-sdk", wasm_bindgen(constructor))]
     pub fn ctor(transaction_id: TransactionId, index: u32) -> TransactionOutpoint {
-        Self { inner: Arc::new(TransactionOutpointInner { transaction_id, index }) }
+        Self {
+            inner: Arc::new(TransactionOutpointInner {
+                transaction_id,
+                index,
+            }),
+        }
     }
 
     #[cfg_attr(feature = "wasm32-sdk", wasm_bindgen(js_name = "getId"))]
     pub fn id_string(&self) -> String {
-        format!("{}-{}", self.get_transaction_id_as_string(), self.get_index())
+        format!(
+            "{}-{}",
+            self.get_transaction_id_as_string(),
+            self.get_index()
+        )
     }
 
     #[cfg_attr(feature = "wasm32-sdk", wasm_bindgen(getter, js_name = transactionId))]
@@ -144,7 +165,9 @@ impl TryFrom<&JsValue> for TransactionOutpoint {
     type Error = Error;
     fn try_from(js_value: &JsValue) -> Result<Self, Self::Error> {
         let inner: TransactionOutpointInner = js_value.as_ref().try_into()?;
-        Ok(TransactionOutpoint { inner: Arc::new(inner) })
+        Ok(TransactionOutpoint {
+            inner: Arc::new(inner),
+        })
     }
 }
 
@@ -167,6 +190,9 @@ impl From<TransactionOutpoint> for cctx::TransactionOutpoint {
 
 impl TransactionOutpoint {
     pub fn simulated() -> Self {
-        Self::new(TransactionId::from_slice(&rand::random::<[u8; karlsen_hashes::HASH_SIZE]>()), 0)
+        Self::new(
+            TransactionId::from_slice(&rand::random::<[u8; karlsen_hashes::HASH_SIZE]>()),
+            0,
+        )
     }
 }

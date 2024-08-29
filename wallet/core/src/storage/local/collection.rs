@@ -26,7 +26,10 @@ where
     Data: IdT,
 {
     fn default() -> Self {
-        Self { vec: Vec::new(), map: HashMap::new() }
+        Self {
+            vec: Vec::new(),
+            map: HashMap::new(),
+        }
     }
 }
 
@@ -135,8 +138,14 @@ where
     type Error = Error;
 
     fn try_from(vec: Vec<Data>) -> Result<Self> {
-        let vec = vec.into_iter().map(|data| Arc::new(data)).collect::<Vec<_>>();
-        let map = vec.iter().map(|data| (*data.id(), data.clone())).collect::<HashMap<_, _>>();
+        let vec = vec
+            .into_iter()
+            .map(|data| Arc::new(data))
+            .collect::<Vec<_>>();
+        let map = vec
+            .iter()
+            .map(|data| (*data.id(), data.clone()))
+            .collect::<HashMap<_, _>>();
 
         Ok(Self { vec, map })
     }
@@ -150,6 +159,10 @@ where
     type Error = Error;
 
     fn try_from(collection: &Collection<Id, Data>) -> Result<Self> {
-        Ok(collection.vec.iter().map(|data| (**data).clone()).collect::<Vec<_>>())
+        Ok(collection
+            .vec
+            .iter()
+            .map(|data| (**data).clone())
+            .collect::<Vec<_>>())
     }
 }

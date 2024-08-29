@@ -16,7 +16,11 @@ where
     T: Clone + BorshSerialize + BorshDeserialize,
 {
     pub fn new(storable: &T) -> Self {
-        Self { before: 0xdeadbeef, storable: storable.clone(), after: 0xbaadf00d }
+        Self {
+            before: 0xdeadbeef,
+            storable: storable.clone(),
+            after: 0xbaadf00d,
+        }
     }
 
     pub fn validate(&self) -> Result<T> {

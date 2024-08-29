@@ -82,8 +82,16 @@ struct BlockTaskInternal {
 }
 
 impl BlockTaskInternal {
-    fn new(task: BlockTask, block_result_transmitter: BlockResultSender, virtual_state_result_transmitter: BlockResultSender) -> Self {
-        Self { task: Some(task), block_result_transmitter, virtual_state_result_transmitter }
+    fn new(
+        task: BlockTask,
+        block_result_transmitter: BlockResultSender,
+        virtual_state_result_transmitter: BlockResultSender,
+    ) -> Self {
+        Self {
+            task: Some(task),
+            block_result_transmitter,
+            virtual_state_result_transmitter,
+        }
     }
 }
 
@@ -162,7 +170,10 @@ struct BlockTaskGroup {
 
 impl BlockTaskGroup {
     fn new(task: BlockTaskInternal) -> Self {
-        Self { tasks: TaskQueue::new(task), dependent_tasks: Vec::new() }
+        Self {
+            tasks: TaskQueue::new(task),
+            dependent_tasks: Vec::new(),
+        }
     }
 }
 
@@ -177,7 +188,10 @@ pub(crate) struct BlockTaskDependencyManager {
 
 impl BlockTaskDependencyManager {
     pub fn new() -> Self {
-        Self { pending: Mutex::new(HashMap::new()), idle_signal: Condvar::new() }
+        Self {
+            pending: Mutex::new(HashMap::new()),
+            idle_signal: Condvar::new(),
+        }
     }
 
     /// Registers the `(task, result_transmitter)` pair as a pending task. If a task with the same
@@ -204,7 +218,11 @@ impl BlockTaskDependencyManager {
             }
             e => {
                 e.and_modify(|g| {
-                    g.tasks.push_back(BlockTaskInternal::new(task, block_result_transmitter, virtual_state_result_transmitter));
+                    g.tasks.push_back(BlockTaskInternal::new(
+                        task,
+                        block_result_transmitter,
+                        virtual_state_result_transmitter,
+                    ));
                 });
                 None
             }
@@ -219,9 +237,17 @@ impl BlockTaskDependencyManager {
         // Lock the pending map. The contention around the lock is
         // expected to be negligible in task processing time
         let mut pending = self.pending.lock();
-        let group = pending.get(&task_id).expect("try_begin expects a task group");
+        let group = pending
+            .get(&task_id)
+            .expect("try_begin expects a task group");
         let internal_task = group.tasks.front().expect("try_begin expects a task");
-        let header = internal_task.task.as_ref().expect("task is expected to not be taken").block().header.clone();
+        let header = internal_task
+            .task
+            .as_ref()
+            .expect("task is expected to not be taken")
+            .block()
+            .header
+            .clone();
         for parent in header.direct_parents().iter() {
             if let Some(parent_task) = pending.get_mut(parent) {
                 parent_task.dependent_tasks.push(task_id);
@@ -229,7 +255,17 @@ impl BlockTaskDependencyManager {
             }
         }
         // Re-access and take the inner task (now with mutable access)
-        Some(pending.get_mut(&task_id).unwrap().tasks.front_mut().unwrap().task.take().unwrap())
+        Some(
+            pending
+                .get_mut(&task_id)
+                .unwrap()
+                .tasks
+                .front_mut()
+                .unwrap()
+                .task
+                .take()
+                .unwrap(),
+        )
     }
 
     /// Report the completion of a processing task. Signals idleness if pending task list is emptied.
@@ -244,18 +280,32 @@ impl BlockTaskDependencyManager {
         // Re-lock for post-processing steps
         let mut pending = self.pending.lock();
 
-        let Occupied(mut entry) = pending.entry(task_id) else { panic!("processed task is expected to have an entry") };
-        let internal_task = entry.get_mut().tasks.pop_front().expect("same task from try_begin is expected");
+        let Occupied(mut entry) = pending.entry(task_id) else {
+            panic!("processed task is expected to have an entry")
+        };
+        let internal_task = entry
+            .get_mut()
+            .tasks
+            .pop_front()
+            .expect("same task from try_begin is expected");
 
         // If this task group is not empty, we return the same hash in order for the next task in
         // the group to be queued, otherwise we return the dependent tasks
-        let next_tasks = if entry.get().tasks.is_empty() { entry.remove().dependent_tasks } else { vec![task_id] };
+        let next_tasks = if entry.get().tasks.is_empty() {
+            entry.remove().dependent_tasks
+        } else {
+            vec![task_id]
+        };
 
         // We expect the inner task to be taken by `try_begin`
         assert!(internal_task.task.is_none());
 
         // Callback within the lock
-        callback(task, internal_task.block_result_transmitter, internal_task.virtual_state_result_transmitter);
+        callback(
+            task,
+            internal_task.block_result_transmitter,
+            internal_task.virtual_state_result_transmitter,
+        );
 
         if pending.is_empty() {
             self.idle_signal.notify_one();

@@ -23,7 +23,12 @@ where
                 if let Some(router) = self.router() {
                     router.try_sending_reject_message(&err).await;
                     if router.close().await || !err.is_connection_closed_error() {
-                        warn!("{} flow error: {}, disconnecting from peer {}.", self.name(), err, router);
+                        warn!(
+                            "{} flow error: {}, disconnecting from peer {}.",
+                            self.name(),
+                            err,
+                            router
+                        );
                     }
                 }
             }

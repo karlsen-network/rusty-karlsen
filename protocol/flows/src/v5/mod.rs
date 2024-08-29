@@ -62,10 +62,14 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
         Box::new(HandleRelayInvsFlow::new(
             ctx.clone(),
             router.clone(),
-            SharedIncomingRoute::new(
-                router.subscribe_with_capacity(vec![KarlsendMessagePayloadType::InvRelayBlock], ctx.block_invs_channel_size()),
-            ),
-            router.subscribe(vec![KarlsendMessagePayloadType::Block, KarlsendMessagePayloadType::BlockLocator]),
+            SharedIncomingRoute::new(router.subscribe_with_capacity(
+                vec![KarlsendMessagePayloadType::InvRelayBlock],
+                ctx.block_invs_channel_size(),
+            )),
+            router.subscribe(vec![
+                KarlsendMessagePayloadType::Block,
+                KarlsendMessagePayloadType::BlockLocator,
+            ]),
             ibd_sender,
         )),
         Box::new(HandleRelayBlockRequests::new(
@@ -73,12 +77,23 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
             router.clone(),
             router.subscribe(vec![KarlsendMessagePayloadType::RequestRelayBlocks]),
         )),
-        Box::new(ReceivePingsFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KarlsendMessagePayloadType::Ping]))),
-        Box::new(SendPingsFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KarlsendMessagePayloadType::Pong]))),
+        Box::new(ReceivePingsFlow::new(
+            ctx.clone(),
+            router.clone(),
+            router.subscribe(vec![KarlsendMessagePayloadType::Ping]),
+        )),
+        Box::new(SendPingsFlow::new(
+            ctx.clone(),
+            router.clone(),
+            router.subscribe(vec![KarlsendMessagePayloadType::Pong]),
+        )),
         Box::new(RequestHeadersFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KarlsendMessagePayloadType::RequestHeaders, KarlsendMessagePayloadType::RequestNextHeaders]),
+            router.subscribe(vec![
+                KarlsendMessagePayloadType::RequestHeaders,
+                KarlsendMessagePayloadType::RequestNextHeaders,
+            ]),
         )),
         Box::new(RequestPruningPointProofFlow::new(
             ctx.clone(),
@@ -88,7 +103,9 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
         Box::new(RequestIbdChainBlockLocatorFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![KarlsendMessagePayloadType::RequestIbdChainBlockLocator]),
+            router.subscribe(vec![
+                KarlsendMessagePayloadType::RequestIbdChainBlockLocator,
+            ]),
         )),
         Box::new(PruningPointAndItsAnticoneRequestsFlow::new(
             ctx.clone(),
@@ -119,10 +136,15 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
         Box::new(RelayTransactionsFlow::new(
             ctx.clone(),
             router.clone(),
-            router
-                .subscribe_with_capacity(vec![KarlsendMessagePayloadType::InvTransactions], RelayTransactionsFlow::invs_channel_size()),
             router.subscribe_with_capacity(
-                vec![KarlsendMessagePayloadType::Transaction, KarlsendMessagePayloadType::TransactionNotFound],
+                vec![KarlsendMessagePayloadType::InvTransactions],
+                RelayTransactionsFlow::invs_channel_size(),
+            ),
+            router.subscribe_with_capacity(
+                vec![
+                    KarlsendMessagePayloadType::Transaction,
+                    KarlsendMessagePayloadType::TransactionNotFound,
+                ],
                 RelayTransactionsFlow::txs_channel_size(),
             ),
         )),
@@ -131,7 +153,11 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
             router.clone(),
             router.subscribe(vec![KarlsendMessagePayloadType::RequestTransactions]),
         )),
-        Box::new(ReceiveAddressesFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KarlsendMessagePayloadType::Addresses]))),
+        Box::new(ReceiveAddressesFlow::new(
+            ctx.clone(),
+            router.clone(),
+            router.subscribe(vec![KarlsendMessagePayloadType::Addresses]),
+        )),
         Box::new(SendAddressesFlow::new(
             ctx.clone(),
             router.clone(),

@@ -30,14 +30,32 @@ impl BlockTemplateReceiverTask {
         stopper: Stopper,
     ) -> Self {
         let template = Arc::new(Mutex::new(response));
-        Self { client, channel, template, pay_address, stopper }
+        Self {
+            client,
+            channel,
+            template,
+            pay_address,
+            stopper,
+        }
     }
 
-    pub async fn build(client: Arc<GrpcClient>, pay_address: Address, stopper: Stopper) -> Arc<Self> {
+    pub async fn build(
+        client: Arc<GrpcClient>,
+        pay_address: Address,
+        stopper: Stopper,
+    ) -> Arc<Self> {
         let channel = Channel::default();
-        client.start(Some(Arc::new(ChannelNotify::new(channel.sender())))).await;
-        client.start_notify(ListenerId::default(), NewBlockTemplateScope {}.into()).await.unwrap();
-        let response = client.get_block_template(pay_address.clone(), vec![]).await.unwrap();
+        client
+            .start(Some(Arc::new(ChannelNotify::new(channel.sender()))))
+            .await;
+        client
+            .start_notify(ListenerId::default(), NewBlockTemplateScope {}.into())
+            .await
+            .unwrap();
+        let response = client
+            .get_block_template(pay_address.clone(), vec![])
+            .await
+            .unwrap();
         Arc::new(Self::new(client, channel, response, pay_address, stopper))
     }
 
@@ -85,7 +103,10 @@ impl Task for BlockTemplateReceiverTask {
             if stopper == Stopper::Signal {
                 stop_signal.trigger.trigger();
             }
-            client.stop_notify(ListenerId::default(), NewBlockTemplateScope {}.into()).await.unwrap();
+            client
+                .stop_notify(ListenerId::default(), NewBlockTemplateScope {}.into())
+                .await
+                .unwrap();
             client.disconnect().await.unwrap();
             warn!("Block template receiver task exited");
         });

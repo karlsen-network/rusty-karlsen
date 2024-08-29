@@ -33,12 +33,19 @@ pub struct RpcCtl {
 
 impl RpcCtl {
     pub fn new() -> Self {
-        Self { inner: Arc::new(Inner::default()) }
+        Self {
+            inner: Arc::new(Inner::default()),
+        }
     }
 
     pub fn with_descriptor<Str: ToString>(descriptor: Option<Str>) -> Self {
         if let Some(descriptor) = descriptor {
-            Self { inner: Arc::new(Inner { descriptor: Mutex::new(Some(descriptor.to_string())), ..Inner::default() }) }
+            Self {
+                inner: Arc::new(Inner {
+                    descriptor: Mutex::new(Some(descriptor.to_string())),
+                    ..Inner::default()
+                }),
+            }
         } else {
             Self::default()
         }
@@ -60,13 +67,21 @@ impl RpcCtl {
     /// Signal open to all listeners (async)
     pub async fn signal_open(&self) -> RpcResult<()> {
         *self.inner.state.lock().unwrap() = RpcState::Connected;
-        Ok(self.inner.multiplexer.broadcast(RpcState::Connected).await?)
+        Ok(self
+            .inner
+            .multiplexer
+            .broadcast(RpcState::Connected)
+            .await?)
     }
 
     /// Signal close to all listeners (async)
     pub async fn signal_close(&self) -> RpcResult<()> {
         *self.inner.state.lock().unwrap() = RpcState::Disconnected;
-        Ok(self.inner.multiplexer.broadcast(RpcState::Disconnected).await?)
+        Ok(self
+            .inner
+            .multiplexer
+            .broadcast(RpcState::Disconnected)
+            .await?)
     }
 
     /// Try signal open to all listeners (sync)
@@ -78,7 +93,10 @@ impl RpcCtl {
     /// Try signal close to all listeners (sync)
     pub fn try_signal_close(&self) -> RpcResult<()> {
         *self.inner.state.lock().unwrap() = RpcState::Disconnected;
-        Ok(self.inner.multiplexer.try_broadcast(RpcState::Disconnected)?)
+        Ok(self
+            .inner
+            .multiplexer
+            .try_broadcast(RpcState::Disconnected)?)
     }
 
     /// Set the connection descriptor (URL, peer address, etc.)

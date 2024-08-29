@@ -16,13 +16,20 @@ impl PathParams {
     }
 
     pub fn iter() -> impl Iterator<Item = PathParams> {
-        NetworkId::iter().flat_map(move |network_id| WrpcEncoding::iter().map(move |encoding| PathParams::new(*encoding, network_id)))
+        NetworkId::iter().flat_map(move |network_id| {
+            WrpcEncoding::iter().map(move |encoding| PathParams::new(*encoding, network_id))
+        })
     }
 }
 
 impl fmt::Display for PathParams {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}", self.encoding.to_string().to_lowercase(), self.network)
+        write!(
+            f,
+            "{}:{}",
+            self.encoding.to_string().to_lowercase(),
+            self.network
+        )
     }
 }
 
@@ -99,7 +106,15 @@ pub struct AccessList {
 
 impl std::fmt::Display for AccessList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.access.iter().map(|access| access.to_string()).collect::<Vec<_>>().join(" "))
+        write!(
+            f,
+            "{}",
+            self.access
+                .iter()
+                .map(|access| access.to_string())
+                .collect::<Vec<_>>()
+                .join(" ")
+        )
     }
 }
 
@@ -107,7 +122,10 @@ impl FromStr for AccessList {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        let access = s.split(' ').map(|s| s.parse::<AccessType>()).collect::<std::result::Result<Vec<_>, _>>()?;
+        let access = s
+            .split(' ')
+            .map(|s| s.parse::<AccessType>())
+            .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(AccessList { access })
     }
 }

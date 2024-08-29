@@ -24,7 +24,11 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Options { listen_address: "127.0.0.1:43110".to_owned(), verbose: false, grpc_proxy_address: None }
+        Options {
+            listen_address: "127.0.0.1:43110".to_owned(),
+            verbose: false,
+            grpc_proxy_address: None,
+        }
     }
 }
 
@@ -55,7 +59,10 @@ impl KarlsenRpcHandler {
         core_service: Option<Arc<RpcCoreService>>,
         options: Arc<Options>,
     ) -> KarlsenRpcHandler {
-        KarlsenRpcHandler { server: Server::new(tasks, encoding, core_service, options.clone()), options }
+        KarlsenRpcHandler {
+            server: Server::new(tasks, encoding, core_service, options.clone()),
+            options,
+        }
     }
 }
 
@@ -79,7 +86,11 @@ impl RpcHandler for KarlsenRpcHandler {
         // )
         // .await
 
-        let connection = self.server.connect(peer, messenger).await.map_err(|err| err.to_string())?;
+        let connection = self
+            .server
+            .connect(peer, messenger)
+            .await
+            .map_err(|err| err.to_string())?;
         Ok(connection)
     }
 
@@ -113,7 +124,12 @@ impl WrpcService {
     ) -> Self {
         let options = Arc::new(options);
         // Create handle to manage connections
-        let rpc_handler = Arc::new(KarlsenRpcHandler::new(tasks, *encoding, core_service, options.clone()));
+        let rpc_handler = Arc::new(KarlsenRpcHandler::new(
+            tasks,
+            *encoding,
+            core_service,
+            options.clone(),
+        ));
 
         // Create router (initializes Interface registering RPC method and notification handlers)
         let router = Arc::new(Router::new(rpc_handler.server.clone()));
@@ -125,7 +141,12 @@ impl WrpcService {
             Some(counters),
         );
 
-        WrpcService { options, server, rpc_handler, shutdown: SingleTrigger::default() }
+        WrpcService {
+            options,
+            server,
+            rpc_handler,
+            shutdown: SingleTrigger::default(),
+        }
     }
 
     /// Start listening on the configured address (will panic if the socket listen() fails)
@@ -138,14 +159,24 @@ impl WrpcService {
         let service = self.clone();
         tokio::spawn(async move {
             let _ = termination_receiver.await;
-            service.server.stop().unwrap_or_else(|err| warn!("wRPC unable to signal shutdown: `{err}`"));
-            service.server.join().await.unwrap_or_else(|err| warn!("wRPC error: `{err}"));
+            service
+                .server
+                .stop()
+                .unwrap_or_else(|err| warn!("wRPC unable to signal shutdown: `{err}`"));
+            service
+                .server
+                .join()
+                .await
+                .unwrap_or_else(|err| warn!("wRPC error: `{err}"));
         });
 
         // Spawn a task running the server
         info!("WRPC Server starting on: {}", listen_address);
         tokio::spawn(async move {
-            let config = WebSocketConfig { max_message_size: Some(MAX_WRPC_MESSAGE_SIZE), ..Default::default() };
+            let config = WebSocketConfig {
+                max_message_size: Some(MAX_WRPC_MESSAGE_SIZE),
+                ..Default::default()
+            };
             let serve_result = self.server.listen(&listen_address, Some(config)).await;
             match serve_result {
                 Ok(_) => info!("WRPC Server stopped on: {}", listen_address),
@@ -184,7 +215,9 @@ impl AsyncService for WrpcService {
                 .server
                 .join()
                 .await
-                .map_err(|err| AsyncServiceError::Service(format!("Notification system error: `{err}`")))?;
+                .map_err(|err| {
+                    AsyncServiceError::Service(format!("Notification system error: `{err}`"))
+                })?;
 
             // Signal server termination
             drop(terminate_server);

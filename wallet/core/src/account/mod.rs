@@ -16,7 +16,10 @@ use crate::storage::account::AccountSettings;
 use crate::storage::AccountMetadata;
 use crate::storage::{PrvKeyData, PrvKeyDataId};
 use crate::tx::PaymentOutput;
-use crate::tx::{Fees, Generator, GeneratorSettings, GeneratorSummary, PaymentDestination, PendingTransaction, Signer};
+use crate::tx::{
+    Fees, Generator, GeneratorSettings, GeneratorSummary, PaymentDestination, PendingTransaction,
+    Signer,
+};
 use crate::utxo::balance::{AtomicBalance, BalanceStrings};
 use crate::utxo::UtxoContextBinding;
 use karlsen_bip32::{ChildNumber, ExtendedPrivateKey, PrivateKey};
@@ -56,15 +59,32 @@ pub struct Inner {
 }
 
 impl Inner {
-    pub fn new(wallet: &Arc<Wallet>, id: AccountId, storage_key: AccountStorageKey, settings: AccountSettings) -> Self {
-        let utxo_context = UtxoContext::new(wallet.utxo_processor(), UtxoContextBinding::AccountId(id));
+    pub fn new(
+        wallet: &Arc<Wallet>,
+        id: AccountId,
+        storage_key: AccountStorageKey,
+        settings: AccountSettings,
+    ) -> Self {
+        let utxo_context =
+            UtxoContext::new(wallet.utxo_processor(), UtxoContextBinding::AccountId(id));
 
         let context = Context { settings };
-        Inner { context: Mutex::new(context), id, storage_key, wallet: wallet.clone(), utxo_context: utxo_context.clone() }
+        Inner {
+            context: Mutex::new(context),
+            id,
+            storage_key,
+            wallet: wallet.clone(),
+            utxo_context: utxo_context.clone(),
+        }
     }
 
     pub fn from_storage(wallet: &Arc<Wallet>, storage: &AccountStorage) -> Self {
-        Self::new(wallet, storage.id, storage.storage_key, storage.settings.clone())
+        Self::new(
+            wallet,
+            storage.id,
+            storage.storage_key,
+            storage.settings.clone(),
+        )
     }
 
     pub fn context(&self) -> MutexGuard<Context> {
@@ -109,7 +129,11 @@ pub trait Account: AnySync + Send + Sync + 'static {
     }
 
     fn balance_as_strings(&self, padding: Option<usize>) -> Result<BalanceStrings> {
-        Ok(BalanceStrings::from((self.balance().as_ref(), &self.wallet().network_id()?.into(), padding)))
+        Ok(BalanceStrings::from((
+            self.balance().as_ref(),
+            &self.wallet().network_id()?.into(),
+            padding,
+        )))
     }
 
     fn name(&self) -> Option<String> {
@@ -147,7 +171,11 @@ pub trait Account: AnySync + Send + Sync + 'static {
         }
 
         let account = self.to_storage()?;
-        self.wallet().store().as_account_store()?.store_single(&account, None).await?;
+        self.wallet()
+            .store()
+            .as_account_store()?
+            .store_single(&account, None)
+            .await?;
 
         self.wallet().store().commit(wallet_secret).await?;
         Ok(())
@@ -167,7 +195,11 @@ pub trait Account: AnySync + Send + Sync + 'static {
                 format!("{} UTXOs pending", pending_utxo_size.separated_string())
             }
             _ => {
-                format!("{} UTXOs, {} UTXOs pending", mature_utxo_size.separated_string(), pending_utxo_size.separated_string())
+                format!(
+                    "{} UTXOs, {} UTXOs pending",
+                    mature_utxo_size.separated_string(),
+                    pending_utxo_size.separated_string()
+                )
             }
         };
         Ok(format!("{name}: {balance}   {}", style(info).dim()))
@@ -198,7 +230,10 @@ pub trait Account: AnySync + Send + Sync + 'static {
     async fn scan(self: Arc<Self>, window_size: Option<usize>, extent: Option<u32>) -> Result<()> {
         self.utxo_context().clear().await?;
 
-        let current_daa_score = self.wallet().current_daa_score().ok_or(Error::NotConnected)?;
+        let current_daa_score = self
+            .wallet()
+            .current_daa_score()
+            .ok_or(Error::NotConnected)?;
         let balance = Arc::new(AtomicBalance::default());
 
         match self.clone().as_derivation_capable() {
@@ -227,9 +262,15 @@ pub trait Account: AnySync + Send + Sync + 'static {
                     ),
                 ];
 
-                let futures = scans.iter().map(|scan| scan.scan(self.utxo_context())).collect::<Vec<_>>();
+                let futures = scans
+                    .iter()
+                    .map(|scan| scan.scan(self.utxo_context()))
+                    .collect::<Vec<_>>();
 
-                join_all(futures).await.into_iter().collect::<Result<Vec<_>>>()?;
+                join_all(futures)
+                    .await
+                    .into_iter()
+                    .collect::<Result<Vec<_>>>()?;
             }
             Err(_) => {
                 let mut address_set = HashSet::<Address>::new();
@@ -269,7 +310,10 @@ pub trait Account: AnySync + Send + Sync + 'static {
 
     /// handle connection event
     async fn connect(self: Arc<Self>) -> Result<()> {
-        let vacated = self.wallet().active_accounts().insert(self.clone().as_dyn_arc());
+        let vacated = self
+            .wallet()
+            .active_accounts()
+            .insert(self.clone().as_dyn_arc());
         if vacated.is_none() && self.wallet().is_connected() {
             self.scan(None, None).await?;
         }
@@ -294,9 +338,17 @@ pub trait Account: AnySync + Send + Sync + 'static {
         notifier: Option<GenerationNotifier>,
     ) -> Result<(GeneratorSummary, Vec<karlsen_hashes::Hash>)> {
         let keydata = self.prv_key_data(wallet_secret).await?;
-        let signer = Arc::new(Signer::new(self.clone().as_dyn_arc(), keydata, payment_secret));
-        let settings =
-            GeneratorSettings::try_new_with_account(self.clone().as_dyn_arc(), PaymentDestination::Change, Fees::None, None)?;
+        let signer = Arc::new(Signer::new(
+            self.clone().as_dyn_arc(),
+            keydata,
+            payment_secret,
+        ));
+        let settings = GeneratorSettings::try_new_with_account(
+            self.clone().as_dyn_arc(),
+            PaymentDestination::Change,
+            Fees::None,
+            None,
+        )?;
         let generator = Generator::try_new(settings, Some(signer), Some(abortable))?;
 
         let mut stream = generator.stream();
@@ -327,9 +379,18 @@ pub trait Account: AnySync + Send + Sync + 'static {
         notifier: Option<GenerationNotifier>,
     ) -> Result<(GeneratorSummary, Vec<karlsen_hashes::Hash>)> {
         let keydata = self.prv_key_data(wallet_secret).await?;
-        let signer = Arc::new(Signer::new(self.clone().as_dyn_arc(), keydata, payment_secret));
+        let signer = Arc::new(Signer::new(
+            self.clone().as_dyn_arc(),
+            keydata,
+            payment_secret,
+        ));
 
-        let settings = GeneratorSettings::try_new_with_account(self.clone().as_dyn_arc(), destination, priority_fee_sompi, payload)?;
+        let settings = GeneratorSettings::try_new_with_account(
+            self.clone().as_dyn_arc(),
+            destination,
+            priority_fee_sompi,
+            payload,
+        )?;
 
         let generator = Generator::try_new(settings, Some(signer), Some(abortable))?;
 
@@ -360,7 +421,11 @@ pub trait Account: AnySync + Send + Sync + 'static {
         notifier: Option<GenerationNotifier>,
     ) -> Result<(GeneratorSummary, Vec<karlsen_hashes::Hash>)> {
         let keydata = self.prv_key_data(wallet_secret).await?;
-        let signer = Arc::new(Signer::new(self.clone().as_dyn_arc(), keydata, payment_secret));
+        let signer = Arc::new(Signer::new(
+            self.clone().as_dyn_arc(),
+            keydata,
+            payment_secret,
+        ));
 
         let destination_account = self
             .wallet()
@@ -369,7 +434,10 @@ pub trait Account: AnySync + Send + Sync + 'static {
             .ok_or_else(|| Error::AccountNotFound(destination_account_id))?;
 
         let destination_address = destination_account.receive_address()?;
-        let final_transaction_destination = PaymentDestination::from(PaymentOutput::new(destination_address, transfer_amount_sompi));
+        let final_transaction_destination = PaymentDestination::from(PaymentOutput::new(
+            destination_address,
+            transfer_amount_sompi,
+        ));
         let final_transaction_payload = None;
 
         let settings = GeneratorSettings::try_new_with_account(
@@ -404,7 +472,12 @@ pub trait Account: AnySync + Send + Sync + 'static {
         payload: Option<Vec<u8>>,
         abortable: &Abortable,
     ) -> Result<GeneratorSummary> {
-        let settings = GeneratorSettings::try_new_with_account(self.as_dyn_arc(), destination, priority_fee_sompi, payload)?;
+        let settings = GeneratorSettings::try_new_with_account(
+            self.as_dyn_arc(),
+            destination,
+            priority_fee_sompi,
+            payload,
+        )?;
 
         let generator = Generator::try_new(settings, None, Some(abortable))?;
 
@@ -459,7 +532,9 @@ pub trait DerivationCapableAccount: Account {
         notifier: Option<ScanNotifier>,
     ) -> Result<()> {
         if let Ok(legacy_account) = self.clone().as_legacy_account() {
-            legacy_account.create_private_context(&wallet_secret, payment_secret.as_ref(), None).await?;
+            legacy_account
+                .create_private_context(&wallet_secret, payment_secret.as_ref(), None)
+                .await?;
         }
 
         let derivation = self.derivation();
@@ -472,8 +547,14 @@ pub trait DerivationCapableAccount: Account {
         let change_address_manager = derivation.change_address_manager();
 
         let change_address_index = change_address_manager.index();
-        let change_address_keypair =
-            derivation.get_range_with_keys(true, change_address_index..change_address_index + 1, false, &xkey).await?;
+        let change_address_keypair = derivation
+            .get_range_with_keys(
+                true,
+                change_address_index..change_address_index + 1,
+                false,
+                &xkey,
+            )
+            .await?;
 
         let rpc = self.wallet().rpc_api();
         let notifier = notifier.as_ref();
@@ -491,8 +572,12 @@ pub trait DerivationCapableAccount: Account {
             index = last as usize;
 
             let (mut keys, addresses) = if sweep {
-                let mut keypairs = derivation.get_range_with_keys(false, first..last, false, &xkey).await?;
-                let change_keypairs = derivation.get_range_with_keys(true, first..last, false, &xkey).await?;
+                let mut keypairs = derivation
+                    .get_range_with_keys(false, first..last, false, &xkey)
+                    .await?;
+                let change_keypairs = derivation
+                    .get_range_with_keys(true, first..last, false, &xkey)
+                    .await?;
                 keypairs.extend(change_keypairs);
                 let mut keys = vec![];
                 let addresses = keypairs
@@ -505,8 +590,10 @@ pub trait DerivationCapableAccount: Account {
                 keys.push(change_address_keypair[0].1.to_bytes());
                 (keys, addresses)
             } else {
-                let mut addresses = receive_address_manager.get_range_with_args(first..last, false)?;
-                let change_addresses = change_address_manager.get_range_with_args(first..last, false)?;
+                let mut addresses =
+                    receive_address_manager.get_range_with_args(first..last, false)?;
+                let change_addresses =
+                    change_address_manager.get_range_with_args(first..last, false)?;
                 addresses.extend(change_addresses);
                 (vec![], addresses)
             };
@@ -519,7 +606,10 @@ pub trait DerivationCapableAccount: Account {
                 aggregate_balance += balance;
 
                 if sweep {
-                    let utxos = utxos.into_iter().map(UtxoEntryReference::from).collect::<Vec<_>>();
+                    let utxos = utxos
+                        .into_iter()
+                        .map(UtxoEntryReference::from)
+                        .collect::<Vec<_>>();
 
                     let settings = GeneratorSettings::try_new_with_iterator(
                         self.wallet().network_id()?,
@@ -578,26 +668,42 @@ pub trait DerivationCapableAccount: Account {
 
     async fn new_receive_address(self: Arc<Self>) -> Result<Address> {
         let address = self.derivation().receive_address_manager().new_address()?;
-        self.utxo_context().register_addresses(&[address.clone()]).await?;
+        self.utxo_context()
+            .register_addresses(&[address.clone()])
+            .await?;
 
-        let metadata = self.metadata()?.expect("derivation accounts must provide metadata");
+        let metadata = self
+            .metadata()?
+            .expect("derivation accounts must provide metadata");
         let store = self.wallet().store().as_account_store()?;
         store.update_metadata(vec![metadata]).await?;
 
-        self.wallet().notify(Events::AccountUpdate { account_descriptor: self.descriptor()? }).await?;
+        self.wallet()
+            .notify(Events::AccountUpdate {
+                account_descriptor: self.descriptor()?,
+            })
+            .await?;
 
         Ok(address)
     }
 
     async fn new_change_address(self: Arc<Self>) -> Result<Address> {
         let address = self.derivation().change_address_manager().new_address()?;
-        self.utxo_context().register_addresses(&[address.clone()]).await?;
+        self.utxo_context()
+            .register_addresses(&[address.clone()])
+            .await?;
 
-        let metadata = self.metadata()?.expect("derivation accounts must provide metadata");
+        let metadata = self
+            .metadata()?
+            .expect("derivation accounts must provide metadata");
         let store = self.wallet().store().as_account_store()?;
         store.update_metadata(vec![metadata]).await?;
 
-        self.wallet().notify(Events::AccountUpdate { account_descriptor: self.descriptor()? }).await?;
+        self.wallet()
+            .notify(Events::AccountUpdate {
+                account_descriptor: self.descriptor()?,
+            })
+            .await?;
 
         Ok(address)
     }
@@ -615,7 +721,14 @@ pub trait DerivationCapableAccount: Account {
     ) -> Result<Vec<(&'l Address, secp256k1::SecretKey)>> {
         let payload = key_data.payload.decrypt(payment_secret.as_ref())?;
         let xkey = payload.get_xprv(payment_secret.as_ref())?;
-        create_private_keys(&self.account_kind(), self.cosigner_index(), self.account_index(), &xkey, receive, change)
+        create_private_keys(
+            &self.account_kind(),
+            self.cosigner_index(),
+            self.account_index(),
+            &xkey,
+            receive,
+            change,
+        )
     }
 }
 
@@ -634,14 +747,20 @@ pub(crate) fn create_private_keys<'l>(
     if matches!(account_kind.as_ref(), LEGACY_ACCOUNT_KIND) {
         let (private_key, attrs) = WalletDerivationManagerV0::derive_key_by_path(xkey, paths.0)?;
         for (address, index) in receive.iter() {
-            let (private_key, _) =
-                WalletDerivationManagerV0::derive_private_key(&private_key, &attrs, ChildNumber::new(*index, true)?)?;
+            let (private_key, _) = WalletDerivationManagerV0::derive_private_key(
+                &private_key,
+                &attrs,
+                ChildNumber::new(*index, true)?,
+            )?;
             private_keys.push((*address, private_key));
         }
         let (private_key, attrs) = WalletDerivationManagerV0::derive_key_by_path(xkey, paths.1)?;
         for (address, index) in change.iter() {
-            let (private_key, _) =
-                WalletDerivationManagerV0::derive_private_key(&private_key, &attrs, ChildNumber::new(*index, true)?)?;
+            let (private_key, _) = WalletDerivationManagerV0::derive_private_key(
+                &private_key,
+                &attrs,
+                ChildNumber::new(*index, true)?,
+            )?;
             private_keys.push((*address, private_key));
         }
     } else {
@@ -649,10 +768,20 @@ pub(crate) fn create_private_keys<'l>(
         let change_xkey = xkey.clone().derive_path(&paths.1)?;
 
         for (address, index) in receive.iter() {
-            private_keys.push((*address, *receive_xkey.derive_child(ChildNumber::new(*index, false)?)?.private_key()));
+            private_keys.push((
+                *address,
+                *receive_xkey
+                    .derive_child(ChildNumber::new(*index, false)?)?
+                    .private_key(),
+            ));
         }
         for (address, index) in change.iter() {
-            private_keys.push((*address, *change_xkey.derive_child(ChildNumber::new(*index, false)?)?.private_key()));
+            private_keys.push((
+                *address,
+                *change_xkey
+                    .derive_child(ChildNumber::new(*index, false)?)?
+                    .private_key(),
+            ));
         }
     }
 
@@ -673,29 +802,28 @@ mod tests {
     use karlsen_wallet_keys::derivation::gen0::PubkeyDerivationManagerV0;
     use std::str::FromStr;
 
-    //addresses not valid for karlsen
     fn gen0_receive_addresses() -> Vec<&'static str> {
         vec![
-            "karlsentest:qqnapngv3zxp305qf06w6hpzmyxtx2r99jjhs04lu980xdyd2ulwwmx9evrfz",
-            "karlsentest:qqfwmv2jm7dsuju9wz27ptdm4e28qh6evfsm66uf2vf4fxmpxfqgym4m2fcyp",
-            "karlsentest:qpcerqk4ltxtyprv9096wrlzjx5mnrlw4fqce6hnl3axy7tkvyjxypjc5dyqs",
-            "karlsentest:qr9m4h44ghmyz4wagktx8kgmh9zj8h8q0f6tc87wuad5xvzkdlwd6uu9plg2c",
-            "karlsentest:qrkxylqkyjtkjr5zs4z5wjmhmj756e84pa05amcw3zn8wdqjvn4tcc2gcqhrw",
-            "karlsentest:qp3w5h9hp9ude4vjpllsm4qpe8rcc5dmeealkl0cnxlgtj4ly7rczqxcdamvr",
-            "karlsentest:qpqen78dezzj4w7rae4n6kvahlr6wft7jy3lcul78709asxksgxc2kr9fgv6j",
-            "karlsentest:qq7upgj3g8klaylc4etwhlmr70t24wu4n4qrlayuw44yd8wx40seje27ah2x7",
-            "karlsentest:qqt2jzgzwy04j8np6ne4g0akmq4gj3fha0gqupr2mjj95u5utzxqvv33mzpcu",
-            "karlsentest:qpcnt3vscphae5q8h576xkufhtuqvntg0ves8jnthgfaxy8ajek8zz3jcg4de",
-            "karlsentest:qz7wzgzvnadgp6v4u6ua9f3hltaa3cv8635mvzlepa63ttt72c6m208g48q0p",
-            "karlsentest:qpqtsd4flc0n4g720mjwk67tnc46xv9ns5xs2khyvlvszy584ej4xq9adw9h9",
-            "karlsentest:qq4uy92hzh9eauypps060g2k7zv2xv9fsgc5gxkwgsvlhc7tw4a3gk5rnpc0k",
-            "karlsentest:qqgfhd3ur2v2xcf35jggre97ar3awl0h62qlmmaaq28dfrhwzgjnxntdugycr",
-            "karlsentest:qzuflj6tgzwjujsym9ap6dvqz9zfwnmkta68fjulax09clh8l4rfslj9j9nnt",
-            "karlsentest:qz6645a8rrf0hmrdvyr9uj673lrr9zwhjvvrytqpjsjdet23czvc784e84lfe",
-            "karlsentest:qz2fvhmk996rmmg44ht0s79gnw647ehu8ncmpf3sf6txhkfmuzuxssceg9sw0",
-            "karlsentest:qr9aflwylzdu99z2z25lzljyeszhs7j02zhfdazydgahq2vg6x8w7nfp3juqq",
-            "karlsentest:qzen7nh0lmzvujlye5sv3nwgwdyew2zp9nz5we7pay65wrt6kfxd6khwja56q",
-            "karlsentest:qq74jrja2mh3wn6853g8ywpfy9nlg0uuzchvpa0cmnvds4tfnpjj5tqgnqm4f",
+            "karlsentest:qqnapngv3zxp305qf06w6hpzmyxtx2r99jjhs04lu980xdyd2ulwwrd2kaave",
+            "karlsentest:qqfwmv2jm7dsuju9wz27ptdm4e28qh6evfsm66uf2vf4fxmpxfqgyr759cxp6",
+            "karlsentest:qpcerqk4ltxtyprv9096wrlzjx5mnrlw4fqce6hnl3axy7tkvyjxyeehmu69t",
+            "karlsentest:qr9m4h44ghmyz4wagktx8kgmh9zj8h8q0f6tc87wuad5xvzkdlwd6yh2wwk0r",
+            "karlsentest:qrkxylqkyjtkjr5zs4z5wjmhmj756e84pa05amcw3zn8wdqjvn4tcqp8h3fx4",
+            "karlsentest:qp3w5h9hp9ude4vjpllsm4qpe8rcc5dmeealkl0cnxlgtj4ly7rczcdhzv9fc",
+            "karlsentest:qpqen78dezzj4w7rae4n6kvahlr6wft7jy3lcul78709asxksgxc2wg2xejlf",
+            "karlsentest:qq7upgj3g8klaylc4etwhlmr70t24wu4n4qrlayuw44yd8wx40sejpp3jx5r9",
+            "karlsentest:qqt2jzgzwy04j8np6ne4g0akmq4gj3fha0gqupr2mjj95u5utzxqv5675nla8",
+            "karlsentest:qpcnt3vscphae5q8h576xkufhtuqvntg0ves8jnthgfaxy8ajek8z66ahetgz",
+            "karlsentest:qz7wzgzvnadgp6v4u6ua9f3hltaa3cv8635mvzlepa63ttt72c6m2hv86k726",
+            "karlsentest:qpqtsd4flc0n4g720mjwk67tnc46xv9ns5xs2khyvlvszy584ej4xcwjzlmj7",
+            "karlsentest:qq4uy92hzh9eauypps060g2k7zv2xv9fsgc5gxkwgsvlhc7tw4a3gwlvusx2d",
+            "karlsentest:qqgfhd3ur2v2xcf35jggre97ar3awl0h62qlmmaaq28dfrhwzgjnxtqzne6ac",
+            "karlsentest:qzuflj6tgzwjujsym9ap6dvqz9zfwnmkta68fjulax09clh8l4rfs8e2a5dks",
+            "karlsentest:qz6645a8rrf0hmrdvyr9uj673lrr9zwhjvvrytqpjsjdet23czvc7l7kgypvz",
+            "karlsentest:qz2fvhmk996rmmg44ht0s79gnw647ehu8ncmpf3sf6txhkfmuzuxsgnk85wt5",
+            "karlsentest:qr9aflwylzdu99z2z25lzljyeszhs7j02zhfdazydgahq2vg6x8w7tzw7rz9m",
+            "karlsentest:qzen7nh0lmzvujlye5sv3nwgwdyew2zp9nz5we7pay65wrt6kfxd6wupav2lm",
+            "karlsentest:qq74jrja2mh3wn6853g8ywpfy9nlg0uuzchvpa0cmnvds4tfnpjj5nt8u39sj",
         ]
     }
 
@@ -726,26 +854,26 @@ mod tests {
 
     fn gen0_change_addresses() -> Vec<&'static str> {
         vec![
-            "karlsentest:qrc0xjaq00fq8qzvrudfuk9msag7whnd72nefwq5d07ks4j4d97kzm0x3ertv",
-            "karlsentest:qpf00utzmaa2u8w9353ssuazsv7fzs605eg00l9luyvcwzwj9cx0z4m8n9p5j",
-            "karlsentest:qrkxek2q6eze7lhg8tq0qw9h890lujvjhtnn5vllrkgj2rgudl6xv3ut9j5mu",
-            "karlsentest:qrn0ga4lddypp9w8eygt9vwk92lagr55e2eqjgkfr09az90632jc6namw09ll",
-            "karlsentest:qzga696vavxtrg0heunvlta5ghjucptll9cfs5x0m2j05s55vtl36uhpauwuk",
-            "karlsentest:qq8ernhu26fgt3ap73jalhzl5u5zuergm9f0dcsa8uy7lmcx875hwl3r894fp",
-            "karlsentest:qrauma73jdn0yfwspr7yf39recvjkk3uy5e4309vjc82qq7sxtskjphgwu0sx",
-            "karlsentest:qzk7yd3ep4def7sv7yhl8m0mr7p75zclycrv0x0jfm0gmwte23k0u5f9dclzy",
-            "karlsentest:qzvm7mnhpkrw52c4p85xd5scrpddxnagzmhmz4v8yt6nawwzgjtavu84ft88x",
-            "karlsentest:qq4feppacdug6p6zk2xf4rw400ps92c9h78gctfcdlucvzzjwzyz7j650nw52",
-            "karlsentest:qryepg9agerq4wdzpv39xxjdytktga53dphvs6r4fdjc0gfyndhk7ytpnl5tv",
-            "karlsentest:qpywh5galz3dd3ndkx96ckpvvf5g8t4adaf0k58y4kgf8w06jt5myjrpluvk6",
-            "karlsentest:qq32grys34737mfe5ud5j2v03cjefynuym27q7jsdt28qy72ucv3sv0teqwvm",
-            "karlsentest:qper47ahktzf9lv67a5e9rmfk35pq4xneufhu97px6tlzd0d4qkaklx7m3f7w",
-            "karlsentest:qqal0t8w2y65a4lm5j5y4maxyy4nuwxj6u364eppj5qpxz9s4l7tknfw0u6r3",
-            "karlsentest:qr7p66q7lmdqcf2vnyus38efx3l4apvqvv5sff66n808mtclef2w7vxh3afnn",
-            "karlsentest:qqx4xydd58qe5csedz3l3q7v02e49rwqnydc425d6jchv02el2gdv4055vh0y",
-            "karlsentest:qzyc9l5azcae7y3yltgnl5k2dzzvngp90a0glsepq0dnz8dvp4jyveezpqse8",
-            "karlsentest:qq705x6hl9qdvr03n0t65esevpvzkkt2xj0faxp6luvd2hk2gr76chxw8xhy5",
-            "karlsentest:qzufchm3cy2ej6f4cjpxpnt3g7c2gn77c320qhrnrjqqskpn7vnzsaxg6z0kd",
+            "karlsentest:qrc0xjaq00fq8qzvrudfuk9msag7whnd72nefwq5d07ks4j4d97kzryf7gawh",
+            "karlsentest:qpf00utzmaa2u8w9353ssuazsv7fzs605eg00l9luyvcwzwj9cx0zdsgu5l3f",
+            "karlsentest:qrkxek2q6eze7lhg8tq0qw9h890lujvjhtnn5vllrkgj2rgudl6xvfhy2r278",
+            "karlsentest:qrn0ga4lddypp9w8eygt9vwk92lagr55e2eqjgkfr09az90632jc6tk5p7m6y",
+            "karlsentest:qzga696vavxtrg0heunvlta5ghjucptll9cfs5x0m2j05s55vtl36yuwjdsed",
+            "karlsentest:qq8ernhu26fgt3ap73jalhzl5u5zuergm9f0dcsa8uy7lmcx875hw86vg5tv6",
+            "karlsentest:qrauma73jdn0yfwspr7yf39recvjkk3uy5e4309vjc82qq7sxtskjeu8pd34a",
+            "karlsentest:qzk7yd3ep4def7sv7yhl8m0mr7p75zclycrv0x0jfm0gmwte23k0uvz2zfp8l",
+            "karlsentest:qzvm7mnhpkrw52c4p85xd5scrpddxnagzmhmz4v8yt6nawwzgjtavyv6x6eza",
+            "karlsentest:qq4feppacdug6p6zk2xf4rw400ps92c9h78gctfcdlucvzzjwzyz723mqzs33",
+            "karlsentest:qryepg9agerq4wdzpv39xxjdytktga53dphvs6r4fdjc0gfyndhk7uqwuw2wh",
+            "karlsentest:qpywh5galz3dd3ndkx96ckpvvf5g8t4adaf0k58y4kgf8w06jt5my2gwsdjnp",
+            "karlsentest:qq32grys34737mfe5ud5j2v03cjefynuym27q7jsdt28qy72ucv3s5yyk3sfq",
+            "karlsentest:qper47ahktzf9lv67a5e9rmfk35pq4xneufhu97px6tlzd0d4qkak8d35qhm4",
+            "karlsentest:qqal0t8w2y65a4lm5j5y4maxyy4nuwxj6u364eppj5qpxz9s4l7tktzpqdyx2",
+            "karlsentest:qr7p66q7lmdqcf2vnyus38efx3l4apvqvv5sff66n808mtclef2w75dc7vhkg",
+            "karlsentest:qqx4xydd58qe5csedz3l3q7v02e49rwqnydc425d6jchv02el2gdvdymmaf2l",
+            "karlsentest:qzyc9l5azcae7y3yltgnl5k2dzzvngp90a0glsepq0dnz8dvp4jyvpjdw3wuu",
+            "karlsentest:qq705x6hl9qdvr03n0t65esevpvzkkt2xj0faxp6luvd2hk2gr76c0dpghfp0",
+            "karlsentest:qzufchm3cy2ej6f4cjpxpnt3g7c2gn77c320qhrnrjqqskpn7vnzs9d84n3nk",
         ]
     }
 
@@ -776,7 +904,8 @@ mod tests {
 
     fn bytes_str(bytes: &[u8]) -> String {
         let mut hex = [0u8; 64];
-        faster_hex::hex_encode(bytes, &mut hex).expect("The output is exactly twice the size of the input");
+        faster_hex::hex_encode(bytes, &mut hex)
+            .expect("The output is exactly twice the size of the input");
         unsafe { std::str::from_utf8_unchecked(&hex) }.to_string()
     }
 
@@ -794,8 +923,14 @@ mod tests {
             .map(|(index, str)| (Address::try_from(*str).unwrap(), index as u32))
             .collect::<Vec<(Address, u32)>>();
 
-        let receive_addresses = receive_addresses.iter().map(|(a, index)| (a, *index)).collect::<Vec<(&Address, u32)>>();
-        let change_addresses = change_addresses.iter().map(|(a, index)| (a, *index)).collect::<Vec<(&Address, u32)>>();
+        let receive_addresses = receive_addresses
+            .iter()
+            .map(|(a, index)| (a, *index))
+            .collect::<Vec<(&Address, u32)>>();
+        let change_addresses = change_addresses
+            .iter()
+            .map(|(a, index)| (a, *index))
+            .collect::<Vec<(&Address, u32)>>();
 
         let key = "xprv9s21ZrQH143K2SDYtUz6dphDH3yRLAC7Jc552GYiXai3STvqgc3JBZxH2M4KaKhriaZDSS9KL7zUi5kYpggFspkiZBYWNCxbp27CCcnsJUs";
         let xkey = ExtendedPrivateKey::<SecretKey>::from_str(key).unwrap();
@@ -803,18 +938,52 @@ mod tests {
         let receive_keys = gen0_receive_keys();
         let change_keys = gen0_change_keys();
 
-        let keys = create_private_keys(&LEGACY_ACCOUNT_KIND.into(), 0, 0, &xkey, &receive_addresses, &[]).unwrap();
+        let keys = create_private_keys(
+            &LEGACY_ACCOUNT_KIND.into(),
+            0,
+            0,
+            &xkey,
+            &receive_addresses,
+            &[],
+        )
+        .unwrap();
         for (index, (a, key)) in keys.iter().enumerate() {
-            let address = PubkeyDerivationManagerV0::create_address(&key.get_public_key(), Prefix::Testnet, false).unwrap();
+            let address = PubkeyDerivationManagerV0::create_address(
+                &key.get_public_key(),
+                Prefix::Testnet,
+                false,
+            )
+            .unwrap();
             assert_eq!(*a, &address, "receive address at {index} failed");
-            assert_eq!(bytes_str(&key.to_bytes()), receive_keys[index], "receive key at {index} failed");
+            assert_eq!(
+                bytes_str(&key.to_bytes()),
+                receive_keys[index],
+                "receive key at {index} failed"
+            );
         }
 
-        let keys = create_private_keys(&LEGACY_ACCOUNT_KIND.into(), 0, 0, &xkey, &[], &change_addresses).unwrap();
+        let keys = create_private_keys(
+            &LEGACY_ACCOUNT_KIND.into(),
+            0,
+            0,
+            &xkey,
+            &[],
+            &change_addresses,
+        )
+        .unwrap();
         for (index, (a, key)) in keys.iter().enumerate() {
-            let address = PubkeyDerivationManagerV0::create_address(&key.get_public_key(), Prefix::Testnet, false).unwrap();
+            let address = PubkeyDerivationManagerV0::create_address(
+                &key.get_public_key(),
+                Prefix::Testnet,
+                false,
+            )
+            .unwrap();
             assert_eq!(*a, &address, "change address at {index} failed");
-            assert_eq!(bytes_str(&key.to_bytes()), change_keys[index], "change key at {index} failed");
+            assert_eq!(
+                bytes_str(&key.to_bytes()),
+                change_keys[index],
+                "change key at {index} failed"
+            );
         }
     }
 }

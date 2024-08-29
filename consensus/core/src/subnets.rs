@@ -10,12 +10,16 @@ use thiserror::Error;
 pub const SUBNETWORK_ID_SIZE: usize = 20;
 
 /// The domain representation of a Subnetwork ID
-#[derive(Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Clone, Default, Eq, PartialEq, Ord, PartialOrd, Hash, BorshSerialize, BorshDeserialize,
+)]
 pub struct SubnetworkId([u8; SUBNETWORK_ID_SIZE]);
 
 impl Debug for SubnetworkId {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SubnetworkId").field("", &self.to_hex()).finish()
+        f.debug_struct("SubnetworkId")
+            .field("", &self.to_hex())
+            .finish()
     }
 }
 
@@ -95,7 +99,8 @@ impl Display for SubnetworkId {
     #[inline]
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut hex = [0u8; SUBNETWORK_ID_SIZE * 2];
-        faster_hex::hex_encode(&self.0, &mut hex).expect("The output is exactly twice the size of the input");
+        faster_hex::hex_encode(&self.0, &mut hex)
+            .expect("The output is exactly twice the size of the input");
         f.write_str(str::from_utf8(&hex).expect("hex is always valid UTF-8"))
     }
 }
@@ -103,8 +108,11 @@ impl Display for SubnetworkId {
 impl ToHex for SubnetworkId {
     fn to_hex(&self) -> String {
         let mut hex = [0u8; SUBNETWORK_ID_SIZE * 2];
-        faster_hex::hex_encode(&self.0, &mut hex).expect("The output is exactly twice the size of the input");
-        str::from_utf8(&hex).expect("hex is always valid UTF-8").to_string()
+        faster_hex::hex_encode(&self.0, &mut hex)
+            .expect("The output is exactly twice the size of the input");
+        str::from_utf8(&hex)
+            .expect("hex is always valid UTF-8")
+            .to_string()
     }
 }
 

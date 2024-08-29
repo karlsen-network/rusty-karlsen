@@ -51,7 +51,16 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let Args { testnet, simnet, devnet, grpc_proxy_address, interface, verbose, threads, encoding } = Args::parse();
+    let Args {
+        testnet,
+        simnet,
+        devnet,
+        grpc_proxy_address,
+        interface,
+        verbose,
+        threads,
+        encoding,
+    } = Args::parse();
 
     let network_type = if testnet {
         NetworkType::Testnet
@@ -73,16 +82,27 @@ async fn main() -> Result<()> {
 
     let options = Arc::new(Options {
         listen_address: interface.unwrap_or_else(|| format!("wrpc://127.0.0.1:{proxy_port}")),
-        grpc_proxy_address: Some(grpc_proxy_address.unwrap_or_else(|| format!("grpc://127.0.0.1:{karlsend_port}"))),
+        grpc_proxy_address: Some(
+            grpc_proxy_address.unwrap_or_else(|| format!("grpc://127.0.0.1:{karlsend_port}")),
+        ),
         verbose,
         // ..Options::default()
     });
     log_info!("");
-    log_info!("Proxy routing to `{}` on {}", network_type, options.grpc_proxy_address.as_ref().unwrap());
+    log_info!(
+        "Proxy routing to `{}` on {}",
+        network_type,
+        options.grpc_proxy_address.as_ref().unwrap()
+    );
 
     let counters = Arc::new(WebSocketCounters::default());
     let tasks = threads.unwrap_or_else(num_cpus::get);
-    let rpc_handler = Arc::new(KarlsenRpcHandler::new(tasks, encoding, None, options.clone()));
+    let rpc_handler = Arc::new(KarlsenRpcHandler::new(
+        tasks,
+        encoding,
+        None,
+        options.clone(),
+    ));
 
     let router = Arc::new(Router::new(rpc_handler.server.clone()));
     let server = RpcServer::new_with_encoding::<Server, Connection, RpcApiOps, Id64>(
@@ -92,10 +112,16 @@ async fn main() -> Result<()> {
         Some(counters),
     );
 
-    log_info!("Karlsen wRPC server is listening on {}", options.listen_address);
+    log_info!(
+        "Karlsen wRPC server is listening on {}",
+        options.listen_address
+    );
     log_info!("Using `{encoding}` protocol encoding");
 
-    let config = WebSocketConfig { max_message_size: Some(1024 * 1024 * 1024), ..Default::default() };
+    let config = WebSocketConfig {
+        max_message_size: Some(1024 * 1024 * 1024),
+        ..Default::default()
+    };
     server.listen(&options.listen_address, Some(config)).await?;
 
     Ok(())

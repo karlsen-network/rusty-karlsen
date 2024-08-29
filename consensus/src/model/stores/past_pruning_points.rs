@@ -28,18 +28,31 @@ pub struct DbPastPruningPointsStore {
 
 impl DbPastPruningPointsStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::PastPruningPoints.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbAccess::new(
+                db,
+                cache_policy,
+                DatabaseStorePrefixes::PastPruningPoints.into(),
+            ),
+        }
     }
 
     pub fn clone_with_new_cache(&self, cache_policy: CachePolicy) -> Self {
         Self::new(Arc::clone(&self.db), cache_policy)
     }
 
-    pub fn insert_batch(&self, batch: &mut WriteBatch, index: u64, pruning_point: Hash) -> Result<(), StoreError> {
+    pub fn insert_batch(
+        &self,
+        batch: &mut WriteBatch,
+        index: u64,
+        pruning_point: Hash,
+    ) -> Result<(), StoreError> {
         if self.access.has(index.into())? {
             return Err(StoreError::KeyAlreadyExists(index.to_string()));
         }
-        self.access.write(BatchDbWriter::new(batch), index.into(), pruning_point)?;
+        self.access
+            .write(BatchDbWriter::new(batch), index.into(), pruning_point)?;
         Ok(())
     }
 }
@@ -59,7 +72,8 @@ impl PastPruningPointsStore for DbPastPruningPointsStore {
     }
 
     fn set(&self, index: u64, pruning_point: Hash) -> StoreResult<()> {
-        self.access.write(DirectDbWriter::new(&self.db), index.into(), pruning_point)?;
+        self.access
+            .write(DirectDbWriter::new(&self.db), index.into(), pruning_point)?;
         Ok(())
     }
 }

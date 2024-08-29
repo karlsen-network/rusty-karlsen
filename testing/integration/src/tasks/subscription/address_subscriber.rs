@@ -30,7 +30,14 @@ impl AddressSubscriberTask {
         max_cycles: usize,
     ) -> Self {
         assert_eq!(clients.len(), addresses.len());
-        Self { clients, addresses, command_sender, initial_secs_delay, cycle_seconds, max_cycles }
+        Self {
+            clients,
+            addresses,
+            command_sender,
+            initial_secs_delay,
+            cycle_seconds,
+            max_cycles,
+        }
     }
 
     pub fn build(
@@ -41,7 +48,14 @@ impl AddressSubscriberTask {
         cycle_seconds: u64,
         max_cycles: usize,
     ) -> Arc<Self> {
-        Arc::new(Self::new(clients, addresses, command_sender, initial_secs_delay, cycle_seconds, max_cycles))
+        Arc::new(Self::new(
+            clients,
+            addresses,
+            command_sender,
+            initial_secs_delay,
+            cycle_seconds,
+            max_cycles,
+        ))
     }
 
     pub fn clients(&self) -> &[Arc<GrpcClient>] {
@@ -78,11 +92,18 @@ impl Task for AddressSubscriberTask {
                 if cycle <= max_cycles {
                     warn!("Cycle {cycle} - Starting UTXOs notifications...");
                     let (tx, rx) = channel();
-                    sender.send(SubscribeCommand::RegisterJob((clients.len(), tx))).await.unwrap();
+                    sender
+                        .send(SubscribeCommand::RegisterJob((clients.len(), tx)))
+                        .await
+                        .unwrap();
                     let registration = rx.await.unwrap();
                     for (i, client) in clients.iter().cloned().enumerate() {
                         sender
-                            .send(SubscribeCommand::StartUtxosChanged((registration.id, client, addresses[i].clone())))
+                            .send(SubscribeCommand::StartUtxosChanged((
+                                registration.id,
+                                client,
+                                addresses[i].clone(),
+                            )))
                             .await
                             .unwrap();
                     }
@@ -108,10 +129,19 @@ impl Task for AddressSubscriberTask {
                 if cycle < max_cycles {
                     warn!("Cycle {cycle} - Stopping UTXOs notifications...");
                     let (tx, rx) = channel();
-                    sender.send(SubscribeCommand::RegisterJob((clients.len(), tx))).await.unwrap();
+                    sender
+                        .send(SubscribeCommand::RegisterJob((clients.len(), tx)))
+                        .await
+                        .unwrap();
                     let registration = rx.await.unwrap();
                     for client in clients.iter().cloned() {
-                        sender.send(SubscribeCommand::StopUtxosChanged((registration.id, client))).await.unwrap();
+                        sender
+                            .send(SubscribeCommand::StopUtxosChanged((
+                                registration.id,
+                                client,
+                            )))
+                            .await
+                            .unwrap();
                     }
                     tokio::select! {
                         biased;

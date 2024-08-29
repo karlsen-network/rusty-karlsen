@@ -25,7 +25,10 @@ pub struct Options {
 
 impl Options {
     pub fn new(terminal_options: TerminalOptions, daemons: Option<Arc<Daemons>>) -> Self {
-        Self { daemons, terminal: terminal_options }
+        Self {
+            daemons,
+            terminal: terminal_options,
+        }
     }
 }
 
@@ -120,7 +123,10 @@ impl KarlsenCli {
             sync_state: Mutex::new(None),
         });
 
-        let term = Arc::new(Terminal::try_new_with_options(karlsen_cli.clone(), options.terminal)?);
+        let term = Arc::new(Terminal::try_new_with_options(
+            karlsen_cli.clone(),
+            options.terminal,
+        )?);
         term.init().await?;
 
         cfg_if! {
@@ -133,7 +139,12 @@ impl KarlsenCli {
     }
 
     pub fn term(&self) -> Arc<Terminal> {
-        self.term.lock().unwrap().as_ref().cloned().expect("WalletCli::term is not initialized")
+        self.term
+            .lock()
+            .unwrap()
+            .as_ref()
+            .cloned()
+            .expect("WalletCli::term is not initialized")
     }
 
     pub fn try_term(&self) -> Option<Arc<Terminal>> {
@@ -243,7 +254,10 @@ impl KarlsenCli {
         self.start_notification_pipe_task();
         self.handlers.start(self).await?;
         // wallet starts rpc and notifier
-        self.wallet.load_settings().await.unwrap_or_else(|_| log_error!("Unable to load settings, discarding..."));
+        self.wallet
+            .load_settings()
+            .await
+            .unwrap_or_else(|_| log_error!("Unable to load settings, discarding..."));
         self.wallet.start().await?;
         Ok(())
     }
@@ -486,12 +500,34 @@ impl KarlsenCli {
 
     /// Asks uses for a wallet secret, checks the supplied account's private key info
     /// and if it requires a payment secret, asks for it as well.
-    pub(crate) async fn ask_wallet_secret(&self, account: Option<&Arc<dyn Account>>) -> Result<(Secret, Option<Secret>)> {
-        let wallet_secret = Secret::new(self.term().ask(true, "Enter wallet password: ").await?.trim().as_bytes().to_vec());
+    pub(crate) async fn ask_wallet_secret(
+        &self,
+        account: Option<&Arc<dyn Account>>,
+    ) -> Result<(Secret, Option<Secret>)> {
+        let wallet_secret = Secret::new(
+            self.term()
+                .ask(true, "Enter wallet password: ")
+                .await?
+                .trim()
+                .as_bytes()
+                .to_vec(),
+        );
 
         let payment_secret = if let Some(account) = account {
-            if self.wallet().is_account_key_encrypted(account).await?.is_some_and(|f| f) {
-                Some(Secret::new(self.term().ask(true, "Enter payment password: ").await?.trim().as_bytes().to_vec()))
+            if self
+                .wallet()
+                .is_account_key_encrypted(account)
+                .await?
+                .is_some_and(|f| f)
+            {
+                Some(Secret::new(
+                    self.term()
+                        .ask(true, "Enter payment password: ")
+                        .await?
+                        .trim()
+                        .as_bytes()
+                        .to_vec(),
+                ))
             } else {
                 None
             }
@@ -559,22 +595,37 @@ impl KarlsenCli {
         while selection.is_none() {
             tprintln!(self);
 
-            list_by_key.iter().for_each(|(prv_key_data_info, accounts)| {
-                tprintln!(self, "• {prv_key_data_info}");
+            list_by_key
+                .iter()
+                .for_each(|(prv_key_data_info, accounts)| {
+                    tprintln!(self, "• {prv_key_data_info}");
 
-                accounts.iter().for_each(|(seq, account)| {
-                    let seq = style(seq.to_string()).cyan();
-                    let ls_string = account.get_list_string().unwrap_or_else(|err| panic!("{err}"));
-                    tprintln!(self, "    {seq}: {ls_string}");
-                })
-            });
+                    accounts.iter().for_each(|(seq, account)| {
+                        let seq = style(seq.to_string()).cyan();
+                        let ls_string = account
+                            .get_list_string()
+                            .unwrap_or_else(|err| panic!("{err}"));
+                        tprintln!(self, "    {seq}: {ls_string}");
+                    })
+                });
 
             tprintln!(self);
 
-            let range = if flat_list.len() > 1 { format!("[{}..{}] ", 0, flat_list.len() - 1) } else { "".to_string() };
+            let range = if flat_list.len() > 1 {
+                format!("[{}..{}] ", 0, flat_list.len() - 1)
+            } else {
+                "".to_string()
+            };
 
-            let text =
-                self.term().ask(false, &format!("Please select account {}or <enter> to abort: ", range)).await?.trim().to_string();
+            let text = self
+                .term()
+                .ask(
+                    false,
+                    &format!("Please select account {}or <enter> to abort: ", range),
+                )
+                .await?
+                .trim()
+                .to_string();
             if text.is_empty() {
                 return Err(Error::UserAbort);
             } else {
@@ -596,7 +647,10 @@ impl KarlsenCli {
         self.select_private_key_with_args(true).await
     }
 
-    pub async fn select_private_key_with_args(&self, autoselect: bool) -> Result<Arc<PrvKeyDataInfo>> {
+    pub async fn select_private_key_with_args(
+        &self,
+        autoselect: bool,
+    ) -> Result<Arc<PrvKeyDataInfo>> {
         let mut selection = None;
 
         // let mut list_by_key = Vec::<(Arc<PrvKeyDataInfo>, Vec<(usize, Arc<dyn Account>)>)>::new();
@@ -616,16 +670,30 @@ impl KarlsenCli {
         while selection.is_none() {
             tprintln!(self);
 
-            flat_list.iter().enumerate().for_each(|(seq, prv_key_data_info)| {
-                tprintln!(self, "    {seq}: {prv_key_data_info}");
-            });
+            flat_list
+                .iter()
+                .enumerate()
+                .for_each(|(seq, prv_key_data_info)| {
+                    tprintln!(self, "    {seq}: {prv_key_data_info}");
+                });
 
             tprintln!(self);
 
-            let range = if flat_list.len() > 1 { format!("[{}..{}] ", 0, flat_list.len() - 1) } else { "".to_string() };
+            let range = if flat_list.len() > 1 {
+                format!("[{}..{}] ", 0, flat_list.len() - 1)
+            } else {
+                "".to_string()
+            };
 
-            let text =
-                self.term().ask(false, &format!("Please select private key {}or <enter> to abort: ", range)).await?.trim().to_string();
+            let text = self
+                .term()
+                .ask(
+                    false,
+                    &format!("Please select private key {}or <enter> to abort: ", range),
+                )
+                .await?
+                .trim()
+                .to_string();
             if text.is_empty() {
                 return Err(Error::UserAbort);
             } else {
@@ -698,22 +766,38 @@ impl KarlsenCli {
             match state {
                 SyncState::Proof { level } => {
                     if *level == 0 {
-                        Some([style("SYNC").red().to_string(), style("...").black().to_string()].join(" "))
+                        Some(
+                            [
+                                style("SYNC").red().to_string(),
+                                style("...").black().to_string(),
+                            ]
+                            .join(" "),
+                        )
                     } else {
-                        Some([style("SYNC PROOF").red().to_string(), style(level.separated_string()).dim().to_string()].join(" "))
+                        Some(
+                            [
+                                style("SYNC PROOF").red().to_string(),
+                                style(level.separated_string()).dim().to_string(),
+                            ]
+                            .join(" "),
+                        )
                     }
                 }
                 SyncState::Headers { headers, progress } => Some(
                     [
                         style("SYNC IBD HDRS").red().to_string(),
-                        style(format!("{} ({}%)", headers.separated_string(), progress)).dim().to_string(),
+                        style(format!("{} ({}%)", headers.separated_string(), progress))
+                            .dim()
+                            .to_string(),
                     ]
                     .join(" "),
                 ),
                 SyncState::Blocks { blocks, progress } => Some(
                     [
                         style("SYNC IBD BLOCKS").red().to_string(),
-                        style(format!("{} ({}%)", blocks.separated_string(), progress)).dim().to_string(),
+                        style(format!("{} ({}%)", blocks.separated_string(), progress))
+                            .dim()
+                            .to_string(),
                     ]
                     .join(" "),
                 ),
@@ -722,16 +806,34 @@ impl KarlsenCli {
                     Some(
                         [
                             style("SYNC TRUST").red().to_string(),
-                            style(format!("{} ({}%)", processed.separated_string(), progress)).dim().to_string(),
+                            style(format!("{} ({}%)", processed.separated_string(), progress))
+                                .dim()
+                                .to_string(),
                         ]
                         .join(" "),
                     )
                 }
-                SyncState::UtxoSync { total, .. } => {
-                    Some([style("SYNC UTXO").red().to_string(), style(total.separated_string()).dim().to_string()].join(" "))
-                }
-                SyncState::UtxoResync => Some([style("SYNC").red().to_string(), style("UTXO").black().to_string()].join(" ")),
-                SyncState::NotSynced => Some([style("SYNC").red().to_string(), style("...").black().to_string()].join(" ")),
+                SyncState::UtxoSync { total, .. } => Some(
+                    [
+                        style("SYNC UTXO").red().to_string(),
+                        style(total.separated_string()).dim().to_string(),
+                    ]
+                    .join(" "),
+                ),
+                SyncState::UtxoResync => Some(
+                    [
+                        style("SYNC").red().to_string(),
+                        style("UTXO").black().to_string(),
+                    ]
+                    .join(" "),
+                ),
+                SyncState::NotSynced => Some(
+                    [
+                        style("SYNC").red().to_string(),
+                        style("...").black().to_string(),
+                    ]
+                    .join(" "),
+                ),
                 SyncState::Synced { .. } => None,
             }
         } else {
@@ -764,7 +866,11 @@ impl Cli for KarlsenCli {
         Ok(())
     }
 
-    async fn complete(self: Arc<Self>, _term: Arc<Terminal>, cmd: String) -> TerminalResult<Option<Vec<String>>> {
+    async fn complete(
+        self: Arc<Self>,
+        _term: Arc<Terminal>,
+        cmd: String,
+    ) -> TerminalResult<Option<Vec<String>>> {
         let list = self.handlers.complete(&self, &cmd).await?;
         Ok(list)
     }
@@ -776,9 +882,17 @@ impl Cli for KarlsenCli {
 
         let mut prompt = vec![];
 
-        let node_running = if let Some(node) = self.node.lock().unwrap().as_ref() { node.is_running() } else { false };
+        let node_running = if let Some(node) = self.node.lock().unwrap().as_ref() {
+            node.is_running()
+        } else {
+            false
+        };
 
-        let _miner_running = if let Some(miner) = self.miner.lock().unwrap().as_ref() { miner.is_running() } else { false };
+        let _miner_running = if let Some(miner) = self.miner.lock().unwrap().as_ref() {
+            miner.is_running()
+        } else {
+            false
+        };
 
         // match (node_running, miner_running) {
         //     (true, true) => prompt.push(style("NM").green().to_string()),
@@ -787,7 +901,9 @@ impl Cli for KarlsenCli {
         //     _ => {}
         // }
 
-        if (self.wallet.is_open() && !self.wallet.is_connected()) || (node_running && !self.wallet.is_connected()) {
+        if (self.wallet.is_open() && !self.wallet.is_connected())
+            || (node_running && !self.wallet.is_connected())
+        {
             prompt.push(style("N/C").red().to_string());
         } else if self.wallet.is_connected() && !self.wallet.is_synced() {
             if let Some(state) = self.sync_state() {
@@ -861,7 +977,14 @@ where
             term.writeln(format!("{}: {} ({})", seq, item, item.id().to_hex()));
         });
 
-        let text = term.ask(false, &format!("{prompt} ({}..{}) or <enter> to abort: ", 0, list.len() - 1)).await?.trim().to_string();
+        let text = term
+            .ask(
+                false,
+                &format!("{prompt} ({}..{}) or <enter> to abort: ", 0, list.len() - 1),
+            )
+            .await?
+            .trim()
+            .to_string();
         if text.is_empty() {
             term.writeln("aborting...");
             return Err(Error::UserAbort);
@@ -921,8 +1044,12 @@ pub async fn karlsen_cli(terminal_options: TerminalOptions, banner: Option<Strin
     let options = Options::new(terminal_options, None);
     let cli = KarlsenCli::try_new_arc(options).await?;
 
-    let banner =
-        banner.unwrap_or_else(|| format!("Karlsen Cli Wallet v{} (type 'help' for list of commands)", env!("CARGO_PKG_VERSION")));
+    let banner = banner.unwrap_or_else(|| {
+        format!(
+            "Karlsen Cli Wallet v{} (type 'help' for list of commands)",
+            env!("CARGO_PKG_VERSION")
+        )
+    });
     cli.term().writeln(banner);
 
     // redirect the global log output to terminal

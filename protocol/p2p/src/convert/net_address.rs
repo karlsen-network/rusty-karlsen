@@ -48,7 +48,13 @@ impl TryFrom<protowire::NetAddress> for (IpAddress, u16) {
                 let octets = addr
                     .ip
                     .chunks(size_of::<u16>())
-                    .map(|chunk| u16::from_be_bytes(chunk.try_into().expect("We already checked the number of bytes")))
+                    .map(|chunk| {
+                        u16::from_be_bytes(
+                            chunk
+                                .try_into()
+                                .expect("We already checked the number of bytes"),
+                        )
+                    })
                     .collect_vec();
                 let ipv6 = Ipv6Addr::from(<[u16; 8]>::try_from(octets).unwrap());
                 Ok(ipv6.into())
@@ -80,14 +86,30 @@ mod tests {
 
     #[test]
     fn test_netaddress() {
-        let net_addr_ipv4 = pb::NetAddress { timestamp: 0, ip: hex::decode("6a0a8af0").unwrap(), port: 123 };
+        let net_addr_ipv4 = pb::NetAddress {
+            timestamp: 0,
+            ip: hex::decode("6a0a8af0").unwrap(),
+            port: 123,
+        };
         let ipv4 = Ipv4Addr::from_str("106.10.138.240").unwrap().into();
-        assert_eq!(<(IpAddress, u16)>::try_from(net_addr_ipv4.clone()).unwrap(), (ipv4, 123u16));
+        assert_eq!(
+            <(IpAddress, u16)>::try_from(net_addr_ipv4.clone()).unwrap(),
+            (ipv4, 123u16)
+        );
         assert_eq!(pb::NetAddress::from((ipv4, 123u16)), net_addr_ipv4);
 
-        let net_addr_ipv6 = pb::NetAddress { timestamp: 0, ip: hex::decode("20010db885a3000000008a2e03707334").unwrap(), port: 456 };
-        let ipv6 = Ipv6Addr::from_str("2001:0db8:85a3:0000:0000:8a2e:0370:7334").unwrap().into();
-        assert_eq!(<(IpAddress, u16)>::try_from(net_addr_ipv6.clone()).unwrap(), (ipv6, 456u16));
+        let net_addr_ipv6 = pb::NetAddress {
+            timestamp: 0,
+            ip: hex::decode("20010db885a3000000008a2e03707334").unwrap(),
+            port: 456,
+        };
+        let ipv6 = Ipv6Addr::from_str("2001:0db8:85a3:0000:0000:8a2e:0370:7334")
+            .unwrap()
+            .into();
+        assert_eq!(
+            <(IpAddress, u16)>::try_from(net_addr_ipv6.clone()).unwrap(),
+            (ipv6, 456u16)
+        );
         assert_eq!(pb::NetAddress::from((ipv6, 456u16)), net_addr_ipv6);
     }
 }

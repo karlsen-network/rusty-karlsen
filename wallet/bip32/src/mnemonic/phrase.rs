@@ -76,7 +76,8 @@ impl Mnemonic {
 
     #[wasm_bindgen(setter, js_name = entropy)]
     pub fn set_entropy(&mut self, entropy: String) {
-        let vec = Vec::<u8>::from_hex(&entropy).unwrap_or_else(|err| panic!("invalid entropy `{entropy}`: {err}"));
+        let vec = Vec::<u8>::from_hex(&entropy)
+            .unwrap_or_else(|err| panic!("invalid entropy `{entropy}`: {err}"));
         let len = vec.len();
         if len != 16 && len != 32 {
             panic!("Invalid entropy: `{entropy}`")
@@ -113,7 +114,11 @@ impl Mnemonic {
     }
 
     /// Create a random BIP39 mnemonic phrase.
-    pub fn random_impl(word_count: WordCount, mut rng: impl RngCore + CryptoRng, language: Language) -> Result<Self> {
+    pub fn random_impl(
+        word_count: WordCount,
+        mut rng: impl RngCore + CryptoRng,
+        language: Language,
+    ) -> Result<Self> {
         match word_count {
             WordCount::Words24 => {
                 let mut entropy = Entropy32::default();
@@ -131,7 +136,9 @@ impl Mnemonic {
     /// Create a new BIP39 mnemonic phrase from the given entropy
     pub fn from_entropy(entropy: Vec<u8>, language: Language) -> Result<Self> {
         if entropy.len() != 16 && entropy.len() != 32 {
-            return Err(Error::String("Entropy length should be 16 or 32.".to_string()));
+            return Err(Error::String(
+                "Entropy length should be 16 or 32.".to_string(),
+            ));
         }
 
         let wordlist = language.wordlist();
@@ -147,9 +154,18 @@ impl Mnemonic {
         //
         // Given the entropy is of correct size, this ought to give us the correct word
         // count.
-        let phrase = entropy.iter().chain(Some(&checksum_byte)).bits().map(|bits| wordlist.get_word(bits)).join(" ");
+        let phrase = entropy
+            .iter()
+            .chain(Some(&checksum_byte))
+            .bits()
+            .map(|bits| wordlist.get_word(bits))
+            .join(" ");
 
-        Ok(Self { language, entropy: entropy.to_vec(), phrase })
+        Ok(Self {
+            language,
+            entropy: entropy.to_vec(),
+            phrase,
+        })
     }
 
     /// Create a new BIP39 mnemonic phrase from the given string.
@@ -234,7 +250,13 @@ impl Mnemonic {
     pub fn to_seed(&self, password: &str) -> Seed {
         let salt = Zeroizing::new(format!("mnemonic{password}"));
         let mut seed = [0u8; Seed::SIZE];
-        pbkdf2::pbkdf2::<Hmac<Sha512>>(self.phrase.as_bytes(), salt.as_bytes(), PBKDF2_ROUNDS, &mut seed).unwrap();
+        pbkdf2::pbkdf2::<Hmac<Sha512>>(
+            self.phrase.as_bytes(),
+            salt.as_bytes(),
+            PBKDF2_ROUNDS,
+            &mut seed,
+        )
+        .unwrap();
         Seed(seed)
     }
 }
@@ -298,12 +320,12 @@ mod tests {
                 "xprv9s21ZrQH143K2YStJyGeTyoWRBu2N1wkamjidQSdxrVeDziGfvwkmP67L2xf6weijVapZxwi64pW8ywHDvCaBQA8PyrRHqkjuuPY9aapypz"
             ],
             [
-                // KPRV (kaspa mainnet xprv)
+                // KPRV (karlsen mainnet xprv)
                 "cruise village slam canyon monster scrub myself farm add riot large board sentence outer nice coast raven bird scheme undo december blanket trim hero",
                 "kprv5y2qurMHCsXYr8yytxy6ZwYWLtFbdtWWavDL6bPfz2fNLvnZymmNfE6KpQqNHHjb7mAWYCtuUkZPbkgUR19LSKS9VasqRR852L5GMVY8wf9"
             ],
             [
-                // KTRV (kaspa testnet xprv)
+                // KTRV (karlsen testnet xprv)
                 "short diagram life tip retreat nothing dynamic absent lamp carry mansion keen truck cram crash science liberty emotion live pepper orphan quiz wide prison",
                 "ktrv5himbbCxArFU23gGTxVHNKahNXXSETHjNWgwc5qm85nKS1p55FEb8DUdTd2CPvQvBUKYFRSjjXb5nagr7wXUE4eSaFSxof8cUd6Sm66NRjA"
             ]
@@ -327,7 +349,11 @@ mod tests {
             } else {
                 Prefix::XPRV
             };
-            assert_eq!(&xprv.to_string(prefix).to_string(), xprv_str, "xprv is not valid");
+            assert_eq!(
+                &xprv.to_string(prefix).to_string(),
+                xprv_str,
+                "xprv is not valid"
+            );
         }
     }
 }

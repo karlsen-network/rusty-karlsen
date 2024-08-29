@@ -19,7 +19,10 @@ impl Parse for RpcTable {
     fn parse(input: ParseStream) -> Result<Self> {
         let parsed = Punctuated::<Expr, Token![,]>::parse_terminated(input).unwrap();
         if parsed.len() != 1 {
-            return Err(Error::new_spanned(parsed, "usage: build_wrpc_client_interface!([XxxRequest, ..])".to_string()));
+            return Err(Error::new_spanned(
+                parsed,
+                "usage: build_wrpc_client_interface!([XxxRequest, ..])".to_string(),
+            ));
         }
 
         let mut iter = parsed.iter();
@@ -38,7 +41,14 @@ impl ToTokens for RpcTable {
         // let rpc_api_ops = &self.rpc_api_ops;
 
         for handler in self.handlers.elems.iter() {
-            let Handler { hash_64, ident, fn_call, request_type, response_type, .. } = Handler::new(handler);
+            let Handler {
+                hash_64,
+                ident,
+                fn_call,
+                request_type,
+                response_type,
+                ..
+            } = Handler::new(handler);
 
             targets.push(quote! {
                 fn #fn_call<'async_trait>(

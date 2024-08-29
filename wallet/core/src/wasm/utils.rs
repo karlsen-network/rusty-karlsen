@@ -17,7 +17,10 @@ extern "C" {
 /// @category Wallet SDK
 #[wasm_bindgen(js_name = "karlsenToSompi")]
 pub fn karlsen_to_sompi(karlsen: String) -> Option<BigInt> {
-    crate::utils::try_karlsen_str_to_sompi(karlsen).ok().flatten().map(Into::into)
+    crate::utils::try_karlsen_str_to_sompi(karlsen)
+        .ok()
+        .flatten()
+        .map(Into::into)
 }
 
 ///
@@ -33,14 +36,20 @@ pub fn sompi_to_karlsen_string(sompi: ISompiToKarlsen) -> Result<String> {
 
 ///
 /// Format a Sompi amount to a string representation of the amount in Karlsen with a suffix
-/// based on the network type (e.g. `KAS` for mainnet, `TKAS` for testnet,
-/// `SKAS` for simnet, `DKAS` for devnet).
+/// based on the network type (e.g. `KLS` for mainnet, `TKLS` for testnet,
+/// `SKLS` for simnet, `DKLS` for devnet).
 ///
 /// @category Wallet SDK
 ///
 #[wasm_bindgen(js_name = "sompiToKarlsenStringWithSuffix")]
-pub fn sompi_to_karlsen_string_with_suffix(sompi: ISompiToKarlsen, network: &NetworkTypeT) -> Result<String> {
+pub fn sompi_to_karlsen_string_with_suffix(
+    sompi: ISompiToKarlsen,
+    network: &NetworkTypeT,
+) -> Result<String> {
     let sompi = sompi.try_as_u64()?;
     let network_type = NetworkType::try_from(network)?;
-    Ok(crate::utils::sompi_to_karlsen_string_with_suffix(sompi, &network_type))
+    Ok(crate::utils::sompi_to_karlsen_string_with_suffix(
+        sompi,
+        &network_type,
+    ))
 }

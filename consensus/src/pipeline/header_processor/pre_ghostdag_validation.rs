@@ -14,14 +14,18 @@ use std::cmp::max;
 impl HeaderProcessor {
     /// Validates the header in isolation including pow check against header declared bits.
     /// Returns the block level as computed from pow state or a rule error if such was encountered
-    pub(super) fn validate_header_in_isolation(&self, header: &Header) -> BlockProcessResult<BlockLevel> {
+    pub(super) fn validate_header_in_isolation(
+        &self,
+        header: &Header,
+        hf_daa_score: u64,
+    ) -> BlockProcessResult<BlockLevel> {
         /*
         println!("header daa_score : {:?}", header.daa_score);
         println!("header blue_score : {:?}", header.blue_score);
         println!("header hash : {:?}", header.hash);
         println!("header hash_merkle_root : {:?}", header.hash_merkle_root);
         */
-        self.check_header_version(header)?;
+        self.check_header_version(header, hf_daa_score)?;
         self.check_block_timestamp_in_isolation(header)?;
         self.check_parents_limit(header)?;
         Self::check_parents_not_origin(header)?;
@@ -34,9 +38,20 @@ impl HeaderProcessor {
         Ok(())
     }
 
-    fn check_header_version(&self, header: &Header) -> BlockProcessResult<()> {
-        if header.version != constants::BLOCK_VERSION {
-            return Err(RuleError::WrongBlockVersion(header.version));
+    // TODO : setup dual block version managment
+    fn check_header_version(&self, header: &Header, hf_daa_score: u64) -> BlockProcessResult<()> {
+        if header.daa_score >= hf_daa_score && header.version != constants::BLOCK_VERSION_KHASHV2 {
+            return Err(RuleError::WrongBlockVersion(
+                header.version,
+                constants::BLOCK_VERSION_KHASHV2,
+            ));
+        } else if header.daa_score < hf_daa_score
+            && header.version != constants::BLOCK_VERSION_KHASHV1
+        {
+            return Err(RuleError::WrongBlockVersion(
+                header.version,
+                constants::BLOCK_VERSION_KHASHV1,
+            ));
         }
         Ok(())
     }
@@ -45,7 +60,10 @@ impl HeaderProcessor {
         // Timestamp deviation tolerance is in seconds so we multiply by 1000 to get milliseconds (without BPS dependency)
         let max_block_time = unix_now() + self.timestamp_deviation_tolerance * 1000;
         if header.timestamp > max_block_time {
-            return Err(RuleError::TimeTooFarIntoTheFuture(header.timestamp, max_block_time));
+            return Err(RuleError::TimeTooFarIntoTheFuture(
+                header.timestamp,
+                max_block_time,
+            ));
         }
         Ok(())
     }
@@ -56,14 +74,21 @@ impl HeaderProcessor {
         }
 
         if header.direct_parents().len() > self.max_block_parents as usize {
-            return Err(RuleError::TooManyParents(header.direct_parents().len(), self.max_block_parents as usize));
+            return Err(RuleError::TooManyParents(
+                header.direct_parents().len(),
+                self.max_block_parents as usize,
+            ));
         }
 
         Ok(())
     }
 
     fn check_parents_not_origin(header: &Header) -> BlockProcessResult<()> {
-        if header.direct_parents().iter().any(|&parent| parent.is_origin()) {
+        if header
+            .direct_parents()
+            .iter()
+            .any(|&parent| parent.is_origin())
+        {
             return Err(RuleError::OriginParent);
         }
 
@@ -95,7 +120,10 @@ impl HeaderProcessor {
                     continue;
                 }
 
-                if self.reachability_service.is_dag_ancestor_of(*parent_a, *parent_b) {
+                if self
+                    .reachability_service
+                    .is_dag_ancestor_of(*parent_a, *parent_b)
+                {
                     return Err(RuleError::InvalidParentsRelation(*parent_a, *parent_b));
                 }
             }

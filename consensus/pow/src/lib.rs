@@ -9,9 +9,10 @@ pub mod xoshiro;
 use std::cmp::max;
 
 use crate::matrix::Matrix;
-use karlsen_consensus_core::{hashing, header::Header, BlockLevel};
+use karlsen_consensus_core::{constants, hashing, header::Header, BlockLevel};
+//use karlsen_consensus_core::errors::block::RuleError;
 //use karlsen_hashes::Pow;
-use karlsen_hashes::PowB3Hash;
+use karlsen_hashes::{PowB3Hash, PowFishHash};
 use karlsen_math::Uint256;
 
 /// State is an intermediate data structure with pre-computed values to speed up mining.
@@ -20,6 +21,8 @@ pub struct State {
     pub(crate) target: Uint256,
     // PRE_POW_HASH || TIME || 32 zero byte padding; without NONCE
     pub(crate) hasher: PowB3Hash,
+    //pub(crate) fishhasher: PowFishHash,
+    pub(crate) header_version: u16,
 }
 
 impl State {
@@ -32,21 +35,62 @@ impl State {
         //let hasher = PowHash::new(pre_pow_hash, header.timestamp);
         let hasher = PowB3Hash::new(pre_pow_hash, header.timestamp);
         let matrix = Matrix::generate(pre_pow_hash);
+        //let fishhasher = PowFishHash::new();
+        let header_version = header.version;
 
-        Self { matrix, target, hasher }
+        Self {
+            matrix,
+            target,
+            hasher,
+            /*fishhasher,*/ header_version,
+        }
+    }
+
+    fn calculate_pow_khashv1(&self, nonce: u64) -> Uint256 {
+        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
+        let hash = self.hasher.clone().finalize_with_nonce(nonce);
+        let hash = self.matrix.heavy_hash(hash);
+        Uint256::from_le_bytes(hash.as_bytes())
+    }
+
+    #[allow(dead_code)]
+    fn calculate_pow_khashv2(&self, nonce: u64) -> Uint256 {
+        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
+        let hash = self.hasher.clone().finalize_with_nonce(nonce);
+        //println!("hash-1 : {:?}", hash);
+        let hash = PowFishHash::fishhash_kernel(&hash);
+        //println!("hash-2 : {:?}", hash);
+        //last b3 hash
+        let hash = PowB3Hash::hash(hash);
+        //println!("hash-3 : {:?}", hash);
+        Uint256::from_le_bytes(hash.as_bytes())
+    }
+
+    fn calculate_pow_khashv2plus(&self, nonce: u64) -> Uint256 {
+        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
+        let hash = self.hasher.clone().finalize_with_nonce(nonce);
+        //println!("hash-1 : {:?}", hash);
+        let hash = PowFishHash::fishhashplus_kernel(&hash);
+        //println!("hash-2 : {:?}", hash);
+        //last b3 hash
+        let hash = PowB3Hash::hash(hash);
+        //println!("hash-3 : {:?}", hash);
+        Uint256::from_le_bytes(hash.as_bytes())
     }
 
     #[inline]
     #[must_use]
     /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
-        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
-        //println!("nonce:{0}", nonce);
-        let hash = self.hasher.clone().finalize_with_nonce(nonce);
-        //println!("hash1:{0}", hash);
-        let hash = self.matrix.heavy_hash(hash);
-        //println!("hash2:{0}", hash);
-        Uint256::from_le_bytes(hash.as_bytes())
+        if self.header_version == constants::BLOCK_VERSION_KHASHV1 {
+            self.calculate_pow_khashv1(nonce)
+        } else if self.header_version == constants::BLOCK_VERSION_KHASHV2 {
+            self.calculate_pow_khashv2plus(nonce)
+        } else {
+            // TODO handle block version error
+            //Err(RuleError::WrongBlockVersion(self.header_version));
+            self.calculate_pow_khashv1(nonce)
+        }
     }
 
     #[inline]
@@ -55,8 +99,6 @@ impl State {
         let pow = self.calculate_pow(nonce);
         // The pow hash must be less or equal than the claimed target.
         (pow <= self.target, pow)
-        //println!("pow:{0}, \n target:{1}, \n diff:{2}", pow, self.target, (pow-self.target));
-        //(true, pow)
     }
 }
 

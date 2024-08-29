@@ -12,7 +12,10 @@ pub struct UtxoIterator {
 
 impl UtxoIterator {
     pub fn new(utxo_context: &UtxoContext) -> Self {
-        Self { entries: utxo_context.context().mature.clone(), cursor: 0 }
+        Self {
+            entries: utxo_context.context().mature.clone(),
+            cursor: 0,
+        }
     }
 }
 

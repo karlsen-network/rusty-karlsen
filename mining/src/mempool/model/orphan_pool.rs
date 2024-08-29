@@ -51,12 +51,22 @@ impl OrphanPool {
         }
     }
 
-    pub(crate) fn outpoint_orphan(&self, outpoint: &TransactionOutpoint) -> Option<&MempoolTransaction> {
-        self.outpoint_owner_id.get(outpoint).and_then(|id| self.all_orphans.get(id))
+    pub(crate) fn outpoint_orphan(
+        &self,
+        outpoint: &TransactionOutpoint,
+    ) -> Option<&MempoolTransaction> {
+        self.outpoint_owner_id
+            .get(outpoint)
+            .and_then(|id| self.all_orphans.get(id))
     }
 
-    pub(crate) fn outpoint_orphan_mut(&mut self, outpoint: &TransactionOutpoint) -> Option<&mut MempoolTransaction> {
-        self.outpoint_owner_id.get(outpoint).and_then(|id| self.all_orphans.get_mut(id))
+    pub(crate) fn outpoint_orphan_mut(
+        &mut self,
+        outpoint: &TransactionOutpoint,
+    ) -> Option<&mut MempoolTransaction> {
+        self.outpoint_owner_id
+            .get(outpoint)
+            .and_then(|id| self.all_orphans.get_mut(id))
     }
 
     pub(crate) fn try_add_orphan(
@@ -83,23 +93,35 @@ impl OrphanPool {
     ///
     /// An error is returned if the pool is filled with high priority transactions.
     fn limit_orphan_pool_size(&mut self, free_slots: usize) -> RuleResult<()> {
-        while self.all_orphans.len() + free_slots > self.config.maximum_orphan_transaction_count as usize {
+        while self.all_orphans.len() + free_slots
+            > self.config.maximum_orphan_transaction_count as usize
+        {
             let orphan_to_remove = self.get_random_low_priority_orphan();
             if orphan_to_remove.is_none() {
                 // this means all orphans are high priority so return an error
-                let err = RuleError::RejectOrphanPoolIsFull(self.all_orphans.len(), self.config.maximum_orphan_transaction_count);
+                let err = RuleError::RejectOrphanPoolIsFull(
+                    self.all_orphans.len(),
+                    self.config.maximum_orphan_transaction_count,
+                );
                 warn!("{}", err.to_string());
                 return Err(err);
             }
             // Don't remove redeemers in the case of a random eviction since the evicted transaction is
             // not invalid, therefore it's redeemers are as good as any orphan that just arrived.
-            self.remove_orphan(&orphan_to_remove.unwrap().id(), false, TxRemovalReason::MakingRoom, "")?;
+            self.remove_orphan(
+                &orphan_to_remove.unwrap().id(),
+                false,
+                TxRemovalReason::MakingRoom,
+                "",
+            )?;
         }
         Ok(())
     }
 
     fn check_orphan_mass(&self, transaction: &MutableTransaction) -> RuleResult<()> {
-        if transaction.calculated_compute_mass.unwrap() > self.config.maximum_orphan_transaction_mass {
+        if transaction.calculated_compute_mass.unwrap()
+            > self.config.maximum_orphan_transaction_mass
+        {
             return Err(RuleError::RejectBadOrphanMass(
                 transaction.calculated_compute_mass.unwrap(),
                 self.config.maximum_orphan_transaction_mass,
@@ -119,14 +141,22 @@ impl OrphanPool {
         for input in transaction.tx.inputs.iter() {
             if let Some(double_spend_orphan) = self.outpoint_orphan(&input.previous_outpoint) {
                 if double_spend_orphan.id() != transaction.id() {
-                    return Err(RuleError::RejectDoubleSpendOrphan(transaction.id(), double_spend_orphan.id()));
+                    return Err(RuleError::RejectDoubleSpendOrphan(
+                        transaction.id(),
+                        double_spend_orphan.id(),
+                    ));
                 }
             }
         }
         Ok(())
     }
 
-    fn add_orphan(&mut self, virtual_daa_score: u64, transaction: MutableTransaction, priority: Priority) -> RuleResult<()> {
+    fn add_orphan(
+        &mut self,
+        virtual_daa_score: u64,
+        transaction: MutableTransaction,
+        priority: Priority,
+    ) -> RuleResult<()> {
         let id = transaction.id();
         let transaction = MempoolTransaction::new(transaction, priority, virtual_daa_score);
         // Add all entries in outpoint_owner_id
@@ -174,20 +204,30 @@ impl OrphanPool {
         if remove_redeemers {
             transaction_ids_to_remove.extend(self.get_redeemer_ids_in_pool(transaction_id));
         }
-        let removed_transactions =
-            transaction_ids_to_remove.iter().map(|x| self.remove_single_orphan(x)).collect::<RuleResult<Vec<_>>>()?;
+        let removed_transactions = transaction_ids_to_remove
+            .iter()
+            .map(|x| self.remove_single_orphan(x))
+            .collect::<RuleResult<Vec<_>>>()?;
         if reason.verbose() {
             match removed_transactions.len() {
                 0 => (), // This is not possible
                 1 => {
-                    debug!("Removed orphan transaction ({}): {}{}", reason, removed_transactions[0].id(), extra_info);
+                    debug!(
+                        "Removed orphan transaction ({}): {}{}",
+                        reason,
+                        removed_transactions[0].id(),
+                        extra_info
+                    );
                 }
                 n => {
                     debug!(
                         "Removed {} orphan transactions ({}): {}{}",
                         n,
                         reason,
-                        removed_transactions.iter().map(|x| x.id()).reusable_format(", "),
+                        removed_transactions
+                            .iter()
+                            .map(|x| x.id())
+                            .reusable_format(", "),
                         extra_info
                     );
                 }
@@ -196,7 +236,10 @@ impl OrphanPool {
         Ok(removed_transactions)
     }
 
-    fn remove_single_orphan(&mut self, transaction_id: &TransactionId) -> RuleResult<MempoolTransaction> {
+    fn remove_single_orphan(
+        &mut self,
+        transaction_id: &TransactionId,
+    ) -> RuleResult<MempoolTransaction> {
         if let Some(transaction) = self.all_orphans.remove(transaction_id) {
             // Remove all chained_transaction relations...
             // ... incoming
@@ -215,8 +258,16 @@ impl OrphanPool {
             // Remove all entries in outpoint_owner_id
             let mut error = None;
             for (i, input) in transaction.mtx.tx.inputs.iter().enumerate() {
-                if self.outpoint_owner_id.remove(&input.previous_outpoint).is_none() {
-                    error = Some(RuleError::RejectMissingOrphanOutpoint(i, transaction.id(), input.previous_outpoint));
+                if self
+                    .outpoint_owner_id
+                    .remove(&input.previous_outpoint)
+                    .is_none()
+                {
+                    error = Some(RuleError::RejectMissingOrphanOutpoint(
+                        i,
+                        transaction.id(),
+                        input.previous_outpoint,
+                    ));
                 }
             }
             match error {
@@ -228,8 +279,14 @@ impl OrphanPool {
         }
     }
 
-    pub(crate) fn remove_redeemers_of(&mut self, transaction_id: &TransactionId) -> RuleResult<Vec<MempoolTransaction>> {
-        self.get_redeemer_ids_in_pool(transaction_id).iter().map(|x| self.remove_single_orphan(x)).collect()
+    pub(crate) fn remove_redeemers_of(
+        &mut self,
+        transaction_id: &TransactionId,
+    ) -> RuleResult<Vec<MempoolTransaction>> {
+        self.get_redeemer_ids_in_pool(transaction_id)
+            .iter()
+            .map(|x| self.remove_single_orphan(x))
+            .collect()
     }
 
     pub(crate) fn update_orphans_after_transaction_removed(
@@ -257,15 +314,22 @@ impl OrphanPool {
     }
 
     fn get_random_low_priority_orphan(&self) -> Option<&MempoolTransaction> {
-        self.all_orphans.values().find(|x| x.priority == Priority::Low)
+        self.all_orphans
+            .values()
+            .find(|x| x.priority == Priority::Low)
     }
 
     fn chained_mut(&mut self) -> &mut TransactionsEdges {
         &mut self.chained_orphans
     }
 
-    pub(crate) fn expire_low_priority_transactions(&mut self, virtual_daa_score: u64) -> RuleResult<()> {
-        if virtual_daa_score < self.last_expire_scan + self.config.orphan_expire_scan_interval_daa_score {
+    pub(crate) fn expire_low_priority_transactions(
+        &mut self,
+        virtual_daa_score: u64,
+    ) -> RuleResult<()> {
+        if virtual_daa_score
+            < self.last_expire_scan + self.config.orphan_expire_scan_interval_daa_score
+        {
             return Ok(());
         }
 
@@ -276,7 +340,8 @@ impl OrphanPool {
             .values()
             .filter_map(|x| {
                 if (x.priority == Priority::Low)
-                    && virtual_daa_score > x.added_at_daa_score + self.config.orphan_expire_interval_daa_score
+                    && virtual_daa_score
+                        > x.added_at_daa_score + self.config.orphan_expire_interval_daa_score
                 {
                     Some(x.id())
                 } else {

@@ -20,7 +20,11 @@ pub(crate) struct Inner {
 impl Inner {
     pub(crate) fn new(cache_lifetime: Option<u64>) -> Self {
         let cache_lifetime = cache_lifetime.unwrap_or(DEFAULT_CACHE_LIFETIME);
-        Self { last_update_time: 0, block_template: None, cache_lifetime }
+        Self {
+            last_update_time: 0,
+            block_template: None,
+            cache_lifetime,
+        }
     }
 
     fn clear(&mut self) {
@@ -37,7 +41,10 @@ impl Inner {
         }
     }
 
-    pub(crate) fn set_immutable_cached_template(&mut self, block_template: BlockTemplate) -> Arc<BlockTemplate> {
+    pub(crate) fn set_immutable_cached_template(
+        &mut self,
+        block_template: BlockTemplate,
+    ) -> Arc<BlockTemplate> {
         self.last_update_time = unix_now();
         let block_template = Arc::new(block_template);
         self.block_template = Some(block_template.clone());
@@ -51,7 +58,9 @@ pub(crate) struct BlockTemplateCache {
 
 impl BlockTemplateCache {
     pub(crate) fn new(cache_lifetime: Option<u64>) -> Self {
-        Self { inner: Mutex::new(Inner::new(cache_lifetime)) }
+        Self {
+            inner: Mutex::new(Inner::new(cache_lifetime)),
+        }
     }
 
     #[cfg(test)]
@@ -61,7 +70,9 @@ impl BlockTemplateCache {
 
     pub(crate) fn lock(&self, virtual_state_approx_id: VirtualStateApproxId) -> MutexGuard<Inner> {
         let mut guard = self.inner.lock();
-        if guard.block_template.as_ref().is_some_and(|template| template.to_virtual_state_approx_id() != virtual_state_approx_id) {
+        if guard.block_template.as_ref().is_some_and(|template| {
+            template.to_virtual_state_approx_id() != virtual_state_approx_id
+        }) {
             // If the VirtualStateApproxId is different from ours, our template is likely expired and we should clear it
             guard.clear();
         }

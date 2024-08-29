@@ -24,8 +24,15 @@ trait DifficultyManagerExtension {
 
     #[inline]
     #[must_use]
-    fn internal_calc_daa_score(&self, ghostdag_data: &GhostdagData, mergeset_non_daa: &BlockHashSet) -> u64 {
-        let sp_daa_score = self.headers_store().get_daa_score(ghostdag_data.selected_parent).unwrap();
+    fn internal_calc_daa_score(
+        &self,
+        ghostdag_data: &GhostdagData,
+        mergeset_non_daa: &BlockHashSet,
+    ) -> u64 {
+        let sp_daa_score = self
+            .headers_store()
+            .get_daa_score(ghostdag_data.selected_parent)
+            .unwrap();
         sp_daa_score + (ghostdag_data.mergeset_size() - mergeset_non_daa.len()) as u64
     }
 
@@ -33,21 +40,39 @@ trait DifficultyManagerExtension {
         window
             .iter()
             .map(|item| {
-                let data = self.headers_store().get_compact_header_data(item.0.hash).unwrap();
-                DifficultyBlock { timestamp: data.timestamp, bits: data.bits, sortable_block: item.0.clone() }
+                let data = self
+                    .headers_store()
+                    .get_compact_header_data(item.0.hash)
+                    .unwrap();
+                DifficultyBlock {
+                    timestamp: data.timestamp,
+                    bits: data.bits,
+                    sortable_block: item.0.clone(),
+                }
             })
             .collect()
     }
 
-    fn internal_estimate_network_hashes_per_second(&self, window: &BlockWindowHeap) -> DifficultyResult<u64> {
+    fn internal_estimate_network_hashes_per_second(
+        &self,
+        window: &BlockWindowHeap,
+    ) -> DifficultyResult<u64> {
         // TODO: perhaps move this const
         const MIN_WINDOW_SIZE: usize = 1000;
         let window_size = window.len();
         if window_size < MIN_WINDOW_SIZE {
-            return Err(DifficultyError::UnderMinWindowSizeAllowed(window_size, MIN_WINDOW_SIZE));
+            return Err(DifficultyError::UnderMinWindowSizeAllowed(
+                window_size,
+                MIN_WINDOW_SIZE,
+            ));
         }
         let difficulty_blocks = self.get_difficulty_blocks(window);
-        let (min_ts, max_ts) = difficulty_blocks.iter().map(|x| x.timestamp).minmax().into_option().unwrap();
+        let (min_ts, max_ts) = difficulty_blocks
+            .iter()
+            .map(|x| x.timestamp)
+            .minmax()
+            .into_option()
+            .unwrap();
         if min_ts == max_ts {
             return Err(DifficultyError::EmptyTimestampRange);
         }
@@ -56,16 +81,24 @@ trait DifficultyManagerExtension {
             return Ok(0);
         }
 
-        let (min_blue_work, max_blue_work) =
-            difficulty_blocks.iter().map(|x| x.sortable_block.blue_work).minmax().into_option().unwrap();
+        let (min_blue_work, max_blue_work) = difficulty_blocks
+            .iter()
+            .map(|x| x.sortable_block.blue_work)
+            .minmax()
+            .into_option()
+            .unwrap();
 
         Ok(((max_blue_work - min_blue_work) / window_duration).as_u64())
     }
 
     #[inline]
-    fn check_min_difficulty_window_len(difficulty_window_size: usize, min_difficulty_window_len: usize) {
+    fn check_min_difficulty_window_len(
+        difficulty_window_size: usize,
+        min_difficulty_window_len: usize,
+    ) {
         assert!(
-            MIN_DIFFICULTY_WINDOW_LEN <= min_difficulty_window_len && min_difficulty_window_len <= difficulty_window_size,
+            MIN_DIFFICULTY_WINDOW_LEN <= min_difficulty_window_len
+                && min_difficulty_window_len <= difficulty_window_size,
             "min_difficulty_window_len {} is expected to fit within {}..={}",
             min_difficulty_window_len,
             MIN_DIFFICULTY_WINDOW_LEN,
@@ -113,19 +146,33 @@ impl<T: HeaderStoreReader> FullDifficultyManager<T> {
         store: &'a (impl GhostdagStoreReader + ?Sized),
     ) -> (u64, BlockHashSet) {
         // If the window is empty, all the mergeset goes in the non-DAA set, hence a default lowest block with maximum blue work.
-        let default_lowest_block = SortableBlock { hash: Default::default(), blue_work: BlueWorkType::MAX };
-        let window_lowest_block = window.peek().map(|x| &x.0).unwrap_or_else(|| &default_lowest_block);
+        let default_lowest_block = SortableBlock {
+            hash: Default::default(),
+            blue_work: BlueWorkType::MAX,
+        };
+        let window_lowest_block = window
+            .peek()
+            .map(|x| &x.0)
+            .unwrap_or_else(|| &default_lowest_block);
         let mergeset_non_daa: BlockHashSet = ghostdag_data
             .ascending_mergeset_without_selected_parent(store)
             .chain(once_with(|| {
                 let selected_parent_hash = ghostdag_data.selected_parent;
-                SortableBlock { hash: selected_parent_hash, blue_work: store.get_blue_work(selected_parent_hash).unwrap_or_default() }
+                SortableBlock {
+                    hash: selected_parent_hash,
+                    blue_work: store
+                        .get_blue_work(selected_parent_hash)
+                        .unwrap_or_default(),
+                }
             }))
             .take_while(|sortable_block| sortable_block < window_lowest_block)
             .map(|sortable_block| sortable_block.hash)
             .collect();
 
-        (self.internal_calc_daa_score(ghostdag_data, &mergeset_non_daa), mergeset_non_daa)
+        (
+            self.internal_calc_daa_score(ghostdag_data, &mergeset_non_daa),
+            mergeset_non_daa,
+        )
     }
 
     pub fn calculate_difficulty_bits(&self, window: &BlockWindowHeap) -> u32 {
@@ -136,7 +183,11 @@ impl<T: HeaderStoreReader> FullDifficultyManager<T> {
             return self.genesis_bits;
         }
 
-        let (min_ts_index, max_ts_index) = difficulty_blocks.iter().position_minmax().into_option().unwrap();
+        let (min_ts_index, max_ts_index) = difficulty_blocks
+            .iter()
+            .position_minmax()
+            .into_option()
+            .unwrap();
 
         let min_ts = difficulty_blocks[min_ts_index].timestamp;
         let max_ts = difficulty_blocks[max_ts_index].timestamp;
@@ -146,14 +197,22 @@ impl<T: HeaderStoreReader> FullDifficultyManager<T> {
 
         // We need Uint320 to avoid overflow when summing and multiplying by the window size.
         let difficulty_blocks_len = difficulty_blocks.len() as u64;
-        let targets_sum: Uint320 =
-            difficulty_blocks.into_iter().map(|diff_block| Uint320::from(Uint256::from_compact_target_bits(diff_block.bits))).sum();
+        let targets_sum: Uint320 = difficulty_blocks
+            .into_iter()
+            .map(|diff_block| Uint320::from(Uint256::from_compact_target_bits(diff_block.bits)))
+            .sum();
         let average_target = targets_sum / (difficulty_blocks_len);
-        let new_target = average_target * max(max_ts - min_ts, 1) / (self.target_time_per_block * difficulty_blocks_len);
-        Uint256::try_from(new_target.min(self.max_difficulty_target)).expect("max target < Uint256::MAX").compact_target_bits()
+        let new_target = average_target * max(max_ts - min_ts, 1)
+            / (self.target_time_per_block * difficulty_blocks_len);
+        Uint256::try_from(new_target.min(self.max_difficulty_target))
+            .expect("max target < Uint256::MAX")
+            .compact_target_bits()
     }
 
-    pub fn estimate_network_hashes_per_second(&self, window: &BlockWindowHeap) -> DifficultyResult<u64> {
+    pub fn estimate_network_hashes_per_second(
+        &self,
+        window: &BlockWindowHeap,
+    ) -> DifficultyResult<u64> {
         self.internal_estimate_network_hashes_per_second(window)
     }
 }
@@ -215,7 +274,11 @@ impl<T: HeaderStoreReader> SampledDifficultyManager<T> {
 
     #[inline]
     #[must_use]
-    pub fn calc_daa_score(&self, ghostdag_data: &GhostdagData, mergeset_non_daa: &BlockHashSet) -> u64 {
+    pub fn calc_daa_score(
+        &self,
+        ghostdag_data: &GhostdagData,
+        mergeset_non_daa: &BlockHashSet,
+    ) -> u64 {
         self.internal_calc_daa_score(ghostdag_data, mergeset_non_daa)
     }
 
@@ -225,9 +288,14 @@ impl<T: HeaderStoreReader> SampledDifficultyManager<T> {
         store: &(impl GhostdagStoreReader + ?Sized),
     ) -> (u64, BlockHashSet) {
         let lowest_daa_blue_score = self.lowest_daa_blue_score(ghostdag_data);
-        let mergeset_non_daa: BlockHashSet =
-            ghostdag_data.unordered_mergeset().filter(|hash| store.get_blue_score(*hash).unwrap() < lowest_daa_blue_score).collect();
-        (self.internal_calc_daa_score(ghostdag_data, &mergeset_non_daa), mergeset_non_daa)
+        let mergeset_non_daa: BlockHashSet = ghostdag_data
+            .unordered_mergeset()
+            .filter(|hash| store.get_blue_score(*hash).unwrap() < lowest_daa_blue_score)
+            .collect();
+        (
+            self.internal_calc_daa_score(ghostdag_data, &mergeset_non_daa),
+            mergeset_non_daa,
+        )
     }
 
     pub fn calculate_difficulty_bits(&self, window: &BlockWindowHeap) -> u32 {
@@ -240,7 +308,11 @@ impl<T: HeaderStoreReader> SampledDifficultyManager<T> {
             return self.genesis_bits;
         }
 
-        let (min_ts_index, max_ts_index) = difficulty_blocks.iter().position_minmax().into_option().unwrap();
+        let (min_ts_index, max_ts_index) = difficulty_blocks
+            .iter()
+            .position_minmax()
+            .into_option()
+            .unwrap();
 
         let min_ts = difficulty_blocks[min_ts_index].timestamp;
         let max_ts = difficulty_blocks[max_ts_index].timestamp;
@@ -250,16 +322,24 @@ impl<T: HeaderStoreReader> SampledDifficultyManager<T> {
 
         // We need Uint320 to avoid overflow when summing and multiplying by the window size.
         let difficulty_blocks_len = difficulty_blocks.len() as u64;
-        let targets_sum: Uint320 =
-            difficulty_blocks.into_iter().map(|diff_block| Uint320::from(Uint256::from_compact_target_bits(diff_block.bits))).sum();
+        let targets_sum: Uint320 = difficulty_blocks
+            .into_iter()
+            .map(|diff_block| Uint320::from(Uint256::from_compact_target_bits(diff_block.bits)))
+            .sum();
         let average_target = targets_sum / difficulty_blocks_len;
         let measured_duration = max(max_ts - min_ts, 1);
-        let expected_duration = self.target_time_per_block * self.difficulty_sample_rate * difficulty_blocks_len; // This does differ from FullDifficultyManager version
+        let expected_duration =
+            self.target_time_per_block * self.difficulty_sample_rate * difficulty_blocks_len; // This does differ from FullDifficultyManager version
         let new_target = average_target * measured_duration / expected_duration;
-        Uint256::try_from(new_target.min(self.max_difficulty_target)).expect("max target < Uint256::MAX").compact_target_bits()
+        Uint256::try_from(new_target.min(self.max_difficulty_target))
+            .expect("max target < Uint256::MAX")
+            .compact_target_bits()
     }
 
-    pub fn estimate_network_hashes_per_second(&self, window: &BlockWindowHeap) -> DifficultyResult<u64> {
+    pub fn estimate_network_hashes_per_second(
+        &self,
+        window: &BlockWindowHeap,
+    ) -> DifficultyResult<u64> {
         self.internal_estimate_network_hashes_per_second(window)
     }
 }
@@ -304,6 +384,8 @@ impl PartialOrd for DifficultyBlock {
 
 impl Ord for DifficultyBlock {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.timestamp.cmp(&other.timestamp).then_with(|| self.sortable_block.cmp(&other.sortable_block))
+        self.timestamp
+            .cmp(&other.timestamp)
+            .then_with(|| self.sortable_block.cmp(&other.sortable_block))
     }
 }

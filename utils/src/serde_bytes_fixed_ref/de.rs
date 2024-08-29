@@ -26,7 +26,8 @@ macro_rules! serde_impl_deser_fixed_bytes_ref {
                     where
                         E: serde::de::Error,
                     {
-                        let v: [u8; $size] = v.as_bytes().try_into().map_err(serde::de::Error::custom)?;
+                        let v: [u8; $size] =
+                            v.as_bytes().try_into().map_err(serde::de::Error::custom)?;
                         Ok(Self::Value::from(v))
                     }
                     #[inline]
@@ -34,7 +35,8 @@ macro_rules! serde_impl_deser_fixed_bytes_ref {
                     where
                         E: serde::de::Error,
                     {
-                        let v: [u8; $size] = v.as_bytes().try_into().map_err(serde::de::Error::custom)?;
+                        let v: [u8; $size] =
+                            v.as_bytes().try_into().map_err(serde::de::Error::custom)?;
                         Ok(Self::Value::from(v))
                     }
                     #[inline]
@@ -55,11 +57,15 @@ macro_rules! serde_impl_deser_fixed_bytes_ref {
                     }
 
                     #[inline]
-                    fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+                    fn visit_newtype_struct<D>(
+                        self,
+                        deserializer: D,
+                    ) -> Result<Self::Value, D::Error>
                     where
                         D: serde::Deserializer<'de>,
                     {
-                        <[u8; $size] as serde::Deserialize>::deserialize(deserializer).map(|v| Self::Value::from(v))
+                        <[u8; $size] as serde::Deserialize>::deserialize(deserializer)
+                            .map(|v| Self::Value::from(v))
                     }
                     #[inline]
                     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -67,7 +73,10 @@ macro_rules! serde_impl_deser_fixed_bytes_ref {
                         A: serde::de::SeqAccess<'de>,
                     {
                         let Some(value): Option<[u8; $size]> = seq.next_element()? else {
-                            return Err(serde::de::Error::invalid_length(0usize, &"tuple struct fixed array with 1 element"));
+                            return Err(serde::de::Error::invalid_length(
+                                0usize,
+                                &"tuple struct fixed array with 1 element",
+                            ));
                         };
                         Ok(Self::Value::from(value))
                     }
@@ -77,7 +86,10 @@ macro_rules! serde_impl_deser_fixed_bytes_ref {
                 } else {
                     deserializer.deserialize_newtype_struct(
                         stringify!($i),
-                        MyVisitor { marker: Default::default(), lifetime: Default::default() },
+                        MyVisitor {
+                            marker: Default::default(),
+                            lifetime: Default::default(),
+                        },
                     )
                 }
             }

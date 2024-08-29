@@ -17,11 +17,19 @@ pub struct PruningPointInfo {
 
 impl PruningPointInfo {
     pub fn new(pruning_point: Hash, candidate: Hash, index: u64) -> Self {
-        Self { pruning_point, candidate, index }
+        Self {
+            pruning_point,
+            candidate,
+            index,
+        }
     }
 
     pub fn from_genesis(genesis_hash: Hash) -> Self {
-        Self { pruning_point: genesis_hash, candidate: genesis_hash, index: 0 }
+        Self {
+            pruning_point: genesis_hash,
+            candidate: genesis_hash,
+            index: 0,
+        }
     }
 
     pub fn decompose(self) -> (Hash, Hash, u64) {
@@ -69,12 +77,30 @@ impl DbPruningStore {
         Self::new(Arc::clone(&self.db))
     }
 
-    pub fn set_batch(&mut self, batch: &mut WriteBatch, pruning_point: Hash, candidate: Hash, index: u64) -> StoreResult<()> {
-        self.access.write(BatchDbWriter::new(batch), &PruningPointInfo { pruning_point, candidate, index })
+    pub fn set_batch(
+        &mut self,
+        batch: &mut WriteBatch,
+        pruning_point: Hash,
+        candidate: Hash,
+        index: u64,
+    ) -> StoreResult<()> {
+        self.access.write(
+            BatchDbWriter::new(batch),
+            &PruningPointInfo {
+                pruning_point,
+                candidate,
+                index,
+            },
+        )
     }
 
-    pub fn set_history_root(&mut self, batch: &mut WriteBatch, history_root: Hash) -> StoreResult<()> {
-        self.history_root_access.write(BatchDbWriter::new(batch), &history_root)
+    pub fn set_history_root(
+        &mut self,
+        batch: &mut WriteBatch,
+        history_root: Hash,
+    ) -> StoreResult<()> {
+        self.history_root_access
+            .write(BatchDbWriter::new(batch), &history_root)
     }
 }
 
@@ -102,6 +128,9 @@ impl PruningStoreReader for DbPruningStore {
 
 impl PruningStore for DbPruningStore {
     fn set(&mut self, pruning_point: Hash, candidate: Hash, index: u64) -> StoreResult<()> {
-        self.access.write(DirectDbWriter::new(&self.db), &PruningPointInfo::new(pruning_point, candidate, index))
+        self.access.write(
+            DirectDbWriter::new(&self.db),
+            &PruningPointInfo::new(pruning_point, candidate, index),
+        )
     }
 }

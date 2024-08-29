@@ -63,7 +63,14 @@ impl AccountStorage {
     where
         A: AccountStorable,
     {
-        Ok(Self { id: *id, storage_key: *storage_key, kind, prv_key_data_ids, settings, serialized: serialized.try_to_vec()? })
+        Ok(Self {
+            id: *id,
+            storage_key: *storage_key,
+            kind,
+            prv_key_data_ids,
+            settings,
+            serialized: serialized.try_to_vec()?,
+        })
     }
 
     pub fn id(&self) -> &AccountId {
@@ -108,8 +115,9 @@ impl BorshSerialize for AccountStorage {
 
 impl BorshDeserialize for AccountStorage {
     fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
-        let StorageHeader { version: _, .. } =
-            StorageHeader::deserialize(buf)?.try_magic(Self::STORAGE_MAGIC)?.try_version(Self::STORAGE_VERSION)?;
+        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?
+            .try_magic(Self::STORAGE_MAGIC)?
+            .try_version(Self::STORAGE_VERSION)?;
 
         let kind = BorshDeserialize::deserialize(buf)?;
         let id = BorshDeserialize::deserialize(buf)?;
@@ -118,7 +126,14 @@ impl BorshDeserialize for AccountStorage {
         let settings = BorshDeserialize::deserialize(buf)?;
         let serialized = BorshDeserialize::deserialize(buf)?;
 
-        Ok(Self { kind, id, storage_key, prv_key_data_ids, settings, serialized })
+        Ok(Self {
+            kind,
+            id,
+            storage_key,
+            prv_key_data_ids,
+            settings,
+            serialized,
+        })
     }
 }
 
@@ -129,7 +144,10 @@ mod tests {
 
     #[test]
     fn test_storage_account_storage_wrapper() -> Result<()> {
-        let (id, storage_key) = make_account_hashes(from_data(&BIP32_ACCOUNT_KIND.into(), &[0x00, 0x01, 0x02, 0x03]));
+        let (id, storage_key) = make_account_hashes(from_data(
+            &BIP32_ACCOUNT_KIND.into(),
+            &[0x00, 0x01, 0x02, 0x03],
+        ));
         let prv_key_data_id = PrvKeyDataId::new(0xcafe);
         let storable = bip32::Payload::new(0, ExtendedPublicKeys::default(), false);
         let storable_in = AccountStorage::try_new(

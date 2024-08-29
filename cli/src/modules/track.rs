@@ -6,7 +6,12 @@ use crate::imports::*;
 pub struct Track;
 
 impl Track {
-    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 
         if let Some(attr) = argv.first() {

@@ -12,7 +12,10 @@ pub struct Signals<T: 'static + Shutdown + Send + Sync> {
 
 impl<T: Shutdown + Send + Sync> Signals<T> {
     pub fn new(target: &Arc<T>) -> Signals<T> {
-        Signals { target: Arc::downgrade(target), iterations: AtomicU64::new(0) }
+        Signals {
+            target: Arc::downgrade(target),
+            iterations: AtomicU64::new(0),
+        }
     }
 
     pub fn init(self: &Arc<Signals<T>>) {

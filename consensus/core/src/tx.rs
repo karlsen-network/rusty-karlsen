@@ -4,7 +4,10 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use karlsen_utils::hex::ToHex;
 use karlsen_utils::mem_size::MemSizeEstimator;
 use karlsen_utils::{serde_bytes, serde_bytes_fixed_ref};
-pub use script_public_key::{scriptvec, ScriptPublicKey, ScriptPublicKeyVersion, ScriptPublicKeys, ScriptVec, SCRIPT_VECTOR_SIZE};
+pub use script_public_key::{
+    scriptvec, ScriptPublicKey, ScriptPublicKeyVersion, ScriptPublicKeys, ScriptVec,
+    SCRIPT_VECTOR_SIZE,
+};
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering::SeqCst;
@@ -43,8 +46,18 @@ pub struct UtxoEntry {
 }
 
 impl UtxoEntry {
-    pub fn new(amount: u64, script_public_key: ScriptPublicKey, block_daa_score: u64, is_coinbase: bool) -> Self {
-        Self { amount, script_public_key, block_daa_score, is_coinbase }
+    pub fn new(
+        amount: u64,
+        script_public_key: ScriptPublicKey,
+        block_daa_score: u64,
+        is_coinbase: bool,
+    ) -> Self {
+        Self {
+            amount,
+            script_public_key,
+            block_daa_score,
+            is_coinbase,
+        }
     }
 }
 
@@ -53,7 +66,18 @@ impl MemSizeEstimator for UtxoEntry {}
 pub type TransactionIndexType = u32;
 
 /// Represents a Karlsen transaction outpoint
-#[derive(Eq, Hash, PartialEq, Debug, Copy, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Eq,
+    Hash,
+    PartialEq,
+    Debug,
+    Copy,
+    Clone,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionOutpoint {
     #[serde(with = "serde_bytes_fixed_ref")]
@@ -63,7 +87,10 @@ pub struct TransactionOutpoint {
 
 impl TransactionOutpoint {
     pub fn new(transaction_id: TransactionId, index: u32) -> Self {
-        Self { transaction_id, index }
+        Self {
+            transaction_id,
+            index,
+        }
     }
 }
 
@@ -89,8 +116,18 @@ pub struct TransactionInput {
 }
 
 impl TransactionInput {
-    pub fn new(previous_outpoint: TransactionOutpoint, signature_script: Vec<u8>, sequence: u64, sig_op_count: u8) -> Self {
-        Self { previous_outpoint, signature_script, sequence, sig_op_count }
+    pub fn new(
+        previous_outpoint: TransactionOutpoint,
+        signature_script: Vec<u8>,
+        sequence: u64,
+        sig_op_count: u8,
+    ) -> Self {
+        Self {
+            previous_outpoint,
+            signature_script,
+            sequence,
+            sig_op_count,
+        }
     }
 }
 
@@ -115,7 +152,10 @@ pub struct TransactionOutput {
 
 impl TransactionOutput {
     pub fn new(value: u64, script_public_key: ScriptPublicKey) -> Self {
-        Self { value, script_public_key }
+        Self {
+            value,
+            script_public_key,
+        }
     }
 }
 
@@ -150,7 +190,9 @@ impl BorshSerialize for TransactionMass {
 }
 
 /// Represents a Karlsen transaction
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
+)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub version: u16,
@@ -163,7 +205,8 @@ pub struct Transaction {
     pub payload: Vec<u8>,
 
     #[serde(default)]
-    #[borsh_skip] // TODO: skipped for now as it is only required for consensus storage and miner grpc
+    #[borsh_skip]
+    // TODO: skipped for now as it is only required for consensus storage and miner grpc
     mass: TransactionMass,
 
     // A field that is used to cache the transaction ID.
@@ -182,7 +225,15 @@ impl Transaction {
         gas: u64,
         payload: Vec<u8>,
     ) -> Self {
-        let mut tx = Self::new_non_finalized(version, inputs, outputs, lock_time, subnetwork_id, gas, payload);
+        let mut tx = Self::new_non_finalized(
+            version,
+            inputs,
+            outputs,
+            lock_time,
+            subnetwork_id,
+            gas,
+            payload,
+        );
         tx.finalize();
         tx
     }
@@ -196,7 +247,17 @@ impl Transaction {
         gas: u64,
         payload: Vec<u8>,
     ) -> Self {
-        Self { version, inputs, outputs, lock_time, subnetwork_id, gas, payload, mass: Default::default(), id: Default::default() }
+        Self {
+            version,
+            inputs,
+            outputs,
+            lock_time,
+            subnetwork_id,
+            gas,
+            payload,
+            mass: Default::default(),
+            id: Default::default(),
+        }
     }
 }
 
@@ -270,7 +331,10 @@ pub struct PopulatedInputIterator<'a, T: VerifiableTransaction> {
 
 impl<'a, T: VerifiableTransaction> PopulatedInputIterator<'a, T> {
     pub fn new(tx: &'a T) -> Self {
-        Self { tx, r: (0..tx.inputs().len()) }
+        Self {
+            tx,
+            r: (0..tx.inputs().len()),
+        }
     }
 }
 
@@ -320,12 +384,20 @@ pub struct ValidatedTransaction<'a> {
 
 impl<'a> ValidatedTransaction<'a> {
     pub fn new(populated_tx: PopulatedTransaction<'a>, calculated_fee: u64) -> Self {
-        Self { tx: populated_tx.tx, entries: populated_tx.entries, calculated_fee }
+        Self {
+            tx: populated_tx.tx,
+            entries: populated_tx.entries,
+            calculated_fee,
+        }
     }
 
     pub fn new_coinbase(tx: &'a Transaction) -> Self {
         assert!(tx.is_coinbase());
-        Self { tx, entries: Vec::new(), calculated_fee: 0 }
+        Self {
+            tx,
+            entries: Vec::new(),
+            calculated_fee: 0,
+        }
     }
 }
 
@@ -362,7 +434,12 @@ pub struct MutableTransaction<T: AsRef<Transaction> = std::sync::Arc<Transaction
 impl<T: AsRef<Transaction>> MutableTransaction<T> {
     pub fn new(tx: T) -> Self {
         let num_inputs = tx.as_ref().inputs.len();
-        Self { tx, entries: vec![None; num_inputs], calculated_fee: None, calculated_compute_mass: None }
+        Self {
+            tx,
+            entries: vec![None; num_inputs],
+            calculated_fee: None,
+            calculated_compute_mass: None,
+        }
     }
 
     pub fn id(&self) -> TransactionId {
@@ -371,7 +448,12 @@ impl<T: AsRef<Transaction>> MutableTransaction<T> {
 
     pub fn with_entries(tx: T, entries: Vec<UtxoEntry>) -> Self {
         assert_eq!(tx.as_ref().inputs.len(), entries.len());
-        Self { tx, entries: entries.into_iter().map(Some).collect(), calculated_fee: None, calculated_compute_mass: None }
+        Self {
+            tx,
+            entries: entries.into_iter().map(Some).collect(),
+            calculated_fee: None,
+            calculated_compute_mass: None,
+        }
     }
 
     /// Returns the tx wrapped as a [`VerifiableTransaction`]. Note that this function
@@ -387,7 +469,9 @@ impl<T: AsRef<Transaction>> MutableTransaction<T> {
     }
 
     pub fn is_fully_populated(&self) -> bool {
-        self.is_verifiable() && self.calculated_fee.is_some() && self.calculated_compute_mass.is_some()
+        self.is_verifiable()
+            && self.calculated_fee.is_some()
+            && self.calculated_compute_mass.is_some()
     }
 
     pub fn missing_outpoints(&self) -> impl Iterator<Item = TransactionOutpoint> + '_ {
@@ -427,7 +511,9 @@ impl<T: AsRef<Transaction>> VerifiableTransaction for MutableTransactionVerifiab
     fn populated_input(&self, index: usize) -> (&TransactionInput, &UtxoEntry) {
         (
             &self.inner.tx.as_ref().inputs[index],
-            self.inner.entries[index].as_ref().expect("expected to be called only following full UTXO population"),
+            self.inner.entries[index]
+                .as_ref()
+                .expect("expected to be called only following full UTXO population"),
         )
     }
 }
@@ -453,8 +539,9 @@ mod tests {
         let script_public_key = ScriptPublicKey::new(
             0,
             smallvec![
-                0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43, 0x0a, 0xa4, 0xc9, 0xd1, 0x59, 0x43, 0x7e, 0x84, 0xb9, 0x75, 0xdc, 0x76,
-                0xd9, 0x00, 0x3b, 0xf0, 0x92, 0x2c, 0xf3, 0xaa, 0x45, 0x28, 0x46, 0x4b, 0xab, 0x78, 0x0d, 0xba, 0x5e
+                0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43, 0x0a, 0xa4, 0xc9, 0xd1, 0x59, 0x43, 0x7e,
+                0x84, 0xb9, 0x75, 0xdc, 0x76, 0xd9, 0x00, 0x3b, 0xf0, 0x92, 0x2c, 0xf3, 0xaa, 0x45,
+                0x28, 0x46, 0x4b, 0xab, 0x78, 0x0d, 0xba, 0x5e
             ],
         );
         Transaction::new(
@@ -463,14 +550,16 @@ mod tests {
                 TransactionInput {
                     previous_outpoint: TransactionOutpoint {
                         transaction_id: TransactionId::from_slice(&[
-                            0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95, 0xd9, 0xc6, 0x41, 0xf3, 0xb8, 0xee, 0xc2, 0xf3, 0x46,
-                            0x11, 0x89, 0x6b, 0x82, 0x1a, 0x68, 0x3b, 0x7a, 0x4e, 0xde, 0xfe, 0x2c, 0x00, 0x00, 0x00,
+                            0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95, 0xd9, 0xc6, 0x41, 0xf3,
+                            0xb8, 0xee, 0xc2, 0xf3, 0x46, 0x11, 0x89, 0x6b, 0x82, 0x1a, 0x68, 0x3b,
+                            0x7a, 0x4e, 0xde, 0xfe, 0x2c, 0x00, 0x00, 0x00,
                         ]),
                         index: 0xfffffffa,
                     },
                     signature_script: vec![
-                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11,
-                        0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+                        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+                        0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+                        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
                     ],
                     sequence: 2,
                     sig_op_count: 3,
@@ -478,33 +567,43 @@ mod tests {
                 TransactionInput {
                     previous_outpoint: TransactionOutpoint {
                         transaction_id: TransactionId::from_slice(&[
-                            0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b, 0x3c, 0xd6, 0x4f, 0xd7, 0x15, 0x52, 0x80, 0x87, 0x2a,
-                            0x04, 0x71, 0xbc, 0xf8, 0x30, 0x95, 0x52, 0x6a, 0xce, 0x0e, 0x38, 0xc6, 0x00, 0x00, 0x00,
+                            0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b, 0x3c, 0xd6, 0x4f, 0xd7,
+                            0x15, 0x52, 0x80, 0x87, 0x2a, 0x04, 0x71, 0xbc, 0xf8, 0x30, 0x95, 0x52,
+                            0x6a, 0xce, 0x0e, 0x38, 0xc6, 0x00, 0x00, 0x00,
                         ]),
                         index: 0xfffffffb,
                     },
                     signature_script: vec![
-                        0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31,
-                        0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+                        0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b,
+                        0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+                        0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
                     ],
                     sequence: 4,
                     sig_op_count: 5,
                 },
             ],
             vec![
-                TransactionOutput { value: 6, script_public_key: script_public_key.clone() },
-                TransactionOutput { value: 7, script_public_key },
+                TransactionOutput {
+                    value: 6,
+                    script_public_key: script_public_key.clone(),
+                },
+                TransactionOutput {
+                    value: 7,
+                    script_public_key,
+                },
             ],
             8,
             SUBNETWORK_ID_COINBASE,
             9,
             vec![
-                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12,
-                0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
-                0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
-                0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b,
-                0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e,
-                0x5f, 0x60, 0x61, 0x62, 0x63,
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+                0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b,
+                0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29,
+                0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+                0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45,
+                0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53,
+                0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, 0x60, 0x61,
+                0x62, 0x63,
             ],
         )
     }
@@ -516,21 +615,27 @@ mod tests {
 
         // standard, based on https://github.com/karlsen-network/rusty-karlsen/commit/7e947a06d2434daf4bc7064d4cd87dc1984b56fe
         let expected_bts = vec![
-            1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 22, 94, 56, 232, 179, 145, 69, 149, 217, 198, 65, 243, 184, 238, 194, 243, 70, 17, 137, 107,
-            130, 26, 104, 59, 122, 78, 222, 254, 44, 0, 0, 0, 250, 255, 255, 255, 32, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-            9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 2, 0, 0, 0, 0, 0, 0, 0, 3, 75,
-            176, 117, 53, 223, 213, 142, 11, 60, 214, 79, 215, 21, 82, 128, 135, 42, 4, 113, 188, 248, 48, 149, 82, 106, 206, 14, 56,
-            198, 0, 0, 0, 251, 255, 255, 255, 32, 0, 0, 0, 0, 0, 0, 0, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
-            48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 4, 0, 0, 0, 0, 0, 0, 0, 5, 2, 0, 0, 0, 0, 0, 0, 0, 6, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 118, 169, 33, 3, 47, 126, 67, 10, 164, 201, 209, 89, 67, 126, 132, 185,
-            117, 220, 118, 217, 0, 59, 240, 146, 44, 243, 170, 69, 40, 70, 75, 171, 120, 13, 186, 94, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            36, 0, 0, 0, 0, 0, 0, 0, 118, 169, 33, 3, 47, 126, 67, 10, 164, 201, 209, 89, 67, 126, 132, 185, 117, 220, 118, 217, 0,
-            59, 240, 146, 44, 243, 170, 69, 40, 70, 75, 171, 120, 13, 186, 94, 8, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-            13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
-            43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72,
-            73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 0, 0, 0, 0, 0,
-            0, 0, 0, 69, 146, 193, 64, 98, 49, 45, 0, 77, 32, 25, 122, 77, 15, 211, 252, 61, 210, 82, 177, 39, 153, 127, 33, 188, 172,
+            1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 22, 94, 56, 232, 179, 145, 69, 149, 217, 198, 65, 243,
+            184, 238, 194, 243, 70, 17, 137, 107, 130, 26, 104, 59, 122, 78, 222, 254, 44, 0, 0, 0,
+            250, 255, 255, 255, 32, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+            13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 2, 0, 0, 0,
+            0, 0, 0, 0, 3, 75, 176, 117, 53, 223, 213, 142, 11, 60, 214, 79, 215, 21, 82, 128, 135,
+            42, 4, 113, 188, 248, 48, 149, 82, 106, 206, 14, 56, 198, 0, 0, 0, 251, 255, 255, 255,
+            32, 0, 0, 0, 0, 0, 0, 0, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+            47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 4, 0, 0, 0, 0, 0,
+            0, 0, 5, 2, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0,
+            118, 169, 33, 3, 47, 126, 67, 10, 164, 201, 209, 89, 67, 126, 132, 185, 117, 220, 118,
+            217, 0, 59, 240, 146, 44, 243, 170, 69, 40, 70, 75, 171, 120, 13, 186, 94, 7, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 118, 169, 33, 3, 47, 126, 67, 10, 164, 201,
+            209, 89, 67, 126, 132, 185, 117, 220, 118, 217, 0, 59, 240, 146, 44, 243, 170, 69, 40,
+            70, 75, 171, 120, 13, 186, 94, 8, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2,
+            3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+            26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+            48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69,
+            70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91,
+            92, 93, 94, 95, 96, 97, 98, 99, 0, 0, 0, 0, 0, 0, 0, 0, 69, 146, 193, 64, 98, 49, 45,
+            0, 77, 32, 25, 122, 77, 15, 211, 252, 61, 210, 82, 177, 39, 153, 127, 33, 188, 172,
             138, 38, 67, 75, 241, 176,
         ];
         assert_eq!(expected_bts, bts);
@@ -589,14 +694,20 @@ mod tests {
         let vec = (0..SCRIPT_VECTOR_SIZE as u8).collect::<Vec<_>>();
         let spk = ScriptPublicKey::from_vec(0xc0de, vec.clone());
         let hex: String = serde_json::to_string(&spk).unwrap();
-        assert_eq!("\"c0de000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212223\"", hex);
+        assert_eq!(
+            "\"c0de000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212223\"",
+            hex
+        );
         let spk = serde_json::from_str::<ScriptPublicKey>(&hex).unwrap();
         assert_eq!(spk.version, 0xc0de);
         assert_eq!(spk.script.as_slice(), vec.as_slice());
         let result = "00".parse::<ScriptPublicKey>();
         assert!(matches!(result, Err(faster_hex::Error::InvalidLength(2))));
         let result = "0000".parse::<ScriptPublicKey>();
-        let _empty = ScriptPublicKey { version: 0, script: ScriptVec::new() };
+        let _empty = ScriptPublicKey {
+            version: 0,
+            script: ScriptVec::new(),
+        };
         assert!(matches!(result, Ok(_empty)));
     }
 

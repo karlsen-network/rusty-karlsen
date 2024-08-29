@@ -11,8 +11,9 @@ use parking_lot::RwLock;
 use crate::model::{
     services::reachability::{MTReachabilityService, ReachabilityService},
     stores::{
-        ghostdag::GhostdagStoreReader, headers_selected_tip::HeadersSelectedTipStoreReader, pruning::PruningStoreReader,
-        reachability::ReachabilityStoreReader, relations::RelationsStoreReader, selected_chain::SelectedChainStoreReader,
+        ghostdag::GhostdagStoreReader, headers_selected_tip::HeadersSelectedTipStoreReader,
+        pruning::PruningStoreReader, reachability::ReachabilityStoreReader,
+        relations::RelationsStoreReader, selected_chain::SelectedChainStoreReader,
         statuses::StatusesStoreReader,
     },
 };
@@ -74,7 +75,12 @@ impl<
     /// Returns the hashes of the blocks between low's antipast and high's antipast, or up to `max_blocks`, if provided.
     /// The result excludes low and includes high. If low == high, returns nothing. If max_blocks is some then it MUST be >= MergeSetSizeLimit
     /// because it returns blocks with MergeSet granularity, so if MergeSet > max_blocks, the function will return nothing which is undesired behavior.
-    pub fn antipast_hashes_between(&self, low: Hash, high: Hash, max_blocks: Option<usize>) -> (Vec<Hash>, Hash) {
+    pub fn antipast_hashes_between(
+        &self,
+        low: Hash,
+        high: Hash,
+        max_blocks: Option<usize>,
+    ) -> (Vec<Hash>, Hash) {
         let max_blocks = max_blocks.unwrap_or(usize::MAX);
         assert!(max_blocks >= self.mergeset_size_limit);
 
@@ -91,14 +97,22 @@ impl<
 
         let mut highest_reached = low; // The highest chain block we reached before completing/reaching a limit
         let mut blocks = Vec::with_capacity(min(max_blocks, (high_bs - low_bs) as usize));
-        for current in self.reachability_service.forward_chain_iterator(low, high, true).skip(1) {
+        for current in self
+            .reachability_service
+            .forward_chain_iterator(low, high, true)
+            .skip(1)
+        {
             let gd = self.ghostdag_store.get_data(current).unwrap();
             if blocks.len() + gd.mergeset_size() > max_blocks {
                 break;
             }
             blocks.extend(
                 gd.consensus_ordered_mergeset(self.ghostdag_store.deref())
-                    .filter(|hash| !self.reachability_service.is_dag_ancestor_of(*hash, original_low)),
+                    .filter(|hash| {
+                        !self
+                            .reachability_service
+                            .is_dag_ancestor_of(*hash, original_low)
+                    }),
             );
             highest_reached = current;
         }
@@ -114,14 +128,22 @@ impl<
     fn find_highest_common_chain_block(&self, low: Hash, high: Hash) -> Hash {
         self.reachability_service
             .default_backward_chain_iterator(low)
-            .find(|candidate| self.reachability_service.is_chain_ancestor_of(*candidate, high))
+            .find(|candidate| {
+                self.reachability_service
+                    .is_chain_ancestor_of(*candidate, high)
+            })
             .expect("because of the pruning rules such block has to exist")
     }
 
     /// Returns a logarithmic amount of blocks sampled from the virtual selected chain between `low` and `high`.
     /// Expects both blocks to be on the virtual selected chain, otherwise an error is returned
-    pub fn create_virtual_selected_chain_block_locator(&self, low: Option<Hash>, high: Option<Hash>) -> SyncManagerResult<Vec<Hash>> {
-        let low = low.unwrap_or_else(|| self.pruning_point_store.read().get().unwrap().pruning_point);
+    pub fn create_virtual_selected_chain_block_locator(
+        &self,
+        low: Option<Hash>,
+        high: Option<Hash>,
+    ) -> SyncManagerResult<Vec<Hash>> {
+        let low =
+            low.unwrap_or_else(|| self.pruning_point_store.read().get().unwrap().pruning_point);
         let sc_read = self.selected_chain_store.read();
         let high = high.unwrap_or_else(|| sc_read.get_tip().unwrap().1);
         if low == high {
@@ -142,7 +164,8 @@ impl<
             return Err(SyncManagerError::LowHashHigherThanHighHash(low, high));
         }
 
-        let mut locator = Vec::with_capacity((high_index - low_index).ceiling_log_base_2() as usize);
+        let mut locator =
+            Vec::with_capacity((high_index - low_index).ceiling_log_base_2() as usize);
         let mut step = 1;
         let mut current_index = high_index;
         while current_index > low_index {
@@ -166,8 +189,13 @@ impl<
         }
 
         let mut highest_with_body = None;
-        let mut forward_iterator = self.reachability_service.forward_chain_iterator(pp, high, true).tuple_windows();
-        let mut backward_iterator = self.reachability_service.backward_chain_iterator(high, pp, true);
+        let mut forward_iterator = self
+            .reachability_service
+            .forward_chain_iterator(pp, high, true)
+            .tuple_windows();
+        let mut backward_iterator = self
+            .reachability_service
+            .backward_chain_iterator(high, pp, true);
         loop {
             // We loop from both directions in parallel in order to use the shorter path
             let Some((parent, current)) = forward_iterator.next() else {
@@ -195,7 +223,8 @@ impl<
             return Ok(vec![]);
         };
 
-        let (mut hashes_between, _) = self.antipast_hashes_between(highest_with_body.unwrap(), high, None);
+        let (mut hashes_between, _) =
+            self.antipast_hashes_between(highest_with_body.unwrap(), high, None);
         let statuses = self.statuses_store.read();
         hashes_between.retain(|&h| statuses.get(h).unwrap().is_header_only());
 
@@ -209,7 +238,9 @@ impl<
         limit: Option<usize>,
     ) -> SyncManagerResult<Vec<Hash>> {
         if !self.reachability_service.is_chain_ancestor_of(low, high) {
-            return Err(SyncManagerError::LocatorLowHashNotInHighHashChain(low, high));
+            return Err(SyncManagerError::LocatorLowHashNotInHighHashChain(
+                low, high,
+            ));
         }
 
         let low_bs = self.ghostdag_store.get_blue_score(low).unwrap();
@@ -238,7 +269,9 @@ impl<
             };
 
             // Walk down current's selected parent chain to the appropriate ancestor
-            current = self.traversal_manager.lowest_chain_block_above_or_equal_to_blue_score(current, next_bs);
+            current = self
+                .traversal_manager
+                .lowest_chain_block_above_or_equal_to_blue_score(current, next_bs);
 
             // Double the distance between included hashes
             step *= 2;

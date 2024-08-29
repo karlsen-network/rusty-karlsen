@@ -170,7 +170,10 @@ mod tests {
         T: Clone + std::fmt::Debug + std::hash::Hash + Eq,
     {
         fn new() -> Self {
-            Self { nodes: HashSet::default(), edges: HashMap::default() }
+            Self {
+                nodes: HashSet::default(),
+                edges: HashMap::default(),
+            }
         }
 
         fn add_node(&mut self, key: T) {
@@ -225,8 +228,16 @@ mod tests {
         }
 
         let tests = vec![
-            Test { name: "a regular DAG", dag: build_dag(false), is_acyclic: true },
-            Test { name: "an invalid DAG with one cycle", dag: build_dag(true), is_acyclic: false },
+            Test {
+                name: "a regular DAG",
+                dag: build_dag(false),
+                is_acyclic: true,
+            },
+            Test {
+                name: "an invalid DAG with one cycle",
+                dag: build_dag(true),
+                is_acyclic: false,
+            },
         ];
 
         for test in tests.iter() {
@@ -236,10 +247,16 @@ mod tests {
                 test.is_acyclic,
                 "testing {}, expecting the in-degree index to be {}",
                 test.name,
-                if test.is_acyclic { "acyclic" } else { "invalid" }
+                if test.is_acyclic {
+                    "acyclic"
+                } else {
+                    "invalid"
+                }
             );
             if index_in_degree.is_ok() {
-                let test_result = test.dag.check_topological_order(index_in_degree.as_ref().unwrap());
+                let test_result = test
+                    .dag
+                    .check_topological_order(index_in_degree.as_ref().unwrap());
                 assert!(
                     test_result.is_ok(),
                     "testing {}, expecting {:?} to be topologically ordered and got {:?}",
@@ -255,10 +272,16 @@ mod tests {
                 test.is_acyclic,
                 "testing {}, expecting the dfs index to be {}",
                 test.name,
-                if test.is_acyclic { "acyclic" } else { "invalid" }
+                if test.is_acyclic {
+                    "acyclic"
+                } else {
+                    "invalid"
+                }
             );
             if index_dfs.is_ok() {
-                let test_result = test.dag.check_topological_order(index_dfs.as_ref().unwrap());
+                let test_result = test
+                    .dag
+                    .check_topological_order(index_dfs.as_ref().unwrap());
                 assert!(
                     test_result.is_ok(),
                     "testing {}, expecting {:?} to be topologically ordered and got {:?}",
@@ -281,17 +304,23 @@ mod tests {
         let tests = vec![
             Test {
                 name: "topologically ordered index",
-                index: vec!["shirt", "socks", "tie", "boxer", "pants", "belt", "jacket", "shoes"],
+                index: vec![
+                    "shirt", "socks", "tie", "boxer", "pants", "belt", "jacket", "shoes",
+                ],
                 expected_result: Ok(()),
             },
             Test {
                 name: "index has duplicate key",
-                index: vec!["shirt", "shirt", "tie", "boxer", "pants", "belt", "jacket", "shoes"],
+                index: vec![
+                    "shirt", "shirt", "tie", "boxer", "pants", "belt", "jacket", "shoes",
+                ],
                 expected_result: Err(TopologicalIndexError::IndexHasNonUniqueKey),
             },
             Test {
                 name: "index has a wrong set of keys",
-                index: vec!["UNKNOWN", "shirt", "tie", "boxer", "pants", "belt", "jacket", "shoes"],
+                index: vec![
+                    "UNKNOWN", "shirt", "tie", "boxer", "pants", "belt", "jacket", "shoes",
+                ],
                 expected_result: Err(TopologicalIndexError::IndexHasWrongKeySet),
             },
             Test {
@@ -301,7 +330,9 @@ mod tests {
             },
             Test {
                 name: "index is not topologically ordered",
-                index: vec!["jacket", "socks", "tie", "belt", "pants", "shirt", "boxer", "shoes"],
+                index: vec![
+                    "jacket", "socks", "tie", "belt", "pants", "shirt", "boxer", "shoes",
+                ],
                 expected_result: Err(TopologicalIndexError::IndexIsNotTopological),
             },
         ];

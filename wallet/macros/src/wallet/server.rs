@@ -18,7 +18,10 @@ impl Parse for RpcTable {
     fn parse(input: ParseStream) -> Result<Self> {
         let parsed = Punctuated::<Expr, Token![,]>::parse_terminated(input).unwrap();
         if parsed.len() != 1 {
-            return Err(Error::new_spanned(parsed, "usage: build_wrpc_server_interface!([XxxOp, ..])".to_string()));
+            return Err(Error::new_spanned(
+                parsed,
+                "usage: build_wrpc_server_interface!([XxxOp, ..])".to_string(),
+            ));
         }
 
         let mut iter = parsed.iter();
@@ -34,7 +37,13 @@ impl ToTokens for RpcTable {
         let mut targets_serde = Vec::new();
 
         for handler in self.handlers.elems.iter() {
-            let Handler { hash_64, ident, fn_call, request_type, .. } = Handler::new(handler);
+            let Handler {
+                hash_64,
+                ident,
+                fn_call,
+                request_type,
+                ..
+            } = Handler::new(handler);
 
             targets_borsh.push(quote! {
                 #hash_64 => {

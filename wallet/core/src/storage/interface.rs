@@ -25,7 +25,18 @@ export interface IWalletDescriptor {
 "#;
 
 /// @category Wallet API
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    PartialOrd,
+    Eq,
+    Ord,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+)]
 #[wasm_bindgen(inspectable)]
 pub struct WalletDescriptor {
     #[wasm_bindgen(getter_with_clone)]
@@ -51,7 +62,18 @@ export interface IStorageDescriptor {
 }
 "#;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    PartialOrd,
+    Eq,
+    Ord,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "kind", content = "data")]
 pub enum StorageDescriptor {
@@ -77,7 +99,11 @@ pub trait PrvKeyDataStore: Send + Sync {
     async fn is_empty(&self) -> Result<bool>;
     async fn iter(&self) -> Result<StorageStream<Arc<PrvKeyDataInfo>>>;
     async fn load_key_info(&self, id: &PrvKeyDataId) -> Result<Option<Arc<PrvKeyDataInfo>>>;
-    async fn load_key_data(&self, wallet_secret: &Secret, id: &PrvKeyDataId) -> Result<Option<PrvKeyData>>;
+    async fn load_key_data(
+        &self,
+        wallet_secret: &Secret,
+        id: &PrvKeyDataId,
+    ) -> Result<Option<PrvKeyData>>;
     async fn store(&self, wallet_secret: &Secret, data: PrvKeyData) -> Result<()>;
     async fn remove(&self, wallet_secret: &Secret, id: &PrvKeyDataId) -> Result<()>;
 }
@@ -90,10 +116,23 @@ pub trait AccountStore: Send + Sync {
         prv_key_data_id_filter: Option<PrvKeyDataId>,
     ) -> Result<StorageStream<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>>;
     async fn len(&self, prv_key_data_id_filter: Option<PrvKeyDataId>) -> Result<usize>;
-    async fn load_single(&self, ids: &AccountId) -> Result<Option<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>>;
-    async fn load_multiple(&self, ids: &[AccountId]) -> Result<Vec<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>>;
-    async fn store_single(&self, account: &AccountStorage, metadata: Option<&AccountMetadata>) -> Result<()>;
-    async fn store_multiple(&self, data: Vec<(AccountStorage, Option<AccountMetadata>)>) -> Result<()>;
+    async fn load_single(
+        &self,
+        ids: &AccountId,
+    ) -> Result<Option<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>>;
+    async fn load_multiple(
+        &self,
+        ids: &[AccountId],
+    ) -> Result<Vec<(Arc<AccountStorage>, Option<Arc<AccountMetadata>>)>>;
+    async fn store_single(
+        &self,
+        account: &AccountStorage,
+        metadata: Option<&AccountMetadata>,
+    ) -> Result<()>;
+    async fn store_multiple(
+        &self,
+        data: Vec<(AccountStorage, Option<AccountMetadata>)>,
+    ) -> Result<()>;
     async fn remove(&self, id: &[&AccountId]) -> Result<()>;
     async fn update_metadata(&self, metadata: Vec<AccountMetadata>) -> Result<()>;
 }
@@ -118,8 +157,16 @@ pub struct TransactionRangeResult {
 
 #[async_trait]
 pub trait TransactionRecordStore: Send + Sync {
-    async fn transaction_id_iter(&self, binding: &Binding, network_id: &NetworkId) -> Result<StorageStream<Arc<TransactionId>>>;
-    async fn transaction_data_iter(&self, binding: &Binding, network_id: &NetworkId) -> Result<StorageStream<Arc<TransactionRecord>>>;
+    async fn transaction_id_iter(
+        &self,
+        binding: &Binding,
+        network_id: &NetworkId,
+    ) -> Result<StorageStream<Arc<TransactionId>>>;
+    async fn transaction_data_iter(
+        &self,
+        binding: &Binding,
+        network_id: &NetworkId,
+    ) -> Result<StorageStream<Arc<TransactionRecord>>>;
     async fn load_range(
         &self,
         binding: &Binding,
@@ -128,7 +175,12 @@ pub trait TransactionRecordStore: Send + Sync {
         range: std::ops::Range<usize>,
     ) -> Result<TransactionRangeResult>;
 
-    async fn load_single(&self, binding: &Binding, network_id: &NetworkId, id: &TransactionId) -> Result<Arc<TransactionRecord>>;
+    async fn load_single(
+        &self,
+        binding: &Binding,
+        network_id: &NetworkId,
+        id: &TransactionId,
+    ) -> Result<Arc<TransactionRecord>>;
     async fn load_multiple(
         &self,
         binding: &Binding,
@@ -137,7 +189,12 @@ pub trait TransactionRecordStore: Send + Sync {
     ) -> Result<Vec<Arc<TransactionRecord>>>;
 
     async fn store(&self, transaction_records: &[&TransactionRecord]) -> Result<()>;
-    async fn remove(&self, binding: &Binding, network_id: &NetworkId, ids: &[&TransactionId]) -> Result<()>;
+    async fn remove(
+        &self,
+        binding: &Binding,
+        network_id: &NetworkId,
+        ids: &[&TransactionId],
+    ) -> Result<()>;
 
     async fn store_transaction_note(
         &self,
@@ -172,7 +229,13 @@ impl CreateArgs {
         user_hint: Option<Hint>,
         overwrite_wallet: bool,
     ) -> Self {
-        Self { title, filename, encryption_kind, user_hint, overwrite_wallet }
+        Self {
+            title,
+            filename,
+            encryption_kind,
+            user_hint,
+            overwrite_wallet,
+        }
     }
 }
 
@@ -205,10 +268,19 @@ pub trait Interface: Send + Sync + AnySync {
     fn encryption_kind(&self) -> Result<EncryptionKind>;
 
     /// rename the currently open wallet (title or the filename)
-    async fn rename(&self, wallet_secret: &Secret, title: Option<&str>, filename: Option<&str>) -> Result<()>;
+    async fn rename(
+        &self,
+        wallet_secret: &Secret,
+        title: Option<&str>,
+        filename: Option<&str>,
+    ) -> Result<()>;
 
     /// change the secret of the currently open wallet
-    async fn change_secret(&self, old_wallet_secret: &Secret, new_wallet_secret: &Secret) -> Result<()>;
+    async fn change_secret(
+        &self,
+        old_wallet_secret: &Secret,
+        new_wallet_secret: &Secret,
+    ) -> Result<()>;
 
     /// checks if the wallet storage is present
     async fn exists(&self, name: Option<&str>) -> Result<bool>;
@@ -232,10 +304,18 @@ pub trait Interface: Send + Sync + AnySync {
     async fn close(&self) -> Result<()>;
 
     /// export the wallet data
-    async fn wallet_export(&self, wallet_secret: &Secret, options: WalletExportOptions) -> Result<Vec<u8>>;
+    async fn wallet_export(
+        &self,
+        wallet_secret: &Secret,
+        options: WalletExportOptions,
+    ) -> Result<Vec<u8>>;
 
     /// import the wallet data
-    async fn wallet_import(&self, wallet_secret: &Secret, serialized_wallet_storage: &[u8]) -> Result<WalletDescriptor>;
+    async fn wallet_import(
+        &self,
+        wallet_secret: &Secret,
+        serialized_wallet_storage: &[u8],
+    ) -> Result<WalletDescriptor>;
 
     // ~~~
 

@@ -13,7 +13,11 @@ fn noise(size: usize, magnitude: usize) -> usize {
 }
 
 /// Bounds the size according to the "memory budget" (represented in bytes) and the approximate size of each unit in bytes
-fn bounded_size(desired_units: usize, memory_budget_bytes: usize, approx_unit_bytes: usize) -> usize {
+fn bounded_size(
+    desired_units: usize,
+    memory_budget_bytes: usize,
+    approx_unit_bytes: usize,
+) -> usize {
     let max_size = memory_budget_bytes / approx_unit_bytes;
     usize::min(desired_units, max_size)
 }
@@ -90,20 +94,36 @@ impl CachePolicyBuilder {
     pub fn downscale(&self, level: u8) -> Self {
         // Downscale both upper-bound limits unless they have the initial MAX value.
         // The calc is equal to downscaled = budget / 2^level
-        let bytes_budget =
-            if self.bytes_budget == usize::MAX { self.bytes_budget } else { self.bytes_budget.checked_shr(level as u32).unwrap_or(0) };
-        let max_items =
-            if self.max_items == usize::MAX { self.max_items } else { self.max_items.checked_shr(level as u32).unwrap_or(0) };
-        Self { bytes_budget, max_items, ..*self }
+        let bytes_budget = if self.bytes_budget == usize::MAX {
+            self.bytes_budget
+        } else {
+            self.bytes_budget.checked_shr(level as u32).unwrap_or(0)
+        };
+        let max_items = if self.max_items == usize::MAX {
+            self.max_items
+        } else {
+            self.max_items.checked_shr(level as u32).unwrap_or(0)
+        };
+        Self {
+            bytes_budget,
+            max_items,
+            ..*self
+        }
     }
 
     pub fn build(&self) -> CachePolicy {
-        assert!(self.max_items < usize::MAX || self.bytes_budget < usize::MAX, "max_items or bytes_budget are expected");
+        assert!(
+            self.max_items < usize::MAX || self.bytes_budget < usize::MAX,
+            "max_items or bytes_budget are expected"
+        );
 
         if self.tracked {
             match self.mem_mode {
                 MemMode::Bytes => {
-                    assert!(self.max_items == usize::MAX, "max_items is not supported in tracked bytes mode");
+                    assert!(
+                        self.max_items == usize::MAX,
+                        "max_items is not supported in tracked bytes mode"
+                    );
                     CachePolicy::Tracked {
                         max_size: noise(self.bytes_budget, 512), // 0.5KB noise magnitude
                         min_items: noise(self.min_items, 1),
@@ -117,7 +137,9 @@ impl CachePolicyBuilder {
                         bounded_size(
                             self.max_items,
                             self.bytes_budget,
-                            self.unit_bytes.expect("unit_bytes are expected with bytes_budget in units mem mode"),
+                            self.unit_bytes.expect(
+                                "unit_bytes are expected with bytes_budget in units mem mode",
+                            ),
                         )
                     };
                     CachePolicy::Tracked {
@@ -135,7 +157,8 @@ impl CachePolicyBuilder {
                 bounded_size(
                     self.max_items,
                     self.bytes_budget,
-                    self.unit_bytes.expect("unit_bytes are expected with bytes_budget in non-tracked mode"),
+                    self.unit_bytes
+                        .expect("unit_bytes are expected with bytes_budget in non-tracked mode"),
                 )
             };
             CachePolicy::Count(noise(max_items.max(self.min_items), 1))

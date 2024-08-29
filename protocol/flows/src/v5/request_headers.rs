@@ -31,7 +31,11 @@ impl Flow for RequestHeadersFlow {
 
 impl RequestHeadersFlow {
     pub fn new(ctx: FlowContext, router: Arc<Router>, incoming_route: IncomingRoute) -> Self {
-        Self { ctx, router, incoming_route }
+        Self {
+            ctx,
+            router,
+            incoming_route,
+        }
     }
 
     async fn start_impl(&mut self) -> Result<(), ProtocolError> {
@@ -40,7 +44,8 @@ impl RequestHeadersFlow {
         let max_blocks = max(MAX_BLOCKS, self.ctx.config.mergeset_size_limit as usize + 1);
 
         loop {
-            let (msg, request_id) = dequeue_with_request_id!(self.incoming_route, Payload::RequestHeaders)?;
+            let (msg, request_id) =
+                dequeue_with_request_id!(self.incoming_route, Payload::RequestHeaders)?;
             let (high, mut low) = msg.try_into()?;
 
             let consensus = self.ctx.consensus();
@@ -64,17 +69,30 @@ impl RequestHeadersFlow {
                 debug!("Getting block headers between {} and {}", high, low);
 
                 // We spawn the I/O-intensive operation of reading a bunch of headers as a tokio blocking task
-                let (block_headers, last) =
-                    session.spawn_blocking(move |c| Self::get_headers_between(c, low, high, max_blocks)).await?;
+                let (block_headers, last) = session
+                    .spawn_blocking(move |c| Self::get_headers_between(c, low, high, max_blocks))
+                    .await?;
                 debug!("Got {} header hashes above {}", block_headers.len(), low);
                 low = last;
-                self.router.enqueue(make_response!(Payload::BlockHeaders, BlockHeadersMessage { block_headers }, request_id)).await?;
+                self.router
+                    .enqueue(make_response!(
+                        Payload::BlockHeaders,
+                        BlockHeadersMessage { block_headers },
+                        request_id
+                    ))
+                    .await?;
 
                 dequeue!(self.incoming_route, Payload::RequestNextHeaders)?;
                 session = consensus.session().await;
             }
 
-            self.router.enqueue(make_response!(Payload::DoneHeaders, DoneHeadersMessage {}, request_id)).await?;
+            self.router
+                .enqueue(make_response!(
+                    Payload::DoneHeaders,
+                    DoneHeadersMessage {},
+                    request_id
+                ))
+                .await?;
         }
     }
 
@@ -87,7 +105,9 @@ impl RequestHeadersFlow {
         max_blocks: usize,
     ) -> Result<(Vec<pb::BlockHeader>, Hash), ProtocolError> {
         let hashes = consensus.get_hashes_between(low, high, max_blocks)?.0;
-        let last = *hashes.last().expect("caller ensured that high and low are valid and different");
+        let last = *hashes
+            .last()
+            .expect("caller ensured that high and low are valid and different");
         debug!("obtained {} header hashes above {}", hashes.len(), low);
         let mut block_headers = Vec::with_capacity(hashes.len());
         for hash in hashes {

@@ -24,10 +24,14 @@ impl<'a> KarlsendHandshake<'a> {
         }
     }
 
-    async fn receive_version_flow(router: &Router, version_receiver: &mut IncomingRoute) -> Result<VersionMessage, ProtocolError> {
+    async fn receive_version_flow(
+        router: &Router,
+        version_receiver: &mut IncomingRoute,
+    ) -> Result<VersionMessage, ProtocolError> {
         debug!("starting receive version flow");
 
-        let version_message = dequeue_with_timeout!(version_receiver, Payload::Version, Duration::from_secs(4))?;
+        let version_message =
+            dequeue_with_timeout!(version_receiver, Payload::Version, Duration::from_secs(4))?;
         debug!("accepted version message: {version_message:?}");
 
         let verack_message = make_message!(Payload::Verack, VerackMessage {});
@@ -47,7 +51,8 @@ impl<'a> KarlsendHandshake<'a> {
         let version_message = make_message!(Payload::Version, version_message);
         router.enqueue(version_message).await?;
 
-        let verack_message = dequeue_with_timeout!(verack_receiver, Payload::Verack, Duration::from_secs(4))?;
+        let verack_message =
+            dequeue_with_timeout!(verack_receiver, Payload::Verack, Duration::from_secs(4))?;
         debug!("accepted verack_message: {verack_message:?}");
 
         Ok(())
@@ -61,14 +66,18 @@ impl<'a> KarlsendHandshake<'a> {
         let sent_ready_message = make_message!(Payload::Ready, ReadyMessage {});
         self.router.enqueue(sent_ready_message).await?;
 
-        let recv_ready_message = dequeue_with_timeout!(self.ready_receiver, Payload::Ready, Duration::from_secs(8))?;
+        let recv_ready_message =
+            dequeue_with_timeout!(self.ready_receiver, Payload::Ready, Duration::from_secs(8))?;
         debug!("accepted ready message: {recv_ready_message:?}");
 
         Ok(())
     }
 
     /// Performs the handshake with the peer, essentially exchanging version messages
-    pub async fn handshake(&mut self, self_version_message: VersionMessage) -> Result<VersionMessage, ProtocolError> {
+    pub async fn handshake(
+        &mut self,
+        self_version_message: VersionMessage,
+    ) -> Result<VersionMessage, ProtocolError> {
         // Run both send and receive flows concurrently -- this is critical in order to avoid a handshake deadlock
         let (send_res, recv_res) = tokio::join!(
             Self::send_version_flow(self.router, &mut self.verack_receiver, self_version_message),

@@ -8,9 +8,14 @@ use crate::utxo::*;
 
 #[tokio::test]
 async fn test_utxo_subsystem_bootstrap() -> Result<()> {
-    let network_id = NetworkId::with_suffix(NetworkType::Testnet, 10);
+    let network_id = NetworkId::with_suffix(NetworkType::Testnet, 1);
     let rpc_api_mock = Arc::new(RpcCoreMock::new());
-    let processor = UtxoProcessor::new(Some(rpc_api_mock.clone().into()), Some(network_id), None, None);
+    let processor = UtxoProcessor::new(
+        Some(rpc_api_mock.clone().into()),
+        Some(network_id),
+        None,
+        None,
+    );
     let _context = UtxoContext::new(&processor, UtxoContextBinding::default());
 
     processor.mock_set_connected(true);
@@ -26,7 +31,15 @@ fn test_utxo_generator_empty_utxo_noop() -> Result<()> {
     let output_address = output_address(network_id.into());
 
     let payment_output = PaymentOutput::new(output_address, karlsen_to_sompi(2.0));
-    let generator = make_generator(network_id, &[10.0], &[], Fees::SenderPays(0), change_address, payment_output.into()).unwrap();
+    let generator = make_generator(
+        network_id,
+        &[10.0],
+        &[],
+        Fees::SenderPays(0),
+        change_address,
+        payment_output.into(),
+    )
+    .unwrap();
     let _tx = generator.generate_transaction().unwrap();
     // println!("tx: {:?}", tx);
     // assert!(tx.is_none());

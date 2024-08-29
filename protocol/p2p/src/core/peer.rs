@@ -32,7 +32,14 @@ impl Peer {
         properties: Arc<PeerProperties>,
         last_ping_duration: u64,
     ) -> Self {
-        Self { identity, net_address, is_outbound, connection_started, properties, last_ping_duration }
+        Self {
+            identity,
+            net_address,
+            is_outbound,
+            connection_started,
+            properties,
+            last_ping_duration,
+        }
     }
 
     /// Internal identity of this peer
@@ -55,7 +62,9 @@ impl Peer {
     }
 
     pub fn time_connected(&self) -> u64 {
-        Instant::now().duration_since(self.connection_started).as_millis() as u64
+        Instant::now()
+            .duration_since(self.connection_started)
+            .as_millis() as u64
     }
 
     pub fn properties(&self) -> Arc<PeerProperties> {

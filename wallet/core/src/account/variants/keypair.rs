@@ -72,14 +72,23 @@ impl BorshDeserialize for Payload {
     fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
         use secp256k1::constants::PUBLIC_KEY_SIZE;
 
-        let StorageHeader { version: _, .. } =
-            StorageHeader::deserialize(buf)?.try_magic(Self::STORAGE_MAGIC)?.try_version(Self::STORAGE_VERSION)?;
+        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?
+            .try_magic(Self::STORAGE_MAGIC)?
+            .try_version(Self::STORAGE_VERSION)?;
 
-        let public_key_bytes: [u8; PUBLIC_KEY_SIZE] = buf[..PUBLIC_KEY_SIZE]
-            .try_into()
-            .map_err(|_| IoError::new(IoErrorKind::Other, "Unable to deserialize keypair account (public_key buffer try_into)"))?;
-        let public_key = secp256k1::PublicKey::from_slice(&public_key_bytes)
-            .map_err(|_| IoError::new(IoErrorKind::Other, "Unable to deserialize keypair account (invalid public key)"))?;
+        let public_key_bytes: [u8; PUBLIC_KEY_SIZE] =
+            buf[..PUBLIC_KEY_SIZE].try_into().map_err(|_| {
+                IoError::new(
+                    IoErrorKind::Other,
+                    "Unable to deserialize keypair account (public_key buffer try_into)",
+                )
+            })?;
+        let public_key = secp256k1::PublicKey::from_slice(&public_key_bytes).map_err(|_| {
+            IoError::new(
+                IoErrorKind::Other,
+                "Unable to deserialize keypair account (invalid public key)",
+            )
+        })?;
         *buf = &buf[PUBLIC_KEY_SIZE..];
         let ecdsa = BorshDeserialize::deserialize(buf)?;
 
@@ -103,21 +112,42 @@ impl Keypair {
         ecdsa: bool,
     ) -> Result<Self> {
         let storable = Payload::new(public_key, ecdsa);
-        let settings = AccountSettings { name, ..Default::default() };
+        let settings = AccountSettings {
+            name,
+            ..Default::default()
+        };
 
         let (id, storage_key) = make_account_hashes(from_keypair(&prv_key_data_id, &storable));
         let inner = Arc::new(Inner::new(wallet, id, storage_key, settings));
 
-        let Payload { public_key, ecdsa, .. } = storable;
-        Ok(Self { inner, prv_key_data_id, public_key, ecdsa })
+        let Payload {
+            public_key, ecdsa, ..
+        } = storable;
+        Ok(Self {
+            inner,
+            prv_key_data_id,
+            public_key,
+            ecdsa,
+        })
     }
 
-    pub async fn try_load(wallet: &Arc<Wallet>, storage: &AccountStorage, _meta: Option<Arc<AccountMetadata>>) -> Result<Self> {
+    pub async fn try_load(
+        wallet: &Arc<Wallet>,
+        storage: &AccountStorage,
+        _meta: Option<Arc<AccountMetadata>>,
+    ) -> Result<Self> {
         let storable = Payload::try_load(storage)?;
         let inner = Arc::new(Inner::from_storage(wallet, storage));
 
-        let Payload { public_key, ecdsa, .. } = storable;
-        Ok(Self { inner, prv_key_data_id: storage.prv_key_data_ids.clone().try_into()?, public_key, ecdsa })
+        let Payload {
+            public_key, ecdsa, ..
+        } = storable;
+        Ok(Self {
+            inner,
+            prv_key_data_id: storage.prv_key_data_ids.clone().try_into()?,
+            public_key,
+            ecdsa,
+        })
     }
 }
 
@@ -149,12 +179,20 @@ impl Account for Keypair {
 
     fn receive_address(&self) -> Result<Address> {
         let (xonly_public_key, _) = self.public_key.x_only_public_key();
-        Ok(Address::new(self.inner().wallet.network_id()?.into(), Version::PubKey, &xonly_public_key.serialize()))
+        Ok(Address::new(
+            self.inner().wallet.network_id()?.into(),
+            Version::PubKey,
+            &xonly_public_key.serialize(),
+        ))
     }
 
     fn change_address(&self) -> Result<Address> {
         let (xonly_public_key, _) = self.public_key.x_only_public_key();
-        Ok(Address::new(self.inner().wallet.network_id()?.into(), Version::PubKey, &xonly_public_key.serialize()))
+        Ok(Address::new(
+            self.inner().wallet.network_id()?.into(),
+            Version::PubKey,
+            &xonly_public_key.serialize(),
+        ))
     }
 
     fn to_storage(&self) -> Result<AccountStorage> {

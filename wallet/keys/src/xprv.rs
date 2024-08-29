@@ -28,7 +28,8 @@ impl XPrv {
 impl XPrv {
     #[wasm_bindgen(constructor)]
     pub fn try_new(seed: HexString) -> Result<XPrv> {
-        let seed_bytes = Vec::<u8>::from_hex(String::try_from(seed)?.as_str()).map_err(|_| Error::custom("Invalid seed"))?;
+        let seed_bytes = Vec::<u8>::from_hex(String::try_from(seed)?.as_str())
+            .map_err(|_| Error::custom("Invalid seed"))?;
 
         let inner = ExtendedPrivateKey::<SecretKey>::new(seed_bytes)?;
         Ok(Self { inner })
@@ -37,7 +38,9 @@ impl XPrv {
     /// Create {@link XPrv} from `xprvxxxx..` string
     #[wasm_bindgen(js_name=fromXPrv)]
     pub fn from_xprv_str(xprv: String) -> Result<XPrv> {
-        Ok(Self { inner: ExtendedPrivateKey::<SecretKey>::from_str(&xprv)? })
+        Ok(Self {
+            inner: ExtendedPrivateKey::<SecretKey>::from_str(&xprv)?,
+        })
     }
 
     #[wasm_bindgen(js_name=deriveChild)]

@@ -37,7 +37,10 @@ const MAXIMUM_STANDARD_SIGNATURE_SCRIPT_SIZE: u64 = 1650;
 const MAXIMUM_STANDARD_TRANSACTION_MASS: u64 = 100_000;
 
 impl Mempool {
-    pub(crate) fn check_transaction_standard_in_isolation(&self, transaction: &MutableTransaction) -> NonStandardResult<()> {
+    pub(crate) fn check_transaction_standard_in_isolation(
+        &self,
+        transaction: &MutableTransaction,
+    ) -> NonStandardResult<()> {
         let transaction_id = transaction.id();
 
         // The transaction must be a currently supported version.
@@ -88,7 +91,10 @@ impl Mempool {
         // None of the output public key scripts can be a non-standard script or be "dust".
         for (i, output) in transaction.tx.outputs.iter().enumerate() {
             if output.script_public_key.version() > MAX_SCRIPT_PUBLIC_KEY_VERSION {
-                return Err(NonStandardError::RejectScriptPublicKeyVersion(transaction_id, i));
+                return Err(NonStandardError::RejectScriptPublicKeyVersion(
+                    transaction_id,
+                    i,
+                ));
             }
 
             if ScriptClass::from_script(&output.script_public_key) == ScriptClass::NonStandard {
@@ -96,7 +102,11 @@ impl Mempool {
             }
 
             if self.is_transaction_output_dust(output) {
-                return Err(NonStandardError::RejectDust(transaction_id, i, output.value));
+                return Err(NonStandardError::RejectDust(
+                    transaction_id,
+                    i,
+                    output.value,
+                ));
             }
         }
 
@@ -112,7 +122,10 @@ impl Mempool {
     /// transaction relay fee, it is considered dust.
     ///
     /// It is exposed by [MiningManager] for use by transaction generators and wallets.
-    pub(crate) fn is_transaction_output_dust(&self, transaction_output: &TransactionOutput) -> bool {
+    pub(crate) fn is_transaction_output_dust(
+        &self,
+        transaction_output: &TransactionOutput,
+    ) -> bool {
         // Unspendable outputs are considered dust.
         if is_unspendable::<PopulatedTransaction>(transaction_output.script_public_key.script()) {
             return true;
@@ -135,7 +148,8 @@ impl Mempool {
         // The most common scripts are pay-to-pubkey, and as per the above
         // breakdown, the minimum size of a p2pk input script is 148 bytes. So
         // that figure is used.
-        let total_serialized_size = mass::transaction_output_estimated_serialized_size(transaction_output) + 148;
+        let total_serialized_size =
+            mass::transaction_output_estimated_serialized_size(transaction_output) + 148;
 
         // The output is considered dust if the cost to the network to spend the
         // coins is more than 1/3 of the minimum free transaction relay fee.
@@ -153,7 +167,9 @@ impl Mempool {
         // Since the multiplication may overflow a u64, 2 separate calculation paths
         // are considered to avoid overflowing.
         match transaction_output.value.checked_mul(1000) {
-            Some(value_1000) => value_1000 / (3 * total_serialized_size) < self.config.minimum_relay_transaction_fee,
+            Some(value_1000) => {
+                value_1000 / (3 * total_serialized_size) < self.config.minimum_relay_transaction_fee
+            }
             None => {
                 (transaction_output.value as u128 * 1000 / (3 * total_serialized_size as u128))
                     < self.config.minimum_relay_transaction_fee as u128
@@ -168,12 +184,19 @@ impl Mempool {
     /// maxStandardP2SHSigOps signature operations.
     /// In addition, makes sure that the transaction's fee is above the minimum for acceptance
     /// into the mempool and relay.
-    pub(crate) fn check_transaction_standard_in_context(&self, transaction: &MutableTransaction) -> NonStandardResult<()> {
+    pub(crate) fn check_transaction_standard_in_context(
+        &self,
+        transaction: &MutableTransaction,
+    ) -> NonStandardResult<()> {
         let transaction_id = transaction.id();
         let contextual_mass = transaction.tx.mass();
         assert!(contextual_mass > 0, "expected to be set by consensus");
         if contextual_mass > MAXIMUM_STANDARD_TRANSACTION_MASS {
-            return Err(NonStandardError::RejectContextualMass(transaction_id, contextual_mass, MAXIMUM_STANDARD_TRANSACTION_MASS));
+            return Err(NonStandardError::RejectContextualMass(
+                transaction_id,
+                contextual_mass,
+                MAXIMUM_STANDARD_TRANSACTION_MASS,
+            ));
         }
 
         for (i, input) in transaction.tx.inputs.iter().enumerate() {
@@ -188,18 +211,32 @@ impl Mempool {
                 ScriptClass::PubKey => {}
                 ScriptClass::PubKeyECDSA => {}
                 ScriptClass::ScriptHash => {
-                    get_sig_op_count::<PopulatedTransaction>(&input.signature_script, &entry.script_public_key);
+                    get_sig_op_count::<PopulatedTransaction>(
+                        &input.signature_script,
+                        &entry.script_public_key,
+                    );
                     let num_sig_ops = 1;
                     if num_sig_ops > MAX_STANDARD_P2SH_SIG_OPS {
-                        return Err(NonStandardError::RejectSignatureCount(transaction_id, i, num_sig_ops, MAX_STANDARD_P2SH_SIG_OPS));
+                        return Err(NonStandardError::RejectSignatureCount(
+                            transaction_id,
+                            i,
+                            num_sig_ops,
+                            MAX_STANDARD_P2SH_SIG_OPS,
+                        ));
                     }
                 }
             }
 
             // TODO: For now, until wallets adapt, we don't require fee as function of full contextual_mass (but the fee/mass ratio will affect tx selection to block template)
-            let minimum_fee = self.minimum_required_transaction_relay_fee(transaction.calculated_compute_mass.unwrap());
+            let minimum_fee = self.minimum_required_transaction_relay_fee(
+                transaction.calculated_compute_mass.unwrap(),
+            );
             if transaction.calculated_fee.unwrap() < minimum_fee {
-                return Err(NonStandardError::RejectInsufficientFee(transaction_id, transaction.calculated_fee.unwrap(), minimum_fee));
+                return Err(NonStandardError::RejectInsufficientFee(
+                    transaction_id,
+                    transaction.calculated_fee.unwrap(),
+                    minimum_fee,
+                ));
             }
         }
 
@@ -240,7 +277,10 @@ mod tests {
         constants::{MAX_TX_IN_SEQUENCE_NUM, SOMPI_PER_KARLSEN, TX_VERSION},
         network::NetworkType,
         subnets::SUBNETWORK_ID_NATIVE,
-        tx::{ScriptPublicKey, ScriptVec, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput},
+        tx::{
+            ScriptPublicKey, ScriptVec, Transaction, TransactionInput, TransactionOutpoint,
+            TransactionOutput,
+        },
     };
     use karlsen_txscript::{
         opcodes::codes::{OpReturn, OpTrue},
@@ -279,24 +319,56 @@ mod tests {
                 minimum_relay_transaction_fee: DEFAULT_MINIMUM_RELAY_TRANSACTION_FEE,
                 want: 100000,
             },
-            Test { name: "1500 bytes with 5000 relay fee", size: 1500, minimum_relay_transaction_fee: 5000, want: 7500 },
-            Test { name: "1500 bytes with 3000 relay fee", size: 1500, minimum_relay_transaction_fee: 3000, want: 4500 },
-            Test { name: "782 bytes with 5000 relay fee", size: 782, minimum_relay_transaction_fee: 5000, want: 3910 },
-            Test { name: "782 bytes with 3000 relay fee", size: 782, minimum_relay_transaction_fee: 3000, want: 2346 },
-            Test { name: "782 bytes with 2550 relay fee", size: 782, minimum_relay_transaction_fee: 2550, want: 1994 },
+            Test {
+                name: "1500 bytes with 5000 relay fee",
+                size: 1500,
+                minimum_relay_transaction_fee: 5000,
+                want: 7500,
+            },
+            Test {
+                name: "1500 bytes with 3000 relay fee",
+                size: 1500,
+                minimum_relay_transaction_fee: 3000,
+                want: 4500,
+            },
+            Test {
+                name: "782 bytes with 5000 relay fee",
+                size: 782,
+                minimum_relay_transaction_fee: 5000,
+                want: 3910,
+            },
+            Test {
+                name: "782 bytes with 3000 relay fee",
+                size: 782,
+                minimum_relay_transaction_fee: 3000,
+                want: 2346,
+            },
+            Test {
+                name: "782 bytes with 2550 relay fee",
+                size: 782,
+                minimum_relay_transaction_fee: 2550,
+                want: 1994,
+            },
         ];
 
         for test in tests.iter() {
             for net in NetworkType::iter() {
                 let params: Params = net.into();
-                let mut config = Config::build_default(params.target_time_per_block, false, params.max_block_mass);
+                let mut config = Config::build_default(
+                    params.target_time_per_block,
+                    false,
+                    params.max_block_mass,
+                );
                 config.minimum_relay_transaction_fee = test.minimum_relay_transaction_fee;
                 let counters = Arc::new(MiningCounters::default());
                 let mempool = Mempool::new(Arc::new(config), counters);
 
                 let got = mempool.minimum_required_transaction_relay_fee(test.size);
                 if got != test.want {
-                    println!("test_calc_min_required_tx_relay_fee test '{}' failed: got {}, want {}", test.name, got, test.want);
+                    println!(
+                        "test_calc_min_required_tx_relay_fee test '{}' failed: got {}, want {}",
+                        test.name, got, test.want
+                    );
                 }
                 assert_eq!(test.want, got);
             }
@@ -308,8 +380,9 @@ mod tests {
         let script_public_key = ScriptPublicKey::new(
             0,
             smallvec![
-                0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43, 0x0a, 0xa4, 0xc9, 0xd1, 0x59, 0x43, 0x7e, 0x84, 0xb9, 0x75, 0xdc, 0x76,
-                0xd9, 0x00, 0x3b, 0xf0, 0x92, 0x2c, 0xf3, 0xaa, 0x45, 0x28, 0x46, 0x4b, 0xab, 0x78, 0x0d, 0xba, 0x5e
+                0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43, 0x0a, 0xa4, 0xc9, 0xd1, 0x59, 0x43, 0x7e,
+                0x84, 0xb9, 0x75, 0xdc, 0x76, 0xd9, 0x00, 0x3b, 0xf0, 0x92, 0x2c, 0xf3, 0xaa, 0x45,
+                0x28, 0x46, 0x4b, 0xab, 0x78, 0x0d, 0xba, 0x5e
             ],
         );
         let invalid_script_public_key = ScriptPublicKey::new(0, smallvec![0x01]);
@@ -374,7 +447,11 @@ mod tests {
         for test in tests {
             for net in NetworkType::iter() {
                 let params: Params = net.into();
-                let mut config = Config::build_default(params.target_time_per_block, false, params.max_block_mass);
+                let mut config = Config::build_default(
+                    params.target_time_per_block,
+                    false,
+                    params.max_block_mass,
+                );
                 config.minimum_relay_transaction_fee = test.minimum_relay_transaction_fee;
                 let counters = Arc::new(MiningCounters::default());
                 let mempool = Mempool::new(Arc::new(config), counters);
@@ -382,7 +459,10 @@ mod tests {
                 println!("test_is_transaction_output_dust test '{}' ", test.name);
                 let res = mempool.is_transaction_output_dust(&test.tx_out);
                 if res != test.is_dust {
-                    println!("test_is_transaction_output_dust test '{}' failed: got {}, want {}", test.name, res, test.is_dust);
+                    println!(
+                        "test_is_transaction_output_dust test '{}' failed: got {}, want {}",
+                        test.name, res, test.is_dust
+                    );
                 }
                 assert_eq!(test.is_dust, res);
             }
@@ -394,7 +474,8 @@ mod tests {
         // Create some dummy, but otherwise standard, data for transactions.
         let dummy_prev_out = TransactionOutpoint::new(karlsen_hashes::Hash::from_u64_word(1), 1);
         let dummy_sig_script = vec![0u8; 65];
-        let dummy_tx_input = TransactionInput::new(dummy_prev_out, dummy_sig_script, MAX_TX_IN_SEQUENCE_NUM, 1);
+        let dummy_tx_input =
+            TransactionInput::new(dummy_prev_out, dummy_sig_script, MAX_TX_IN_SEQUENCE_NUM, 1);
         let addr_hash = vec![1u8; 32];
 
         let addr = Address::new(Prefix::Testnet, Version::PubKey, &addr_hash);
@@ -456,7 +537,11 @@ mod tests {
                             0u64,
                             ScriptPublicKey::new(
                                 MAX_SCRIPT_PUBLIC_KEY_VERSION,
-                                ScriptVec::from_vec(vec![0u8; MAXIMUM_STANDARD_TRANSACTION_MASS as usize + 1]),
+                                ScriptVec::from_vec(vec![
+                                    0u8;
+                                    MAXIMUM_STANDARD_TRANSACTION_MASS as usize
+                                        + 1
+                                ]),
                             ),
                         )],
                         0,
@@ -537,7 +622,11 @@ mod tests {
                             SOMPI_PER_KARLSEN,
                             ScriptPublicKey::new(
                                 MAX_SCRIPT_PUBLIC_KEY_VERSION,
-                                ScriptBuilder::new().add_op(OpReturn).unwrap().script().into(),
+                                ScriptBuilder::new()
+                                    .add_op(OpReturn)
+                                    .unwrap()
+                                    .script()
+                                    .into(),
                             ),
                         )],
                         0,
@@ -554,12 +643,19 @@ mod tests {
         for test in tests {
             for net in NetworkType::iter() {
                 let params: Params = net.into();
-                let config = Config::build_default(params.target_time_per_block, false, params.max_block_mass);
+                let config = Config::build_default(
+                    params.target_time_per_block,
+                    false,
+                    params.max_block_mass,
+                );
                 let counters = Arc::new(MiningCounters::default());
                 let mempool = Mempool::new(Arc::new(config), counters);
 
                 // Ensure standard-ness is as expected.
-                println!("test_check_transaction_standard_in_isolation test '{}' ", test.name);
+                println!(
+                    "test_check_transaction_standard_in_isolation test '{}' ",
+                    test.name
+                );
                 let res = mempool.check_transaction_standard_in_isolation(&test.mtx);
                 if res.is_ok() && test.is_standard {
                     // Test passes since function returned standard for a
@@ -575,7 +671,11 @@ mod tests {
                         test.name, res
                     );
                 }
-                assert_eq!(res.is_ok(), test.is_standard, "ensuring transaction standard-ness is as expected");
+                assert_eq!(
+                    res.is_ok(),
+                    test.is_standard,
+                    "ensuring transaction standard-ness is as expected"
+                );
             }
         }
     }

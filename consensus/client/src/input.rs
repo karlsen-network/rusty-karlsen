@@ -55,7 +55,13 @@ impl TransactionInputInner {
         sig_op_count: u8,
         utxo: Option<UtxoEntryReference>,
     ) -> Self {
-        Self { previous_outpoint, signature_script, sequence, sig_op_count, utxo }
+        Self {
+            previous_outpoint,
+            signature_script,
+            sequence,
+            sig_op_count,
+            utxo,
+        }
     }
 }
 
@@ -75,12 +81,22 @@ impl TransactionInput {
         sig_op_count: u8,
         utxo: Option<UtxoEntryReference>,
     ) -> Self {
-        let inner = TransactionInputInner::new(previous_outpoint, signature_script, sequence, sig_op_count, utxo);
-        Self { inner: Arc::new(Mutex::new(inner)) }
+        let inner = TransactionInputInner::new(
+            previous_outpoint,
+            signature_script,
+            sequence,
+            sig_op_count,
+            utxo,
+        );
+        Self {
+            inner: Arc::new(Mutex::new(inner)),
+        }
     }
 
     pub fn new_with_inner(inner: TransactionInputInner) -> Self {
-        Self { inner: Arc::new(Mutex::new(inner)) }
+        Self {
+            inner: Arc::new(Mutex::new(inner)),
+        }
     }
 
     pub fn inner(&self) -> MutexGuard<'_, TransactionInputInner> {
@@ -167,7 +183,8 @@ impl TransactionInput {
     }
 
     pub fn script_public_key(&self) -> Option<ScriptPublicKey> {
-        self.utxo().map(|utxo_ref| utxo_ref.utxo.script_public_key.clone())
+        self.utxo()
+            .map(|utxo_ref| utxo_ref.utxo.script_public_key.clone())
     }
 }
 
@@ -182,12 +199,22 @@ impl TryCastFromJs for TransactionInput {
     fn try_cast_from(value: impl AsRef<JsValue>) -> std::result::Result<Cast<Self>, Self::Error> {
         Self::resolve_cast(&value, || {
             if let Some(object) = Object::try_from(value.as_ref()) {
-                let previous_outpoint: TransactionOutpoint = object.get_value("previousOutpoint")?.as_ref().try_into()?;
+                let previous_outpoint: TransactionOutpoint =
+                    object.get_value("previousOutpoint")?.as_ref().try_into()?;
                 let signature_script = object.get_vec_u8("signatureScript")?;
                 let sequence = object.get_u64("sequence")?;
                 let sig_op_count = object.get_u8("sigOpCount")?;
-                let utxo = object.try_get_cast::<UtxoEntryReference>("utxo")?.map(Cast::into_owned);
-                Ok(TransactionInput::new(previous_outpoint, signature_script, sequence, sig_op_count, utxo).into())
+                let utxo = object
+                    .try_get_cast::<UtxoEntryReference>("utxo")?
+                    .map(Cast::into_owned);
+                Ok(TransactionInput::new(
+                    previous_outpoint,
+                    signature_script,
+                    sequence,
+                    sig_op_count,
+                    utxo,
+                )
+                .into())
             } else {
                 Err("TransactionInput must be an object".into())
             }

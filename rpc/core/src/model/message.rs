@@ -2,7 +2,9 @@ use crate::model::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 use karlsen_consensus_core::api::stats::BlockCount;
 use karlsen_core::debug;
-use karlsen_notify::subscription::{context::SubscriptionContext, single::UtxosChangedSubscription, Command};
+use karlsen_notify::subscription::{
+    context::SubscriptionContext, single::UtxosChangedSubscription, Command,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{Display, Formatter},
@@ -24,11 +26,16 @@ pub struct SubmitBlockRequest {
 }
 impl SubmitBlockRequest {
     pub fn new(block: RpcBlock, allow_non_daa_blocks: bool) -> Self {
-        Self { block, allow_non_daa_blocks }
+        Self {
+            block,
+            allow_non_daa_blocks,
+        }
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Clone, Copy, Eq, PartialEq, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum SubmitBlockRejectReason {
     BlockInvalid = 1,
@@ -84,7 +91,10 @@ pub struct GetBlockTemplateRequest {
 }
 impl GetBlockTemplateRequest {
     pub fn new(pay_address: RpcAddress, extra_data: RpcExtraData) -> Self {
-        Self { pay_address, extra_data }
+        Self {
+            pay_address,
+            extra_data,
+        }
     }
 }
 
@@ -112,7 +122,10 @@ pub struct GetBlockRequest {
 }
 impl GetBlockRequest {
     pub fn new(hash: RpcHash, include_transactions: bool) -> Self {
-        Self { hash, include_transactions }
+        Self {
+            hash,
+            include_transactions,
+        }
     }
 }
 
@@ -168,7 +181,10 @@ pub struct GetPeerAddressesResponse {
 
 impl GetPeerAddressesResponse {
     pub fn new(known_addresses: Vec<RpcPeerAddress>, banned_addresses: Vec<RpcIpAddress>) -> Self {
-        Self { known_addresses, banned_addresses }
+        Self {
+            known_addresses,
+            banned_addresses,
+        }
     }
 }
 
@@ -184,7 +200,9 @@ pub struct GetSinkResponse {
 
 impl GetSinkResponse {
     pub fn new(selected_tip_hash: RpcHash) -> Self {
-        Self { sink: selected_tip_hash }
+        Self {
+            sink: selected_tip_hash,
+        }
     }
 }
 
@@ -198,8 +216,16 @@ pub struct GetMempoolEntryRequest {
 }
 
 impl GetMempoolEntryRequest {
-    pub fn new(transaction_id: RpcTransactionId, include_orphan_pool: bool, filter_transaction_pool: bool) -> Self {
-        Self { transaction_id, include_orphan_pool, filter_transaction_pool }
+    pub fn new(
+        transaction_id: RpcTransactionId,
+        include_orphan_pool: bool,
+        filter_transaction_pool: bool,
+    ) -> Self {
+        Self {
+            transaction_id,
+            include_orphan_pool,
+            filter_transaction_pool,
+        }
     }
 }
 
@@ -225,7 +251,10 @@ pub struct GetMempoolEntriesRequest {
 
 impl GetMempoolEntriesRequest {
     pub fn new(include_orphan_pool: bool, filter_transaction_pool: bool) -> Self {
-        Self { include_orphan_pool, filter_transaction_pool }
+        Self {
+            include_orphan_pool,
+            filter_transaction_pool,
+        }
     }
 }
 
@@ -266,7 +295,10 @@ pub struct AddPeerRequest {
 
 impl AddPeerRequest {
     pub fn new(peer_address: RpcContextualPeerAddress, is_permanent: bool) -> Self {
-        Self { peer_address, is_permanent }
+        Self {
+            peer_address,
+            is_permanent,
+        }
     }
 }
 
@@ -283,7 +315,10 @@ pub struct SubmitTransactionRequest {
 
 impl SubmitTransactionRequest {
     pub fn new(transaction: RpcTransaction, allow_orphan: bool) -> Self {
-        Self { transaction, allow_orphan }
+        Self {
+            transaction,
+            allow_orphan,
+        }
     }
 }
 
@@ -332,7 +367,10 @@ pub struct GetVirtualChainFromBlockRequest {
 
 impl GetVirtualChainFromBlockRequest {
     pub fn new(start_hash: RpcHash, include_accepted_transaction_ids: bool) -> Self {
-        Self { start_hash, include_accepted_transaction_ids }
+        Self {
+            start_hash,
+            include_accepted_transaction_ids,
+        }
     }
 }
 
@@ -350,7 +388,11 @@ impl GetVirtualChainFromBlockResponse {
         added_chain_block_hashes: Vec<RpcHash>,
         accepted_transaction_ids: Vec<RpcAcceptedTransactionIds>,
     ) -> Self {
-        Self { removed_chain_block_hashes, added_chain_block_hashes, accepted_transaction_ids }
+        Self {
+            removed_chain_block_hashes,
+            added_chain_block_hashes,
+            accepted_transaction_ids,
+        }
     }
 }
 
@@ -363,8 +405,16 @@ pub struct GetBlocksRequest {
 }
 
 impl GetBlocksRequest {
-    pub fn new(low_hash: Option<RpcHash>, include_blocks: bool, include_transactions: bool) -> Self {
-        Self { low_hash, include_blocks, include_transactions }
+    pub fn new(
+        low_hash: Option<RpcHash>,
+        include_blocks: bool,
+        include_transactions: bool,
+    ) -> Self {
+        Self {
+            low_hash,
+            include_blocks,
+            include_transactions,
+        }
     }
 }
 
@@ -377,7 +427,10 @@ pub struct GetBlocksResponse {
 
 impl GetBlocksResponse {
     pub fn new(block_hashes: Vec<RpcHash>, blocks: Vec<RpcBlock>) -> Self {
-        Self { block_hashes, blocks }
+        Self {
+            block_hashes,
+            blocks,
+        }
     }
 }
 
@@ -442,7 +495,9 @@ pub struct ResolveFinalityConflictRequest {
 
 impl ResolveFinalityConflictRequest {
     pub fn new(finality_block_hash: RpcHash) -> Self {
-        Self { finality_block_hash }
+        Self {
+            finality_block_hash,
+        }
     }
 }
 
@@ -468,7 +523,11 @@ pub struct GetHeadersRequest {
 
 impl GetHeadersRequest {
     pub fn new(start_hash: RpcHash, limit: u64, is_ascending: bool) -> Self {
-        Self { start_hash, limit, is_ascending }
+        Self {
+            start_hash,
+            limit,
+            is_ascending,
+        }
     }
 }
 
@@ -613,7 +672,10 @@ pub struct EstimateNetworkHashesPerSecondRequest {
 
 impl EstimateNetworkHashesPerSecondRequest {
     pub fn new(window_size: u32, start_hash: Option<RpcHash>) -> Self {
-        Self { window_size, start_hash }
+        Self {
+            window_size,
+            start_hash,
+        }
     }
 }
 
@@ -625,7 +687,9 @@ pub struct EstimateNetworkHashesPerSecondResponse {
 
 impl EstimateNetworkHashesPerSecondResponse {
     pub fn new(network_hashes_per_second: u64) -> Self {
-        Self { network_hashes_per_second }
+        Self {
+            network_hashes_per_second,
+        }
     }
 }
 
@@ -639,8 +703,16 @@ pub struct GetMempoolEntriesByAddressesRequest {
 }
 
 impl GetMempoolEntriesByAddressesRequest {
-    pub fn new(addresses: Vec<RpcAddress>, include_orphan_pool: bool, filter_transaction_pool: bool) -> Self {
-        Self { addresses, include_orphan_pool, filter_transaction_pool }
+    pub fn new(
+        addresses: Vec<RpcAddress>,
+        include_orphan_pool: bool,
+        filter_transaction_pool: bool,
+    ) -> Self {
+        Self {
+            addresses,
+            include_orphan_pool,
+            filter_transaction_pool,
+        }
     }
 }
 
@@ -669,7 +741,10 @@ pub struct GetCoinSupplyResponse {
 
 impl GetCoinSupplyResponse {
     pub fn new(max_sompi: u64, circulating_sompi: u64) -> Self {
-        Self { max_sompi, circulating_sompi }
+        Self {
+            max_sompi,
+            circulating_sompi,
+        }
     }
 }
 
@@ -772,7 +847,13 @@ impl GetMetricsResponse {
         bandwidth_metrics: Option<BandwidthMetrics>,
         consensus_metrics: Option<ConsensusMetrics>,
     ) -> Self {
-        Self { process_metrics, connection_metrics, bandwidth_metrics, consensus_metrics, server_time }
+        Self {
+            process_metrics,
+            connection_metrics,
+            bandwidth_metrics,
+            consensus_metrics,
+            server_time,
+        }
     }
 }
 
@@ -876,7 +957,10 @@ pub struct NotifyVirtualChainChangedRequest {
 
 impl NotifyVirtualChainChangedRequest {
     pub fn new(include_accepted_transaction_ids: bool, command: Command) -> Self {
-        Self { include_accepted_transaction_ids, command }
+        Self {
+            include_accepted_transaction_ids,
+            command,
+        }
     }
 }
 
@@ -999,8 +1083,15 @@ impl UtxosChangedNotification {
             if added.is_empty() && removed.is_empty() {
                 None
             } else {
-                debug!("CRPC, Creating UtxosChanged notifications with {} added and {} removed utxos", added.len(), removed.len());
-                Some(Self { added: Arc::new(added), removed: Arc::new(removed) })
+                debug!(
+                    "CRPC, Creating UtxosChanged notifications with {} added and {} removed utxos",
+                    added.len(),
+                    removed.len()
+                );
+                Some(Self {
+                    added: Arc::new(added),
+                    removed: Arc::new(removed),
+                })
             }
         }
     }
@@ -1011,7 +1102,11 @@ impl UtxosChangedNotification {
         context: &SubscriptionContext,
     ) -> Vec<RpcUtxosByAddressesEntry> {
         let subscription_data = subscription.data();
-        utxo_set.iter().filter(|x| subscription_data.contains(&x.utxo_entry.script_public_key, context)).cloned().collect()
+        utxo_set
+            .iter()
+            .filter(|x| subscription_data.contains(&x.utxo_entry.script_public_key, context))
+            .cloned()
+            .collect()
     }
 }
 

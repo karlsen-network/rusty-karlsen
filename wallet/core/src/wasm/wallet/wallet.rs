@@ -2,7 +2,9 @@ use crate::imports::*;
 use crate::storage::local::interface::LocalStore;
 use crate::storage::WalletDescriptor;
 use crate::wallet as native;
-use crate::wasm::notify::{WalletEventTarget, WalletNotificationCallback, WalletNotificationTypeOrCallback};
+use crate::wasm::notify::{
+    WalletEventTarget, WalletNotificationCallback, WalletNotificationTypeOrCallback,
+};
 use karlsen_wallet_macros::declare_typescript_wasm_interface as declare;
 use karlsen_wasm_core::events::{get_event_targets, Sink};
 use karlsen_wrpc_wasm::{IConnectOptions, Resolver, RpcClient, RpcConfig, WrpcEncoding};
@@ -47,7 +49,13 @@ impl TryFrom<JsValue> for WalletCtorArgs {
             let url = object.get_value("url")?.as_string();
             let resolver = object.try_get("resolver")?;
 
-            Ok(Self { resident, network_id, encoding, url, resolver })
+            Ok(Self {
+                resident,
+                network_id,
+                encoding,
+                url,
+                resolver,
+            })
         } else {
             Ok(WalletCtorArgs::default())
         }
@@ -144,17 +152,32 @@ cfg_if! {
 impl Wallet {
     #[wasm_bindgen(constructor)]
     pub fn constructor(config: IWalletConfig) -> Result<Wallet> {
-        let WalletCtorArgs { resident, network_id, encoding, url, resolver } = WalletCtorArgs::try_from(JsValue::from(config))?;
+        let WalletCtorArgs {
+            resident,
+            network_id,
+            encoding,
+            url,
+            resolver,
+        } = WalletCtorArgs::try_from(JsValue::from(config))?;
 
         let store = Arc::new(LocalStore::try_new(resident)?);
 
-        let rpc_config = RpcConfig { url, resolver, encoding, network_id };
+        let rpc_config = RpcConfig {
+            url,
+            resolver,
+            encoding,
+            network_id,
+        };
 
         let rpc = RpcClient::new(Some(rpc_config))?;
         let rpc_api: Arc<DynRpcApi> = rpc.client().rpc_api().clone();
         let rpc_ctl = rpc.client().rpc_ctl().clone();
         let rpc_binding = Rpc::new(rpc_api, rpc_ctl);
-        let wallet = Arc::new(native::Wallet::try_with_rpc(Some(rpc_binding), store, network_id)?);
+        let wallet = Arc::new(native::Wallet::try_with_rpc(
+            Some(rpc_binding),
+            store,
+            network_id,
+        )?);
 
         Ok(Self {
             inner: Arc::new(Inner {
@@ -197,7 +220,8 @@ impl Wallet {
     }
 
     pub async fn start(&self) -> Result<()> {
-        self.start_notification_task(self.wallet().multiplexer()).await?;
+        self.start_notification_task(self.wallet().multiplexer())
+            .await?;
         self.wallet().start().await?;
         Ok(())
     }
@@ -226,12 +250,24 @@ impl Wallet {
     ) -> Result<()> {
         if let Ok(sink) = Sink::try_from(&event) {
             let event = EventKind::All;
-            self.inner.callbacks.lock().unwrap().entry(event).or_default().push(sink);
+            self.inner
+                .callbacks
+                .lock()
+                .unwrap()
+                .entry(event)
+                .or_default()
+                .push(sink);
             Ok(())
         } else if let Some(Ok(sink)) = callback.map(Sink::try_from) {
             let targets: Vec<EventKind> = get_event_targets(event)?;
             for event in targets {
-                self.inner.callbacks.lock().unwrap().entry(event).or_default().push(sink.clone());
+                self.inner
+                    .callbacks
+                    .lock()
+                    .unwrap()
+                    .entry(event)
+                    .or_default()
+                    .push(sink.clone());
             }
             Ok(())
         } else {
@@ -240,7 +276,11 @@ impl Wallet {
     }
 
     #[wasm_bindgen(js_name = "removeEventListener")]
-    pub fn remove_event_listener(&self, event: WalletEventTarget, callback: Option<WalletNotificationCallback>) -> Result<()> {
+    pub fn remove_event_listener(
+        &self,
+        event: WalletEventTarget,
+        callback: Option<WalletNotificationCallback>,
+    ) -> Result<()> {
         let mut callbacks = self.inner.callbacks.lock().unwrap();
         if let Ok(sink) = Sink::try_from(&event) {
             // remove callback from all events
@@ -271,7 +311,10 @@ impl Wallet {
         &self.inner.wallet
     }
 
-    pub async fn start_notification_task(&self, multiplexer: &Multiplexer<Box<Events>>) -> Result<()> {
+    pub async fn start_notification_task(
+        &self,
+        multiplexer: &Multiplexer<Box<Events>>,
+    ) -> Result<()> {
         let inner = self.inner.clone();
 
         if inner.task_running.load(Ordering::SeqCst) {
@@ -319,7 +362,11 @@ impl Wallet {
         let inner = &self.inner;
         if inner.task_running.load(Ordering::SeqCst) {
             inner.task_running.store(false, Ordering::SeqCst);
-            inner.task_ctl.signal(()).await.map_err(|err| JsValue::from_str(&err.to_string()))?;
+            inner
+                .task_ctl
+                .signal(())
+                .await
+                .map_err(|err| JsValue::from_str(&err.to_string()))?;
         }
         Ok(())
     }

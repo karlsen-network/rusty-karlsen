@@ -38,7 +38,8 @@ impl TryFrom<HexString> for String {
 impl From<&[u8]> for HexString {
     fn from(bytes: &[u8]) -> Self {
         let mut hex = vec![0u8; bytes.len() * 2];
-        faster_hex::hex_encode(bytes, hex.as_mut_slice()).expect("The output is exactly twice the size of the input");
+        faster_hex::hex_encode(bytes, hex.as_mut_slice())
+            .expect("The output is exactly twice the size of the input");
         let result = unsafe { str::from_utf8_unchecked(&hex) };
         JsValue::from(result).into()
     }

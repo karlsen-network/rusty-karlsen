@@ -33,18 +33,27 @@ pub struct DbUtxoDiffsStore {
 
 impl DbUtxoDiffsStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::UtxoDiffs.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::UtxoDiffs.into()),
+        }
     }
 
     pub fn clone_with_new_cache(&self, cache_policy: CachePolicy) -> Self {
         Self::new(Arc::clone(&self.db), cache_policy)
     }
 
-    pub fn insert_batch(&self, batch: &mut WriteBatch, hash: Hash, utxo_diff: Arc<UtxoDiff>) -> Result<(), StoreError> {
+    pub fn insert_batch(
+        &self,
+        batch: &mut WriteBatch,
+        hash: Hash,
+        utxo_diff: Arc<UtxoDiff>,
+    ) -> Result<(), StoreError> {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access.write(BatchDbWriter::new(batch), hash, utxo_diff)?;
+        self.access
+            .write(BatchDbWriter::new(batch), hash, utxo_diff)?;
         Ok(())
     }
 
@@ -64,7 +73,8 @@ impl UtxoDiffsStore for DbUtxoDiffsStore {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access.write(DirectDbWriter::new(&self.db), hash, utxo_diff)?;
+        self.access
+            .write(DirectDbWriter::new(&self.db), hash, utxo_diff)?;
         Ok(())
     }
 

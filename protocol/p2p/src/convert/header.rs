@@ -13,11 +13,18 @@ impl From<&Header> for protowire::BlockHeader {
     fn from(item: &Header) -> Self {
         Self {
             version: item.version.into(),
-            parents: item.parents_by_level.iter().map(protowire::BlockLevelParents::from).collect(),
+            parents: item
+                .parents_by_level
+                .iter()
+                .map(protowire::BlockLevelParents::from)
+                .collect(),
             hash_merkle_root: Some(item.hash_merkle_root.into()),
             accepted_id_merkle_root: Some(item.accepted_id_merkle_root.into()),
             utxo_commitment: Some(item.utxo_commitment.into()),
-            timestamp: item.timestamp.try_into().expect("timestamp is always convertible to i64"),
+            timestamp: item
+                .timestamp
+                .try_into()
+                .expect("timestamp is always convertible to i64"),
             bits: item.bits,
             nonce: item.nonce,
             daa_score: item.daa_score,
@@ -31,7 +38,9 @@ impl From<&Header> for protowire::BlockHeader {
 
 impl From<&Vec<Hash>> for protowire::BlockLevelParents {
     fn from(item: &Vec<Hash>) -> Self {
-        Self { parent_hashes: item.iter().map(|h| h.into()).collect() }
+        Self {
+            parent_hashes: item.iter().map(|h| h.into()).collect(),
+        }
     }
 }
 
@@ -44,7 +53,10 @@ impl TryFrom<protowire::BlockHeader> for Header {
     fn try_from(item: protowire::BlockHeader) -> Result<Self, Self::Error> {
         Ok(Self::new_finalized(
             item.version.try_into()?,
-            item.parents.into_iter().map(Vec::<Hash>::try_from).collect::<Result<Vec<Vec<Hash>>, ConversionError>>()?,
+            item.parents
+                .into_iter()
+                .map(Vec::<Hash>::try_from)
+                .collect::<Result<Vec<Vec<Hash>>, ConversionError>>()?,
             item.hash_merkle_root.try_into_ex()?,
             item.accepted_id_merkle_root.try_into_ex()?,
             item.utxo_commitment.try_into_ex()?,
@@ -63,6 +75,9 @@ impl TryFrom<protowire::BlockHeader> for Header {
 impl TryFrom<protowire::BlockLevelParents> for Vec<Hash> {
     type Error = ConversionError;
     fn try_from(item: protowire::BlockLevelParents) -> Result<Self, Self::Error> {
-        item.parent_hashes.into_iter().map(|x| x.try_into()).collect()
+        item.parent_hashes
+            .into_iter()
+            .map(|x| x.try_into())
+            .collect()
     }
 }

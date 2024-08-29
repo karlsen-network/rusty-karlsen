@@ -10,13 +10,22 @@ pub struct Descriptor {
 
 impl From<&Arc<Connection>> for Descriptor {
     fn from(connection: &Arc<Connection>) -> Self {
-        Self { connection: connection.clone(), json: serde_json::to_string(&Output::from(connection)).unwrap() }
+        Self {
+            connection: connection.clone(),
+            json: serde_json::to_string(&Output::from(connection)).unwrap(),
+        }
     }
 }
 
 impl fmt::Display for Connection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}: [{:>3}] {}", self.node.id_string, self.clients(), self.node.address)
+        write!(
+            f,
+            "{}: [{:>3}] {}",
+            self.node.id_string,
+            self.clients(),
+            self.node.address
+        )
     }
 }
 
@@ -46,7 +55,19 @@ impl Connection {
         let clients = Arc::new(AtomicU64::new(0));
         let bias = (node.bias.unwrap_or(1.0) * BIAS_SCALE as f64) as u64;
         let args = args.clone();
-        Ok(Self { node, descriptor, sender, client, shutdown_ctl, is_connected, is_synced, is_online, clients, bias, args })
+        Ok(Self {
+            node,
+            descriptor,
+            sender,
+            client,
+            shutdown_ctl,
+            is_connected,
+            is_synced,
+            is_online,
+            clients,
+            bias,
+            args,
+        })
     }
 
     pub fn verbose(&self) -> bool {
@@ -90,7 +111,11 @@ impl Connection {
     }
 
     async fn connect(&self) -> Result<()> {
-        let options = ConnectOptions { block_async_connect: false, strategy: ConnectStrategy::Retry, ..Default::default() };
+        let options = ConnectOptions {
+            block_async_connect: false,
+            strategy: ConnectStrategy::Retry,
+            ..Default::default()
+        };
 
         self.client.connect(Some(options)).await?;
         Ok(())
@@ -176,7 +201,10 @@ impl Connection {
     }
 
     pub async fn stop(self: &Arc<Self>) -> Result<()> {
-        self.shutdown_ctl.signal(()).await.expect("NodeConnection shutdown signal error");
+        self.shutdown_ctl
+            .signal(())
+            .await
+            .expect("NodeConnection shutdown signal error");
         Ok(())
     }
 
@@ -192,8 +220,8 @@ impl Connection {
                             if let Some(connection_metrics) = metrics.connection_metrics {
                                 // update
                                 let previous = self.clients.load(Ordering::Relaxed);
-                                let clients =
-                                    connection_metrics.borsh_live_connections as u64 + connection_metrics.json_live_connections as u64;
+                                let clients = connection_metrics.borsh_live_connections as u64
+                                    + connection_metrics.json_live_connections as u64;
                                 self.clients.store(clients, Ordering::Relaxed);
                                 if clients != previous {
                                     if self.verbose() {
@@ -252,11 +280,24 @@ impl<'a> From<&'a Arc<Connection>> for Output<'a> {
     fn from(connection: &'a Arc<Connection>) -> Self {
         let id = connection.node.id_string.as_str();
         let url = connection.node.address.as_str();
-        let provider_name = connection.node.provider.as_ref().map(|provider| provider.name.as_str());
-        let provider_url = connection.node.provider.as_ref().map(|provider| provider.url.as_str());
+        let provider_name = connection
+            .node
+            .provider
+            .as_ref()
+            .map(|provider| provider.name.as_str());
+        let provider_url = connection
+            .node
+            .provider
+            .as_ref()
+            .map(|provider| provider.url.as_str());
 
         // let provider_name = connection.node.provider.as_deref();
         // let provider_url = connection.node.link.as_deref();
-        Self { id, url, provider_name, provider_url }
+        Self {
+            id,
+            url,
+            provider_name,
+            provider_url,
+        }
     }
 }

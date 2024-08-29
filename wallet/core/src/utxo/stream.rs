@@ -12,7 +12,10 @@ pub struct UtxoStream {
 
 impl UtxoStream {
     pub fn new(utxo_context: &UtxoContext) -> Self {
-        Self { utxo_context: utxo_context.clone(), cursor: 0 }
+        Self {
+            utxo_context: utxo_context.clone(),
+            cursor: 0,
+        }
     }
 }
 

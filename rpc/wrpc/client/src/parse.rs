@@ -103,24 +103,44 @@ pub fn parse_host(input: &str) -> Result<ParseHostOutput, ParseHostError> {
 
     // Attempt to parse the host as an IPv4 address.
     if let Ok(ipv4) = host.parse::<Ipv4Addr>() {
-        return Ok(ParseHostOutput { scheme, host: Host::Ipv4(ipv4), port, path });
+        return Ok(ParseHostOutput {
+            scheme,
+            host: Host::Ipv4(ipv4),
+            port,
+            path,
+        });
     }
 
     // Attempt to parse the host as an IPv6 address enclosed in square brackets.
     if host.starts_with('[') && host.ends_with(']') {
         let ipv6 = &host[1..host.len() - 1];
         if let Ok(ipv6) = ipv6.parse::<Ipv6Addr>() {
-            return Ok(ParseHostOutput { scheme, host: Host::Ipv6(ipv6), port, path });
+            return Ok(ParseHostOutput {
+                scheme,
+                host: Host::Ipv6(ipv6),
+                port,
+                path,
+            });
         }
     }
     // Attempt to parse the host as an IPv6 address.
     if let Ok(ipv6) = host.parse::<Ipv6Addr>() {
-        return Ok(ParseHostOutput { scheme, host: Host::Ipv6(ipv6), port, path });
+        return Ok(ParseHostOutput {
+            scheme,
+            host: Host::Ipv6(ipv6),
+            port,
+            path,
+        });
     }
 
     // Attempt to parse the host as a hostname.
     if host.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
-        return Ok(ParseHostOutput { scheme, host: Host::Hostname(host), port, path });
+        return Ok(ParseHostOutput {
+            scheme,
+            host: Host::Hostname(host),
+            port,
+            path,
+        });
     }
 
     // Attempt to parse the host as a domain.
@@ -130,13 +150,17 @@ pub fn parse_host(input: &str) -> Result<ParseHostOutput, ParseHostError> {
     let dots_are_separated_by_valid_chars = host.split('.').all(|part| {
         let part_does_not_start_with_hyphen = !part.starts_with('-');
         let part_does_not_end_with_hyphen = !part.ends_with('-');
-        part_does_not_start_with_hyphen && part_does_not_end_with_hyphen && part.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+        part_does_not_start_with_hyphen
+            && part_does_not_end_with_hyphen
+            && part.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
     });
     let does_not_start_with_hyphen = !host.starts_with('-');
     let does_not_end_with_hyphen = !host.ends_with('-');
     let has_at_least_one_hyphen = host.contains('-');
-    let hyphens_are_separated_by_valid_chars =
-        has_at_least_one_hyphen.then(|| host.split('-').all(|part| part.chars().all(|c| c == '.' || c.is_ascii_alphanumeric())));
+    let hyphens_are_separated_by_valid_chars = has_at_least_one_hyphen.then(|| {
+        host.split('-')
+            .all(|part| part.chars().all(|c| c == '.' || c.is_ascii_alphanumeric()))
+    });
     let tld = host.split('.').last();
     // Prevents e.g. numbers being used as TLDs (which in turn prevents e.g. mistakes in IPv4 addresses as being detected as a domain).
     let tld_exists_and_is_not_number = tld.map(|tld| tld.parse::<i32>().is_err()).unwrap_or(false);
@@ -150,7 +174,12 @@ pub fn parse_host(input: &str) -> Result<ParseHostOutput, ParseHostError> {
         && hyphens_are_separated_by_valid_chars.unwrap_or(true)
         && tld_exists_and_is_not_number
     {
-        return Ok(ParseHostOutput { scheme, host: Host::Domain(host), port, path });
+        return Ok(ParseHostOutput {
+            scheme,
+            host: Host::Domain(host),
+            port,
+            path,
+        });
     }
 
     Err(ParseHostError::InvalidInput)
@@ -201,7 +230,10 @@ mod tests {
         let input = "::1";
         let output = parse_host(input).unwrap();
         assert_eq!(output.scheme, None);
-        assert_eq!(output.host, Host::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)));
+        assert_eq!(
+            output.host,
+            Host::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1))
+        );
         assert_eq!(output.port, None);
     }
 
@@ -210,7 +242,10 @@ mod tests {
         let input = "[::1]";
         let output = parse_host(input).unwrap();
         assert_eq!(output.scheme, None);
-        assert_eq!(output.host, Host::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)));
+        assert_eq!(
+            output.host,
+            Host::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1))
+        );
         assert_eq!(output.port, None);
     }
 
@@ -228,7 +263,10 @@ mod tests {
         let input = "[::1]:8080";
         let output = parse_host(input).unwrap();
         assert_eq!(output.scheme, None);
-        assert_eq!(output.host, Host::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)));
+        assert_eq!(
+            output.host,
+            Host::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1))
+        );
         assert_eq!(output.port, Some(8080));
     }
 
@@ -237,7 +275,10 @@ mod tests {
         let input = "ws://[::1]:8080";
         let output = parse_host(input).unwrap();
         assert_eq!(output.scheme, Some("ws"));
-        assert_eq!(output.host, Host::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)));
+        assert_eq!(
+            output.host,
+            Host::Ipv6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1))
+        );
         assert_eq!(output.port, Some(8080));
     }
 

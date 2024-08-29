@@ -4,7 +4,9 @@
 
 use crate::utxo::NetworkParams;
 use karlsen_consensus_client::UtxoEntryReference;
-use karlsen_consensus_core::tx::{Transaction, TransactionInput, TransactionOutput, SCRIPT_VECTOR_SIZE};
+use karlsen_consensus_core::tx::{
+    Transaction, TransactionInput, TransactionOutput, SCRIPT_VECTOR_SIZE,
+};
 use karlsen_consensus_core::{config::params::Params, constants::*, subnets::SUBNETWORK_ID_SIZE};
 use karlsen_hashes::HASH_SIZE;
 
@@ -106,15 +108,21 @@ pub fn is_transaction_output_dust(transaction_output: &TransactionOutput) -> boo
     // are considered to avoid overflowing.
     let value = transaction_output.value;
     match value.checked_mul(1000) {
-        Some(value_1000) => value_1000 / (3 * total_serialized_size) < MINIMUM_RELAY_TRANSACTION_FEE,
-        None => (value as u128 * 1000 / (3 * total_serialized_size as u128)) < MINIMUM_RELAY_TRANSACTION_FEE as u128,
+        Some(value_1000) => {
+            value_1000 / (3 * total_serialized_size) < MINIMUM_RELAY_TRANSACTION_FEE
+        }
+        None => {
+            (value as u128 * 1000 / (3 * total_serialized_size as u128))
+                < MINIMUM_RELAY_TRANSACTION_FEE as u128
+        }
     }
 }
 
 // The most common scripts are pay-to-pubkey, and as per the above
 // breakdown, the minimum size of a p2pk input script is 148 bytes. So
 // that figure is used.
-pub const STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE: u64 = transaction_standard_output_serialized_byte_size() + 148;
+pub const STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE: u64 =
+    transaction_standard_output_serialized_byte_size() + 148;
 pub const STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE_3X: u64 = STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE * 3;
 
 // pub fn is_standard_output_amount_dust(value: u64) -> bool {
@@ -146,11 +154,19 @@ pub fn transaction_serialized_byte_size(tx: &Transaction) -> u64 {
     let mut size: u64 = 0;
     size += 2; // Tx version (u16)
     size += 8; // Number of inputs (u64)
-    let inputs_size: u64 = tx.inputs.iter().map(transaction_input_serialized_byte_size).sum();
+    let inputs_size: u64 = tx
+        .inputs
+        .iter()
+        .map(transaction_input_serialized_byte_size)
+        .sum();
     size += inputs_size;
 
     size += 8; // number of outputs (u64)
-    let outputs_size: u64 = tx.outputs.iter().map(transaction_output_serialized_byte_size).sum();
+    let outputs_size: u64 = tx
+        .outputs
+        .iter()
+        .map(transaction_output_serialized_byte_size)
+        .sum();
     size += outputs_size;
 
     size += 8; // lock time (u64)
@@ -238,8 +254,13 @@ impl MassCalculator {
 
     pub fn is_dust(&self, value: u64) -> bool {
         match value.checked_mul(1000) {
-            Some(value_1000) => value_1000 / STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE_3X < MINIMUM_RELAY_TRANSACTION_FEE,
-            None => (value as u128 * 1000 / STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE_3X as u128) < MINIMUM_RELAY_TRANSACTION_FEE as u128,
+            Some(value_1000) => {
+                value_1000 / STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE_3X < MINIMUM_RELAY_TRANSACTION_FEE
+            }
+            None => {
+                (value as u128 * 1000 / STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE_3X as u128)
+                    < MINIMUM_RELAY_TRANSACTION_FEE as u128
+            }
         }
     }
 
@@ -259,11 +280,17 @@ impl MassCalculator {
     }
 
     pub fn calc_mass_for_outputs(&self, outputs: &[TransactionOutput]) -> u64 {
-        outputs.iter().map(|output| self.calc_mass_for_output(output)).sum()
+        outputs
+            .iter()
+            .map(|output| self.calc_mass_for_output(output))
+            .sum()
     }
 
     pub fn calc_mass_for_inputs(&self, inputs: &[TransactionInput]) -> u64 {
-        inputs.iter().map(|input| self.calc_mass_for_input(input)).sum::<u64>()
+        inputs
+            .iter()
+            .map(|input| self.calc_mass_for_input(input))
+            .sum::<u64>()
     }
 
     pub fn calc_mass_for_output(&self, output: &TransactionOutput) -> u64 {
@@ -272,7 +299,8 @@ impl MassCalculator {
     }
 
     pub fn calc_mass_for_input(&self, input: &TransactionInput) -> u64 {
-        input.sig_op_count as u64 * self.mass_per_sig_op + transaction_input_serialized_byte_size(input) * self.mass_per_tx_byte
+        input.sig_op_count as u64 * self.mass_per_sig_op
+            + transaction_input_serialized_byte_size(input) * self.mass_per_tx_byte
     }
 
     pub fn calc_signature_mass(&self, minimum_signatures: u16) -> u64 {
@@ -280,7 +308,11 @@ impl MassCalculator {
         SIGNATURE_SIZE * self.mass_per_tx_byte * minimum_signatures as u64
     }
 
-    pub fn calc_signature_mass_for_inputs(&self, number_of_inputs: usize, minimum_signatures: u16) -> u64 {
+    pub fn calc_signature_mass_for_inputs(
+        &self,
+        number_of_inputs: usize,
+        minimum_signatures: u16,
+    ) -> u64 {
         let minimum_signatures = std::cmp::max(1, minimum_signatures);
         SIGNATURE_SIZE * self.mass_per_tx_byte * minimum_signatures as u64 * number_of_inputs as u64
     }
@@ -289,17 +321,35 @@ impl MassCalculator {
         calc_minimum_required_transaction_relay_fee(mass)
     }
 
-    pub fn calc_mass_for_signed_transaction(&self, tx: &Transaction, minimum_signatures: u16) -> u64 {
-        self.calc_mass_for_transaction(tx) + self.calc_signature_mass_for_inputs(tx.inputs.len(), minimum_signatures)
+    pub fn calc_mass_for_signed_transaction(
+        &self,
+        tx: &Transaction,
+        minimum_signatures: u16,
+    ) -> u64 {
+        self.calc_mass_for_transaction(tx)
+            + self.calc_signature_mass_for_inputs(tx.inputs.len(), minimum_signatures)
     }
 
-    pub fn calc_minium_transaction_relay_fee(&self, tx: &Transaction, minimum_signatures: u16) -> u64 {
-        let mass = self.calc_mass_for_transaction(tx) + self.calc_signature_mass_for_inputs(tx.inputs.len(), minimum_signatures);
+    pub fn calc_minium_transaction_relay_fee(
+        &self,
+        tx: &Transaction,
+        minimum_signatures: u16,
+    ) -> u64 {
+        let mass = self.calc_mass_for_transaction(tx)
+            + self.calc_signature_mass_for_inputs(tx.inputs.len(), minimum_signatures);
         calc_minimum_required_transaction_relay_fee(mass)
     }
 
-    pub fn calc_tx_storage_fee(&self, is_coinbase: bool, inputs: &[UtxoEntryReference], outputs: &[TransactionOutput]) -> u64 {
-        self.calc_fee_for_storage_mass(self.calc_storage_mass_for_transaction(is_coinbase, inputs, outputs).unwrap_or(u64::MAX))
+    pub fn calc_tx_storage_fee(
+        &self,
+        is_coinbase: bool,
+        inputs: &[UtxoEntryReference],
+        outputs: &[TransactionOutput],
+    ) -> u64 {
+        self.calc_fee_for_storage_mass(
+            self.calc_storage_mass_for_transaction(is_coinbase, inputs, outputs)
+                .unwrap_or(u64::MAX),
+        )
     }
 
     pub fn calc_fee_for_storage_mass(&self, mass: u64) -> u64 {
@@ -360,20 +410,32 @@ impl MassCalculator {
         outputs
             .iter()
             .map(|out| self.storage_mass_parameter.checked_div(out.value))
-            .try_fold(0u64, |total, current| current.and_then(|current| total.checked_add(current)))
+            .try_fold(0u64, |total, current| {
+                current.and_then(|current| total.checked_add(current))
+            })
     }
 
     pub fn calc_storage_mass_output_harmonic_single(&self, output_value: u64) -> u64 {
         self.storage_mass_parameter / output_value
     }
 
-    pub fn calc_storage_mass_input_mean_arithmetic(&self, total_input_value: u64, number_of_inputs: u64) -> u64 {
+    pub fn calc_storage_mass_input_mean_arithmetic(
+        &self,
+        total_input_value: u64,
+        number_of_inputs: u64,
+    ) -> u64 {
         let mean_input_value = total_input_value / number_of_inputs;
         number_of_inputs.saturating_mul(self.storage_mass_parameter / mean_input_value)
     }
 
-    pub fn calc_storage_mass(&self, output_harmonic: u64, total_input_value: u64, number_of_inputs: u64) -> u64 {
-        let input_arithmetic = self.calc_storage_mass_input_mean_arithmetic(total_input_value, number_of_inputs);
+    pub fn calc_storage_mass(
+        &self,
+        output_harmonic: u64,
+        total_input_value: u64,
+        number_of_inputs: u64,
+    ) -> u64 {
+        let input_arithmetic =
+            self.calc_storage_mass_input_mean_arithmetic(total_input_value, number_of_inputs);
         output_harmonic.saturating_sub(input_arithmetic)
     }
 }

@@ -14,7 +14,8 @@ use karlsen_notify::notification::Notification as NotificationT;
 use karlsen_rpc_core::api::ctl;
 pub use karlsen_rpc_core::wasm::message::*;
 pub use karlsen_rpc_macros::{
-    build_wrpc_wasm_bindgen_interface, build_wrpc_wasm_bindgen_subscriptions, declare_typescript_wasm_interface as declare,
+    build_wrpc_wasm_bindgen_interface, build_wrpc_wasm_bindgen_subscriptions,
+    declare_typescript_wasm_interface as declare,
 };
 use karlsen_wasm_core::events::{get_event_targets, Sink};
 pub use serde_wasm_bindgen::from_value;
@@ -48,7 +49,7 @@ declare! {
          */
         encoding?: Encoding;
         /**
-         * Network identifier: `mainnet`, `testnet-10` etc.
+         * Network identifier: `mainnet`, `testnet-1` etc.
          * `networkId` is required when using a resolver.
          */
         networkId?: NetworkId | string;
@@ -65,7 +66,12 @@ pub struct RpcConfig {
 
 impl Default for RpcConfig {
     fn default() -> Self {
-        RpcConfig { url: None, encoding: Some(Encoding::Borsh), network_id: None, resolver: None }
+        RpcConfig {
+            url: None,
+            encoding: Some(Encoding::Borsh),
+            network_id: None,
+            resolver: None,
+        }
     }
 }
 
@@ -81,7 +87,12 @@ impl TryFrom<IRpcConfig> for RpcConfig {
             return Err(Error::custom("networkId is required when using a resolver"));
         }
 
-        Ok(RpcConfig { resolver, url, encoding, network_id })
+        Ok(RpcConfig {
+            resolver,
+            url,
+            encoding,
+            network_id,
+        })
     }
 }
 
@@ -114,7 +125,10 @@ impl FromStr for NotificationEvent {
         } else if let Ok(event) = EventType::from_str(s) {
             Ok(NotificationEvent::Notification(event))
         } else {
-            Err(Error::custom(format!("Invalid notification event type: `{}`", s)))
+            Err(Error::custom(format!(
+                "Invalid notification event type: `{}`",
+                s
+            )))
         }
     }
 }
@@ -125,7 +139,10 @@ impl TryFrom<JsValue> for NotificationEvent {
         if let Some(event) = event.as_string() {
             event.parse()
         } else {
-            Err(Error::custom(format!("Invalid notification event: `{:?}`", event)))
+            Err(Error::custom(format!(
+                "Invalid notification event: `{:?}`",
+                event
+            )))
         }
     }
 }
@@ -272,25 +289,34 @@ cfg_if! {
 
 impl RpcClient {
     pub fn new(config: Option<RpcConfig>) -> Result<RpcClient> {
-        let RpcConfig { resolver, url, encoding, network_id } = config.unwrap_or_default();
+        let RpcConfig {
+            resolver,
+            url,
+            encoding,
+            network_id,
+        } = config.unwrap_or_default();
 
         let encoding = encoding.unwrap_or(Encoding::Borsh);
 
         let url = url
-            .map(
-                |url| {
-                    if let Some(network_id) = network_id {
-                        Self::parse_url(&url, encoding, network_id)
-                    } else {
-                        Ok(url.to_string())
-                    }
-                },
-            )
+            .map(|url| {
+                if let Some(network_id) = network_id {
+                    Self::parse_url(&url, encoding, network_id)
+                } else {
+                    Ok(url.to_string())
+                }
+            })
             .transpose()?;
 
         let client = Arc::new(
-            KarlsenRpcClient::new(encoding, url.as_deref(), resolver.clone().map(Into::into), network_id, None)
-                .unwrap_or_else(|err| panic!("{err}")),
+            KarlsenRpcClient::new(
+                encoding,
+                url.as_deref(),
+                resolver.clone().map(Into::into),
+                network_id,
+                None,
+            )
+            .unwrap_or_else(|err| panic!("{err}")),
         );
 
         let rpc_client = RpcClient {
@@ -364,19 +390,28 @@ impl RpcClient {
     /// Optional: Resolver node id.
     #[wasm_bindgen(getter, js_name = "nodeId")]
     pub fn resolver_node_id(&self) -> Option<String> {
-        self.inner.client.node_descriptor().map(|node| node.id.clone())
+        self.inner
+            .client
+            .node_descriptor()
+            .map(|node| node.id.clone())
     }
 
     /// Optional: public node provider name.
     #[wasm_bindgen(getter, js_name = "providerName")]
     pub fn resolver_node_provider_name(&self) -> Option<String> {
-        self.inner.client.node_descriptor().and_then(|node| node.provider_name.clone())
+        self.inner
+            .client
+            .node_descriptor()
+            .and_then(|node| node.provider_name.clone())
     }
 
     /// Optional: public node provider URL.
     #[wasm_bindgen(getter, js_name = "providerUrl")]
     pub fn resolver_node_provider_url(&self) -> Option<String> {
-        self.inner.client.node_descriptor().and_then(|node| node.provider_url.clone())
+        self.inner
+            .client
+            .node_descriptor()
+            .and_then(|node| node.provider_url.clone())
     }
 
     /// Connect to the Karlsen RPC server. This function starts a background
@@ -535,15 +570,31 @@ impl RpcClient {
     /// @see {@link RpcClient.removeEventListener}, {@link RpcClient.removeAllEventListeners}
     ///
     #[wasm_bindgen(js_name = "addEventListener", skip_typescript)]
-    pub fn add_event_listener(&self, event: RpcEventTypeOrCallback, callback: Option<RpcEventCallback>) -> Result<()> {
+    pub fn add_event_listener(
+        &self,
+        event: RpcEventTypeOrCallback,
+        callback: Option<RpcEventCallback>,
+    ) -> Result<()> {
         if let Ok(sink) = Sink::try_from(&event) {
             let event = NotificationEvent::All;
-            self.inner.callbacks.lock().unwrap().entry(event).or_default().push(sink);
+            self.inner
+                .callbacks
+                .lock()
+                .unwrap()
+                .entry(event)
+                .or_default()
+                .push(sink);
             Ok(())
         } else if let Some(Ok(sink)) = callback.map(Sink::try_from) {
             let targets: Vec<NotificationEvent> = get_event_targets(event)?;
             for event in targets {
-                self.inner.callbacks.lock().unwrap().entry(event).or_default().push(sink.clone());
+                self.inner
+                    .callbacks
+                    .lock()
+                    .unwrap()
+                    .entry(event)
+                    .or_default()
+                    .push(sink.clone());
             }
             Ok(())
         } else {
@@ -559,7 +610,11 @@ impl RpcClient {
     ///
     /// @see {@link RpcClient.addEventListener}
     #[wasm_bindgen(js_name = "removeEventListener")]
-    pub fn remove_event_listener(&self, event: RpcEventType, callback: Option<RpcEventCallback>) -> Result<()> {
+    pub fn remove_event_listener(
+        &self,
+        event: RpcEventType,
+        callback: Option<RpcEventCallback>,
+    ) -> Result<()> {
         let mut callbacks = self.inner.callbacks.lock().unwrap();
         if let Ok(sink) = Sink::try_from(&event) {
             // remove callback from all events
@@ -635,7 +690,11 @@ impl RpcClient {
 
     async fn stop_notification_task(&self) -> Result<()> {
         if self.inner.notification_task.load(Ordering::SeqCst) {
-            self.inner.notification_ctl.signal(()).await.map_err(|err| JsError::new(&err.to_string()))?;
+            self.inner
+                .notification_ctl
+                .signal(())
+                .await
+                .map_err(|err| JsError::new(&err.to_string()))?;
             self.inner.notification_task.store(false, Ordering::SeqCst);
         }
         Ok(())
@@ -653,8 +712,14 @@ impl RpcClient {
         let ctl_receiver = self.inner.notification_ctl.request.receiver.clone();
         let ctl_sender = self.inner.notification_ctl.response.sender.clone();
         let notification_receiver = self.inner.notification_channel.receiver.clone();
-        let ctl_multiplexer_channel =
-            self.inner.client.rpc_client().ctl_multiplexer().as_ref().expect("WASM32 RpcClient ctl_multiplexer is None").channel();
+        let ctl_multiplexer_channel = self
+            .inner
+            .client
+            .rpc_client()
+            .ctl_multiplexer()
+            .as_ref()
+            .expect("WASM32 RpcClient ctl_multiplexer is None")
+            .channel();
         let this = self.clone();
 
         spawn(async move {
@@ -796,7 +861,13 @@ impl RpcClient {
     #[wasm_bindgen(js_name = subscribeVirtualDaaScoreChanged)]
     pub async fn subscribe_daa_score(&self) -> Result<()> {
         if let Some(listener_id) = self.listener_id() {
-            self.inner.client.stop_notify(listener_id, Scope::VirtualDaaScoreChanged(VirtualDaaScoreChangedScope {})).await?;
+            self.inner
+                .client
+                .stop_notify(
+                    listener_id,
+                    Scope::VirtualDaaScoreChanged(VirtualDaaScoreChangedScope {}),
+                )
+                .await?;
         } else {
             log_error!("RPC unsubscribe on a closed connection");
         }
@@ -809,7 +880,13 @@ impl RpcClient {
     #[wasm_bindgen(js_name = unsubscribeVirtualDaaScoreChanged)]
     pub async fn unsubscribe_daa_score(&self) -> Result<()> {
         if let Some(listener_id) = self.listener_id() {
-            self.inner.client.stop_notify(listener_id, Scope::VirtualDaaScoreChanged(VirtualDaaScoreChangedScope {})).await?;
+            self.inner
+                .client
+                .stop_notify(
+                    listener_id,
+                    Scope::VirtualDaaScoreChanged(VirtualDaaScoreChangedScope {}),
+                )
+                .await?;
         } else {
             log_error!("RPC unsubscribe on a closed connection");
         }
@@ -825,7 +902,13 @@ impl RpcClient {
     pub async fn subscribe_utxos_changed(&self, addresses: AddressOrStringArrayT) -> Result<()> {
         if let Some(listener_id) = self.listener_id() {
             let addresses: Vec<Address> = addresses.try_into()?;
-            self.inner.client.start_notify(listener_id, Scope::UtxosChanged(UtxosChangedScope { addresses })).await?;
+            self.inner
+                .client
+                .start_notify(
+                    listener_id,
+                    Scope::UtxosChanged(UtxosChangedScope { addresses }),
+                )
+                .await?;
         } else {
             log_error!("RPC subscribe on a closed connection");
         }
@@ -839,7 +922,13 @@ impl RpcClient {
     pub async fn unsubscribe_utxos_changed(&self, addresses: AddressOrStringArrayT) -> Result<()> {
         if let Some(listener_id) = self.listener_id() {
             let addresses: Vec<Address> = addresses.try_into()?;
-            self.inner.client.stop_notify(listener_id, Scope::UtxosChanged(UtxosChangedScope { addresses })).await?;
+            self.inner
+                .client
+                .stop_notify(
+                    listener_id,
+                    Scope::UtxosChanged(UtxosChangedScope { addresses }),
+                )
+                .await?;
         } else {
             log_error!("RPC unsubscribe on a closed connection");
         }
@@ -852,11 +941,19 @@ impl RpcClient {
     /// Virtual chain changed notification event is produced when the virtual
     /// chain changes in the Karlsen BlockDAG.
     #[wasm_bindgen(js_name = subscribeVirtualChainChanged)]
-    pub async fn subscribe_virtual_chain_changed(&self, include_accepted_transaction_ids: bool) -> Result<()> {
+    pub async fn subscribe_virtual_chain_changed(
+        &self,
+        include_accepted_transaction_ids: bool,
+    ) -> Result<()> {
         if let Some(listener_id) = self.listener_id() {
             self.inner
                 .client
-                .start_notify(listener_id, Scope::VirtualChainChanged(VirtualChainChangedScope { include_accepted_transaction_ids }))
+                .start_notify(
+                    listener_id,
+                    Scope::VirtualChainChanged(VirtualChainChangedScope {
+                        include_accepted_transaction_ids,
+                    }),
+                )
                 .await?;
         } else {
             log_error!("RPC subscribe on a closed connection");
@@ -868,11 +965,19 @@ impl RpcClient {
     /// Virtual chain changed notification event is produced when the virtual
     /// chain changes in the Karlsen BlockDAG.
     #[wasm_bindgen(js_name = unsubscribeVirtualChainChanged)]
-    pub async fn unsubscribe_virtual_chain_changed(&self, include_accepted_transaction_ids: bool) -> Result<()> {
+    pub async fn unsubscribe_virtual_chain_changed(
+        &self,
+        include_accepted_transaction_ids: bool,
+    ) -> Result<()> {
         if let Some(listener_id) = self.listener_id() {
             self.inner
                 .client
-                .stop_notify(listener_id, Scope::VirtualChainChanged(VirtualChainChangedScope { include_accepted_transaction_ids }))
+                .stop_notify(
+                    listener_id,
+                    Scope::VirtualChainChanged(VirtualChainChangedScope {
+                        include_accepted_transaction_ids,
+                    }),
+                )
                 .await?;
         } else {
             log_error!("RPC unsubscribe on a closed connection");

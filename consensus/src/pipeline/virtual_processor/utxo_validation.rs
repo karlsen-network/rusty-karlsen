@@ -2,9 +2,15 @@ use super::VirtualStateProcessor;
 use crate::{
     errors::{
         BlockProcessResult,
-        RuleError::{BadAcceptedIDMerkleRoot, BadCoinbaseTransaction, BadUTXOCommitment, InvalidTransactionsInUtxoContext},
+        RuleError::{
+            BadAcceptedIDMerkleRoot, BadCoinbaseTransaction, BadUTXOCommitment,
+            InvalidTransactionsInUtxoContext,
+        },
     },
-    model::stores::{block_transactions::BlockTransactionsStoreReader, daa::DaaStoreReader, ghostdag::GhostdagData},
+    model::stores::{
+        block_transactions::BlockTransactionsStoreReader, daa::DaaStoreReader,
+        ghostdag::GhostdagData,
+    },
     processes::{
         mass::Kip9Version,
         transaction_validator::{
@@ -19,7 +25,10 @@ use karlsen_consensus_core::{
     hashing,
     header::Header,
     muhash::MuHashExtensions,
-    tx::{MutableTransaction, PopulatedTransaction, Transaction, TransactionId, ValidatedTransaction, VerifiableTransaction},
+    tx::{
+        MutableTransaction, PopulatedTransaction, Transaction, TransactionId, ValidatedTransaction,
+        VerifiableTransaction,
+    },
     utxo::{
         utxo_diff::UtxoDiff,
         utxo_view::{UtxoView, UtxoViewComposition},
@@ -46,7 +55,10 @@ pub(super) struct UtxoProcessingContext<'a> {
 }
 
 impl<'a> UtxoProcessingContext<'a> {
-    pub fn new(ghostdag_data: Refs<'a, GhostdagData>, selected_parent_multiset_hash: MuHash) -> Self {
+    pub fn new(
+        ghostdag_data: Refs<'a, GhostdagData>,
+        selected_parent_multiset_hash: MuHash,
+    ) -> Self {
         let mergeset_size = ghostdag_data.mergeset_size();
         Self {
             ghostdag_data,
@@ -71,18 +83,27 @@ impl VirtualStateProcessor {
         selected_parent_utxo_view: &V,
         pov_daa_score: u64,
     ) {
-        let selected_parent_transactions = self.block_transactions_store.get(ctx.selected_parent()).unwrap();
-        let validated_coinbase = ValidatedTransaction::new_coinbase(&selected_parent_transactions[0]);
+        let selected_parent_transactions = self
+            .block_transactions_store
+            .get(ctx.selected_parent())
+            .unwrap();
+        let validated_coinbase =
+            ValidatedTransaction::new_coinbase(&selected_parent_transactions[0]);
 
-        ctx.mergeset_diff.add_transaction(&validated_coinbase, pov_daa_score).unwrap();
-        ctx.multiset_hash.add_transaction(&validated_coinbase, pov_daa_score);
+        ctx.mergeset_diff
+            .add_transaction(&validated_coinbase, pov_daa_score)
+            .unwrap();
+        ctx.multiset_hash
+            .add_transaction(&validated_coinbase, pov_daa_score);
         let validated_coinbase_id = validated_coinbase.id();
         ctx.accepted_tx_ids.push(validated_coinbase_id);
 
         for (i, (merged_block, txs)) in once((ctx.selected_parent(), selected_parent_transactions))
             .chain(
                 ctx.ghostdag_data
-                    .consensus_ordered_mergeset_without_selected_parent(self.ghostdag_primary_store.deref())
+                    .consensus_ordered_mergeset_without_selected_parent(
+                        self.ghostdag_primary_store.deref(),
+                    )
                     .map(|b| (b, self.block_transactions_store.get(b).unwrap())),
             )
             .enumerate()
@@ -95,43 +116,71 @@ impl VirtualStateProcessor {
 
             // No need to fully validate selected parent transactions since selected parent txs were already validated
             // as part of selected parent UTXO state verification with the exact same UTXO context.
-            let validation_flags = if is_selected_parent { TxValidationFlags::SkipScriptChecks } else { TxValidationFlags::Full };
-            let validated_transactions = self.validate_transactions_in_parallel(&txs, &composed_view, pov_daa_score, validation_flags);
+            let validation_flags = if is_selected_parent {
+                TxValidationFlags::SkipScriptChecks
+            } else {
+                TxValidationFlags::Full
+            };
+            let validated_transactions = self.validate_transactions_in_parallel(
+                &txs,
+                &composed_view,
+                pov_daa_score,
+                validation_flags,
+            );
 
             let mut block_fee = 0u64;
             for (validated_tx, _) in validated_transactions.iter() {
-                ctx.mergeset_diff.add_transaction(validated_tx, pov_daa_score).unwrap();
-                ctx.multiset_hash.add_transaction(validated_tx, pov_daa_score);
+                ctx.mergeset_diff
+                    .add_transaction(validated_tx, pov_daa_score)
+                    .unwrap();
+                ctx.multiset_hash
+                    .add_transaction(validated_tx, pov_daa_score);
                 ctx.accepted_tx_ids.push(validated_tx.id());
                 block_fee += validated_tx.calculated_fee;
             }
 
             if is_selected_parent {
                 // For the selected parent, we prepend the coinbase tx
-                ctx.mergeset_acceptance_data.push(MergesetBlockAcceptanceData {
-                    block_hash: merged_block,
-                    accepted_transactions: once(AcceptedTxEntry { transaction_id: validated_coinbase_id, index_within_block: 0 })
-                        .chain(
-                            validated_transactions
-                                .into_iter()
-                                .map(|(tx, tx_idx)| AcceptedTxEntry { transaction_id: tx.id(), index_within_block: tx_idx }),
-                        )
+                ctx.mergeset_acceptance_data
+                    .push(MergesetBlockAcceptanceData {
+                        block_hash: merged_block,
+                        accepted_transactions: once(AcceptedTxEntry {
+                            transaction_id: validated_coinbase_id,
+                            index_within_block: 0,
+                        })
+                        .chain(validated_transactions.into_iter().map(|(tx, tx_idx)| {
+                            AcceptedTxEntry {
+                                transaction_id: tx.id(),
+                                index_within_block: tx_idx,
+                            }
+                        }))
                         .collect(),
-                });
+                    });
             } else {
-                ctx.mergeset_acceptance_data.push(MergesetBlockAcceptanceData {
-                    block_hash: merged_block,
-                    accepted_transactions: validated_transactions
-                        .into_iter()
-                        .map(|(tx, tx_idx)| AcceptedTxEntry { transaction_id: tx.id(), index_within_block: tx_idx })
-                        .collect(),
-                });
+                ctx.mergeset_acceptance_data
+                    .push(MergesetBlockAcceptanceData {
+                        block_hash: merged_block,
+                        accepted_transactions: validated_transactions
+                            .into_iter()
+                            .map(|(tx, tx_idx)| AcceptedTxEntry {
+                                transaction_id: tx.id(),
+                                index_within_block: tx_idx,
+                            })
+                            .collect(),
+                    });
             }
 
-            let coinbase_data = self.coinbase_manager.deserialize_coinbase_payload(&txs[0].payload).unwrap();
+            let coinbase_data = self
+                .coinbase_manager
+                .deserialize_coinbase_payload(&txs[0].payload)
+                .unwrap();
             ctx.mergeset_rewards.insert(
                 merged_block,
-                BlockRewardData::new(coinbase_data.subsidy, block_fee, coinbase_data.miner_data.script_public_key),
+                BlockRewardData::new(
+                    coinbase_data.subsidy,
+                    block_fee,
+                    coinbase_data.miner_data.script_public_key,
+                ),
             );
         }
 
@@ -155,14 +204,27 @@ impl VirtualStateProcessor {
         // Verify header UTXO commitment
         let expected_commitment = ctx.multiset_hash.finalize();
         if expected_commitment != header.utxo_commitment {
-            return Err(BadUTXOCommitment(header.hash, header.utxo_commitment, expected_commitment));
+            return Err(BadUTXOCommitment(
+                header.hash,
+                header.utxo_commitment,
+                expected_commitment,
+            ));
         }
-        trace!("correct commitment: {}, {}", header.hash, expected_commitment);
+        trace!(
+            "correct commitment: {}, {}",
+            header.hash,
+            expected_commitment
+        );
 
         // Verify header accepted_id_merkle_root
-        let expected_accepted_id_merkle_root = karlsen_merkle::calc_merkle_root(ctx.accepted_tx_ids.iter().copied());
+        let expected_accepted_id_merkle_root =
+            karlsen_merkle::calc_merkle_root(ctx.accepted_tx_ids.iter().copied());
         if expected_accepted_id_merkle_root != header.accepted_id_merkle_root {
-            return Err(BadAcceptedIDMerkleRoot(header.hash, header.accepted_id_merkle_root, expected_accepted_id_merkle_root));
+            return Err(BadAcceptedIDMerkleRoot(
+                header.hash,
+                header.accepted_id_merkle_root,
+                expected_accepted_id_merkle_root,
+            ));
         }
 
         let txs = self.block_transactions_store.get(header.hash).unwrap();
@@ -173,16 +235,26 @@ impl VirtualStateProcessor {
             header.daa_score,
             &ctx.ghostdag_data,
             &ctx.mergeset_rewards,
-            &self.daa_excluded_store.get_mergeset_non_daa(header.hash).unwrap(),
+            &self
+                .daa_excluded_store
+                .get_mergeset_non_daa(header.hash)
+                .unwrap(),
         )?;
 
         // Verify all transactions are valid in context
         let current_utxo_view = selected_parent_utxo_view.compose(&ctx.mergeset_diff);
-        let validated_transactions =
-            self.validate_transactions_in_parallel(&txs, &current_utxo_view, header.daa_score, TxValidationFlags::Full);
+        let validated_transactions = self.validate_transactions_in_parallel(
+            &txs,
+            &current_utxo_view,
+            header.daa_score,
+            TxValidationFlags::Full,
+        );
         if validated_transactions.len() < txs.len() - 1 {
             // Some non-coinbase transactions are invalid
-            return Err(InvalidTransactionsInUtxoContext(txs.len() - 1 - validated_transactions.len(), txs.len() - 1));
+            return Err(InvalidTransactionsInUtxoContext(
+                txs.len() - 1 - validated_transactions.len(),
+                txs.len() - 1,
+            ));
         }
 
         Ok(())
@@ -197,10 +269,20 @@ impl VirtualStateProcessor {
         mergeset_non_daa: &BlockHashSet,
     ) -> BlockProcessResult<()> {
         // Extract only miner data from the provided coinbase
-        let miner_data = self.coinbase_manager.deserialize_coinbase_payload(&coinbase.payload).unwrap().miner_data;
+        let miner_data = self
+            .coinbase_manager
+            .deserialize_coinbase_payload(&coinbase.payload)
+            .unwrap()
+            .miner_data;
         let expected_coinbase = self
             .coinbase_manager
-            .expected_coinbase_transaction(daa_score, miner_data, ghostdag_data, mergeset_rewards, mergeset_non_daa)
+            .expected_coinbase_transaction(
+                daa_score,
+                miner_data,
+                ghostdag_data,
+                mergeset_rewards,
+                mergeset_non_daa,
+            )
             .unwrap()
             .tx;
         if hashing::tx::hash(coinbase, false) != hashing::tx::hash(&expected_coinbase, false) {
@@ -220,12 +302,15 @@ impl VirtualStateProcessor {
         flags: TxValidationFlags,
     ) -> Vec<(ValidatedTransaction<'a>, u32)> {
         self.thread_pool.install(|| {
-            txs
-                .par_iter() // We can do this in parallel without complications since block body validation already ensured
-                            // that all txs within each block are independent
+            txs.par_iter() // We can do this in parallel without complications since block body validation already ensured
+                // that all txs within each block are independent
                 .enumerate()
                 .skip(1) // Skip the coinbase tx.
-                .filter_map(|(i, tx)| self.validate_transaction_in_utxo_context(tx, &utxo_view, pov_daa_score, flags).ok().map(|vtx| (vtx, i as u32)))
+                .filter_map(|(i, tx)| {
+                    self.validate_transaction_in_utxo_context(tx, &utxo_view, pov_daa_score, flags)
+                        .ok()
+                        .map(|vtx| (vtx, i as u32))
+                })
                 .collect()
         })
     }
@@ -248,11 +333,17 @@ impl VirtualStateProcessor {
             }
         }
         let populated_tx = PopulatedTransaction::new(transaction, entries);
-        let res = self.transaction_validator.validate_populated_transaction_and_get_fee(&populated_tx, pov_daa_score, flags);
+        let res = self
+            .transaction_validator
+            .validate_populated_transaction_and_get_fee(&populated_tx, pov_daa_score, flags);
         match res {
             Ok(calculated_fee) => Ok(ValidatedTransaction::new(populated_tx, calculated_fee)),
             Err(tx_rule_error) => {
-                info!("Rejecting transaction {} due to transaction rule error: {}", transaction.id(), tx_rule_error);
+                info!(
+                    "Rejecting transaction {} due to transaction rule error: {}",
+                    transaction.id(),
+                    tx_rule_error
+                );
                 Err(tx_rule_error)
             }
         }
@@ -295,24 +386,34 @@ impl VirtualStateProcessor {
 
         // For non-activated nets (mainnet, TN10) we can update mempool rules to KIP9 beta asap. For
         // TN11 we need to hard-fork consensus first (since the new beta rules are more permissive)
-        let kip9_version = if self.storage_mass_activation_daa_score == u64::MAX { Kip9Version::Beta } else { Kip9Version::Alpha };
+        let kip9_version = if self.storage_mass_activation_daa_score == u64::MAX {
+            Kip9Version::Beta
+        } else {
+            Kip9Version::Alpha
+        };
 
         // Calc the full contextual mass including storage mass
         let contextual_mass = self
             .transaction_validator
             .mass_calculator
-            .calc_tx_overall_mass(&mutable_tx.as_verifiable(), mutable_tx.calculated_compute_mass, kip9_version)
+            .calc_tx_overall_mass(
+                &mutable_tx.as_verifiable(),
+                mutable_tx.calculated_compute_mass,
+                kip9_version,
+            )
             .ok_or(TxRuleError::MassIncomputable)?;
 
         // Set the inner mass field
         mutable_tx.tx.set_mass(contextual_mass);
 
         // At this point we know all UTXO entries are populated, so we can safely pass the tx as verifiable
-        let calculated_fee = self.transaction_validator.validate_populated_transaction_and_get_fee(
-            &mutable_tx.as_verifiable(),
-            pov_daa_score,
-            TxValidationFlags::SkipMassCheck, // we can skip the mass check since we just set it
-        )?;
+        let calculated_fee = self
+            .transaction_validator
+            .validate_populated_transaction_and_get_fee(
+                &mutable_tx.as_verifiable(),
+                pov_daa_score,
+                TxValidationFlags::SkipMassCheck, // we can skip the mass check since we just set it
+            )?;
         mutable_tx.calculated_fee = Some(calculated_fee);
         Ok(())
     }

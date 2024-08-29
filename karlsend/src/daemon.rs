@@ -17,9 +17,12 @@ use karlsen_utils::networking::ContextualNetAddress;
 use karlsen_utils_tower::counters::TowerConnectionCounters;
 
 use karlsen_addressmanager::AddressManager;
-use karlsen_consensus::{consensus::factory::Factory as ConsensusFactory, pipeline::ProcessingCounters};
 use karlsen_consensus::{
-    consensus::factory::MultiConsensusManagementStore, model::stores::headers::DbHeadersStore, pipeline::monitor::ConsensusMonitor,
+    consensus::factory::Factory as ConsensusFactory, pipeline::ProcessingCounters,
+};
+use karlsen_consensus::{
+    consensus::factory::MultiConsensusManagementStore, model::stores::headers::DbHeadersStore,
+    pipeline::monitor::ConsensusMonitor,
 };
 use karlsen_consensusmanager::ConsensusManager;
 use karlsen_core::task::runtime::AsyncRuntime;
@@ -33,7 +36,10 @@ use karlsen_p2p_flows::{flow_context::FlowContext, service::P2pService};
 
 use karlsen_perf_monitor::{builder::Builder as PerfMonitorBuilder, counters::CountersSnapshot};
 use karlsen_utxoindex::{api::UtxoIndexProxy, UtxoIndex};
-use karlsen_wrpc_server::service::{Options as WrpcServerOptions, WebSocketCounters as WrpcServerCounters, WrpcEncoding, WrpcService};
+use karlsen_wrpc_server::service::{
+    Options as WrpcServerOptions, WebSocketCounters as WrpcServerCounters, WrpcEncoding,
+    WrpcService,
+};
 
 /// Desired soft FD limit that needs to be configured
 /// for the karlsend process.
@@ -93,7 +99,9 @@ pub fn validate_args(args: &Args) -> ConfigResult<()> {
         return Err(ConfigError::RamScaleTooHigh);
     }
     if args.max_tracked_addresses > Tracker::MAX_ADDRESS_UPPER_BOUND {
-        return Err(ConfigError::MaxTrackedAddressesTooHigh(Tracker::MAX_ADDRESS_UPPER_BOUND));
+        return Err(ConfigError::MaxTrackedAddressesTooHigh(
+            Tracker::MAX_ADDRESS_UPPER_BOUND,
+        ));
     }
     Ok(())
 }
@@ -107,7 +115,11 @@ fn get_user_approval_or_exit(message: &str, approve: bool) {
     match std::io::stdin().read_line(&mut input) {
         Ok(_) => {
             let lower = input.to_lowercase();
-            let answer = lower.as_str().strip_suffix("\r\n").or(lower.as_str().strip_suffix('\n')).unwrap_or(lower.as_str());
+            let answer = lower
+                .as_str()
+                .strip_suffix("\r\n")
+                .or(lower.as_str().strip_suffix('\n'))
+                .unwrap_or(lower.as_str());
             if answer == "y" || answer == "yes" {
                 // return
             } else {
@@ -150,9 +162,21 @@ pub fn get_log_dir(args: &Args) -> Option<String> {
     let app_dir = get_app_dir_from_args(args);
 
     // Logs directory is usually under the application directory, unless otherwise specified
-    let log_dir = args.logdir.clone().unwrap_or_default().replace('~', get_home_dir().as_path().to_str().unwrap());
-    let log_dir = if log_dir.is_empty() { app_dir.join(network.to_prefixed()).join(DEFAULT_LOG_DIR) } else { PathBuf::from(log_dir) };
-    let log_dir = if args.no_log_files { None } else { log_dir.to_str().map(String::from) };
+    let log_dir = args
+        .logdir
+        .clone()
+        .unwrap_or_default()
+        .replace('~', get_home_dir().as_path().to_str().unwrap());
+    let log_dir = if log_dir.is_empty() {
+        app_dir.join(network.to_prefixed()).join(DEFAULT_LOG_DIR)
+    } else {
+        PathBuf::from(log_dir)
+    };
+    let log_dir = if args.no_log_files {
+        None
+    } else {
+        log_dir.to_str().map(String::from)
+    };
     log_dir
 }
 
@@ -167,7 +191,9 @@ impl Runtime {
         // As we log the panic, we want to set it up after the logger
         karlsen_core::panic::configure_panic();
 
-        Self { log_dir: log_dir.map(|log_dir| log_dir.to_owned()) }
+        Self {
+            log_dir: log_dir.map(|log_dir| log_dir.to_owned()),
+        }
     }
 }
 
@@ -198,7 +224,11 @@ pub fn create_core(args: Args, fd_total_budget: i32) -> (Arc<Core>, Arc<RpcCoreS
 /// The instance of the [`RpcCoreService`] needs to be released
 /// (dropped) before the `Core` is shut down.
 ///
-pub fn create_core_with_runtime(runtime: &Runtime, args: &Args, fd_total_budget: i32) -> (Arc<Core>, Arc<RpcCoreService>) {
+pub fn create_core_with_runtime(
+    runtime: &Runtime,
+    args: &Args,
+    fd_total_budget: i32,
+) -> (Arc<Core>, Arc<RpcCoreService>) {
     let network = args.network();
     let mut fd_remaining = fd_total_budget;
     let utxo_files_limit = if args.utxoindex {
@@ -275,7 +305,9 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
         // Non-mainnet can be restarted, and when it does we need to reset the DB.
         // This will check if the current Genesis can be found the active consensus
         // DB (if one exists), and if not then ask to reset the DB.
-        let active_consensus_dir_name = MultiConsensusManagementStore::new(meta_db.clone()).active_consensus_dir_name().unwrap();
+        let active_consensus_dir_name = MultiConsensusManagementStore::new(meta_db.clone())
+            .active_consensus_dir_name()
+            .unwrap();
 
         match active_consensus_dir_name {
             Some(dir_name) => {
@@ -285,7 +317,8 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
                     .build()
                     .unwrap();
 
-                let headers_store = DbHeadersStore::new(consensus_db, CachePolicy::Empty, CachePolicy::Empty);
+                let headers_store =
+                    DbHeadersStore::new(consensus_db, CachePolicy::Empty, CachePolicy::Empty);
 
                 if headers_store.has(config.genesis.hash).unwrap() {
                     info!("Genesis is found in active consensus DB. No action needed.");
@@ -305,8 +338,12 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
     // Reset Condition: Need to reset if we're upgrading from karlsend DB version
     // TEMP: upgrade from Alpha version or any version before this one
     if !is_db_reset_needed
-        && (meta_db.get_pinned(b"multi-consensus-metadata-key").is_ok_and(|r| r.is_some())
-            || MultiConsensusManagementStore::new(meta_db.clone()).should_upgrade().unwrap())
+        && (meta_db
+            .get_pinned(b"multi-consensus-metadata-key")
+            .is_ok_and(|r| r.is_some())
+            || MultiConsensusManagementStore::new(meta_db.clone())
+                .should_upgrade()
+                .unwrap())
     {
         let msg =
             "Node database is from a different Karlsend *DB* version and needs to be fully deleted, do you confirm the delete? (y/n)";
@@ -342,18 +379,44 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
             .unwrap();
     }
 
-    if !args.archival && MultiConsensusManagementStore::new(meta_db.clone()).is_archival_node().unwrap() {
+    if !args.archival
+        && MultiConsensusManagementStore::new(meta_db.clone())
+            .is_archival_node()
+            .unwrap()
+    {
         get_user_approval_or_exit("--archival is set to false although the node was previously archival. Proceeding may delete archived data. Do you confirm? (y/n)", args.yes);
     }
 
-    let connect_peers = args.connect_peers.iter().map(|x| x.normalize(config.default_p2p_port())).collect::<Vec<_>>();
-    let add_peers = args.add_peers.iter().map(|x| x.normalize(config.default_p2p_port())).collect();
-    let p2p_server_addr = args.listen.unwrap_or(ContextualNetAddress::unspecified()).normalize(config.default_p2p_port());
+    let connect_peers = args
+        .connect_peers
+        .iter()
+        .map(|x| x.normalize(config.default_p2p_port()))
+        .collect::<Vec<_>>();
+    let add_peers = args
+        .add_peers
+        .iter()
+        .map(|x| x.normalize(config.default_p2p_port()))
+        .collect();
+    let p2p_server_addr = args
+        .listen
+        .unwrap_or(ContextualNetAddress::unspecified())
+        .normalize(config.default_p2p_port());
     // connect_peers means no DNS seeding and no outbound peers
-    let outbound_target = if connect_peers.is_empty() { args.outbound_target } else { 0 };
-    let dns_seeders = if connect_peers.is_empty() && !args.disable_dns_seeding { config.dns_seeders } else { &[] };
+    let outbound_target = if connect_peers.is_empty() {
+        args.outbound_target
+    } else {
+        0
+    };
+    let dns_seeders = if connect_peers.is_empty() && !args.disable_dns_seeding {
+        config.dns_seeders
+    } else {
+        &[]
+    };
 
-    let grpc_server_addr = args.rpclisten.unwrap_or(ContextualNetAddress::loopback()).normalize(config.default_rpc_port());
+    let grpc_server_addr = args
+        .rpclisten
+        .unwrap_or(ContextualNetAddress::unspecified())
+        .normalize(config.default_rpc_port());
 
     let core = Arc::new(Core::new());
 
@@ -361,9 +424,16 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
 
     let tick_service = Arc::new(TickService::new());
     let (notification_send, notification_recv) = unbounded();
-    let max_tracked_addresses = if args.utxoindex && args.max_tracked_addresses > 0 { Some(args.max_tracked_addresses) } else { None };
+    let max_tracked_addresses = if args.utxoindex && args.max_tracked_addresses > 0 {
+        Some(args.max_tracked_addresses)
+    } else {
+        None
+    };
     let subscription_context = SubscriptionContext::with_options(max_tracked_addresses);
-    let notification_root = Arc::new(ConsensusNotificationRoot::with_context(notification_send, subscription_context.clone()));
+    let notification_root = Arc::new(ConsensusNotificationRoot::with_context(
+        notification_send,
+        subscription_context.clone(),
+    ));
     let processing_counters = Arc::new(ProcessingCounters::default());
     let mining_counters = Arc::new(MiningCounters::default());
     let wrpc_borsh_counters = Arc::new(WrpcServerCounters::default());
@@ -385,24 +455,43 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
         fd_remaining,
     ));
     let consensus_manager = Arc::new(ConsensusManager::new(consensus_factory));
-    let consensus_monitor = Arc::new(ConsensusMonitor::new(processing_counters.clone(), tick_service.clone()));
+    let consensus_monitor = Arc::new(ConsensusMonitor::new(
+        processing_counters.clone(),
+        tick_service.clone(),
+    ));
 
     let perf_monitor_builder = PerfMonitorBuilder::new()
         .with_fetch_interval(Duration::from_secs(args.perf_metrics_interval_sec))
         .with_tick_service(tick_service.clone());
     let perf_monitor = if args.perf_metrics {
         let cb = move |counters: CountersSnapshot| {
-            trace!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_process_metrics_display());
-            trace!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_io_metrics_display());
+            trace!(
+                "[{}] {}",
+                karlsen_perf_monitor::SERVICE_NAME,
+                counters.to_process_metrics_display()
+            );
+            trace!(
+                "[{}] {}",
+                karlsen_perf_monitor::SERVICE_NAME,
+                counters.to_io_metrics_display()
+            );
             #[cfg(feature = "heap")]
-            trace!("[{}] heap stats: {:?}", karlsen_perf_monitor::SERVICE_NAME, dhat::HeapStats::get());
+            trace!(
+                "[{}] heap stats: {:?}",
+                karlsen_perf_monitor::SERVICE_NAME,
+                dhat::HeapStats::get()
+            );
         };
         Arc::new(perf_monitor_builder.with_fetch_cb(cb).build())
     } else {
         Arc::new(perf_monitor_builder.build())
     };
 
-    let notify_service = Arc::new(NotifyService::new(notification_root.clone(), notification_recv, subscription_context.clone()));
+    let notify_service = Arc::new(NotifyService::new(
+        notification_root.clone(),
+        notification_recv,
+        subscription_context.clone(),
+    ));
     let index_service: Option<Arc<IndexService>> = if args.utxoindex {
         // Use only a single thread for none-consensus databases
         let utxoindex_db = karlsen_database::prelude::ConnBuilder::default()
@@ -410,24 +499,35 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
             .with_files_limit(utxo_files_limit)
             .build()
             .unwrap();
-        let utxoindex = UtxoIndexProxy::new(UtxoIndex::new(consensus_manager.clone(), utxoindex_db).unwrap());
-        let index_service = Arc::new(IndexService::new(&notify_service.notifier(), subscription_context.clone(), Some(utxoindex)));
+        let utxoindex =
+            UtxoIndexProxy::new(UtxoIndex::new(consensus_manager.clone(), utxoindex_db).unwrap());
+        let index_service = Arc::new(IndexService::new(
+            &notify_service.notifier(),
+            subscription_context.clone(),
+            Some(utxoindex),
+        ));
         Some(index_service)
     } else {
         None
     };
 
-    let (address_manager, port_mapping_extender_svc) = AddressManager::new(config.clone(), meta_db, tick_service.clone());
+    let (address_manager, port_mapping_extender_svc) =
+        AddressManager::new(config.clone(), meta_db, tick_service.clone());
 
-    let mining_monitor = Arc::new(MiningMonitor::new(mining_counters.clone(), tx_script_cache_counters.clone(), tick_service.clone()));
-    let mining_manager = MiningManagerProxy::new(Arc::new(MiningManager::new_with_extended_config(
-        config.target_time_per_block,
-        false,
-        config.max_block_mass,
-        config.ram_scale,
-        config.block_template_cache_lifetime,
-        mining_counters,
-    )));
+    let mining_monitor = Arc::new(MiningMonitor::new(
+        mining_counters.clone(),
+        tx_script_cache_counters.clone(),
+        tick_service.clone(),
+    ));
+    let mining_manager =
+        MiningManagerProxy::new(Arc::new(MiningManager::new_with_extended_config(
+            config.target_time_per_block,
+            false,
+            config.max_block_mass,
+            config.ram_scale,
+            config.block_template_cache_lifetime,
+            mining_counters,
+        )));
 
     let flow_context = Arc::new(FlowContext::new(
         consensus_manager.clone(),
@@ -501,8 +601,16 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
     let wrpc_service_tasks: usize = 2; // num_cpus::get() / 2;
                                        // Register wRPC servers based on command line arguments
     [
-        (args.rpclisten_borsh.clone(), WrpcEncoding::Borsh, wrpc_borsh_counters),
-        (args.rpclisten_json.clone(), WrpcEncoding::SerdeJson, wrpc_json_counters),
+        (
+            args.rpclisten_borsh.clone(),
+            WrpcEncoding::Borsh,
+            wrpc_borsh_counters,
+        ),
+        (
+            args.rpclisten_json.clone(),
+            WrpcEncoding::SerdeJson,
+            wrpc_json_counters,
+        ),
     ]
     .into_iter()
     .filter_map(|(listen_address, encoding, wrpc_server_counters)| {
@@ -513,7 +621,9 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
                 &encoding,
                 wrpc_server_counters,
                 WrpcServerOptions {
-                    listen_address: listen_address.to_address(&network.network_type, &encoding).to_string(), // TODO: use a normalized ContextualNetAddress instead of a String
+                    listen_address: listen_address
+                        .to_address(&network.network_type, &encoding)
+                        .to_string(), // TODO: use a normalized ContextualNetAddress instead of a String
                     verbose: args.wrpc_verbose,
                     ..WrpcServerOptions::default()
                 },

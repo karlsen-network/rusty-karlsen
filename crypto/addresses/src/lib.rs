@@ -48,7 +48,20 @@ impl From<workflow_wasm::error::Error> for AddressError {
 }
 
 /// Address prefix identifying the network type this address belongs to (such as `karlsen`, `karlsentest`, `karlsensim`, `karlsendev`).
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Clone,
+    Copy,
+    Debug,
+    Hash,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+)]
 pub enum Prefix {
     #[serde(rename = "karlsen")]
     Mainnet,
@@ -115,7 +128,20 @@ impl TryFrom<&str> for Prefix {
 ///  Karlsen `Address` version (`PubKey`, `PubKey ECDSA`, `ScriptHash`)
 ///
 /// @category Address
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Clone,
+    Copy,
+    Debug,
+    Hash,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+)]
 #[repr(u8)]
 #[wasm_bindgen(js_name = "AddressVersion")]
 pub enum Version {
@@ -210,7 +236,11 @@ impl Address {
         if !prefix.is_test() {
             assert_eq!(payload.len(), version.public_key_len());
         }
-        Self { prefix, payload: PayloadVec::from_slice(payload), version }
+        Self {
+            prefix,
+            payload: PayloadVec::from_slice(payload),
+            version,
+        }
     }
 }
 
@@ -218,7 +248,12 @@ impl Address {
 impl Address {
     #[wasm_bindgen(constructor)]
     pub fn constructor(address: &str) -> Address {
-        address.try_into().unwrap_or_else(|err| panic!("Address::constructor() - address error `{}`: {err}", address))
+        address.try_into().unwrap_or_else(|err| {
+            panic!(
+                "Address::constructor() - address error `{}`: {err}",
+                address
+            )
+        })
     }
 
     #[wasm_bindgen(js_name=validate)]
@@ -244,7 +279,8 @@ impl Address {
 
     #[wasm_bindgen(setter, js_name = "setPrefix")]
     pub fn set_prefix_from_str(&mut self, prefix: &str) {
-        self.prefix = Prefix::try_from(prefix).unwrap_or_else(|err| panic!("Address::prefix() - invalid prefix `{prefix}`: {err}"));
+        self.prefix = Prefix::try_from(prefix)
+            .unwrap_or_else(|err| panic!("Address::prefix() - invalid prefix `{prefix}`: {err}"));
     }
 
     #[wasm_bindgen(getter, js_name = "payload")]
@@ -255,7 +291,12 @@ impl Address {
     pub fn short(&self, n: usize) -> String {
         let payload = self.encode_payload();
         let n = std::cmp::min(n, payload.len() / 4);
-        format!("{}:{}....{}", self.prefix, &payload[0..n], &payload[payload.len() - n..])
+        format!(
+            "{}:{}....{}",
+            self.prefix,
+            &payload[0..n],
+            &payload[payload.len() - n..]
+        )
     }
 }
 
@@ -350,7 +391,10 @@ impl<'de> Deserialize<'de> for Address {
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 {
-                    write!(formatter, "string-type: string, str; bytes-type: slice of bytes, vec of bytes; map")
+                    write!(
+                        formatter,
+                        "string-type: string, str; bytes-type: slice of bytes, vec of bytes; map"
+                    )
                 }
             }
 
@@ -455,7 +499,11 @@ impl<'de> Deserialize<'de> for Address {
 
                 while let Some((key, value)) = access.next_entry::<String, String>()? {
                     #[cfg(test)]
-                    web_sys::console::log_3(&"key value: ".into(), &key.clone().into(), &value.clone().into());
+                    web_sys::console::log_3(
+                        &"key value: ".into(),
+                        &key.clone().into(),
+                        &value.clone().into(),
+                    );
 
                     match key.as_ref() {
                         "prefix" => {
@@ -466,7 +514,10 @@ impl<'de> Deserialize<'de> for Address {
                         }
                         "version" => continue,
                         unknown_field => {
-                            return Err(serde::de::Error::unknown_field(unknown_field, &["prefix", "payload", "version"]))
+                            return Err(serde::de::Error::unknown_field(
+                                unknown_field,
+                                &["prefix", "payload", "version"],
+                            ))
                         }
                     }
                     if prefix.is_some() && payload.is_some() {
@@ -478,8 +529,14 @@ impl<'de> Deserialize<'de> for Address {
                     (None, _) => return Err(serde::de::Error::missing_field("prefix")),
                     (_, None) => return Err(serde::de::Error::missing_field("payload")),
                 };
-                Address::decode_payload(prefix.as_str().try_into().map_err(serde::de::Error::custom)?, &payload)
-                    .map_err(serde::de::Error::custom)
+                Address::decode_payload(
+                    prefix
+                        .as_str()
+                        .try_into()
+                        .map_err(serde::de::Error::custom)?,
+                    &payload,
+                )
+                .map_err(serde::de::Error::custom)
             }
         }
 
@@ -518,7 +575,10 @@ impl TryFrom<AddressOrStringArrayT> for Vec<Address> {
     type Error = AddressError;
     fn try_from(js_value: AddressOrStringArrayT) -> Result<Self, Self::Error> {
         if js_value.is_array() {
-            js_value.iter().map(Address::try_owned_from).collect::<Result<Vec<Address>, AddressError>>()
+            js_value
+                .iter()
+                .map(Address::try_owned_from)
+                .collect::<Result<Vec<Address>, AddressError>>()
         } else {
             Err(AddressError::InvalidAddressArray)
         }
@@ -544,11 +604,11 @@ mod tests {
             (Address::new(Prefix::B, Version::ScriptHash, b"1234598760"), "b:pqcnyve5x5unsdekxqeusxeyu2"),
             (Address::new(Prefix::B, Version::ScriptHash, b"abcdefghijklmnopqrstuvwxyz"), "b:ppskycmyv4nxw6rfdf4kcmtwdac8zunnw36hvamc09aqtpppz8lk"),
             (Address::new(Prefix::B, Version::ScriptHash, b"000000000000000000000000000000000000000000"), "b:pqcrqvpsxqcrqvpsxqcrqvpsxqcrqvpsxqcrqvpsxqcrqvpsxqcrqvpsxqcrqvpsxqcrq7ag684l3"),
-            (Address::new(Prefix::Testnet, Version::PubKey, &[0u8; 32]),      "karlsentest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhqrxplya"),
-            (Address::new(Prefix::Testnet, Version::PubKeyECDSA, &[0u8; 33]), "karlsentest:qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhe837j2d"),
-            (Address::new(Prefix::Testnet, Version::PubKeyECDSA, b"\xba\x01\xfc\x5f\x4e\x9d\x98\x79\x59\x9c\x69\xa3\xda\xfd\xb8\x35\xa7\x25\x5e\x5f\x2e\x93\x4e\x93\x22\xec\xd3\xaf\x19\x0a\xb0\xf6\x0e"), "karlsentest:qxaqrlzlf6wes72en3568khahq66wf27tuhfxn5nytkd8tcep2c0vrse6gdmpks"),
-            (Address::new(Prefix::Mainnet, Version::PubKey, &[0u8; 32]),      "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e"),
-            (Address::new(Prefix::Mainnet, Version::PubKey, b"\x5f\xff\x3c\x4d\xa1\x8f\x45\xad\xcd\xd4\x99\xe4\x46\x11\xe9\xff\xf1\x48\xba\x69\xdb\x3c\x4e\xa2\xdd\xd9\x55\xfc\x46\xa5\x95\x22"), "karlsen:qp0l70zd5x85ttwd6jv7g3s3a8llzj96d8dncn4zmhv4tlzx5k2jyqh70xmfj"),
+            (Address::new(Prefix::Testnet, Version::PubKey, &[0u8; 32]),      "karlsentest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq0tvfsppx"),
+            (Address::new(Prefix::Testnet, Version::PubKeyECDSA, &[0u8; 33]), "karlsentest:qyqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzg70v3fs"),
+            (Address::new(Prefix::Testnet, Version::PubKeyECDSA, b"\xba\x01\xfc\x5f\x4e\x9d\x98\x79\x59\x9c\x69\xa3\xda\xfd\xb8\x35\xa7\x25\x5e\x5f\x2e\x93\x4e\x93\x22\xec\xd3\xaf\x19\x0a\xb0\xf6\x0e"), "karlsentest:qxaqrlzlf6wes72en3568khahq66wf27tuhfxn5nytkd8tcep2c0vrsvt3nfz4d"),
+            (Address::new(Prefix::Mainnet, Version::PubKey, &[0u8; 32]),      "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqu3v2qv4j"),
+            (Address::new(Prefix::Mainnet, Version::PubKey, b"\x5f\xff\x3c\x4d\xa1\x8f\x45\xad\xcd\xd4\x99\xe4\x46\x11\xe9\xff\xf1\x48\xba\x69\xdb\x3c\x4e\xa2\xdd\xd9\x55\xfc\x46\xa5\x95\x22"), "karlsen:qp0l70zd5x85ttwd6jv7g3s3a8llzj96d8dncn4zmhv4tlzx5k2jy2qhcgkfe"),
         ]
         // cspell:enable
     }
@@ -572,33 +632,42 @@ mod tests {
     #[test]
     fn test_errors() {
         // cspell:disable
-        let address_str: String = "karlsen:qqqqqqqqqqqqq1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
+        let address_str: String =
+            "karlsen:qqqqqqqqqqqqq1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::DecodingError('1')), address);
 
         let invalid_char = 124u8 as char;
-        let address_str: String = format!("karlsen:qqqqqqqqqqqqq{invalid_char}qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e");
+        let address_str: String = format!(
+            "karlsen:qqqqqqqqqqqqq{invalid_char}qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e"
+        );
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::DecodingError(invalid_char)), address);
 
         let invalid_char = 129u8 as char;
-        let address_str: String = format!("karlsen:qqqqqqqqqqqqq{invalid_char}qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e");
+        let address_str: String = format!(
+            "karlsen:qqqqqqqqqqqqq{invalid_char}qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e"
+        );
         let address: Result<Address, AddressError> = address_str.try_into();
         assert!(matches!(address, Err(AddressError::DecodingError(_))));
 
-        let address_str: String = "karlsen1:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
+        let address_str: String =
+            "karlsen1:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::InvalidPrefix("karlsen1".into())), address);
 
-        let address_str: String = "karlsenqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
+        let address_str: String =
+            "karlsenqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::MissingPrefix), address);
 
-        let address_str: String = "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4l".to_string();
+        let address_str: String =
+            "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4l".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::BadChecksum), address);
 
-        let address_str: String = "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
+        let address_str: String =
+            "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::BadChecksum), address);
         // cspell:enable
@@ -622,7 +691,9 @@ mod tests {
 
     #[wasm_bindgen_test]
     pub fn test_wasm_js_serde_object() {
-        let expected = Address::constructor("karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j");
+        let expected = Address::constructor(
+            "karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j",
+        );
 
         use web_sys::console;
         console::log_4(
@@ -635,7 +706,11 @@ mod tests {
         let obj = Object::new();
         obj.set("version", &JsValue::from_str("PubKey")).unwrap();
         obj.set("prefix", &JsValue::from_str("karlsen")).unwrap();
-        obj.set("payload", &JsValue::from_str("qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j")).unwrap();
+        obj.set(
+            "payload",
+            &JsValue::from_str("qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j"),
+        )
+        .unwrap();
 
         assert_eq!(JsValue::from_str("object"), obj.js_typeof());
 
@@ -648,7 +723,9 @@ mod tests {
     pub fn test_wasm_serde_object() {
         use wasm_bindgen::convert::IntoWasmAbi;
 
-        let expected = Address::constructor("karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j");
+        let expected = Address::constructor(
+            "karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j",
+        );
         let wasm_js_value: JsValue = expected.clone().into_abi().into();
 
         let actual = from_value(wasm_js_value).unwrap();

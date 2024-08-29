@@ -1,5 +1,8 @@
 /// BLOCK_VERSION represents the current block version
-pub const BLOCK_VERSION: u16 = 1;
+pub const BLOCK_VERSION: u16 = BLOCK_VERSION_KHASHV1;
+
+pub const BLOCK_VERSION_KHASHV1: u16 = 1;
+pub const BLOCK_VERSION_KHASHV2: u16 = 2;
 
 /// TX_VERSION is the current latest supported transaction version.
 pub const TX_VERSION: u16 = 0;
@@ -12,7 +15,7 @@ pub const MAX_SCRIPT_PUBLIC_KEY_VERSION: u16 = 0;
 /// SompiPerKarlsen is the number of sompi in one karlsen (1 KLS).
 pub const SOMPI_PER_KARLSEN: u64 = 100_000_000;
 
-/// The parameter for scaling inverse KAS value to mass units (KIP-0009)
+/// The parameter for scaling inverse KLS value to mass units (KIP-0009)
 pub const STORAGE_MASS_PARAMETER: u64 = SOMPI_PER_KARLSEN * 10_000;
 
 /// MaxSompi is the maximum transaction amount allowed in sompi.

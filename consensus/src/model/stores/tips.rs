@@ -19,7 +19,11 @@ pub trait TipsStoreReader {
 }
 
 pub trait TipsStore: TipsStoreReader {
-    fn add_tip(&mut self, new_tip: Hash, new_tip_parents: &[Hash]) -> StoreResult<ReadLock<BlockHashSet>>;
+    fn add_tip(
+        &mut self,
+        new_tip: Hash,
+        new_tip_parents: &[Hash],
+    ) -> StoreResult<ReadLock<BlockHashSet>>;
     fn add_tip_batch(
         &mut self,
         batch: &mut WriteBatch,
@@ -34,10 +38,18 @@ pub trait TipsStore: TipsStoreReader {
         new_tip: Hash,
         new_tip_parents: &[Hash],
     ) -> StoreResult<ReadLock<BlockHashSet>>;
-    fn prune_tips_batch(&mut self, batch: &mut WriteBatch, pruned_tips: &[Hash]) -> StoreResult<()> {
+    fn prune_tips_batch(
+        &mut self,
+        batch: &mut WriteBatch,
+        pruned_tips: &[Hash],
+    ) -> StoreResult<()> {
         self.prune_tips_with_writer(BatchDbWriter::new(batch), pruned_tips)
     }
-    fn prune_tips_with_writer(&mut self, writer: impl DbWriter, pruned_tips: &[Hash]) -> StoreResult<()>;
+    fn prune_tips_with_writer(
+        &mut self,
+        writer: impl DbWriter,
+        pruned_tips: &[Hash],
+    ) -> StoreResult<()>;
 }
 
 /// A DB + cache implementation of `TipsStore` trait
@@ -49,7 +61,10 @@ pub struct DbTipsStore {
 
 impl DbTipsStore {
     pub fn new(db: Arc<DB>) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbSetItem::new(db, DatabaseStorePrefixes::Tips.into()) }
+        Self {
+            db: Arc::clone(&db),
+            access: CachedDbSetItem::new(db, DatabaseStorePrefixes::Tips.into()),
+        }
     }
 
     pub fn clone_with_new_cache(&self) -> Self {
@@ -61,7 +76,8 @@ impl DbTipsStore {
     }
 
     pub fn init_batch(&mut self, batch: &mut WriteBatch, initial_tips: &[Hash]) -> StoreResult<()> {
-        self.access.update(BatchDbWriter::new(batch), initial_tips, &[])?;
+        self.access
+            .update(BatchDbWriter::new(batch), initial_tips, &[])?;
         Ok(())
     }
 }
@@ -73,8 +89,13 @@ impl TipsStoreReader for DbTipsStore {
 }
 
 impl TipsStore for DbTipsStore {
-    fn add_tip(&mut self, new_tip: Hash, new_tip_parents: &[Hash]) -> StoreResult<ReadLock<BlockHashSet>> {
-        self.access.update(DirectDbWriter::new(&self.db), &[new_tip], new_tip_parents)
+    fn add_tip(
+        &mut self,
+        new_tip: Hash,
+        new_tip_parents: &[Hash],
+    ) -> StoreResult<ReadLock<BlockHashSet>> {
+        self.access
+            .update(DirectDbWriter::new(&self.db), &[new_tip], new_tip_parents)
     }
 
     fn add_tip_with_writer(
@@ -87,7 +108,11 @@ impl TipsStore for DbTipsStore {
         self.access.update(writer, &[new_tip], new_tip_parents)
     }
 
-    fn prune_tips_with_writer(&mut self, writer: impl DbWriter, pruned_tips: &[Hash]) -> StoreResult<()> {
+    fn prune_tips_with_writer(
+        &mut self,
+        writer: impl DbWriter,
+        pruned_tips: &[Hash],
+    ) -> StoreResult<()> {
         if pruned_tips.is_empty() {
             return Ok(());
         }
@@ -109,6 +134,9 @@ mod tests {
         store.add_tip(3.into(), &[]).unwrap();
         store.add_tip(5.into(), &[]).unwrap();
         let tips = store.add_tip(7.into(), &[3.into(), 5.into()]).unwrap();
-        assert_eq!(tips.read().clone(), BlockHashSet::from_iter([1.into(), 7.into()]));
+        assert_eq!(
+            tips.read().clone(),
+            BlockHashSet::from_iter([1.into(), 7.into()])
+        );
     }
 }

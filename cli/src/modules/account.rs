@@ -10,7 +10,12 @@ use crate::wizards;
 pub struct Account;
 
 impl Account {
-    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, mut argv: Vec<String>, _cmd: &str) -> Result<()> {
+    async fn main(
+        self: Arc<Self>,
+        ctx: &Arc<dyn Context>,
+        mut argv: Vec<String>,
+        _cmd: &str,
+    ) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         let wallet = ctx.wallet();
 
@@ -61,24 +66,28 @@ impl Account {
                 let prv_key_data_info = ctx.select_private_key().await?;
 
                 let account_name = account_name.as_deref();
-                wizards::account::create(&ctx, prv_key_data_info, account_kind, account_name).await?;
+                wizards::account::create(&ctx, prv_key_data_info, account_kind, account_name)
+                    .await?;
             }
             "import" => {
                 if argv.is_empty() {
-                    tprintln!(ctx, "usage: 'account import <import-type> <key-type> [extra keys]'");
+                    tprintln!(
+                        ctx,
+                        "usage: 'account import <import-type> <key-type> [extra keys]'"
+                    );
                     tprintln!(ctx, "");
                     tprintln!(ctx, "examples:");
                     tprintln!(ctx, "");
                     ctx.term().help(
                         &[
-                            ("account import legacy-data", "Import KDX keydata file or karlsen-network web wallet data on the same domain"),
+                            ("account import legacy-data", "Import Karlsen-Desktop keydata file or Web Wallet data on the same domain"),
                             (
                                 "account import mnemonic bip32",
-                                "Import Bip32 (12 or 24 word mnemonics used by karlsenwallet, kaspium, onekey, tangem etc.)",
+                                "Import Bip32 (12 or 24 word mnemonics used by karlsenwallet or karlsen-mobile)",
                             ),
                             (
                                 "account import mnemonic legacy",
-                                "Import accounts 12 word mnemonic used by legacy applications (KDX and karlsen-network web wallet)",
+                                "Import accounts 12 word mnemonic used by legacy applications (Karlsen-Desktop and Web Wallet)",
                             ),
                             (
                                 "account import mnemonic multisig [additional keys]",
@@ -103,14 +112,23 @@ impl Account {
                         if exists_legacy_v0_keydata().await? {
                             let import_secret = Secret::new(
                                 ctx.term()
-                                    .ask(true, "Enter the password for the account you are importing: ")
+                                    .ask(
+                                        true,
+                                        "Enter the password for the account you are importing: ",
+                                    )
                                     .await?
                                     .trim()
                                     .as_bytes()
                                     .to_vec(),
                             );
-                            let wallet_secret =
-                                Secret::new(ctx.term().ask(true, "Enter wallet password: ").await?.trim().as_bytes().to_vec());
+                            let wallet_secret = Secret::new(
+                                ctx.term()
+                                    .ask(true, "Enter wallet password: ")
+                                    .await?
+                                    .trim()
+                                    .as_bytes()
+                                    .to_vec(),
+                            );
                             let ctx_ = ctx.clone();
                             wallet
                                 .import_legacy_keydata(
@@ -121,7 +139,7 @@ impl Account {
                                         if let Some(txid) = txid {
                                             tprintln!(
                                                 ctx_,
-                                                "Scan detected {} KAS at index {}; transfer txid: {}",
+                                                "Scan detected {} KLS at index {}; transfer txid: {}",
                                                 sompi_to_karlsen_string(balance),
                                                 processed,
                                                 txid
@@ -129,7 +147,7 @@ impl Account {
                                         } else if processed > 0 {
                                             tprintln!(
                                                 ctx_,
-                                                "Scanned {} derivations, found {} KAS",
+                                                "Scanned {} derivations, found {} KLS",
                                                 processed,
                                                 sompi_to_karlsen_string(balance)
                                             );
@@ -142,14 +160,17 @@ impl Account {
                         } else if application_runtime::is_web() {
                             return Err("'karlsen-network' web wallet storage not found at this domain name".into());
                         } else {
-                            return Err("KDX keydata file not found".into());
+                            return Err("Karlsen-Desktop keydata file not found".into());
                         }
                     }
                     "mnemonic" => {
                         if argv.is_empty() {
-                            tprintln!(ctx, "usage: 'account import mnemonic <bip32|legacy|multisig>'");
+                            tprintln!(
+                                ctx,
+                                "usage: 'account import mnemonic <bip32|legacy|multisig>'"
+                            );
                             tprintln!(ctx, "please specify the mnemonic type");
-                            tprintln!(ctx, "please use 'legacy' for 12-word KDX and karlsen-network web wallet mnemonics\r\n");
+                            tprintln!(ctx, "please use 'legacy' for 12-word Karlsen-Desktop and Web Wallet mnemonics\r\n");
                             return Ok(());
                         }
 
@@ -162,10 +183,20 @@ impl Account {
                                     tprintln!(ctx, "too many arguments: {}\r\n", argv.join(" "));
                                     return Ok(());
                                 }
-                                crate::wizards::import::import_with_mnemonic(&ctx, account_kind, &argv).await?;
+                                crate::wizards::import::import_with_mnemonic(
+                                    &ctx,
+                                    account_kind,
+                                    &argv,
+                                )
+                                .await?;
                             }
                             MULTISIG_ACCOUNT_KIND => {
-                                crate::wizards::import::import_with_mnemonic(&ctx, account_kind, &argv).await?;
+                                crate::wizards::import::import_with_mnemonic(
+                                    &ctx,
+                                    account_kind,
+                                    &argv,
+                                )
+                                .await?;
                             }
                             _ => {
                                 tprintln!(ctx, "account import is not supported for this account type: '{account_kind}'\r\n");
@@ -177,7 +208,10 @@ impl Account {
                     }
                     _ => {
                         tprintln!(ctx, "unknown account import type: '{import_kind}'");
-                        tprintln!(ctx, "supported import types are: 'mnemonic' or 'legacy-data'\r\n");
+                        tprintln!(
+                            ctx,
+                            "supported import types are: 'mnemonic' or 'legacy-data'\r\n"
+                        );
                         return Ok(());
                     }
                 }
@@ -198,7 +232,8 @@ impl Account {
 
                 let sweep = action.eq("sweep");
 
-                self.derivation_scan(&ctx, start, count, window, sweep).await?;
+                self.derivation_scan(&ctx, start, count, window, sweep)
+                    .await?;
             }
             v => {
                 tprintln!(ctx, "unknown command: '{v}'\r\n");
@@ -216,7 +251,7 @@ impl Account {
                 (
                     "import <import-type> [<key-type> [extra keys]]",
                     "Import accounts from a private key using 24 or 12 word mnemonic or legacy data \
-                (KDX and karlsen-network web wallet). Use 'account import' for additional help.",
+                (Karlsen-Desktop and Web Wallet). Use 'account import' for additional help.",
                 ),
                 ("name <name>", "Name or rename the selected account (use 'remove' to remove the name"),
                 ("scan [<derivations>] or scan [<start>] [<derivations>]", "Scan extended address derivation chain (legacy accounts)"),
@@ -261,13 +296,18 @@ impl Account {
                     if let Some(txid) = txid {
                         tprintln!(
                             ctx_,
-                            "Scan detected {} KAS at index {}; transfer txid: {}",
+                            "Scan detected {} KLS at index {}; transfer txid: {}",
                             sompi_to_karlsen_string(balance),
                             processed,
                             txid
                         );
                     } else {
-                        tprintln!(ctx_, "Scanned {} derivations, found {} KAS", processed, sompi_to_karlsen_string(balance));
+                        tprintln!(
+                            ctx_,
+                            "Scanned {} derivations, found {} KLS",
+                            processed,
+                            sompi_to_karlsen_string(balance)
+                        );
                     }
                 })),
             )

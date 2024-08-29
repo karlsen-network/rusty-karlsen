@@ -23,8 +23,14 @@ pub struct ConsensusMonitor {
 }
 
 impl ConsensusMonitor {
-    pub fn new(counters: Arc<ProcessingCounters>, tick_service: Arc<TickService>) -> ConsensusMonitor {
-        ConsensusMonitor { counters, tick_service }
+    pub fn new(
+        counters: Arc<ProcessingCounters>,
+        tick_service: Arc<TickService>,
+    ) -> ConsensusMonitor {
+        ConsensusMonitor {
+            counters,
+            tick_service,
+        }
     }
 
     pub async fn worker(self: &Arc<ConsensusMonitor>) {
@@ -32,7 +38,11 @@ impl ConsensusMonitor {
         let mut last_log_time = Instant::now();
         let snapshot_interval = 10;
         loop {
-            if let TickReason::Shutdown = self.tick_service.tick(Duration::from_secs(snapshot_interval)).await {
+            if let TickReason::Shutdown = self
+                .tick_service
+                .tick(Duration::from_secs(snapshot_interval))
+                .await
+            {
                 // Let the system print final logs before exiting
                 tokio::time::sleep(Duration::from_millis(500)).await;
                 break;

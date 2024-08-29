@@ -32,7 +32,10 @@ impl RpcCoreMock {
             policies,
             Some(sync_sender),
         ));
-        Self { core_notifier, _sync_receiver: sync_receiver }
+        Self {
+            core_notifier,
+            _sync_receiver: sync_receiver,
+        }
     }
 
     pub(super) fn core_notifier(&self) -> Arc<RpcCoreNotifier> {
@@ -51,7 +54,10 @@ impl RpcCoreMock {
 
     #[allow(dead_code)]
     pub(super) async fn notify_complete(&self) {
-        assert!(self._sync_receiver.recv().await.is_ok(), "the notifier sync channel is unexpectedly empty and closed");
+        assert!(
+            self._sync_receiver.recv().await.is_ok(),
+            "the notifier sync channel is unexpectedly empty and closed"
+        );
     }
 
     pub(super) fn start(&self) {
@@ -59,7 +65,10 @@ impl RpcCoreMock {
     }
 
     pub(super) async fn join(&self) {
-        self.core_notifier.join().await.expect("core notifier shutdown")
+        self.core_notifier
+            .join()
+            .await
+            .expect("core notifier shutdown")
     }
 }
 
@@ -86,27 +95,45 @@ impl RpcApi for RpcCoreMock {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_server_info_call(&self, _request: GetServerInfoRequest) -> RpcResult<GetServerInfoResponse> {
+    async fn get_server_info_call(
+        &self,
+        _request: GetServerInfoRequest,
+    ) -> RpcResult<GetServerInfoResponse> {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_sync_status_call(&self, _request: GetSyncStatusRequest) -> RpcResult<GetSyncStatusResponse> {
+    async fn get_sync_status_call(
+        &self,
+        _request: GetSyncStatusRequest,
+    ) -> RpcResult<GetSyncStatusResponse> {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_current_network_call(&self, _request: GetCurrentNetworkRequest) -> RpcResult<GetCurrentNetworkResponse> {
+    async fn get_current_network_call(
+        &self,
+        _request: GetCurrentNetworkRequest,
+    ) -> RpcResult<GetCurrentNetworkResponse> {
         Err(RpcError::NotImplemented)
     }
 
-    async fn submit_block_call(&self, _request: SubmitBlockRequest) -> RpcResult<SubmitBlockResponse> {
+    async fn submit_block_call(
+        &self,
+        _request: SubmitBlockRequest,
+    ) -> RpcResult<SubmitBlockResponse> {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_block_template_call(&self, _request: GetBlockTemplateRequest) -> RpcResult<GetBlockTemplateResponse> {
+    async fn get_block_template_call(
+        &self,
+        _request: GetBlockTemplateRequest,
+    ) -> RpcResult<GetBlockTemplateResponse> {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_peer_addresses_call(&self, _request: GetPeerAddressesRequest) -> RpcResult<GetPeerAddressesResponse> {
+    async fn get_peer_addresses_call(
+        &self,
+        _request: GetPeerAddressesRequest,
+    ) -> RpcResult<GetPeerAddressesResponse> {
         Err(RpcError::NotImplemented)
     }
 
@@ -114,15 +141,24 @@ impl RpcApi for RpcCoreMock {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_mempool_entry_call(&self, _request: GetMempoolEntryRequest) -> RpcResult<GetMempoolEntryResponse> {
+    async fn get_mempool_entry_call(
+        &self,
+        _request: GetMempoolEntryRequest,
+    ) -> RpcResult<GetMempoolEntryResponse> {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_mempool_entries_call(&self, _request: GetMempoolEntriesRequest) -> RpcResult<GetMempoolEntriesResponse> {
+    async fn get_mempool_entries_call(
+        &self,
+        _request: GetMempoolEntriesRequest,
+    ) -> RpcResult<GetMempoolEntriesResponse> {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_connected_peer_info_call(&self, _request: GetConnectedPeerInfoRequest) -> RpcResult<GetConnectedPeerInfoResponse> {
+    async fn get_connected_peer_info_call(
+        &self,
+        _request: GetConnectedPeerInfoRequest,
+    ) -> RpcResult<GetConnectedPeerInfoResponse> {
         Err(RpcError::NotImplemented)
     }
 
@@ -130,7 +166,10 @@ impl RpcApi for RpcCoreMock {
         Err(RpcError::NotImplemented)
     }
 
-    async fn submit_transaction_call(&self, _request: SubmitTransactionRequest) -> RpcResult<SubmitTransactionResponse> {
+    async fn submit_transaction_call(
+        &self,
+        _request: SubmitTransactionRequest,
+    ) -> RpcResult<SubmitTransactionResponse> {
         Err(RpcError::NotImplemented)
     }
 
@@ -138,7 +177,10 @@ impl RpcApi for RpcCoreMock {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_subnetwork_call(&self, _request: GetSubnetworkRequest) -> RpcResult<GetSubnetworkResponse> {
+    async fn get_subnetwork_call(
+        &self,
+        _request: GetSubnetworkRequest,
+    ) -> RpcResult<GetSubnetworkResponse> {
         Err(RpcError::NotImplemented)
     }
 
@@ -153,11 +195,17 @@ impl RpcApi for RpcCoreMock {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_block_count_call(&self, _request: GetBlockCountRequest) -> RpcResult<GetBlockCountResponse> {
+    async fn get_block_count_call(
+        &self,
+        _request: GetBlockCountRequest,
+    ) -> RpcResult<GetBlockCountResponse> {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_block_dag_info_call(&self, _request: GetBlockDagInfoRequest) -> RpcResult<GetBlockDagInfoResponse> {
+    async fn get_block_dag_info_call(
+        &self,
+        _request: GetBlockDagInfoRequest,
+    ) -> RpcResult<GetBlockDagInfoResponse> {
         Err(RpcError::NotImplemented)
     }
 
@@ -176,7 +224,10 @@ impl RpcApi for RpcCoreMock {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_balance_by_address_call(&self, _request: GetBalanceByAddressRequest) -> RpcResult<GetBalanceByAddressResponse> {
+    async fn get_balance_by_address_call(
+        &self,
+        _request: GetBalanceByAddressRequest,
+    ) -> RpcResult<GetBalanceByAddressResponse> {
         Err(RpcError::NotImplemented)
     }
 
@@ -187,11 +238,17 @@ impl RpcApi for RpcCoreMock {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_utxos_by_addresses_call(&self, _request: GetUtxosByAddressesRequest) -> RpcResult<GetUtxosByAddressesResponse> {
+    async fn get_utxos_by_addresses_call(
+        &self,
+        _request: GetUtxosByAddressesRequest,
+    ) -> RpcResult<GetUtxosByAddressesResponse> {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_sink_blue_score_call(&self, _request: GetSinkBlueScoreRequest) -> RpcResult<GetSinkBlueScoreResponse> {
+    async fn get_sink_blue_score_call(
+        &self,
+        _request: GetSinkBlueScoreRequest,
+    ) -> RpcResult<GetSinkBlueScoreResponse> {
         Err(RpcError::NotImplemented)
     }
 
@@ -217,7 +274,10 @@ impl RpcApi for RpcCoreMock {
         Err(RpcError::NotImplemented)
     }
 
-    async fn get_coin_supply_call(&self, _request: GetCoinSupplyRequest) -> RpcResult<GetCoinSupplyResponse> {
+    async fn get_coin_supply_call(
+        &self,
+        _request: GetCoinSupplyRequest,
+    ) -> RpcResult<GetCoinSupplyResponse> {
         Err(RpcError::NotImplemented)
     }
 
@@ -232,7 +292,8 @@ impl RpcApi for RpcCoreMock {
     // Notification API
 
     fn register_new_listener(&self, connection: ChannelConnection) -> ListenerId {
-        self.core_notifier.register_new_listener(connection, ListenerLifespan::Dynamic)
+        self.core_notifier
+            .register_new_listener(connection, ListenerLifespan::Dynamic)
     }
 
     async fn unregister_listener(&self, id: ListenerId) -> RpcResult<()> {

@@ -27,12 +27,18 @@ pub struct Hub {
 
 impl Hub {
     pub fn new() -> Self {
-        Self { peers: Arc::new(RwLock::new(HashMap::new())) }
+        Self {
+            peers: Arc::new(RwLock::new(HashMap::new())),
+        }
     }
 
     /// Starts a loop for receiving central hub events from all peer routers. This mechanism is used for
     /// managing a collection of active peers and for supporting a broadcast operation.
-    pub(crate) fn start_event_loop(self, mut hub_receiver: MpscReceiver<HubEvent>, initializer: Arc<dyn ConnectionInitializer>) {
+    pub(crate) fn start_event_loop(
+        self,
+        mut hub_receiver: MpscReceiver<HubEvent>,
+        initializer: Arc<dyn ConnectionInitializer>,
+    ) {
         tokio::spawn(async move {
             while let Some(new_event) = hub_receiver.recv().await {
                 match new_event {
@@ -51,10 +57,20 @@ impl Hub {
                                     new_router.try_sending_reject_message(&err).await;
                                     // Ignoring the new router
                                     new_router.close().await;
-                                    if matches!(err, ProtocolError::LoopbackConnection(_) | ProtocolError::PeerAlreadyExists(_)) {
-                                        debug!("P2P, handshake failed for inbound peer {}: {}", new_router, err);
+                                    if matches!(
+                                        err,
+                                        ProtocolError::LoopbackConnection(_)
+                                            | ProtocolError::PeerAlreadyExists(_)
+                                    ) {
+                                        debug!(
+                                            "P2P, handshake failed for inbound peer {}: {}",
+                                            new_router, err
+                                        );
                                     } else {
-                                        warn!("P2P, handshake failed for inbound peer {}: {}", new_router, err);
+                                        warn!(
+                                            "P2P, handshake failed for inbound peer {}: {}",
+                                            new_router, err
+                                        );
                                     }
                                 }
                             }
@@ -66,7 +82,10 @@ impl Hub {
                             // This is extremely important in cases of duplicate connection rejection etc.
                             if Arc::ptr_eq(entry.get(), &router) {
                                 entry.remove_entry();
-                                debug!("P2P, Hub event loop, removing peer, router-id: {}", router.identity());
+                                debug!(
+                                    "P2P, Hub event loop, removing peer, router-id: {}",
+                                    router.identity()
+                                );
                             }
                         }
                     }
@@ -81,7 +100,10 @@ impl Hub {
         if let Some(previous_router) = prev {
             // This is not supposed to ever happen but can on rare race-conditions
             previous_router.close().await;
-            warn!("P2P, Hub event loop, removing peer with duplicate key: {}", previous_router.key());
+            warn!(
+                "P2P, Hub event loop, removing peer with duplicate key: {}",
+                previous_router.key()
+            );
         }
     }
 
@@ -109,11 +131,21 @@ impl Hub {
             .cloned()
             .choose_multiple(thread_rng, outbound_count) // Randomly select about half from outbound
             .into_iter() // Then select the rest from inbound
-            .chain(peers.values().filter(|peer| !peer.is_outbound()).cloned().choose_multiple(thread_rng, inbound_count))
+            .chain(
+                peers
+                    .values()
+                    .filter(|peer| !peer.is_outbound())
+                    .cloned()
+                    .choose_multiple(thread_rng, inbound_count),
+            )
     }
 
     /// Send a message to a specific peer
-    pub async fn send(&self, peer_key: PeerKey, msg: KarlsendMessage) -> Result<bool, ProtocolError> {
+    pub async fn send(
+        &self,
+        peer_key: PeerKey,
+        msg: KarlsendMessage,
+    ) -> Result<bool, ProtocolError> {
         let op = self.peers.read().get(&peer_key).cloned();
         if let Some(router) = op {
             router.enqueue(msg).await?;
@@ -166,7 +198,12 @@ impl Hub {
 
     /// Terminate all peers
     pub async fn terminate_all_peers(&self) {
-        let peers = self.peers.write().drain().map(|(_, r)| r).collect::<Vec<_>>();
+        let peers = self
+            .peers
+            .write()
+            .drain()
+            .map(|(_, r)| r)
+            .collect::<Vec<_>>();
         for router in peers {
             router.close().await;
         }
@@ -174,7 +211,11 @@ impl Hub {
 
     /// Returns a list of all currently active peers
     pub fn active_peers(&self) -> Vec<Peer> {
-        self.peers.read().values().map(|r| r.as_ref().into()).collect()
+        self.peers
+            .read()
+            .values()
+            .map(|r| r.as_ref().into())
+            .collect()
     }
 
     /// Returns the number of currently active peers

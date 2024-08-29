@@ -158,8 +158,16 @@ mod tests {
     fn gen_ghostdag_table() {
         println!("[BPS => K]");
         (1..=32).for_each(|bps| {
-            let k = calculate_ghostdag_k(2.0 * NETWORK_DELAY_BOUND as f64 * bps as f64, GHOSTDAG_TAIL_DELTA);
-            print!("{} => {},{}", bps, k, if bps % 10 == 0 { '\n' } else { ' ' });
+            let k = calculate_ghostdag_k(
+                2.0 * NETWORK_DELAY_BOUND as f64 * bps as f64,
+                GHOSTDAG_TAIL_DELTA,
+            );
+            print!(
+                "{} => {},{}",
+                bps,
+                k,
+                if bps % 10 == 0 { '\n' } else { ' ' }
+            );
         });
         println!();
 

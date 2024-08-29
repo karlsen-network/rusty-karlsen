@@ -97,16 +97,26 @@ impl BorshSerialize for AccountKind {
 impl BorshDeserialize for AccountKind {
     fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
         if buf.is_empty() {
-            Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid AccountKind length"))
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Invalid AccountKind length",
+            ))
         } else {
             let len = buf[0];
             if buf.len() < (len as usize + 1) {
-                Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid AccountKind length"))
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Invalid AccountKind length",
+                ))
             } else {
-                let s = str64::make(
-                    std::str::from_utf8(&buf[1..(len as usize + 1)])
-                        .map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid UTF-8 sequence"))?,
-                );
+                let s = str64::make(std::str::from_utf8(&buf[1..(len as usize + 1)]).map_err(
+                    |_| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Invalid UTF-8 sequence",
+                        )
+                    },
+                )?);
                 *buf = &buf[(len as usize + 1)..];
                 Ok(Self(s))
             }

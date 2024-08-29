@@ -19,8 +19,15 @@ pub struct PruningUtxosetStores {
 impl PruningUtxosetStores {
     pub fn new(db: Arc<DB>, utxoset_cache_policy: CachePolicy) -> Self {
         Self {
-            utxo_set: DbUtxoSetStore::new(db.clone(), utxoset_cache_policy, DatabaseStorePrefixes::PruningUtxoset.into()),
-            utxoset_position_access: CachedDbItem::new(db, DatabaseStorePrefixes::PruningUtxosetPosition.into()),
+            utxo_set: DbUtxoSetStore::new(
+                db.clone(),
+                utxoset_cache_policy,
+                DatabaseStorePrefixes::PruningUtxoset.into(),
+            ),
+            utxoset_position_access: CachedDbItem::new(
+                db,
+                DatabaseStorePrefixes::PruningUtxosetPosition.into(),
+            ),
         }
     }
 
@@ -31,7 +38,12 @@ impl PruningUtxosetStores {
         self.utxoset_position_access.read()
     }
 
-    pub fn set_utxoset_position(&mut self, batch: &mut WriteBatch, pruning_utxoset_position: Hash) -> StoreResult<()> {
-        self.utxoset_position_access.write(BatchDbWriter::new(batch), &pruning_utxoset_position)
+    pub fn set_utxoset_position(
+        &mut self,
+        batch: &mut WriteBatch,
+        pruning_utxoset_position: Hash,
+    ) -> StoreResult<()> {
+        self.utxoset_position_access
+            .write(BatchDbWriter::new(batch), &pruning_utxoset_position)
     }
 }

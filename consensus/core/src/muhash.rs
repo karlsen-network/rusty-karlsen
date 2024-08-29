@@ -20,7 +20,12 @@ impl MuHashExtensions for MuHash {
         }
         for (i, output) in tx.outputs().iter().enumerate() {
             let outpoint = TransactionOutpoint::new(tx_id, i as u32);
-            let entry = UtxoEntry::new(output.value, output.script_public_key.clone(), block_daa_score, tx.is_coinbase());
+            let entry = UtxoEntry::new(
+                output.value,
+                output.script_public_key.clone(),
+                block_daa_score,
+                tx.is_coinbase(),
+            );
             self.add_utxo(&outpoint, &entry);
         }
     }

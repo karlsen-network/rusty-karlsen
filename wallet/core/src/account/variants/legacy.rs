@@ -1,5 +1,5 @@
 //!
-//! Legacy (KDX, karlsen-network.io Web Wallet) account implementation
+//! Legacy (Karlsen-Desktop, wallet.karlsencoin.com Web Wallet) account implementation
 //!
 
 use crate::account::{AsLegacyAccount, Inner};
@@ -20,7 +20,7 @@ impl Factory for Ctor {
     }
 
     fn description(&self) -> String {
-        "Karlsen Legacy Account (KDX, karlsen-network.io Web Wallet)".to_string()
+        "Karlsen Legacy Account (Karlsen-Desktop, wallet.karlsencoin.com Web Wallet)".to_string()
     }
 
     async fn try_load(
@@ -60,8 +60,9 @@ impl BorshSerialize for Payload {
 
 impl BorshDeserialize for Payload {
     fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
-        let StorageHeader { version: _, .. } =
-            StorageHeader::deserialize(buf)?.try_magic(Self::STORAGE_MAGIC)?.try_version(Self::STORAGE_VERSION)?;
+        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?
+            .try_magic(Self::STORAGE_MAGIC)?
+            .try_version(Self::STORAGE_VERSION)?;
 
         Ok(Self {})
     }
@@ -74,30 +75,58 @@ pub struct Legacy {
 }
 
 impl Legacy {
-    pub async fn try_new(wallet: &Arc<Wallet>, name: Option<String>, prv_key_data_id: PrvKeyDataId) -> Result<Self> {
+    pub async fn try_new(
+        wallet: &Arc<Wallet>,
+        name: Option<String>,
+        prv_key_data_id: PrvKeyDataId,
+    ) -> Result<Self> {
         let storable = Payload;
-        let settings = AccountSettings { name, ..Default::default() };
+        let settings = AccountSettings {
+            name,
+            ..Default::default()
+        };
 
         let (id, storage_key) = make_account_hashes(from_legacy(&prv_key_data_id, &storable));
         let inner = Arc::new(Inner::new(wallet, id, storage_key, settings));
 
         let account_index = 0;
-        let derivation = AddressDerivationManager::create_legacy_pubkey_managers(wallet, account_index, Default::default())?;
+        let derivation = AddressDerivationManager::create_legacy_pubkey_managers(
+            wallet,
+            account_index,
+            Default::default(),
+        )?;
 
-        Ok(Self { inner, prv_key_data_id, derivation })
+        Ok(Self {
+            inner,
+            prv_key_data_id,
+            derivation,
+        })
     }
 
-    pub async fn try_load(wallet: &Arc<Wallet>, storage: &AccountStorage, meta: Option<Arc<AccountMetadata>>) -> Result<Self> {
+    pub async fn try_load(
+        wallet: &Arc<Wallet>,
+        storage: &AccountStorage,
+        meta: Option<Arc<AccountMetadata>>,
+    ) -> Result<Self> {
         let prv_key_data_id: PrvKeyDataId = storage.prv_key_data_ids.clone().try_into()?;
 
         let inner = Arc::new(Inner::from_storage(wallet, storage));
 
-        let address_derivation_indexes = meta.and_then(|meta| meta.address_derivation_indexes()).unwrap_or_default();
+        let address_derivation_indexes = meta
+            .and_then(|meta| meta.address_derivation_indexes())
+            .unwrap_or_default();
         let account_index = 0;
-        let derivation =
-            AddressDerivationManager::create_legacy_pubkey_managers(wallet, account_index, address_derivation_indexes.clone())?;
+        let derivation = AddressDerivationManager::create_legacy_pubkey_managers(
+            wallet,
+            account_index,
+            address_derivation_indexes.clone(),
+        )?;
 
-        Ok(Self { inner, prv_key_data_id, derivation })
+        Ok(Self {
+            inner,
+            prv_key_data_id,
+            derivation,
+        })
     }
 
     pub async fn initialize_derivation(
@@ -111,10 +140,16 @@ impl Legacy {
             .wallet
             .get_prv_key_data(wallet_secret, &self.prv_key_data_id)
             .await?
-            .ok_or(Error::Custom(format!("Prv key data is missing for {}", self.prv_key_data_id.to_hex())))?;
+            .ok_or(Error::Custom(format!(
+                "Prv key data is missing for {}",
+                self.prv_key_data_id.to_hex()
+            )))?;
         let mnemonic = prv_key_data
             .as_mnemonic(payment_secret)?
-            .ok_or(Error::Custom(format!("Could not convert Prv key data into mnemonic for {}", self.prv_key_data_id.to_hex())))?;
+            .ok_or(Error::Custom(format!(
+                "Could not convert Prv key data into mnemonic for {}",
+                self.prv_key_data_id.to_hex()
+            )))?;
 
         let seed = mnemonic.to_seed("");
         let xprv = ExtendedPrivateKey::<SecretKey>::new(seed).unwrap();
@@ -183,7 +218,8 @@ impl Account for Legacy {
     }
 
     fn metadata(&self) -> Result<Option<AccountMetadata>> {
-        let metadata = AccountMetadata::new(self.inner.id, self.derivation.address_derivation_meta());
+        let metadata =
+            AccountMetadata::new(self.inner.id, self.derivation.address_derivation_meta());
         Ok(Some(metadata))
     }
 
@@ -196,7 +232,10 @@ impl Account for Legacy {
             self.receive_address().ok(),
             self.change_address().ok(),
         )
-        .with_property(AccountDescriptorProperty::DerivationMeta, self.derivation.address_derivation_meta().into());
+        .with_property(
+            AccountDescriptorProperty::DerivationMeta,
+            self.derivation.address_derivation_meta().into(),
+        );
 
         Ok(descriptor)
     }
@@ -212,8 +251,14 @@ impl Account for Legacy {
 
 #[async_trait]
 impl AsLegacyAccount for Legacy {
-    async fn create_private_context(&self, wallet_secret: &Secret, payment_secret: Option<&Secret>, index: Option<u32>) -> Result<()> {
-        self.initialize_derivation(wallet_secret, payment_secret, index).await?;
+    async fn create_private_context(
+        &self,
+        wallet_secret: &Secret,
+        payment_secret: Option<&Secret>,
+        index: Option<u32>,
+    ) -> Result<()> {
+        self.initialize_derivation(wallet_secret, payment_secret, index)
+            .await?;
         Ok(())
     }
 

@@ -17,7 +17,14 @@ pub struct CpuMinerConfig {
 }
 
 impl CpuMinerConfig {
-    pub fn new(path: &str, network: NetworkType, address: Address, server: String, throttle: usize, mute: bool) -> Self {
+    pub fn new(
+        path: &str,
+        network: NetworkType,
+        address: Address,
+        server: String,
+        throttle: usize,
+        mute: bool,
+    ) -> Self {
         Self {
             mute,
             path: Some(path.to_string()),
@@ -30,7 +37,10 @@ impl CpuMinerConfig {
     }
 
     pub fn new_for_version(path: &str) -> Self {
-        Self { path: Some(path.to_string()), ..Default::default() }
+        Self {
+            path: Some(path.to_string()),
+            ..Default::default()
+        }
     }
 }
 
@@ -63,7 +73,9 @@ impl TryFrom<CpuMinerConfig> for Vec<String> {
                 argv.push("--port=42210");
             }
             _ => {
-                return Err(Error::Custom("network type is not suported by the CPU miner".to_string()));
+                return Err(Error::Custom(
+                    "network type is not suported by the CPU miner".to_string(),
+                ));
             }
         }
 
@@ -99,7 +111,10 @@ struct Inner {
 
 impl Default for Inner {
     fn default() -> Self {
-        Self { process: None, config: Mutex::new(Default::default()) }
+        Self {
+            process: None,
+            config: Mutex::new(Default::default()),
+        }
     }
 }
 
@@ -111,7 +126,11 @@ pub struct CpuMiner {
 
 impl Default for CpuMiner {
     fn default() -> Self {
-        Self { inner: Arc::new(Mutex::new(Inner::default())), events: Channel::unbounded(), mute: Arc::new(AtomicBool::new(false)) }
+        Self {
+            inner: Arc::new(Mutex::new(Inner::default())),
+            events: Channel::unbounded(),
+            mute: Arc::new(AtomicBool::new(false)),
+        }
     }
 }
 
@@ -119,7 +138,10 @@ impl CpuMiner {
     pub fn new(args: CpuMinerConfig) -> Self {
         Self {
             mute: Arc::new(AtomicBool::new(args.mute)),
-            inner: Arc::new(Mutex::new(Inner { config: Mutex::new(args), ..Default::default() })),
+            inner: Arc::new(Mutex::new(Inner {
+                config: Mutex::new(args),
+                ..Default::default()
+            })),
             events: Channel::unbounded(),
         }
     }

@@ -49,15 +49,37 @@ impl From<&IpAddress> for PrefixBucket {
         match ip_address.0 {
             IpAddr::V4(ipv4) => {
                 let prefix_bytes = ipv4.octets();
-                Self(u64::from_be_bytes([0u8, 0u8, 0u8, 0u8, 0u8, 0u8, prefix_bytes[0], prefix_bytes[1]]))
+                Self(u64::from_be_bytes([
+                    0u8,
+                    0u8,
+                    0u8,
+                    0u8,
+                    0u8,
+                    0u8,
+                    prefix_bytes[0],
+                    prefix_bytes[1],
+                ]))
             }
             IpAddr::V6(ipv6) => {
                 if let Some(ipv4) = ipv6.to_ipv4() {
                     let prefix_bytes = ipv4.octets();
-                    Self(u64::from_be_bytes([0u8, 0u8, 0u8, 0u8, 0u8, 0u8, prefix_bytes[0], prefix_bytes[1]]))
+                    Self(u64::from_be_bytes([
+                        0u8,
+                        0u8,
+                        0u8,
+                        0u8,
+                        0u8,
+                        0u8,
+                        prefix_bytes[0],
+                        prefix_bytes[1],
+                    ]))
                 } else {
                     // Else use first 8 bytes (routing prefix + subnetwork id) of ipv6
-                    Self(u64::from_be_bytes(ipv6.octets().as_slice()[..8].try_into().expect("Slice with incorrect length")))
+                    Self(u64::from_be_bytes(
+                        ipv6.octets().as_slice()[..8]
+                            .try_into()
+                            .expect("Slice with incorrect length"),
+                    ))
                 }
             }
         }
@@ -91,7 +113,11 @@ impl IpAddress {
                 // RFC 5737 is covered by is_documentation
                 // RFC 3927 is covered by is_link_local
                 // RFC  919 is covered by is_broadcast (wasn't originally covered in go code)
-                if ip.is_broadcast() || ip.is_private() || ip.is_documentation() || ip.is_link_local() {
+                if ip.is_broadcast()
+                    || ip.is_private()
+                    || ip.is_documentation()
+                    || ip.is_link_local()
+                {
                     return false;
                 }
             }
@@ -179,7 +205,10 @@ impl Deref for IpAddress {
 //
 
 impl BorshSerialize for IpAddress {
-    fn serialize<W: borsh::maybestd::io::Write>(&self, writer: &mut W) -> ::core::result::Result<(), borsh::maybestd::io::Error> {
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> ::core::result::Result<(), borsh::maybestd::io::Error> {
         let variant_idx: u8 = match self.0 {
             IpAddr::V4(..) => 0u8,
             IpAddr::V6(..) => 1u8,
@@ -211,7 +240,10 @@ impl BorshDeserialize for IpAddress {
             }
             _ => {
                 let msg = borsh::maybestd::format!("Unexpected variant index: {:?}", variant_idx);
-                return Err(borsh::maybestd::io::Error::new(borsh::maybestd::io::ErrorKind::InvalidInput, msg));
+                return Err(borsh::maybestd::io::Error::new(
+                    borsh::maybestd::io::ErrorKind::InvalidInput,
+                    msg,
+                ));
             }
         };
         Ok(Self(ip))
@@ -219,7 +251,18 @@ impl BorshDeserialize for IpAddress {
 }
 
 /// A network address, equivalent of a [SocketAddr].
-#[derive(PartialEq, Eq, Hash, Copy, Clone, Serialize, Deserialize, Debug, BorshSerialize, BorshDeserialize)]
+#[derive(
+    PartialEq,
+    Eq,
+    Hash,
+    Copy,
+    Clone,
+    Serialize,
+    Deserialize,
+    Debug,
+    BorshSerialize,
+    BorshDeserialize,
+)]
 pub struct NetAddress {
     pub ip: IpAddress,
     pub port: u16,
@@ -264,14 +307,25 @@ impl Display for NetAddress {
 /// A network address possibly without explicit port.
 ///
 /// Use `normalize` to get a fully determined address.
-#[derive(PartialEq, Eq, Hash, Copy, Clone, Serialize, Deserialize, Debug, BorshSerialize, BorshDeserialize)]
+#[derive(
+    PartialEq,
+    Eq,
+    Hash,
+    Copy,
+    Clone,
+    Serialize,
+    Deserialize,
+    Debug,
+    BorshSerialize,
+    BorshDeserialize,
+)]
 pub struct ContextualNetAddress {
     ip: IpAddress,
     port: Option<u16>,
 }
 
 impl ContextualNetAddress {
-    fn new(ip: IpAddress, port: Option<u16>) -> Self {
+    pub fn new(ip: IpAddress, port: Option<u16>) -> Self {
         Self { ip, port }
     }
 
@@ -280,11 +334,28 @@ impl ContextualNetAddress {
     }
 
     pub fn unspecified() -> Self {
-        Self { ip: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)).into(), port: None }
+        Self {
+            ip: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)).into(),
+            port: None,
+        }
     }
 
     pub fn loopback() -> Self {
-        Self { ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)).into(), port: None }
+        Self {
+            ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)).into(),
+            port: None,
+        }
+    }
+
+    pub fn port_not_specified(&self) -> bool {
+        self.port.is_none()
+    }
+
+    pub fn with_port(&self, port: u16) -> Self {
+        Self {
+            ip: self.ip,
+            port: Some(port),
+        }
     }
 }
 
@@ -381,7 +452,10 @@ impl Deref for PeerId {
 //
 
 impl BorshSerialize for PeerId {
-    fn serialize<W: borsh::maybestd::io::Write>(&self, writer: &mut W) -> ::core::result::Result<(), borsh::maybestd::io::Error> {
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> ::core::result::Result<(), borsh::maybestd::io::Error> {
         borsh::BorshSerialize::serialize(&self.0.as_bytes(), writer)?;
         Ok(())
     }
@@ -438,7 +512,10 @@ mod tests {
     #[test]
     fn test_prefix_bucket() {
         let prefix_bytes: [u8; 2] = [42u8, 43u8];
-        let addr = NetAddress::from_str(format!("{0}.{1}.3.4:5678", prefix_bytes[0], prefix_bytes[1]).as_str()).unwrap();
+        let addr = NetAddress::from_str(
+            format!("{0}.{1}.3.4:5678", prefix_bytes[0], prefix_bytes[1]).as_str(),
+        )
+        .unwrap();
         assert!(addr.prefix_bucket() == PrefixBucket(u16::from_be_bytes(prefix_bytes) as u64));
     }
 
@@ -454,122 +531,298 @@ mod tests {
     #[test]
     fn test_is_publicly_routable() {
         // RFC 2544 tests
-        assert!(!IpAddress::from_str("198.18.0.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("198.19.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("198.17.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("198.20.0.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("198.18.0.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("198.19.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("198.17.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("198.20.0.0")
+            .unwrap()
+            .is_publicly_routable());
 
         // Zero net tests
-        assert!(!IpAddress::from_str("0.0.0.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("0.0.0.1").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("0.0.1.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("0.1.0.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("0.0.0.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("0.0.0.1")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("0.0.1.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("0.1.0.0")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 3849
-        assert!(!IpAddress::from_str("2001:db8::").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("2001:db8:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2001:db7:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2001:db9::").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("2001:db8::")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(
+            !IpAddress::from_str("2001:db8:ffff:ffff:ffff:ffff:ffff:ffff")
+                .unwrap()
+                .is_publicly_routable()
+        );
+        assert!(
+            IpAddress::from_str("2001:db7:ffff:ffff:ffff:ffff:ffff:ffff")
+                .unwrap()
+                .is_publicly_routable()
+        );
+        assert!(IpAddress::from_str("2001:db9::")
+            .unwrap()
+            .is_publicly_routable());
 
         // Localhost
-        assert!(!IpAddress::from_str("127.0.0.1").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("127.0.0.1")
+            .unwrap()
+            .is_publicly_routable());
 
         // Some random routable IP
-        assert!(IpAddress::from_str("123.45.67.89").unwrap().is_publicly_routable());
+        assert!(IpAddress::from_str("123.45.67.89")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 1918
-        assert!(!IpAddress::from_str("10.0.0.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("10.255.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("9.255.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("11.0.0.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("10.0.0.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("10.255.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("9.255.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("11.0.0.0")
+            .unwrap()
+            .is_publicly_routable());
 
-        assert!(!IpAddress::from_str("172.16.0.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("172.31.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("172.15.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("172.32.0.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("172.16.0.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("172.31.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("172.15.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("172.32.0.0")
+            .unwrap()
+            .is_publicly_routable());
 
-        assert!(!IpAddress::from_str("192.168.0.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("192.168.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("192.167.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("192.169.0.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("192.168.0.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("192.168.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("192.167.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("192.169.0.0")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 3927
-        assert!(!IpAddress::from_str("169.254.0.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("169.254.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("169.253.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("169.255.0.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("169.254.0.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("169.254.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("169.253.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("169.255.0.0")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 3964
-        assert!(!IpAddress::from_str("2002::").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("2002:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2001:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2003::").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("2002::")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(
+            !IpAddress::from_str("2002:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+                .unwrap()
+                .is_publicly_routable()
+        );
+        assert!(
+            IpAddress::from_str("2001:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+                .unwrap()
+                .is_publicly_routable()
+        );
+        assert!(IpAddress::from_str("2003::")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 4193
-        assert!(!IpAddress::from_str("fc00::").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("fb00:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("fe00::").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("fc00::")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(
+            !IpAddress::from_str("fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+                .unwrap()
+                .is_publicly_routable()
+        );
+        assert!(
+            IpAddress::from_str("fb00:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
+                .unwrap()
+                .is_publicly_routable()
+        );
+        assert!(IpAddress::from_str("fe00::")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 4380
-        assert!(!IpAddress::from_str("2001::").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("2001:0:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2000:0:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2001:1::").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("2001::")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("2001:0:ffff:ffff:ffff:ffff:ffff:ffff")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("2000:0:ffff:ffff:ffff:ffff:ffff:ffff")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("2001:1::")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 4843
-        assert!(!IpAddress::from_str("2001:10::").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("2001:1f:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2001:f:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2001:20::").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("2001:10::")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(
+            !IpAddress::from_str("2001:1f:ffff:ffff:ffff:ffff:ffff:ffff")
+                .unwrap()
+                .is_publicly_routable()
+        );
+        assert!(IpAddress::from_str("2001:f:ffff:ffff:ffff:ffff:ffff:ffff")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("2001:20::")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 4862
-        assert!(!IpAddress::from_str("fe80::").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("fe80::ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("fe7f::ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("fe81::").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("fe80::")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("fe80::ffff:ffff:ffff:ffff")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("fe7f::ffff:ffff:ffff:ffff")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("fe81::")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 5737
-        assert!(!IpAddress::from_str("192.0.2.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("192.0.2.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("192.0.1.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("192.0.3.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("192.0.2.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("192.0.2.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("192.0.1.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("192.0.3.0")
+            .unwrap()
+            .is_publicly_routable());
 
-        assert!(!IpAddress::from_str("198.51.100.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("198.51.100.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("198.51.99.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("198.51.101.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("198.51.100.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("198.51.100.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("198.51.99.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("198.51.101.0")
+            .unwrap()
+            .is_publicly_routable());
 
-        assert!(!IpAddress::from_str("203.0.113.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("203.0.113.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("203.0.112.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("203.0.114.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("203.0.113.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("203.0.113.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("203.0.112.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("203.0.114.0")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 6052
-        assert!(!IpAddress::from_str("64:ff9b::").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("64:ff9b::ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("64:ff9a::ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("64:ff9b:1::").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("64:ff9b::")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("64:ff9b::ffff:ffff")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("64:ff9a::ffff:ffff")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("64:ff9b:1::")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 6145
-        assert!(!IpAddress::from_str("::ffff:0:0:0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("::ffff:0:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("::fffe:0:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("::ffff:1:0:0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("::ffff:0:0:0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("::ffff:0:ffff:ffff")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("::fffe:0:ffff:ffff")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("::ffff:1:0:0")
+            .unwrap()
+            .is_publicly_routable());
 
         // RFC 6598
-        assert!(!IpAddress::from_str("100.64.0.0").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("100.127.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("100.63.255.255").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("100.128.0.0").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("100.64.0.0")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(!IpAddress::from_str("100.127.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("100.63.255.255")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(IpAddress::from_str("100.128.0.0")
+            .unwrap()
+            .is_publicly_routable());
 
         // Hurricane Electric IPv6 address block.
-        assert!(!IpAddress::from_str("2001:470::").unwrap().is_publicly_routable());
-        assert!(!IpAddress::from_str("2001:470:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2001:46f:ffff:ffff:ffff:ffff:ffff:ffff").unwrap().is_publicly_routable());
-        assert!(IpAddress::from_str("2001:471::").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("2001:470::")
+            .unwrap()
+            .is_publicly_routable());
+        assert!(
+            !IpAddress::from_str("2001:470:ffff:ffff:ffff:ffff:ffff:ffff")
+                .unwrap()
+                .is_publicly_routable()
+        );
+        assert!(
+            IpAddress::from_str("2001:46f:ffff:ffff:ffff:ffff:ffff:ffff")
+                .unwrap()
+                .is_publicly_routable()
+        );
+        assert!(IpAddress::from_str("2001:471::")
+            .unwrap()
+            .is_publicly_routable());
 
         // Broadcast ip
-        assert!(!IpAddress::from_str("255.255.255.255").unwrap().is_publicly_routable());
+        assert!(!IpAddress::from_str("255.255.255.255")
+            .unwrap()
+            .is_publicly_routable());
     }
 }

@@ -28,7 +28,11 @@ impl MiningMonitor {
         tx_script_cache_counters: Arc<TxScriptCacheCounters>,
         tick_service: Arc<TickService>,
     ) -> MiningMonitor {
-        MiningMonitor { counters, tx_script_cache_counters, tick_service }
+        MiningMonitor {
+            counters,
+            tx_script_cache_counters,
+            tick_service,
+        }
     }
 
     pub async fn worker(self: &Arc<MiningMonitor>) {
@@ -36,7 +40,11 @@ impl MiningMonitor {
         let mut last_tx_script_cache_snapshot = self.tx_script_cache_counters.snapshot();
         let snapshot_interval = 10;
         loop {
-            if let TickReason::Shutdown = self.tick_service.tick(Duration::from_secs(snapshot_interval)).await {
+            if let TickReason::Shutdown = self
+                .tick_service
+                .tick(Duration::from_secs(snapshot_interval))
+                .await
+            {
                 // Let the system print final logs before exiting
                 tokio::time::sleep(Duration::from_millis(500)).await;
                 break;
@@ -76,7 +84,10 @@ impl MiningMonitor {
             if delta.txs_sample + delta.orphans_sample > 0 {
                 debug!(
                     "Mempool sample: {} ready out of {} txs, {} orphans, {} cached as accepted",
-                    delta.ready_txs_sample, delta.txs_sample, delta.orphans_sample, delta.accepted_sample
+                    delta.ready_txs_sample,
+                    delta.txs_sample,
+                    delta.orphans_sample,
+                    delta.accepted_sample
                 );
             }
 
