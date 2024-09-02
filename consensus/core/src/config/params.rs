@@ -413,7 +413,7 @@ pub const TESTNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
-    hf_daa_score: 6000000,
+    hf_daa_score: 43200, // HF DAAscore to switch to khashv2 (12 hours after testnet launch)
 };
 
 pub const TESTNET11_PARAMS: Params = Params {
