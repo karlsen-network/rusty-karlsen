@@ -518,7 +518,7 @@ pub const SIMNET_PARAMS: Params = Params {
 
     skip_proof_of_work: true, // For simnet only, PoW can be simulated by default
     max_block_level: 250,
-    hf_daa_score: 50,
+    hf_daa_score: 3600,
 };
 
 pub const DEVNET_PARAMS: Params = Params {
@@ -575,5 +575,5 @@ pub const DEVNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
-    hf_daa_score: 50,
+    hf_daa_score: 3600,
 };
