@@ -50,8 +50,9 @@ impl HeaderProcessor {
             .calculate_difficulty_bits(ghostdag_data, &daa_window);
         ctx.mergeset_non_daa = Some(daa_window.mergeset_non_daa);
 
-        if header.daa_score <= (self.hf_daa_score + 10) && header.daa_score >= self.hf_daa_score {
-            //    if virtual_state.daa_score < (self.hf_daa_score + 10) || virtual_state.daa_score >=  self.hf_daa_score {
+        if header.daa_score <= (self.hf_daa_score + self.difficulty_window_size as u64)
+            && header.daa_score >= self.hf_daa_score
+        {
             expected_bits = self.genesis.bits;
         }
 
