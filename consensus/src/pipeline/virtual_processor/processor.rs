@@ -124,6 +124,7 @@ pub struct VirtualStateProcessor {
     pub(super) mergeset_size_limit: u64,
     pub(super) pruning_depth: u64,
     pub(super) hf_daa_score: u64,
+    pub(super) difficulty_window_size: usize,
 
     // Stores
     pub(super) statuses_store: Arc<RwLock<DbStatusesStore>>,
@@ -199,6 +200,7 @@ impl VirtualStateProcessor {
             mergeset_size_limit: params.mergeset_size_limit,
             pruning_depth: params.pruning_depth,
             hf_daa_score: params.hf_daa_score,
+            difficulty_window_size: params.legacy_difficulty_window_size,
 
             db,
             statuses_store: storage.statuses_store.clone(),
@@ -1226,7 +1228,7 @@ impl VirtualStateProcessor {
         };
         // todo: check bits to lower difficulty
         let mut bits = virtual_state.bits;
-        if virtual_state.daa_score <= (self.hf_daa_score + 10)
+        if virtual_state.daa_score <= (self.hf_daa_score + self.difficulty_window_size as u64)
             && virtual_state.daa_score >= self.hf_daa_score
         {
             bits = self.genesis.bits;
