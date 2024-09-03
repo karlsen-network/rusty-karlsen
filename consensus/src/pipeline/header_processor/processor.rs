@@ -127,6 +127,7 @@ pub struct HeaderProcessor {
     pub(super) skip_proof_of_work: bool,
     pub(super) max_block_level: BlockLevel,
     pub(super) hf_daa_score: u64,
+    pub(super) difficulty_window_size: usize,
 
     // DB
     db: Arc<DB>,
@@ -217,6 +218,7 @@ impl HeaderProcessor {
             skip_proof_of_work: params.skip_proof_of_work,
             max_block_level: params.max_block_level,
             hf_daa_score: params.hf_daa_score,
+            difficulty_window_size: params.legacy_difficulty_window_size,
         }
     }
 
