@@ -19,7 +19,7 @@ shaping a platform designed for scalability and speed without
 compromising on decentralization.
 
 Your feedback, contributions, and issue reports will be integral to
-evolving this codebase from its Alpha phase into a mature and reliable
+evolving this codebase and continuing Alpha its maturity as a reliable
 node in the Karlsen network.
 
 ## Overview
@@ -351,6 +351,8 @@ are compatible with WASM SDK Wallet API and Karlsen NG projects.
 ```bash
 cd cli
 cargo run --release
+# or with UTXO-index enabled (needed when using wallets)
+cargo run --release --bin karlsend -- --utxoindex
 ```
 
 ## Local Web Wallet
@@ -432,6 +434,8 @@ Borsh protocol:
 
 ```bash
 --rpclisten-borsh = <interface:port>
+# or use the defaults for current network
+--rpclisten-borsh = default
 ```
 
 ### Sidenote
@@ -454,27 +458,6 @@ using any WebSocket library. Built-in RPC clients for JavaScript and
 TypeScript capable of running in web browsers and Node.js are
 available as a part of the Karlsen WASM framework.
 
-**wRPC to gRPC Proxy is deprecated and no longer supported.**
-
-## Mining
-
-Mining is currently supported only on testnet, so once you've setup a
-test node, follow these instructions.
-
-1. Download and unzip the latest binaries bundle of [karlsen-network/karlsend](https://github.com/karlsen-network/karlsend/releases).
-
-2. In a separate terminal run the karlsen-network/karlsend miner:
-
-   ```
-   karlsenminer --testnet --miningaddr karlsentest:qrcqat6l9zcjsu7swnaztqzrv0s7hu04skpaezxk43y4etj8ncwfk308jlcew
-   ```
-
-This will create and feed a DAG with the miner getting block templates
-from the node and submitting them back when mined. The node processes
-and stores the blocks while applying all currently implemented logic.
-Execution can be stopped and resumed, the data is persisted in a
-database. You can replace the above mining address with your own
-address.
 
 ## Benchmarking & Testing
 
