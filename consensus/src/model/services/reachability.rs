@@ -21,6 +21,7 @@ pub trait ReachabilityService {
     ) -> Result<bool>;
     fn get_next_chain_ancestor(&self, descendant: Hash, ancestor: Hash) -> Hash;
     fn get_chain_parent(&self, this: Hash) -> Hash;
+    fn has_reachability_data(&self, this: Hash) -> bool;
 }
 
 impl<T: ReachabilityStoreReader + ?Sized> ReachabilityService for T {
@@ -63,6 +64,10 @@ impl<T: ReachabilityStoreReader + ?Sized> ReachabilityService for T {
 
     fn get_chain_parent(&self, this: Hash) -> Hash {
         self.get_parent(this).unwrap()
+    }
+
+    fn has_reachability_data(&self, this: Hash) -> bool {
+        self.has(this).unwrap()
     }
 }
 
@@ -119,6 +124,10 @@ impl<T: ReachabilityStoreReader + ?Sized> ReachabilityService for MTReachability
 
     fn get_chain_parent(&self, this: Hash) -> Hash {
         self.store.read().get_parent(this).unwrap()
+    }
+
+    fn has_reachability_data(&self, this: Hash) -> bool {
+        self.store.read().has(this).unwrap()
     }
 }
 
