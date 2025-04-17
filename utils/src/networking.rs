@@ -34,7 +34,7 @@ const TS_IP_ADDRESS: &'static str = r#"
 /// A bucket based on an ip's prefix bytes.
 /// for ipv4 it consists of 6 leading zero bytes, and the first two octets,
 /// for ipv6 it consists of the first 8 octets,
-/// encoded into a big endian u64.  
+/// encoded into a big endian u64.
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct PrefixBucket(u64);
 
