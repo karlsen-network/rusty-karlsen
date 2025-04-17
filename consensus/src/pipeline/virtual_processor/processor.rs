@@ -6,7 +6,7 @@ use crate::{
         },
         storage::ConsensusStorage,
     },
-    //constants::BLOCK_VERSION,
+    // constants::BLOCK_VERSION,
     constants::BLOCK_VERSION_KHASHV1,
     constants::BLOCK_VERSION_KHASHV2,
     errors::RuleError,
@@ -58,6 +58,7 @@ use crate::{
 };
 use karlsen_consensus_core::{
     acceptance_data::AcceptanceData,
+    api::args::{TransactionValidationArgs, TransactionValidationBatchArgs},
     block::{BlockTemplate, MutableBlock, TemplateBuildMode, TemplateTransactionSelector},
     blockstatus::BlockStatus::{StatusDisqualifiedFromChain, StatusUTXOValid},
     coinbase::MinerData,
@@ -974,6 +975,7 @@ impl VirtualStateProcessor {
         virtual_utxo_view: &impl UtxoView,
         virtual_daa_score: u64,
         virtual_past_median_time: u64,
+        args: &TransactionValidationArgs,
     ) -> TxResult<()> {
         self.transaction_validator
             .validate_tx_in_isolation(&mutable_tx.tx)?;
@@ -986,6 +988,7 @@ impl VirtualStateProcessor {
             mutable_tx,
             virtual_utxo_view,
             virtual_daa_score,
+            args,
         )?;
         Ok(())
     }
@@ -993,6 +996,7 @@ impl VirtualStateProcessor {
     pub fn validate_mempool_transaction(
         &self,
         mutable_tx: &mut MutableTransaction,
+        args: &TransactionValidationArgs,
     ) -> TxResult<()> {
         let virtual_read = self.virtual_stores.read();
         let virtual_state = virtual_read.state.get().unwrap();
@@ -1004,12 +1008,14 @@ impl VirtualStateProcessor {
             virtual_utxo_view,
             virtual_daa_score,
             virtual_past_median_time,
+            args,
         )
     }
 
     pub fn validate_mempool_transactions_in_parallel(
         &self,
         mutable_txs: &mut [MutableTransaction],
+        args: &TransactionValidationBatchArgs,
     ) -> Vec<TxResult<()>> {
         let virtual_read = self.virtual_stores.read();
         let virtual_state = virtual_read.state.get().unwrap();
@@ -1026,6 +1032,7 @@ impl VirtualStateProcessor {
                         &virtual_utxo_view,
                         virtual_daa_score,
                         virtual_past_median_time,
+                        args.get(&mtx.id()),
                     )
                 })
                 .collect::<Vec<TxResult<()>>>()

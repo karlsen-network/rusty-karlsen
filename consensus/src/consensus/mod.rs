@@ -42,7 +42,11 @@ use crate::{
 };
 use karlsen_consensus_core::{
     acceptance_data::AcceptanceData,
-    api::{stats::BlockCount, BlockValidationFutures, ConsensusApi, ConsensusStats},
+    api::{
+        args::{TransactionValidationArgs, TransactionValidationBatchArgs},
+        stats::BlockCount,
+        BlockValidationFutures, ConsensusApi, ConsensusStats,
+    },
     block::{
         Block, BlockTemplate, TemplateBuildMode, TemplateTransactionSelector, VirtualStateApproxId,
     },
@@ -53,9 +57,10 @@ use karlsen_consensus_core::{
     errors::{
         coinbase::CoinbaseResult,
         consensus::{ConsensusError, ConsensusResult},
+        difficulty::DifficultyError,
+        pruning::PruningImportError,
         tx::TxResult,
     },
-    errors::{difficulty::DifficultyError, pruning::PruningImportError},
     header::Header,
     muhash::MuHashExtensions,
     network::NetworkType,
@@ -475,18 +480,23 @@ impl ConsensusApi for Consensus {
         }
     }
 
-    fn validate_mempool_transaction(&self, transaction: &mut MutableTransaction) -> TxResult<()> {
+    fn validate_mempool_transaction(
+        &self,
+        transaction: &mut MutableTransaction,
+        args: &TransactionValidationArgs,
+    ) -> TxResult<()> {
         self.virtual_processor
-            .validate_mempool_transaction(transaction)?;
+            .validate_mempool_transaction(transaction, args)?;
         Ok(())
     }
 
     fn validate_mempool_transactions_in_parallel(
         &self,
         transactions: &mut [MutableTransaction],
+        args: &TransactionValidationBatchArgs,
     ) -> Vec<TxResult<()>> {
         self.virtual_processor
-            .validate_mempool_transactions_in_parallel(transactions)
+            .validate_mempool_transactions_in_parallel(transactions, args)
     }
 
     fn populate_mempool_transaction(&self, transaction: &mut MutableTransaction) -> TxResult<()> {

@@ -276,6 +276,13 @@ from!(item: RpcResult<&karlsen_rpc_core::SubmitTransactionResponse>, protowire::
     Self { transaction_id: item.transaction_id.to_string(), error: None }
 });
 
+from!(item: &karlsen_rpc_core::SubmitTransactionReplacementRequest, protowire::SubmitTransactionReplacementRequestMessage, {
+    Self { transaction: Some((&item.transaction).into()) }
+});
+from!(item: RpcResult<&karlsen_rpc_core::SubmitTransactionReplacementResponse>, protowire::SubmitTransactionReplacementResponseMessage, {
+    Self { transaction_id: item.transaction_id.to_string(), replaced_transaction: Some((&item.replaced_transaction).into()), error: None }
+});
+
 from!(item: &karlsen_rpc_core::GetSubnetworkRequest, protowire::GetSubnetworkRequestMessage, {
     Self { subnetwork_id: item.subnetwork_id.to_string() }
 });
@@ -754,6 +761,26 @@ try_from!(item: &protowire::SubmitTransactionRequestMessage, karlsen_rpc_core::S
 });
 try_from!(item: &protowire::SubmitTransactionResponseMessage, RpcResult<karlsen_rpc_core::SubmitTransactionResponse>, {
     Self { transaction_id: RpcHash::from_str(&item.transaction_id)? }
+});
+
+try_from!(item: &protowire::SubmitTransactionReplacementRequestMessage, karlsen_rpc_core::SubmitTransactionReplacementRequest, {
+    Self {
+        transaction: item
+            .transaction
+            .as_ref()
+            .ok_or_else(|| RpcError::MissingRpcFieldError("SubmitTransactionReplacementRequestMessage".to_string(), "transaction".to_string()))?
+            .try_into()?,
+    }
+});
+try_from!(item: &protowire::SubmitTransactionReplacementResponseMessage, RpcResult<karlsen_rpc_core::SubmitTransactionReplacementResponse>, {
+    Self {
+        transaction_id: RpcHash::from_str(&item.transaction_id)?,
+        replaced_transaction: item
+            .replaced_transaction
+            .as_ref()
+            .ok_or_else(|| RpcError::MissingRpcFieldError("SubmitTransactionReplacementRequestMessage".to_string(), "replaced_transaction".to_string()))?
+            .try_into()?,
+    }
 });
 
 try_from!(item: &protowire::GetSubnetworkRequestMessage, karlsen_rpc_core::GetSubnetworkRequest, {

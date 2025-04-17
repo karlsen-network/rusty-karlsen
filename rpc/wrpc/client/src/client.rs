@@ -695,6 +695,7 @@ impl RpcApi for KarlsenRpcClient {
             Shutdown,
             SubmitBlock,
             SubmitTransaction,
+            SubmitTransactionReplacement,
             Unban,
         ]
     );

@@ -10,7 +10,7 @@ use karlsen_mining::{
     errors::MiningManagerError,
     mempool::{
         errors::RuleError,
-        tx::{Orphan, Priority},
+        tx::{Orphan, Priority, RbfPolicy},
     },
     model::tx_query::TransactionQuery,
     P2pTxCountSample,
@@ -262,6 +262,7 @@ impl RelayTransactionsFlow {
                 transactions,
                 Priority::Low,
                 Orphan::Allowed,
+                RbfPolicy::Allowed,
             )
             .await;
 

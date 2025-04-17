@@ -30,6 +30,7 @@ karlsen-muhash.workspace = true
 karlsen-notify.workspace = true
 karlsen-pow.workspace = true
 karlsen-txscript.workspace = true
+karlsen-txscript-errors.workspace = true
 karlsen-utils.workspace = true
 log.workspace = true
 once_cell.workspace = true

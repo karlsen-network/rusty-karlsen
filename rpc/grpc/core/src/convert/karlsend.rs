@@ -39,6 +39,7 @@ pub mod karlsend_request_convert {
     impl_into_karlsend_request!(GetConnectedPeerInfo);
     impl_into_karlsend_request!(AddPeer);
     impl_into_karlsend_request!(SubmitTransaction);
+    impl_into_karlsend_request!(SubmitTransactionReplacement);
     impl_into_karlsend_request!(GetSubnetwork);
     impl_into_karlsend_request!(GetVirtualChainFromBlock);
     impl_into_karlsend_request!(GetBlocks);
@@ -185,6 +186,7 @@ pub mod karlsend_response_convert {
     impl_into_karlsend_response!(GetConnectedPeerInfo);
     impl_into_karlsend_response!(AddPeer);
     impl_into_karlsend_response!(SubmitTransaction);
+    impl_into_karlsend_response!(SubmitTransactionReplacement);
     impl_into_karlsend_response!(GetSubnetwork);
     impl_into_karlsend_response!(GetVirtualChainFromBlock);
     impl_into_karlsend_response!(GetBlocks);

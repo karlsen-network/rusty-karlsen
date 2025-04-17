@@ -1,6 +1,9 @@
 use super::coinbase_mock::CoinbaseManagerMock;
 use karlsen_consensus_core::{
-    api::ConsensusApi,
+    api::{
+        args::{TransactionValidationArgs, TransactionValidationBatchArgs},
+        ConsensusApi,
+    },
     block::{
         BlockTemplate, MutableBlock, TemplateBuildMode, TemplateTransactionSelector,
         VirtualStateApproxId,
@@ -123,7 +126,11 @@ impl ConsensusApi for ConsensusMock {
         ))
     }
 
-    fn validate_mempool_transaction(&self, mutable_tx: &mut MutableTransaction) -> TxResult<()> {
+    fn validate_mempool_transaction(
+        &self,
+        mutable_tx: &mut MutableTransaction,
+        _: &TransactionValidationArgs,
+    ) -> TxResult<()> {
         // If a predefined status was registered to simulate an error, return it right away
         if let Some(status) = self.statuses.read().get(&mutable_tx.id()) {
             if status.is_err() {
@@ -166,10 +173,11 @@ impl ConsensusApi for ConsensusMock {
     fn validate_mempool_transactions_in_parallel(
         &self,
         transactions: &mut [MutableTransaction],
+        _: &TransactionValidationBatchArgs,
     ) -> Vec<TxResult<()>> {
         transactions
             .iter_mut()
-            .map(|x| self.validate_mempool_transaction(x))
+            .map(|x| self.validate_mempool_transaction(x, &Default::default()))
             .collect()
     }
 
@@ -179,7 +187,7 @@ impl ConsensusApi for ConsensusMock {
     ) -> Vec<TxResult<()>> {
         transactions
             .iter_mut()
-            .map(|x| self.validate_mempool_transaction(x))
+            .map(|x| self.validate_mempool_transaction(x, &Default::default()))
             .collect()
     }
 

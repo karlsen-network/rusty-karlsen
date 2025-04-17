@@ -63,6 +63,7 @@ impl Factory {
                 GetConnectedPeerInfo,
                 AddPeer,
                 SubmitTransaction,
+                SubmitTransactionReplacement,
                 GetSubnetwork,
                 GetVirtualChainFromBlock,
                 GetBlockCount,

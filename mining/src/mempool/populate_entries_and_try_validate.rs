@@ -1,6 +1,11 @@
 use crate::mempool::{errors::RuleResult, model::pool::Pool, Mempool};
 use karlsen_consensus_core::{
-    api::ConsensusApi, constants::UNACCEPTED_DAA_SCORE, tx::MutableTransaction, tx::UtxoEntry,
+    api::{
+        args::{TransactionValidationArgs, TransactionValidationBatchArgs},
+        ConsensusApi,
+    },
+    constants::UNACCEPTED_DAA_SCORE,
+    tx::{MutableTransaction, UtxoEntry},
 };
 use karlsen_mining_errors::mempool::RuleError;
 
@@ -26,16 +31,18 @@ impl Mempool {
 pub(crate) fn validate_mempool_transaction(
     consensus: &dyn ConsensusApi,
     transaction: &mut MutableTransaction,
+    args: &TransactionValidationArgs,
 ) -> RuleResult<()> {
-    Ok(consensus.validate_mempool_transaction(transaction)?)
+    Ok(consensus.validate_mempool_transaction(transaction, args)?)
 }
 
 pub(crate) fn validate_mempool_transactions_in_parallel(
     consensus: &dyn ConsensusApi,
     transactions: &mut [MutableTransaction],
+    args: &TransactionValidationBatchArgs,
 ) -> Vec<RuleResult<()>> {
     consensus
-        .validate_mempool_transactions_in_parallel(transactions)
+        .validate_mempool_transactions_in_parallel(transactions, args)
         .into_iter()
         .map(|x| x.map_err(RuleError::from))
         .collect()

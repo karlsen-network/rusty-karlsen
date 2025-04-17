@@ -371,6 +371,20 @@ async fn sanity_test() {
                 })
             }
 
+            KarlsendPayloadOps::SubmitTransactionReplacement => {
+                let rpc_client = client.clone();
+                tst!(op, {
+                    // Build an erroneous transaction...
+                    let transaction =
+                        Transaction::new(0, vec![], vec![], 0, SubnetworkId::default(), 0, vec![]);
+                    let result = rpc_client
+                        .submit_transaction_replacement((&transaction).into())
+                        .await;
+                    // ...that gets rejected by the consensus
+                    assert!(result.is_err());
+                })
+            }
+
             KarlsendPayloadOps::GetSubnetwork => {
                 let rpc_client = client.clone();
                 tst!(op, {

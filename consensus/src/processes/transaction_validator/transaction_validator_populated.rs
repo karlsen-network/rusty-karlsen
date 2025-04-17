@@ -1,7 +1,11 @@
 use crate::constants::{MAX_SOMPI, SEQUENCE_LOCK_TIME_DISABLED, SEQUENCE_LOCK_TIME_MASK};
-use karlsen_consensus_core::{hashing::sighash::SigHashReusedValues, tx::VerifiableTransaction};
+use karlsen_consensus_core::{
+    hashing::sighash::SigHashReusedValues,
+    tx::{TransactionInput, VerifiableTransaction},
+};
 use karlsen_core::warn;
 use karlsen_txscript::{get_sig_op_count, TxScriptEngine};
+use karlsen_txscript_errors::TxScriptError;
 
 use super::{
     errors::{TxResult, TxRuleError},
@@ -27,10 +31,12 @@ impl TransactionValidator {
         tx: &impl VerifiableTransaction,
         pov_daa_score: u64,
         flags: TxValidationFlags,
+        mass_and_feerate_threshold: Option<(u64, f64)>,
     ) -> TxResult<u64> {
         self.check_transaction_coinbase_maturity(tx, pov_daa_score)?;
         let total_in = self.check_transaction_input_amounts(tx)?;
         let total_out = Self::check_transaction_output_values(tx, total_in)?;
+        let fee = total_in - total_out;
         if flags != TxValidationFlags::SkipMassCheck
             && pov_daa_score > self.storage_mass_activation_daa_score
         {
@@ -44,6 +50,11 @@ impl TransactionValidator {
             }
         }
         Self::check_sequence_lock(tx, pov_daa_score)?;
+
+        // The following call is not a consensus check (it could not be one in the first place since it uses floating number)
+        // but rather a mempool Replace by Fee validation rule. It was placed here purposely for avoiding unneeded script checks.
+        Self::check_feerate_threshold(fee, mass_and_feerate_threshold)?;
+
         match flags {
             TxValidationFlags::Full | TxValidationFlags::SkipMassCheck => {
                 Self::check_sig_op_counts(tx)?;
@@ -51,7 +62,22 @@ impl TransactionValidator {
             }
             TxValidationFlags::SkipScriptChecks => {}
         }
-        Ok(total_in - total_out)
+        Ok(fee)
+    }
+
+    fn check_feerate_threshold(
+        fee: u64,
+        mass_and_feerate_threshold: Option<(u64, f64)>,
+    ) -> TxResult<()> {
+        // An actual check can only occur if some mass and threshold are provided,
+        // otherwise, the check does not verify anything and exits successfully.
+        if let Some((contextual_mass, feerate_threshold)) = mass_and_feerate_threshold {
+            assert!(contextual_mass > 0);
+            if fee as f64 / contextual_mass as f64 <= feerate_threshold {
+                return Err(TxRuleError::FeerateTooLow);
+            }
+        }
+        Ok(())
     }
 
     fn check_transaction_coinbase_maturity(
@@ -178,11 +204,19 @@ impl TransactionValidator {
                 &mut reused_values,
                 &self.sig_cache,
             )
-            .map_err(TxRuleError::SignatureInvalid)?;
-            engine.execute().map_err(TxRuleError::SignatureInvalid)?;
+            .map_err(|err| map_script_err(err, input))?;
+            engine.execute().map_err(|err| map_script_err(err, input))?;
         }
 
         Ok(())
+    }
+}
+
+fn map_script_err(script_err: TxScriptError, input: &TransactionInput) -> TxRuleError {
+    if input.signature_script.is_empty() {
+        TxRuleError::SignatureEmpty(script_err)
+    } else {
+        TxRuleError::SignatureInvalid(script_err)
     }
 }
 

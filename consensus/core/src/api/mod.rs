@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::{
     acceptance_data::AcceptanceData,
+    api::args::{TransactionValidationArgs, TransactionValidationBatchArgs},
     block::{
         Block, BlockTemplate, TemplateBuildMode, TemplateTransactionSelector, VirtualStateApproxId,
     },
@@ -27,6 +28,7 @@ use karlsen_hashes::Hash;
 
 pub use self::stats::{BlockCount, ConsensusStats};
 
+pub mod args;
 pub mod counters;
 pub mod stats;
 
@@ -64,16 +66,21 @@ pub trait ConsensusApi: Send + Sync {
     }
 
     /// Populates the mempool transaction with maximally found UTXO entry data and proceeds to full transaction
-    /// validation if all are found. If validation is successful, also [`transaction.calculated_fee`] is expected to be populated.
-    fn validate_mempool_transaction(&self, transaction: &mut MutableTransaction) -> TxResult<()> {
+    /// validation if all are found. If validation is successful, also `transaction.calculated_fee` is expected to be populated.
+    fn validate_mempool_transaction(
+        &self,
+        transaction: &mut MutableTransaction,
+        args: &TransactionValidationArgs,
+    ) -> TxResult<()> {
         unimplemented!()
     }
 
     /// Populates the mempool transactions with maximally found UTXO entry data and proceeds to full transactions
-    /// validation if all are found. If validation is successful, also [`transaction.calculated_fee`] is expected to be populated.
+    /// validation if all are found. If validation is successful, also `transaction.calculated_fee` is expected to be populated.
     fn validate_mempool_transactions_in_parallel(
         &self,
         transactions: &mut [MutableTransaction],
+        args: &TransactionValidationBatchArgs,
     ) -> Vec<TxResult<()>> {
         unimplemented!()
     }

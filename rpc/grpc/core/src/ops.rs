@@ -63,6 +63,7 @@ pub enum KarlsendPayloadOps {
     GetConnectedPeerInfo,
     AddPeer,
     SubmitTransaction,
+    SubmitTransactionReplacement,
     GetSubnetwork,
     GetVirtualChainFromBlock,
     GetBlockCount,

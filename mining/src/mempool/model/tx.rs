@@ -1,8 +1,12 @@
-use crate::mempool::tx::Priority;
-use karlsen_consensus_core::{tx::MutableTransaction, tx::TransactionId};
+use crate::mempool::tx::{Priority, RbfPolicy};
+use karlsen_consensus_core::tx::{
+    MutableTransaction, Transaction, TransactionId, TransactionOutpoint,
+};
+use karlsen_mining_errors::mempool::RuleError;
 use std::{
     cmp::Ordering,
     fmt::{Display, Formatter},
+    sync::Arc,
 };
 
 pub(crate) struct MempoolTransaction {
@@ -70,6 +74,51 @@ impl PartialEq for MempoolTransaction {
     }
 }
 
+impl RbfPolicy {
+    #[cfg(test)]
+    /// Returns an alternate policy accepting a transaction insertion in case the policy requires a replacement
+    pub(crate) fn for_insert(&self) -> RbfPolicy {
+        match self {
+            RbfPolicy::Forbidden | RbfPolicy::Allowed => *self,
+            RbfPolicy::Mandatory => RbfPolicy::Allowed,
+        }
+    }
+}
+
+pub(crate) struct DoubleSpend {
+    pub outpoint: TransactionOutpoint,
+    pub owner_id: TransactionId,
+}
+
+impl DoubleSpend {
+    pub fn new(outpoint: TransactionOutpoint, owner_id: TransactionId) -> Self {
+        Self { outpoint, owner_id }
+    }
+}
+
+impl From<DoubleSpend> for RuleError {
+    fn from(value: DoubleSpend) -> Self {
+        RuleError::RejectDoubleSpendInMempool(value.outpoint, value.owner_id)
+    }
+}
+
+impl From<&DoubleSpend> for RuleError {
+    fn from(value: &DoubleSpend) -> Self {
+        RuleError::RejectDoubleSpendInMempool(value.outpoint, value.owner_id)
+    }
+}
+
+pub(crate) struct TransactionPreValidation {
+    pub transaction: MutableTransaction,
+    pub feerate_threshold: Option<f64>,
+}
+
+#[derive(Default)]
+pub(crate) struct TransactionPostValidation {
+    pub removed: Option<Arc<Transaction>>,
+    pub accepted: Option<Arc<Transaction>>,
+}
+
 #[derive(PartialEq, Eq)]
 pub(crate) enum TxRemovalReason {
     Muted,
@@ -80,6 +129,7 @@ pub(crate) enum TxRemovalReason {
     DoubleSpend,
     InvalidInBlockTemplate,
     RevalidationWithMissingOutpoints,
+    ReplacedByFee,
 }
 
 impl TxRemovalReason {
@@ -95,6 +145,7 @@ impl TxRemovalReason {
             TxRemovalReason::RevalidationWithMissingOutpoints => {
                 "revalidation with missing outpoints"
             }
+            TxRemovalReason::ReplacedByFee => "replaced by fee",
         }
     }
 
