@@ -4,7 +4,7 @@ use crate::mempool::{
     Mempool,
 };
 use karlsen_consensus_core::tx::TransactionId;
-use karlsen_core::{debug, warn};
+use karlsen_core::debug;
 use karlsen_utils::iter::IterExtensions;
 
 impl Mempool {
@@ -43,8 +43,8 @@ impl Mempool {
             TxRemovalReason::Muted => {}
             TxRemovalReason::DoubleSpend => match removed_transactions.len() {
                 0 => {}
-                1 => warn!("Removed transaction ({}) {}{}", reason, removed_transactions[0], extra_info),
-                n => warn!(
+                1 => debug!("Removed transaction ({}) {}{}", reason, removed_transactions[0], extra_info),
+                n => debug!(
                     "Removed {} transactions ({}): {}{}",
                     n,
                     reason,
