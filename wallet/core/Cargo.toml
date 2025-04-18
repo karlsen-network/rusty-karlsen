@@ -71,6 +71,7 @@ karlsen-txscript.workspace = true
 karlsen-utils.workspace = true
 karlsen-wallet-keys.workspace = true
 karlsen-wallet-macros.workspace = true
+karlsen-wallet-pskt.workspace = true
 karlsen-wasm-core.workspace = true
 karlsen-wrpc-client.workspace = true
 karlsen-wrpc-wasm.workspace = true
@@ -125,5 +126,5 @@ serde_repr.workspace = true
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tokio.workspace = true
 
-[lints.clippy]
-empty_docs = "allow"
+[lints]
+workspace = true

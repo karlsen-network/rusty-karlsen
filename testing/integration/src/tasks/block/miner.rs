@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use karlsen_addresses::Address;
 use karlsen_core::warn;
 use karlsen_grpc_client::GrpcClient;
-use karlsen_rpc_core::{api::rpc::RpcApi, GetBlockTemplateResponse, RpcBlock};
+use karlsen_rpc_core::{api::rpc::RpcApi, GetBlockTemplateResponse, RpcRawBlock};
 use karlsen_utils::triggers::SingleTrigger;
 use parking_lot::Mutex;
 use rand::thread_rng;
@@ -25,7 +25,7 @@ pub struct BlockMinerTask {
     client: Arc<GrpcClient>,
     bps: u64,
     block_count: usize,
-    sender: Sender<RpcBlock>,
+    sender: Sender<RpcRawBlock>,
     template: Arc<Mutex<GetBlockTemplateResponse>>,
     pay_address: Address,
     tx_counter: Arc<AtomicUsize>,
@@ -38,7 +38,7 @@ impl BlockMinerTask {
         client: Arc<GrpcClient>,
         bps: u64,
         block_count: usize,
-        sender: Sender<RpcBlock>,
+        sender: Sender<RpcRawBlock>,
         template: Arc<Mutex<GetBlockTemplateResponse>>,
         pay_address: Address,
         stopper: Stopper,
@@ -60,7 +60,7 @@ impl BlockMinerTask {
         client: Arc<GrpcClient>,
         bps: u64,
         block_count: usize,
-        sender: Sender<RpcBlock>,
+        sender: Sender<RpcRawBlock>,
         template: Arc<Mutex<GetBlockTemplateResponse>>,
         pay_address: Address,
         stopper: Stopper,
@@ -68,7 +68,7 @@ impl BlockMinerTask {
         Arc::new(Self::new(client, bps, block_count, sender, template, pay_address, stopper))
     }
 
-    pub fn sender(&self) -> Sender<RpcBlock> {
+    pub fn sender(&self) -> Sender<RpcRawBlock> {
         self.sender.clone()
     }
 

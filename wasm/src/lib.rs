@@ -147,6 +147,7 @@ cfg_if::cfg_if! {
         pub use karlsen_addresses::{Address, Version as AddressVersion};
         pub use karlsen_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput};
         pub use karlsen_pow::wasm::*;
+        pub use karlsen_txscript::wasm::*;
 
         pub mod rpc {
             //! Karlsen RPC interface
@@ -173,6 +174,7 @@ cfg_if::cfg_if! {
         pub use karlsen_addresses::{Address, Version as AddressVersion};
         pub use karlsen_consensus_core::tx::{ScriptPublicKey, Transaction, TransactionInput, TransactionOutpoint, TransactionOutput};
         pub use karlsen_pow::wasm::*;
+        pub use karlsen_txscript::wasm::*;
 
         pub mod rpc {
             //! Karlsen RPC interface
@@ -208,6 +210,7 @@ cfg_if::cfg_if! {
 
         pub use karlsen_addresses::{Address, Version as AddressVersion};
         pub use karlsen_wallet_keys::prelude::*;
+        pub use karlsen_bip32::*;
         pub use karlsen_wasm_core::types::*;
 
     }

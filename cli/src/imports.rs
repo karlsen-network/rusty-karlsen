@@ -14,7 +14,7 @@ pub use karlsen_utils::hex::*;
 pub use karlsen_wallet_core::compat::*;
 pub use karlsen_wallet_core::prelude::*;
 pub use karlsen_wallet_core::settings::{DefaultSettings, SettingsStore, WalletSettings};
-pub use karlsen_wallet_core::utils::*;
+pub use karlsen_wrpc_client::prelude::*;
 pub use pad::PadStr;
 pub use regex::Regex;
 pub use separator::Separatable;

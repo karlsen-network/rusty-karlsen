@@ -55,6 +55,8 @@ pub mod karlsend_request_convert {
     impl_into_karlsend_request!(GetCoinSupply);
     impl_into_karlsend_request!(Ping);
     impl_into_karlsend_request!(GetMetrics);
+    impl_into_karlsend_request!(GetConnections);
+    impl_into_karlsend_request!(GetSystemInfo);
     impl_into_karlsend_request!(GetServerInfo);
     impl_into_karlsend_request!(GetSyncStatus);
     impl_into_karlsend_request!(GetDaaScoreTimestampEstimate);
@@ -189,6 +191,8 @@ pub mod karlsend_response_convert {
     impl_into_karlsend_response!(GetCoinSupply);
     impl_into_karlsend_response!(Ping);
     impl_into_karlsend_response!(GetMetrics);
+    impl_into_karlsend_response!(GetConnections);
+    impl_into_karlsend_response!(GetSystemInfo);
     impl_into_karlsend_response!(GetServerInfo);
     impl_into_karlsend_response!(GetSyncStatus);
     impl_into_karlsend_response!(GetDaaScoreTimestampEstimate);

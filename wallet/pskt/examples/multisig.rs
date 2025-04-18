@@ -3,7 +3,7 @@ use karlsen_consensus_core::{
     tx::{TransactionId, TransactionOutpoint, UtxoEntry},
 };
 use karlsen_txscript::{multisig_redeem_script, opcodes::codes::OpData65, pay_to_script_hash_script, script_builder::ScriptBuilder};
-use karlsen_wallet_pskt::{
+use karlsen_wallet_pskt::prelude::{
     Combiner, Creator, Extractor, Finalizer, Inner, InputBuilder, SignInputOk, Signature, Signer, Updater, PSKT,
 };
 use secp256k1::{rand::thread_rng, Keypair};

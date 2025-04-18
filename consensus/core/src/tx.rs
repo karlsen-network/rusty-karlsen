@@ -4,7 +4,9 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use karlsen_utils::hex::ToHex;
 use karlsen_utils::mem_size::MemSizeEstimator;
 use karlsen_utils::{serde_bytes, serde_bytes_fixed_ref};
-pub use script_public_key::{scriptvec, ScriptPublicKey, ScriptPublicKeyVersion, ScriptPublicKeys, ScriptVec, SCRIPT_VECTOR_SIZE};
+pub use script_public_key::{
+    scriptvec, ScriptPublicKey, ScriptPublicKeyT, ScriptPublicKeyVersion, ScriptPublicKeys, ScriptVec, SCRIPT_VECTOR_SIZE,
+};
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering::SeqCst;
@@ -137,8 +139,8 @@ impl Clone for TransactionMass {
 }
 
 impl BorshDeserialize for TransactionMass {
-    fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
-        let mass: u64 = borsh::BorshDeserialize::deserialize(buf)?;
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let mass: u64 = borsh::BorshDeserialize::deserialize_reader(reader)?;
         Ok(Self(AtomicU64::new(mass)))
     }
 }
@@ -163,8 +165,6 @@ pub struct Transaction {
     pub payload: Vec<u8>,
 
     #[serde(default)]
-    #[borsh_skip]
-    // TODO: skipped for now as it is only required for consensus storage and miner grpc
     mass: TransactionMass,
 
     // A field that is used to cache the transaction ID.
@@ -545,7 +545,7 @@ mod tests {
         let tx = test_transaction();
         let bts = bincode::serialize(&tx).unwrap();
 
-        // standard, based on https://github.com/karlsen-network/rusty-karlsen/commit/7e947a06d2434daf4bc7064d4cd87dc1984b56fe
+        // standard, based on https://github.com/karlsennet/rusty-karlsen/commit/7e947a06d2434daf4bc7064d4cd87dc1984b56fe
         let expected_bts = vec![
             1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 22, 94, 56, 232, 179, 145, 69, 149, 217, 198, 65, 243, 184, 238, 194, 243, 70, 17, 137, 107,
             130, 26, 104, 59, 122, 78, 222, 254, 44, 0, 0, 0, 250, 255, 255, 255, 32, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8,
@@ -635,12 +635,12 @@ mod tests {
     fn test_spk_borsh() {
         // Tests for ScriptPublicKey Borsh ser/deser since we manually implemented them
         let spk = ScriptPublicKey::from_vec(12, vec![32; 20]);
-        let bin = spk.try_to_vec().unwrap();
+        let bin = borsh::to_vec(&spk).unwrap();
         let spk2: ScriptPublicKey = BorshDeserialize::try_from_slice(&bin).unwrap();
         assert_eq!(spk, spk2);
 
         let spk = ScriptPublicKey::from_vec(55455, vec![11; 200]);
-        let bin = spk.try_to_vec().unwrap();
+        let bin = borsh::to_vec(&spk).unwrap();
         let spk2: ScriptPublicKey = BorshDeserialize::try_from_slice(&bin).unwrap();
         assert_eq!(spk, spk2);
     }
