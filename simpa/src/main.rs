@@ -21,7 +21,10 @@ use karlsen_consensus_core::{
 };
 use karlsen_consensus_notify::root::ConsensusNotificationRoot;
 use karlsen_core::{
-    info, task::service::AsyncService, task::tick::TickService, time::unix_now, trace, warn,
+    info,
+    task::{service::AsyncService, tick::TickService},
+    time::unix_now,
+    trace, warn,
 };
 use karlsen_database::prelude::ConnBuilder;
 use karlsen_database::{create_temp_db, load_existing_db};
@@ -137,7 +140,13 @@ fn main() {
     let args = Args::parse();
 
     // Initialize the logger
-    karlsen_core::log::init_logger(None, &args.log_level);
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "semaphore-trace")] {
+            karlsen_core::log::init_logger(None, &format!("{},{}=debug", args.log_level, karlsen_utils::sync::semaphore_module_path()));
+        } else {
+            karlsen_core::log::init_logger(None, &args.log_level);
+        }
+    };
 
     // Configure the panic behavior
     // As we log the panic, we want to set it up after the logger
