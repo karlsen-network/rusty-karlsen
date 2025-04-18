@@ -54,9 +54,14 @@ serde_json.workspace = true
 flate2.workspace = true
 rand_distr.workspace = true
 karlsen-txscript-errors.workspace = true
+karlsen-addresses.workspace = true
 
 [[bench]]
 name = "hash_benchmarks"
+harness = false
+
+[[bench]]
+name = "check_scripts"
 harness = false
 
 [features]
