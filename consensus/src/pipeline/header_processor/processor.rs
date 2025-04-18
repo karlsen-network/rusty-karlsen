@@ -119,7 +119,7 @@ pub struct HeaderProcessor {
     pub(super) mergeset_size_limit: u64,
     pub(super) skip_proof_of_work: bool,
     pub(super) max_block_level: BlockLevel,
-    pub(super) hf_daa_score: u64,
+    pub(super) khashv2_activation: u64,
     pub(super) difficulty_window_size: usize,
 
     // DB
@@ -208,7 +208,7 @@ impl HeaderProcessor {
             mergeset_size_limit: params.mergeset_size_limit,
             skip_proof_of_work: params.skip_proof_of_work,
             max_block_level: params.max_block_level,
-            hf_daa_score: params.hf_daa_score,
+            khashv2_activation: params.khashv2_activation,
             difficulty_window_size: params.legacy_difficulty_window_size,
         }
     }
@@ -298,7 +298,7 @@ impl HeaderProcessor {
 
     /// Runs full ordinary header validation
     fn validate_header(&self, header: &Arc<Header>) -> BlockProcessResult<HeaderProcessingContext> {
-        let block_level = self.validate_header_in_isolation(header, self.hf_daa_score)?;
+        let block_level = self.validate_header_in_isolation(header, self.khashv2_activation)?;
         self.validate_parent_relations(header)?;
         let mut ctx = self.build_processing_context(header, block_level);
         self.ghostdag(&mut ctx);
@@ -312,7 +312,7 @@ impl HeaderProcessor {
 
     // Runs partial header validation for trusted blocks (currently validates only header-in-isolation and computes GHOSTDAG).
     fn validate_trusted_header(&self, header: &Arc<Header>) -> BlockProcessResult<HeaderProcessingContext> {
-        let block_level = self.validate_header_in_isolation(header, self.hf_daa_score)?;
+        let block_level = self.validate_header_in_isolation(header, self.khashv2_activation)?;
         let mut ctx = self.build_processing_context(header, block_level);
         self.ghostdag(&mut ctx);
         Ok(ctx)

@@ -117,7 +117,7 @@ pub struct VirtualStateProcessor {
     pub(super) max_block_parents: u8,
     pub(super) mergeset_size_limit: u64,
     pub(super) pruning_depth: u64,
-    pub(super) hf_daa_score: u64,
+    pub(super) khashv2_activation: u64,
     pub(super) difficulty_window_size: usize,
 
     // Stores
@@ -198,7 +198,7 @@ impl VirtualStateProcessor {
             max_block_parents: params.max_block_parents,
             mergeset_size_limit: params.mergeset_size_limit,
             pruning_depth: params.pruning_depth,
-            hf_daa_score: params.hf_daa_score,
+            khashv2_activation: params.khashv2_activation,
             difficulty_window_size: params.legacy_difficulty_window_size,
 
             db,
@@ -1038,11 +1038,11 @@ impl VirtualStateProcessor {
             )
             .unwrap();
         txs.insert(0, coinbase.tx);
-        let version = if virtual_state.daa_score >= self.hf_daa_score { BLOCK_VERSION_KHASHV2 } else { BLOCK_VERSION_KHASHV1 };
+        let version = if virtual_state.daa_score >= self.khashv2_activation { BLOCK_VERSION_KHASHV2 } else { BLOCK_VERSION_KHASHV1 };
         // todo: check bits to lower difficulty
         let mut bits = virtual_state.bits;
-        if virtual_state.daa_score <= (self.hf_daa_score + self.difficulty_window_size as u64)
-            && virtual_state.daa_score >= self.hf_daa_score
+        if virtual_state.daa_score <= (self.khashv2_activation + self.difficulty_window_size as u64)
+            && virtual_state.daa_score >= self.khashv2_activation
         {
             bits = self.genesis.bits;
         }

@@ -848,7 +848,7 @@ impl KarlsendGoParams {
             skip_proof_of_work: self.SkipProofOfWork,
             max_block_level: self.MaxBlockLevel,
             pruning_proof_m: self.PruningProofM,
-            hf_daa_score: MAINNET_PARAMS.hf_daa_score,
+            khashv2_activation: MAINNET_PARAMS.khashv2_activation,
             payload_activation: ForkActivation::never(),
             runtime_sig_op_counting: ForkActivation::never(),
         }
