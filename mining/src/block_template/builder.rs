@@ -3,7 +3,6 @@ use karlsen_consensus_core::{
     api::ConsensusApi,
     block::{BlockTemplate, TemplateBuildMode, TemplateTransactionSelector},
     coinbase::MinerData,
-    merkle::calc_hash_merkle_root,
     tx::COINBASE_TRANSACTION_INDEX,
 };
 use karlsen_core::time::{unix_now, Stopwatch};
@@ -108,8 +107,10 @@ impl BlockTemplateBuilder {
                 new_miner_data.script_public_key.clone();
         }
         // Update the hash merkle root according to the modified transactions
-        block_template.block.header.hash_merkle_root =
-            calc_hash_merkle_root(block_template.block.transactions.iter());
+        block_template.block.header.hash_merkle_root = consensus.calc_transaction_hash_merkle_root(
+            &block_template.block.transactions,
+            block_template.block.header.daa_score,
+        );
         let new_timestamp = unix_now();
         if new_timestamp > block_template.block.header.timestamp {
             // Only if new time stamp is later than current, update the header. Otherwise,

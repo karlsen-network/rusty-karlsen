@@ -62,6 +62,7 @@ use karlsen_consensus_core::{
         tx::TxResult,
     },
     header::Header,
+    merkle::calc_hash_merkle_root,
     muhash::MuHashExtensions,
     network::NetworkType,
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList},
@@ -844,6 +845,11 @@ impl ConsensusApi for Consensus {
         self.services
             .coinbase_manager
             .modify_coinbase_payload(payload, miner_data)
+    }
+
+    fn calc_transaction_hash_merkle_root(&self, txs: &[Transaction], pov_daa_score: u64) -> Hash {
+        let storage_mass_activated = pov_daa_score > self.config.storage_mass_activation_daa_score;
+        calc_hash_merkle_root(txs.iter(), storage_mass_activated)
     }
 
     fn validate_pruning_proof(&self, proof: &PruningPointProof) -> Result<(), PruningImportError> {

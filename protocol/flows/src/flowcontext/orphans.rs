@@ -82,7 +82,7 @@ impl OrphanBlocksPool {
         if self.orphans.contains_key(&orphan_hash) {
             return None;
         }
-
+        orphan_block.asses_for_cache()?;
         let (roots, orphan_ancestors) = match self
             .get_orphan_roots(
                 consensus,

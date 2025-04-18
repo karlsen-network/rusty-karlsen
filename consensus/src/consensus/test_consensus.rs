@@ -259,7 +259,7 @@ impl TestConsensus {
             cb_payload,
         );
         txs.insert(0, cb);
-        header.hash_merkle_root = calc_hash_merkle_root(txs.iter());
+        header.hash_merkle_root = calc_hash_merkle_root(txs.iter(), false);
         MutableBlock::new(header, txs)
     }
 

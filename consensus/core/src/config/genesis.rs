@@ -241,7 +241,7 @@ mod tests {
         .for_each(|genesis| {
             let block: Block = (&genesis).into();
             assert_hashes_eq(
-                calc_hash_merkle_root(block.transactions.iter()),
+                calc_hash_merkle_root(block.transactions.iter(), false),
                 block.header.hash_merkle_root,
             );
             assert_hashes_eq(block.hash(), genesis.hash);
