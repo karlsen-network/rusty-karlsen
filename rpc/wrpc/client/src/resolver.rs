@@ -84,7 +84,7 @@ impl Inner {
 ///
 /// # Resolver - a client for obtaining public Karlsen wRPC endpoints.
 ///
-/// This client operates against [Karlsen Resolver](https://github.com/aspectron/karlsen-resolver) service
+/// This client operates against [Kaspa Resolver](https://github.com/aspectron/kaspa-resolver) service
 /// that provides load-balancing and failover capabilities for Karlsen wRPC endpoints. The default
 /// configuration allows access to public Karlsen nodes, while custom configurations can be supplied
 /// if you are running your own custom Karlsen node cluster.

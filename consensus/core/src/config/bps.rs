@@ -99,7 +99,7 @@ impl<const BPS: u64> Bps<BPS> {
     }
 
     pub const fn pruning_depth() -> u64 {
-        // Based on the analysis at https://github.com/karlsen-network/docs/blob/main/Reference/prunality/Prunality.pdf
+        // Based on the analysis at https://github.com/kaspanet/docs/blob/main/Reference/prunality/Prunality.pdf
         // and on the decomposition of merge depth (rule R-I therein) from finality depth (φ)
         // We add an additional merge depth unit as a safety margin for anticone finalization
         Self::finality_depth()

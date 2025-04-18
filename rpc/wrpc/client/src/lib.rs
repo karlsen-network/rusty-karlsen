@@ -7,7 +7,7 @@
 //! meant to function as an IPC (Inter-Process Communication) mechanism for Rust applications.
 //!
 //! Rust examples on using wRPC client can be found in the
-//! [examples](https://github.com/karlsennet/rusty-karlsen/tree/master/rpc/wrpc/examples) folder.
+//! [examples](https://github.com/karlsen-network/rusty-karlsen/tree/master/rpc/wrpc/examples) folder.
 //!
 //! WASM bindings for wRPC client can be found in the [`karlsen-wrpc-wasm`](https://docs.rs/karlsen-wrpc-wasm) crate.
 //!
