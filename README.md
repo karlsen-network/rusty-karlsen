@@ -136,7 +136,7 @@ developers, users, and investors within the Cosmos ecosystem.
 ## Installation
 
 ### Building on Linux
-  
+
 1. Install general prerequisites
 
    ```bash
@@ -144,7 +144,7 @@ developers, users, and investors within the Cosmos ecosystem.
    ```
 
 2. Install Protobuf (required for gRPC)
-  
+
    ```bash
    sudo apt install protobuf-compiler libprotobuf-dev #Required for gRPC
    ```
@@ -162,24 +162,24 @@ developers, users, and investors within the Cosmos ecosystem.
    llvm python3-clang
    ```
 
-3. Install the [rust toolchain](https://rustup.rs/)
-     
+4. Install the [rust toolchain](https://rustup.rs/)
+
    If you already have rust installed, update it by running:
    `rustup update`
 
-4. Install wasm-pack
+5. Install wasm-pack
 
    ```bash
    cargo install wasm-pack
    ```
 
-4. Install wasm32 target
+6. Install wasm32 target
 
    ```bash
    rustup target add wasm32-unknown-unknown
    ```
 
-5. Clone the repo
+7. Clone the repo
 
    ```bash
    git clone https://github.com/karlsen-network/rusty-karlsen
@@ -196,7 +196,7 @@ developers, users, and investors within the Cosmos ecosystem.
 
    Add the `bin` directory of the LLVM installation
    (`C:\Program Files\LLVM\bin`) to PATH
-    
+
    Set `LIBCLANG_PATH` environment variable to point to the `bin`
    directory as well
 
@@ -209,9 +209,9 @@ developers, users, and investors within the Cosmos ecosystem.
    WASM32 targets). Currently, the best way to address this, is as
    follows: after installing LLVM on Windows, go to the target `bin`
    installation directory and copy or rename `LLVM_AR.exe` to `AR.exe`.
-  
+
 4. Install the [rust toolchain](https://rustup.rs/)
-     
+
    If you already have rust installed, update it by running:
    `rustup update`
 
@@ -243,7 +243,7 @@ developers, users, and investors within the Cosmos ecosystem.
    ```
 
 2. Install llvm.
-  
+
    The default XCode installation of `llvm` does not support WASM
    build targets. To build WASM on MacOS you need to install `llvm`
    from homebrew (at the time of writing, the llvm version for MacOS
@@ -288,7 +288,7 @@ developers, users, and investors within the Cosmos ecosystem.
    ```
 
 3. Install the [rust toolchain](https://rustup.rs/)
-     
+
    If you already have rust installed, update it by running:
    `rustup update`
 
@@ -298,13 +298,13 @@ developers, users, and investors within the Cosmos ecosystem.
    cargo install wasm-pack
    ```
 
-4. Install wasm32 target
+5. Install wasm32 target
 
    ```bash
    rustup target add wasm32-unknown-unknown
    ```
 
-5. Clone the repo
+6. Clone the repo
 
    ```bash
    git clone https://github.com/karlsen-network/rusty-karlsen
@@ -384,6 +384,7 @@ cargo run --release --bin karlsend
 ```bash
 cargo run --release --bin karlsend -- --testnet
 ```
+
 Using a configuration file
 
 ```bash
@@ -458,20 +459,16 @@ using any WebSocket library. Built-in RPC clients for JavaScript and
 TypeScript capable of running in web browsers and Node.js are
 available as a part of the Karlsen WASM framework.
 
-
 ## Benchmarking & Testing
 
 ### Simulation framework (Simpa)
-
-Logging in `karlsend` and `simpa` can be [filtered](https://docs.rs/env_logger/0.10.0/env_logger/#filtering-results)
-by either:
 
 The current codebase supports a full in-process network simulation,
 building an actual DAG over virtual time with virtual delay and
 benchmarking validation time (following the simulation generation).
 To see the available commands
 
-```bash 
+```bash
 cargo run --release --bin simpa -- --help
 ```
 
