@@ -1,3 +1,9 @@
+//!
+//! Conversion functions for converting between
+//! the [`karlsen_consensus_client`], [`karlsen_consensus_core`]
+//! and [`karlsen_wallet_pskt`](crate) types.
+//!
+
 use crate::error::Error;
 use crate::input::{Input, InputBuilder};
 use crate::output::{Output, OutputBuilder};

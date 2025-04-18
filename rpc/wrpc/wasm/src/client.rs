@@ -1,3 +1,10 @@
+//!
+//! # WASM bindings for the [Karlsen p2p Node RPC client](KarlsenRpcClient).
+//!
+//! This module provides a WASM interface for the Karlsen p2p Node RPC client
+//! - [`RpcClient`].
+//!
+
 #![allow(non_snake_case)]
 
 use crate::imports::*;
@@ -130,7 +137,7 @@ impl TryFrom<JsValue> for NotificationEvent {
     }
 }
 
-pub struct Inner {
+pub(crate) struct Inner {
     client: Arc<KarlsenRpcClient>,
     resolver: Option<Resolver>,
     notification_task: AtomicBool,

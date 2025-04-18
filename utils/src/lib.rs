@@ -1,3 +1,9 @@
+//!
+//! # Karlsen Utilities
+//!
+//! General purpose utilities and various type extensions used across the Rusty Karlsen codebase.
+//!
+
 pub mod any;
 pub mod arc;
 pub mod binary_heap;
