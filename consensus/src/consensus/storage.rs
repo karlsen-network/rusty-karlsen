@@ -31,7 +31,7 @@ use karlsen_consensus_core::{blockstatus::BlockStatus, BlockHashSet};
 use karlsen_database::registry::DatabaseStorePrefixes;
 use karlsen_hashes::Hash;
 use parking_lot::RwLock;
-use std::{mem::size_of, ops::DerefMut, sync::Arc};
+use std::{ops::DerefMut, sync::Arc};
 
 pub struct ConsensusStorage {
     // DB

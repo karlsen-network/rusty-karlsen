@@ -1,4 +1,3 @@
-use std::mem::size_of;
 use std::sync::Arc;
 
 use karlsen_consensus_core::{header::Header, BlockHasher, BlockLevel};
