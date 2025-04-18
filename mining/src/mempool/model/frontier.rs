@@ -220,11 +220,13 @@ impl Frontier {
         let mut estimator = FeerateEstimator::new(self.total_weight(), inclusion_interval);
 
         // Search for better estimators by possibly removing extremely high outliers
-        let mut down_iter = self.search_tree.descending_iter().skip(1);
-        loop {
-            // Update values for the next iteration. In order to remove the outlier from the
-            // total weight, we must compensate by capturing a block slot.
-            mass_per_block -= average_transaction_mass;
+        let mut down_iter = self.search_tree.descending_iter().peekable();
+        while let Some(current) = down_iter.next() {
+            // Update values for the coming iteration. In order to remove the outlier from the
+            // total weight, we must compensate by capturing a block slot. Note we capture the
+            // slot with correspondence to the outlier actual mass. This is important in cases
+            // where the high-feerate txs have mass which deviates from the average.
+            mass_per_block -= current.mass as f64;
             if mass_per_block <= average_transaction_mass {
                 // Out of block slots, break
                 break;
@@ -234,9 +236,8 @@ impl Frontier {
             // Note that inclusion_interval < 1.0 as required by the estimator, since mass_per_block > average_transaction_mass (by condition above) and bps >= 1
             inclusion_interval = average_transaction_mass / (mass_per_block * bps);
 
-            // Compute the weight up to, and including, current key (or use zero weight if next is none)
-            let next = down_iter.next();
-            let prefix_weight = next.map(|key| self.search_tree.prefix_weight(key)).unwrap_or_default();
+            // Compute the weight up to, and excluding, current key (which translates to zero weight if peek() is none)
+            let prefix_weight = down_iter.peek().map(|key| self.search_tree.prefix_weight(key)).unwrap_or_default();
             let pending_estimator = FeerateEstimator::new(prefix_weight, inclusion_interval);
 
             // Test the pending estimator vs. the current one
@@ -245,10 +246,6 @@ impl Frontier {
             } else {
                 // The pending estimator is no better, break. Indicates that the reduction in
                 // network mass per second is more significant than the removed weight
-                break;
-            }
-
-            if next.is_none() {
                 break;
             }
         }
