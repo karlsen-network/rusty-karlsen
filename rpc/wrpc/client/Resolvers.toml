@@ -1,14 +1,14 @@
 [[resolver]]
 enable = true
-url = "https://ping.karlsencoin.com"
+address = "https://ping.karlsencoin.com"
 
 [[resolver]]
 enable = false
 address = "http://127.0.0.1:8888"
 
-# [[group]]
-# template = "https://*.karlsen.stream"
-# nodes = ["eric","maxim","sean","troy"]
+[[group]]
+template = "https://*.karlsencoin.com"
+nodes = ["eric","maxim","sean","troy"]
 
 # [[group]]
 # template = "https://*.karlsen.red"

@@ -83,7 +83,7 @@ impl NetworkParams {
         match value.network_type {
             NetworkType::Mainnet => &MAINNET_NETWORK_PARAMS,
             NetworkType::Testnet => match value.suffix {
-                Some(10) => &TESTNET10_NETWORK_PARAMS,
+                Some(1) => &TESTNET10_NETWORK_PARAMS,
                 Some(11) => &TESTNET11_NETWORK_PARAMS,
                 Some(x) => panic!("Testnet suffix {} is not supported", x),
                 None => panic!("Testnet suffix not provided"),
