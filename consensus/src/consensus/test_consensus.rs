@@ -13,11 +13,8 @@ use karlsen_hashes::Hash;
 use karlsen_notify::subscription::context::SubscriptionContext;
 use parking_lot::RwLock;
 
-use karlsen_database::create_temp_db;
-use karlsen_database::prelude::ConnBuilder;
-use std::future::Future;
-use std::{sync::Arc, thread::JoinHandle};
-
+use super::services::{DbDagTraversalManager, DbGhostdagManager, DbWindowManager};
+use super::Consensus;
 use crate::pipeline::virtual_processor::test_block_builder::TestBlockBuilder;
 use crate::processes::window::WindowManager;
 use crate::{
@@ -35,9 +32,10 @@ use crate::{
     pipeline::{body_processor::BlockBodyProcessor, virtual_processor::VirtualStateProcessor, ProcessingCounters},
     test_helpers::header_from_precomputed_hash,
 };
-
-use super::services::{DbDagTraversalManager, DbGhostdagManager, DbWindowManager};
-use super::Consensus;
+use karlsen_database::create_temp_db;
+use karlsen_database::prelude::ConnBuilder;
+use std::future::Future;
+use std::{sync::Arc, thread::JoinHandle};
 
 pub struct TestConsensus {
     params: Params,
@@ -138,6 +136,12 @@ impl TestConsensus {
         self.validate_and_insert_block(self.build_block_with_parents(hash, parents).to_immutable()).virtual_state_task
     }
 
+    /// Adds a valid block with the given transactions and parents to the consensus.
+    ///
+    /// # Panics
+    ///
+    /// Panics if block builder validation rules are violated.
+    /// See `karlsen_consensus_core::errors::block::RuleError` for the complete list of possible validation rules.
     pub fn add_utxo_valid_block_with_parents(
         &self,
         hash: Hash,
@@ -149,6 +153,12 @@ impl TestConsensus {
             .virtual_state_task
     }
 
+    /// Builds a valid block with the given transactions, parents, and miner data.
+    ///
+    /// # Panics
+    ///
+    /// Panics if block builder validation rules are violated.
+    /// See `karlsen_consensus_core::errors::block::RuleError` for the complete list of possible validation rules.
     pub fn build_utxo_valid_block_with_parents(
         &self,
         hash: Hash,
