@@ -28,12 +28,7 @@ impl<T: Clone> ExpiringCache<T> {
     /// Panics if `refetch > expire`.
     pub fn new(refetch: Duration, expire: Duration) -> Self {
         assert!(refetch <= expire);
-        Self {
-            store: Default::default(),
-            refetch,
-            expire,
-            fetching: Default::default(),
-        }
+        Self { store: Default::default(), refetch, expire, fetching: Default::default() }
     }
 
     /// Returns the cached item or possibly fetches a new one using the `refetch_future` task. The
@@ -53,10 +48,7 @@ impl<T: Clone> ExpiringCache<T> {
                         return entry.item.clone();
                     }
                     // Refetch is triggered, attempt to capture the task
-                    fetching = self
-                        .fetching
-                        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-                        .is_ok();
+                    fetching = self.fetching.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok();
                     // If the fetch task is not captured and expire time is not over yet, return with prev value. Another
                     // thread is refetching the data but we can return with the not-too-old value
                     if !fetching && elapsed < self.expire {
@@ -71,15 +63,10 @@ impl<T: Clone> ExpiringCache<T> {
         let new_item = refetch_future.await;
         let timestamp = Instant::now();
         // Update the store even if we were not in charge of refetching - let the last thread make the final update
-        self.store.store(Some(Arc::new(Entry {
-            item: new_item.clone(),
-            timestamp,
-        })));
+        self.store.store(Some(Arc::new(Entry { item: new_item.clone(), timestamp })));
 
         if fetching {
-            let result =
-                self.fetching
-                    .compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
+            let result = self.fetching.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst);
             assert!(result.is_ok(), "refetching was captured")
         }
 

@@ -14,11 +14,7 @@ pub trait ReachabilityService {
     fn is_dag_ancestor_of(&self, this: Hash, queried: Hash) -> bool;
     fn is_dag_ancestor_of_any(&self, this: Hash, queried: &mut impl Iterator<Item = Hash>) -> bool;
     fn is_any_dag_ancestor(&self, list: &mut impl Iterator<Item = Hash>, queried: Hash) -> bool;
-    fn is_any_dag_ancestor_result(
-        &self,
-        list: &mut impl Iterator<Item = Hash>,
-        queried: Hash,
-    ) -> Result<bool>;
+    fn is_any_dag_ancestor_result(&self, list: &mut impl Iterator<Item = Hash>, queried: Hash) -> Result<bool>;
     fn get_next_chain_ancestor(&self, descendant: Hash, ancestor: Hash) -> Hash;
     fn get_chain_parent(&self, this: Hash) -> Hash;
     fn has_reachability_data(&self, this: Hash) -> bool;
@@ -45,11 +41,7 @@ impl<T: ReachabilityStoreReader + ?Sized> ReachabilityService for T {
         list.any(|hash| inquirer::is_dag_ancestor_of(self, hash, queried).unwrap())
     }
 
-    fn is_any_dag_ancestor_result(
-        &self,
-        list: &mut impl Iterator<Item = Hash>,
-        queried: Hash,
-    ) -> Result<bool> {
+    fn is_any_dag_ancestor_result(&self, list: &mut impl Iterator<Item = Hash>, queried: Hash) -> Result<bool> {
         for hash in list {
             if inquirer::is_dag_ancestor_of(self, hash, queried)? {
                 return Ok(true);
@@ -104,11 +96,7 @@ impl<T: ReachabilityStoreReader + ?Sized> ReachabilityService for MTReachability
         list.any(|hash| inquirer::is_dag_ancestor_of(read_guard.deref(), hash, queried).unwrap())
     }
 
-    fn is_any_dag_ancestor_result(
-        &self,
-        list: &mut impl Iterator<Item = Hash>,
-        queried: Hash,
-    ) -> Result<bool> {
+    fn is_any_dag_ancestor_result(&self, list: &mut impl Iterator<Item = Hash>, queried: Hash) -> Result<bool> {
         self.store.read().is_any_dag_ancestor_result(list, queried)
     }
 
@@ -139,12 +127,7 @@ impl<T: ReachabilityStoreReader + ?Sized> MTReachabilityService<T> {
     ///
     /// The caller is expected to verify that `from_ancestor` is indeed a chain ancestor of
     /// `to_descendant`, otherwise the function will panic.
-    pub fn forward_chain_iterator(
-        &self,
-        from_ancestor: Hash,
-        to_descendant: Hash,
-        inclusive: bool,
-    ) -> impl Iterator<Item = Hash> {
+    pub fn forward_chain_iterator(&self, from_ancestor: Hash, to_descendant: Hash, inclusive: bool) -> impl Iterator<Item = Hash> {
         ForwardChainIterator::new(self.store.clone(), from_ancestor, to_descendant, inclusive)
     }
 
@@ -155,12 +138,7 @@ impl<T: ReachabilityStoreReader + ?Sized> MTReachabilityService<T> {
     ///
     /// The caller is expected to verify that `to_ancestor` is indeed a chain ancestor of
     /// `from_descendant`, otherwise the function will panic.
-    pub fn backward_chain_iterator(
-        &self,
-        from_descendant: Hash,
-        to_ancestor: Hash,
-        inclusive: bool,
-    ) -> impl Iterator<Item = Hash> {
+    pub fn backward_chain_iterator(&self, from_descendant: Hash, to_ancestor: Hash, inclusive: bool) -> impl Iterator<Item = Hash> {
         BackwardChainIterator::new(self.store.clone(), from_descendant, to_ancestor, inclusive)
     }
 
@@ -185,18 +163,8 @@ struct BackwardChainIterator<T: ReachabilityStoreReader + ?Sized> {
 }
 
 impl<T: ReachabilityStoreReader + ?Sized> BackwardChainIterator<T> {
-    fn new(
-        store: Arc<RwLock<T>>,
-        from_descendant: Hash,
-        to_ancestor: Hash,
-        inclusive: bool,
-    ) -> Self {
-        Self {
-            store,
-            current: Some(from_descendant),
-            ancestor: to_ancestor,
-            inclusive,
-        }
+    fn new(store: Arc<RwLock<T>>, from_descendant: Hash, to_ancestor: Hash, inclusive: bool) -> Self {
+        Self { store, current: Some(from_descendant), ancestor: to_ancestor, inclusive }
     }
 }
 
@@ -233,18 +201,8 @@ struct ForwardChainIterator<T: ReachabilityStoreReader + ?Sized> {
 }
 
 impl<T: ReachabilityStoreReader + ?Sized> ForwardChainIterator<T> {
-    fn new(
-        store: Arc<RwLock<T>>,
-        from_ancestor: Hash,
-        to_descendant: Hash,
-        inclusive: bool,
-    ) -> Self {
-        Self {
-            store,
-            current: Some(from_ancestor),
-            descendant: to_descendant,
-            inclusive,
-        }
+    fn new(store: Arc<RwLock<T>>, from_ancestor: Hash, to_descendant: Hash, inclusive: bool) -> Self {
+        Self { store, current: Some(from_ancestor), descendant: to_descendant, inclusive }
     }
 }
 
@@ -262,12 +220,7 @@ impl<T: ReachabilityStoreReader + ?Sized> Iterator for ForwardChainIterator<T> {
                     None
                 }
             } else {
-                let next = inquirer::get_next_chain_ancestor(
-                    self.store.read().deref(),
-                    self.descendant,
-                    current,
-                )
-                .unwrap();
+                let next = inquirer::get_next_chain_ancestor(self.store.read().deref(), self.descendant, current).unwrap();
                 self.current = Some(next);
                 Some(current)
             }
@@ -323,9 +276,7 @@ mod tests {
 
         // Compare backward to reversed forward
         let forward_iter = service.forward_chain_iterator(2.into(), 10.into(), true);
-        let backward_iter: Vec<Hash> = service
-            .backward_chain_iterator(10.into(), 2.into(), true)
-            .collect();
+        let backward_iter: Vec<Hash> = service.backward_chain_iterator(10.into(), 2.into(), true).collect();
         assert!(forward_iter.eq(backward_iter.iter().cloned().rev()))
     }
 
@@ -334,33 +285,15 @@ mod tests {
         // Arrange & Act
         let mut store = MemoryReachabilityStore::new();
         let root: Hash = 1.into();
-        TreeBuilder::new(&mut store)
-            .init_with_params(root, Interval::new(1, 5))
-            .add_block(2.into(), root);
+        TreeBuilder::new(&mut store).init_with_params(root, Interval::new(1, 5)).add_block(2.into(), root);
 
         let service = MTReachabilityService::new(Arc::new(RwLock::new(store)));
 
         // Asserts
-        assert!([1u64, 2]
-            .map(Hash::from)
-            .iter()
-            .cloned()
-            .eq(service.forward_chain_iterator(1.into(), 2.into(), true)));
-        assert!([1u64]
-            .map(Hash::from)
-            .iter()
-            .cloned()
-            .eq(service.forward_chain_iterator(1.into(), 2.into(), false)));
-        assert!([2u64, 1]
-            .map(Hash::from)
-            .iter()
-            .cloned()
-            .eq(service.backward_chain_iterator(2.into(), root, true)));
-        assert!([2u64]
-            .map(Hash::from)
-            .iter()
-            .cloned()
-            .eq(service.backward_chain_iterator(2.into(), root, false)));
+        assert!([1u64, 2].map(Hash::from).iter().cloned().eq(service.forward_chain_iterator(1.into(), 2.into(), true)));
+        assert!([1u64].map(Hash::from).iter().cloned().eq(service.forward_chain_iterator(1.into(), 2.into(), false)));
+        assert!([2u64, 1].map(Hash::from).iter().cloned().eq(service.backward_chain_iterator(2.into(), root, true)));
+        assert!([2u64].map(Hash::from).iter().cloned().eq(service.backward_chain_iterator(2.into(), root, false)));
         assert!(std::iter::once(root).eq(service.backward_chain_iterator(root, root, true)));
         assert!(std::iter::empty::<Hash>().eq(service.backward_chain_iterator(root, root, false)));
         assert!(std::iter::once(root).eq(service.forward_chain_iterator(root, root, true)));

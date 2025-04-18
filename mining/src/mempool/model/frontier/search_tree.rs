@@ -58,11 +58,7 @@ impl SearchArgument<FeerateKey> for FeerateWeight {
         }
     }
 
-    fn locate_in_inner(
-        mut query: Self::Query,
-        _keys: &[FeerateKey],
-        arguments: &[Self],
-    ) -> Option<(usize, Self::Query)> {
+    fn locate_in_inner(mut query: Self::Query, _keys: &[FeerateKey], arguments: &[Self]) -> Option<(usize, Self::Query)> {
         // Search algorithm: Locate the next subtree to visit by iterating through `arguments`
         // and subtracting the query until the correct range is found
         for (i, a) in arguments.iter().enumerate() {
@@ -96,10 +92,7 @@ struct PrefixWeightVisitor<'a> {
 
 impl<'a> PrefixWeightVisitor<'a> {
     pub fn new(key: &'a FeerateKey) -> Self {
-        Self {
-            key,
-            accumulated_weight: Default::default(),
-        }
+        Self { key, accumulated_weight: Default::default() }
     }
 
     /// Returns the index of the first `key ∈ keys` such that `key > self.key`. If no such key
@@ -121,11 +114,7 @@ impl<'a> PrefixWeightVisitor<'a> {
 impl<'a> DescendVisit<FeerateKey, (), FeerateWeight> for PrefixWeightVisitor<'a> {
     type Result = f64;
 
-    fn visit_inner(
-        &mut self,
-        keys: &[FeerateKey],
-        arguments: &[FeerateWeight],
-    ) -> DescendVisitResult<Self::Result> {
+    fn visit_inner(&mut self, keys: &[FeerateKey], arguments: &[FeerateWeight]) -> DescendVisitResult<Self::Result> {
         let idx = self.search_in_keys(keys);
         // Invariants:
         //      a. arguments.len() == keys.len() + 1 (n inner node keys are the separators between n+1 subtrees)
@@ -176,17 +165,13 @@ pub struct SearchTree {
 
 impl Default for SearchTree {
     fn default() -> Self {
-        Self {
-            tree: InnerTree::new(Default::default()),
-        }
+        Self { tree: InnerTree::new(Default::default()) }
     }
 }
 
 impl SearchTree {
     pub fn new() -> Self {
-        Self {
-            tree: InnerTree::new(Default::default()),
-        }
+        Self { tree: InnerTree::new(Default::default()) }
     }
 
     pub fn len(&self) -> usize {
@@ -220,24 +205,18 @@ impl SearchTree {
     /// Computes the prefix weight of a key, i.e., the sum of weights up to that key (inclusive)
     /// according to key order, in log(n) time
     pub fn prefix_weight(&self, key: &FeerateKey) -> f64 {
-        self.tree
-            .descend_visit(PrefixWeightVisitor::new(key))
-            .unwrap()
+        self.tree.descend_visit(PrefixWeightVisitor::new(key)).unwrap()
     }
 
     /// Iterate the tree in descending key order (going down from the
     /// highest key). Linear in the number of keys *actually* iterated.
-    pub fn descending_iter(
-        &self,
-    ) -> impl DoubleEndedIterator<Item = &FeerateKey> + ExactSizeIterator + FusedIterator {
+    pub fn descending_iter(&self) -> impl DoubleEndedIterator<Item = &FeerateKey> + ExactSizeIterator + FusedIterator {
         self.tree.iter().rev().map(|(key, ())| key)
     }
 
     /// Iterate the tree in ascending key order (going up from the
     /// lowest key). Linear in the number of keys *actually* iterated.
-    pub fn ascending_iter(
-        &self,
-    ) -> impl DoubleEndedIterator<Item = &FeerateKey> + ExactSizeIterator + FusedIterator {
+    pub fn ascending_iter(&self) -> impl DoubleEndedIterator<Item = &FeerateKey> + ExactSizeIterator + FusedIterator {
         self.tree.iter().map(|(key, ())| key)
     }
 
@@ -266,10 +245,7 @@ mod tests {
         let mass = 2000;
         // The btree stores N=64 keys at each node/leaf, so we make sure the tree has more than
         // 64^2 keys in order to trigger at least a few intermediate tree nodes
-        let fees = vec![[123, 113, 10_000, 1000, 2050, 2048]; 64 * (64 + 1)]
-            .into_iter()
-            .flatten()
-            .collect_vec();
+        let fees = vec![[123, 113, 10_000, 1000, 2050, 2048]; 64 * (64 + 1)].into_iter().flatten().collect_vec();
 
         #[allow(clippy::mutable_key_type)]
         let mut s = HashSet::with_capacity(fees.len());
@@ -342,10 +318,7 @@ mod tests {
     fn test_tree_rev_iter() {
         let mut tree = SearchTree::new();
         let mass = 2000;
-        let fees = vec![[123, 113, 10_000, 1000, 2050, 2048]; 64 * (64 + 1)]
-            .into_iter()
-            .flatten()
-            .collect_vec();
+        let fees = vec![[123, 113, 10_000, 1000, 2050, 2048]; 64 * (64 + 1)].into_iter().flatten().collect_vec();
         let mut v = Vec::with_capacity(fees.len());
         for (i, fee) in fees.iter().copied().enumerate() {
             let key = build_feerate_key(fee, mass, i as u64);

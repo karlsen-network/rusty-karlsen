@@ -67,10 +67,7 @@ pub struct FeerateEstimatorArgs {
 
 impl FeerateEstimatorArgs {
     pub fn new(network_blocks_per_second: u64, maximum_mass_per_block: u64) -> Self {
-        Self {
-            network_blocks_per_second,
-            maximum_mass_per_block,
-        }
+        Self { network_blocks_per_second, maximum_mass_per_block }
     }
 
     pub fn network_mass_per_second(&self) -> u64 {
@@ -94,10 +91,7 @@ impl FeerateEstimator {
     pub fn new(total_weight: f64, inclusion_interval: f64) -> Self {
         assert!(total_weight >= 0.0);
         assert!((0f64..1f64).contains(&inclusion_interval));
-        Self {
-            total_weight,
-            inclusion_interval,
-        }
+        Self { total_weight, inclusion_interval }
     }
 
     pub(crate) fn feerate_to_time(&self, feerate: f64) -> f64 {
@@ -141,41 +135,23 @@ impl FeerateEstimator {
         // Choose `high` such that it provides sub-second waiting time
         let high = self.time_to_feerate(1f64).max(min);
         // Choose `low` feerate such that it provides sub-hour waiting time AND it covers (at least) the 0.25 quantile
-        let low = self
-            .time_to_feerate(3600f64)
-            .max(self.quantile(min, high, 0.25));
+        let low = self.time_to_feerate(3600f64).max(self.quantile(min, high, 0.25));
         // Choose `normal` feerate such that it provides sub-minute waiting time AND it covers (at least) the 0.66 quantile between low and high.
-        let normal = self
-            .time_to_feerate(60f64)
-            .max(self.quantile(low, high, 0.66));
+        let normal = self.time_to_feerate(60f64).max(self.quantile(low, high, 0.66));
         // Choose an additional point between normal and low
-        let mid = self
-            .time_to_feerate(1800f64)
-            .max(self.quantile(min, high, 0.5));
+        let mid = self.time_to_feerate(1800f64).max(self.quantile(min, high, 0.5));
         /* Intuition for the above:
                1. The quantile calculations make sure that we return interesting points on the `feerate_to_time` curve.
                2. They also ensure that the times don't diminish too high if small increments to feerate would suffice
                   to cover large fractions of the integral area (reflecting the position within the waiting-time distribution)
         */
         FeerateEstimations {
-            priority_bucket: FeerateBucket {
-                feerate: high,
-                estimated_seconds: self.feerate_to_time(high),
-            },
+            priority_bucket: FeerateBucket { feerate: high, estimated_seconds: self.feerate_to_time(high) },
             normal_buckets: vec![
-                FeerateBucket {
-                    feerate: normal,
-                    estimated_seconds: self.feerate_to_time(normal),
-                },
-                FeerateBucket {
-                    feerate: mid,
-                    estimated_seconds: self.feerate_to_time(mid),
-                },
+                FeerateBucket { feerate: normal, estimated_seconds: self.feerate_to_time(normal) },
+                FeerateBucket { feerate: mid, estimated_seconds: self.feerate_to_time(mid) },
             ],
-            low_buckets: vec![FeerateBucket {
-                feerate: low,
-                estimated_seconds: self.feerate_to_time(low),
-            }],
+            low_buckets: vec![FeerateBucket { feerate: low, estimated_seconds: self.feerate_to_time(low) }],
         }
     }
 }
@@ -200,10 +176,7 @@ mod tests {
 
     #[test]
     fn test_feerate_estimations() {
-        let estimator = FeerateEstimator {
-            total_weight: 1002283.659,
-            inclusion_interval: 0.004f64,
-        };
+        let estimator = FeerateEstimator { total_weight: 1002283.659, inclusion_interval: 0.004f64 };
         let estimations = estimator.calc_estimations(1.0);
         let buckets = estimations.ordered_buckets();
         for (i, j) in buckets.into_iter().tuple_windows() {
@@ -214,10 +187,7 @@ mod tests {
 
     #[test]
     fn test_min_feerate_estimations() {
-        let estimator = FeerateEstimator {
-            total_weight: 0.00659,
-            inclusion_interval: 0.004f64,
-        };
+        let estimator = FeerateEstimator { total_weight: 0.00659, inclusion_interval: 0.004f64 };
         let minimum_feerate = 0.755;
         let estimations = estimator.calc_estimations(minimum_feerate);
         println!("{estimations}");
@@ -231,10 +201,7 @@ mod tests {
 
     #[test]
     fn test_zero_values() {
-        let estimator = FeerateEstimator {
-            total_weight: 0.0,
-            inclusion_interval: 0.0,
-        };
+        let estimator = FeerateEstimator { total_weight: 0.0, inclusion_interval: 0.0 };
         let minimum_feerate = 0.755;
         let estimations = estimator.calc_estimations(minimum_feerate);
         let buckets = estimations.ordered_buckets();
@@ -243,10 +210,7 @@ mod tests {
             assert_eq!(0.0, bucket.estimated_seconds);
         }
 
-        let estimator = FeerateEstimator {
-            total_weight: 0.0,
-            inclusion_interval: 0.1,
-        };
+        let estimator = FeerateEstimator { total_weight: 0.0, inclusion_interval: 0.1 };
         let minimum_feerate = 0.755;
         let estimations = estimator.calc_estimations(minimum_feerate);
         let buckets = estimations.ordered_buckets();
@@ -255,10 +219,7 @@ mod tests {
             assert_eq!(estimator.inclusion_interval, bucket.estimated_seconds);
         }
 
-        let estimator = FeerateEstimator {
-            total_weight: 0.1,
-            inclusion_interval: 0.0,
-        };
+        let estimator = FeerateEstimator { total_weight: 0.1, inclusion_interval: 0.0 };
         let minimum_feerate = 0.755;
         let estimations = estimator.calc_estimations(minimum_feerate);
         let buckets = estimations.ordered_buckets();

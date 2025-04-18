@@ -21,10 +21,7 @@ pub struct TickService {
 impl TickService {
     pub fn new() -> Self {
         let (shutdown, monitor) = trigger();
-        Self {
-            shutdown_trigger: shutdown,
-            shutdown_listener: monitor,
-        }
+        Self { shutdown_trigger: shutdown, shutdown_listener: monitor }
     }
 
     /// Waits until `duration` has elapsed when the service is started.

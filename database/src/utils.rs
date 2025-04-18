@@ -10,19 +10,13 @@ pub struct DbLifetime {
 
 impl DbLifetime {
     pub fn new(tempdir: TempDir, weak_db_ref: Weak<DB>) -> Self {
-        Self {
-            optional_tempdir: Some(tempdir),
-            weak_db_ref,
-        }
+        Self { optional_tempdir: Some(tempdir), weak_db_ref }
     }
 
     /// Tracks the DB reference and makes sure all strong refs are cleaned up
     /// but does not remove the DB from disk when dropped.
     pub fn without_destroy(weak_db_ref: Weak<DB>) -> Self {
-        Self {
-            optional_tempdir: None,
-            weak_db_ref,
-        }
+        Self { optional_tempdir: None, weak_db_ref }
     }
 }
 
@@ -36,11 +30,7 @@ impl Drop for DbLifetime {
                 break;
             }
         }
-        assert_eq!(
-            self.weak_db_ref.strong_count(),
-            0,
-            "DB is expected to have no strong references when lifetime is dropped"
-        );
+        assert_eq!(self.weak_db_ref.strong_count(), 0, "DB is expected to have no strong references when lifetime is dropped");
         if let Some(dir) = self.optional_tempdir.take() {
             let options = rocksdb::Options::default();
             let path_buf = dir.path().to_owned();
@@ -67,10 +57,7 @@ macro_rules! create_temp_db {
         let db_tempdir = $crate::utils::get_karlsen_tempdir();
         let db_path = db_tempdir.path().to_owned();
         let db = $conn_builder.with_db_path(db_path).build().unwrap();
-        (
-            $crate::utils::DbLifetime::new(db_tempdir, std::sync::Arc::downgrade(&db)),
-            db,
-        )
+        ($crate::utils::DbLifetime::new(db_tempdir, std::sync::Arc::downgrade(&db)), db)
     }};
 }
 
@@ -89,10 +76,7 @@ macro_rules! create_permanent_db {
             }
         }
         let db = $conn_builder.with_db_path(db_dir).build().unwrap();
-        (
-            $crate::utils::DbLifetime::without_destroy(std::sync::Arc::downgrade(&db)),
-            db,
-        )
+        ($crate::utils::DbLifetime::without_destroy(std::sync::Arc::downgrade(&db)), db)
     }};
 }
 
@@ -102,14 +86,7 @@ macro_rules! create_permanent_db {
 macro_rules! load_existing_db {
     ($db_path: expr, $conn_builder: expr) => {{
         let db_dir = std::path::PathBuf::from($db_path);
-        let db = $conn_builder
-            .with_db_path(db_dir)
-            .with_create_if_missing(false)
-            .build()
-            .unwrap();
-        (
-            $crate::utils::DbLifetime::without_destroy(std::sync::Arc::downgrade(&db)),
-            db,
-        )
+        let db = $conn_builder.with_db_path(db_dir).with_create_if_missing(false).build().unwrap();
+        ($crate::utils::DbLifetime::without_destroy(std::sync::Arc::downgrade(&db)), db)
     }};
 }

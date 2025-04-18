@@ -105,19 +105,11 @@ impl Frontier {
     ///           By using floating point arithmetics we gain the adjustment of the probability space to the accuracy level required for
     ///           current samples. And if the space is highly biased, the repeated elimination of top items and the prefix weight computation
     ///           will readjust it.
-    pub fn sample_inplace<R>(
-        &self,
-        rng: &mut R,
-        policy: &Policy,
-        _collisions: &mut u64,
-    ) -> SequenceSelectorInput
+    pub fn sample_inplace<R>(&self, rng: &mut R, policy: &Policy, _collisions: &mut u64) -> SequenceSelectorInput
     where
         R: Rng + ?Sized,
     {
-        debug_assert!(
-            !self.search_tree.is_empty(),
-            "expected to be called only if not empty"
-        );
+        debug_assert!(!self.search_tree.is_empty(), "expected to be called only if not empty");
 
         // Sample 20% more than the hard limit in order to allow the SequenceSelector to
         // compensate for consensus rejections.
@@ -163,10 +155,7 @@ impl Frontier {
             sequence.push(item.tx.clone(), item.mass);
             total_selected_mass += item.mass; // Max standard mass + Mempool capacity bound imply this will not overflow
         }
-        trace!(
-            "[mempool frontier sample inplace] collisions: {collisions}, cache: {}",
-            cache.len()
-        );
+        trace!("[mempool frontier sample inplace] collisions: {collisions}, cache: {}", cache.len());
         *_collisions += collisions;
         sequence
     }
@@ -187,62 +176,35 @@ impl Frontier {
     /// for more details.  
     pub fn build_selector(&self, policy: &Policy) -> Box<dyn TemplateTransactionSelector> {
         if self.total_mass <= policy.max_block_mass {
-            Box::new(TakeAllSelector::new(
-                self.search_tree
-                    .ascending_iter()
-                    .map(|k| k.tx.clone())
-                    .collect(),
-            ))
+            Box::new(TakeAllSelector::new(self.search_tree.ascending_iter().map(|k| k.tx.clone()).collect()))
         } else if self.total_mass > policy.max_block_mass * COLLISION_FACTOR {
             let mut rng = rand::thread_rng();
-            Box::new(SequenceSelector::new(
-                self.sample_inplace(&mut rng, policy, &mut 0),
-                policy.clone(),
-            ))
+            Box::new(SequenceSelector::new(self.sample_inplace(&mut rng, policy, &mut 0), policy.clone()))
         } else {
             Box::new(RebalancingWeightedTransactionSelector::new(
                 policy.clone(),
-                self.search_tree
-                    .ascending_iter()
-                    .cloned()
-                    .map(CandidateTransaction::from_key)
-                    .collect(),
+                self.search_tree.ascending_iter().cloned().map(CandidateTransaction::from_key).collect(),
             ))
         }
     }
 
     /// Exposed for benchmarking purposes
-    pub fn build_selector_sample_inplace(
-        &self,
-        _collisions: &mut u64,
-    ) -> Box<dyn TemplateTransactionSelector> {
+    pub fn build_selector_sample_inplace(&self, _collisions: &mut u64) -> Box<dyn TemplateTransactionSelector> {
         let mut rng = rand::thread_rng();
         let policy = Policy::new(500_000);
-        Box::new(SequenceSelector::new(
-            self.sample_inplace(&mut rng, &policy, _collisions),
-            policy,
-        ))
+        Box::new(SequenceSelector::new(self.sample_inplace(&mut rng, &policy, _collisions), policy))
     }
 
     /// Exposed for benchmarking purposes
     pub fn build_selector_take_all(&self) -> Box<dyn TemplateTransactionSelector> {
-        Box::new(TakeAllSelector::new(
-            self.search_tree
-                .ascending_iter()
-                .map(|k| k.tx.clone())
-                .collect(),
-        ))
+        Box::new(TakeAllSelector::new(self.search_tree.ascending_iter().map(|k| k.tx.clone()).collect()))
     }
 
     /// Exposed for benchmarking purposes
     pub fn build_rebalancing_selector(&self) -> Box<dyn TemplateTransactionSelector> {
         Box::new(RebalancingWeightedTransactionSelector::new(
             Policy::new(500_000),
-            self.search_tree
-                .ascending_iter()
-                .cloned()
-                .map(CandidateTransaction::from_key)
-                .collect(),
+            self.search_tree.ascending_iter().cloned().map(CandidateTransaction::from_key).collect(),
         ))
     }
 
@@ -274,9 +236,7 @@ impl Frontier {
 
             // Compute the weight up to, and including, current key (or use zero weight if next is none)
             let next = down_iter.next();
-            let prefix_weight = next
-                .map(|key| self.search_tree.prefix_weight(key))
-                .unwrap_or_default();
+            let prefix_weight = next.map(|key| self.search_tree.prefix_weight(key)).unwrap_or_default();
             let pending_estimator = FeerateEstimator::new(prefix_weight, inclusion_interval);
 
             // Test the pending estimator vs. the current one
@@ -310,11 +270,7 @@ mod tests {
         let cap = 1000;
         let mut map = HashMap::with_capacity(cap);
         for i in 0..cap as u64 {
-            let mut fee: u64 = if i % (cap as u64 / 100) == 0 {
-                1000000
-            } else {
-                rng.gen_range(1..10000)
-            };
+            let mut fee: u64 = if i % (cap as u64 / 100) == 0 { 1000000 } else { rng.gen_range(1..10000) };
             if i == 0 {
                 // Add an extremely large fee in order to create extremely high variance
                 fee = 100_000_000 * 1_000_000; // 1M KAS
@@ -350,39 +306,19 @@ mod tests {
         }
 
         let mut selector = frontier.build_selector(&Policy::new(500_000));
-        selector
-            .select_transactions()
-            .iter()
-            .map(|k| k.gas)
-            .sum::<u64>();
+        selector.select_transactions().iter().map(|k| k.gas).sum::<u64>();
 
         let mut selector = frontier.build_rebalancing_selector();
-        selector
-            .select_transactions()
-            .iter()
-            .map(|k| k.gas)
-            .sum::<u64>();
+        selector.select_transactions().iter().map(|k| k.gas).sum::<u64>();
 
         let mut selector = frontier.build_selector_sample_inplace(&mut 0);
-        selector
-            .select_transactions()
-            .iter()
-            .map(|k| k.gas)
-            .sum::<u64>();
+        selector.select_transactions().iter().map(|k| k.gas).sum::<u64>();
 
         let mut selector = frontier.build_selector_take_all();
-        selector
-            .select_transactions()
-            .iter()
-            .map(|k| k.gas)
-            .sum::<u64>();
+        selector.select_transactions().iter().map(|k| k.gas).sum::<u64>();
 
         let mut selector = frontier.build_selector(&Policy::new(500_000));
-        selector
-            .select_transactions()
-            .iter()
-            .map(|k| k.gas)
-            .sum::<u64>();
+        selector.select_transactions().iter().map(|k| k.gas).sum::<u64>();
     }
 
     #[test]
@@ -391,11 +327,7 @@ mod tests {
         let cap = 10000;
         let mut map = HashMap::with_capacity(cap);
         for i in 0..cap as u64 {
-            let fee: u64 = if i % (cap as u64 / 100) == 0 {
-                1000000
-            } else {
-                rng.gen_range(1..10000)
-            };
+            let fee: u64 = if i % (cap as u64 / 100) == 0 { 1000000 } else { rng.gen_range(1..10000) };
             let mass: u64 = rng.gen_range(1..100000); // Use distinct mass values to challenge the test
             let key = build_feerate_key(fee, mass, i);
             map.insert(key.tx.id(), key);
@@ -409,34 +341,15 @@ mod tests {
 
         let prev_total_mass = frontier.total_mass();
         // Assert the total mass
-        assert_eq!(
-            frontier.total_mass(),
-            frontier
-                .search_tree
-                .ascending_iter()
-                .map(|k| k.mass)
-                .sum::<u64>()
-        );
+        assert_eq!(frontier.total_mass(), frontier.search_tree.ascending_iter().map(|k| k.mass).sum::<u64>());
 
         // Add a bunch of duplicates and make sure the total mass remains the same
-        let mut dup_items = frontier
-            .search_tree
-            .ascending_iter()
-            .take(len / 2)
-            .cloned()
-            .collect_vec();
+        let mut dup_items = frontier.search_tree.ascending_iter().take(len / 2).cloned().collect_vec();
         for dup in dup_items.iter().cloned() {
             (!frontier.insert(dup)).then_some(()).unwrap();
         }
         assert_eq!(prev_total_mass, frontier.total_mass());
-        assert_eq!(
-            frontier.total_mass(),
-            frontier
-                .search_tree
-                .ascending_iter()
-                .map(|k| k.mass)
-                .sum::<u64>()
-        );
+        assert_eq!(frontier.total_mass(), frontier.search_tree.ascending_iter().map(|k| k.mass).sum::<u64>());
 
         // Remove a few elements from the map in order to randomize the iterator
         dup_items.iter().take(10).for_each(|k| {
@@ -450,14 +363,7 @@ mod tests {
                 frontier.insert(item2);
             }
         }
-        assert_eq!(
-            frontier.total_mass(),
-            frontier
-                .search_tree
-                .ascending_iter()
-                .map(|k| k.mass)
-                .sum::<u64>()
-        );
+        assert_eq!(frontier.total_mass(), frontier.search_tree.ascending_iter().map(|k| k.mass).sum::<u64>());
     }
 
     #[test]
@@ -477,30 +383,13 @@ mod tests {
             map.insert(key.tx.id(), key);
         }
 
-        for len in [
-            0,
-            1,
-            10,
-            100,
-            200,
-            300,
-            500,
-            750,
-            cap / 2,
-            (cap * 2) / 3,
-            (cap * 4) / 5,
-            (cap * 5) / 6,
-            cap,
-        ] {
+        for len in [0, 1, 10, 100, 200, 300, 500, 750, cap / 2, (cap * 2) / 3, (cap * 4) / 5, (cap * 5) / 6, cap] {
             let mut frontier = Frontier::default();
             for item in map.values().take(len).cloned() {
                 frontier.insert(item).then_some(()).unwrap();
             }
 
-            let args = FeerateEstimatorArgs {
-                network_blocks_per_second: 1,
-                maximum_mass_per_block: 500_000,
-            };
+            let args = FeerateEstimatorArgs { network_blocks_per_second: 1, maximum_mass_per_block: 500_000 };
             // We are testing that the build function actually returns and is not looping indefinitely
             let estimator = frontier.build_feerate_estimator(args);
             let estimations = estimator.calc_estimations(1.0);
@@ -534,21 +423,7 @@ mod tests {
             map.insert(key.tx.id(), key);
         }
 
-        for len in [
-            0,
-            1,
-            10,
-            100,
-            200,
-            300,
-            500,
-            750,
-            cap / 2,
-            (cap * 2) / 3,
-            (cap * 4) / 5,
-            (cap * 5) / 6,
-            cap,
-        ] {
+        for len in [0, 1, 10, 100, 200, 300, 500, 750, cap / 2, (cap * 2) / 3, (cap * 4) / 5, (cap * 5) / 6, cap] {
             println!();
             println!("Testing a frontier with {} txs...", len.min(cap));
             let mut frontier = Frontier::default();
@@ -556,10 +431,7 @@ mod tests {
                 frontier.insert(item).then_some(()).unwrap();
             }
 
-            let args = FeerateEstimatorArgs {
-                network_blocks_per_second: 1,
-                maximum_mass_per_block: 500_000,
-            };
+            let args = FeerateEstimatorArgs { network_blocks_per_second: 1, maximum_mass_per_block: 500_000 };
             // We are testing that the build function actually returns and is not looping indefinitely
             let estimator = frontier.build_feerate_estimator(args);
             let estimations = estimator.calc_estimations(MIN_FEERATE);

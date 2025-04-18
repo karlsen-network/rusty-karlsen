@@ -64,9 +64,7 @@ mod de {
                 }
             }
 
-            let visitor = OptionalVisitor {
-                out: std::marker::PhantomData,
-            };
+            let visitor = OptionalVisitor { out: std::marker::PhantomData };
             deserializer.deserialize_option(visitor)
         }
     }

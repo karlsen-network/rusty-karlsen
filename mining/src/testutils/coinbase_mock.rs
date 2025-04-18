@@ -16,29 +16,14 @@ impl CoinbaseManagerMock {
         Self {}
     }
 
-    pub(super) fn expected_coinbase_transaction(
-        &self,
-        miner_data: MinerData,
-    ) -> CoinbaseTransactionTemplate {
+    pub(super) fn expected_coinbase_transaction(&self, miner_data: MinerData) -> CoinbaseTransactionTemplate {
         const SUBSIDY: u64 = 500 * SOMPI_PER_KARLSEN;
         let output = TransactionOutput::new(SUBSIDY, miner_data.script_public_key.clone());
 
-        let payload = self.serialize_coinbase_payload(&CoinbaseData {
-            blue_score: 1,
-            subsidy: SUBSIDY,
-            miner_data,
-        });
+        let payload = self.serialize_coinbase_payload(&CoinbaseData { blue_score: 1, subsidy: SUBSIDY, miner_data });
 
         CoinbaseTransactionTemplate {
-            tx: Transaction::new(
-                TX_VERSION,
-                vec![],
-                vec![output],
-                0,
-                SUBNETWORK_ID_COINBASE,
-                0,
-                payload,
-            ),
+            tx: Transaction::new(TX_VERSION, vec![], vec![output], 0, SUBNETWORK_ID_COINBASE, 0, payload),
             has_red_reward: false,
         }
     }

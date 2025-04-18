@@ -158,8 +158,7 @@ impl Header {
 
     #[wasm_bindgen(setter = hashMerkleRoot)]
     pub fn set_hash_merkle_root_from_js_value(&mut self, js_value: JsValue) {
-        self.inner_mut().hash_merkle_root =
-            Hash::from_slice(&js_value.try_as_vec_u8().expect("hash merkle root"));
+        self.inner_mut().hash_merkle_root = Hash::from_slice(&js_value.try_as_vec_u8().expect("hash merkle root"));
     }
 
     #[wasm_bindgen(getter = acceptedIdMerkleRoot)]
@@ -169,8 +168,7 @@ impl Header {
 
     #[wasm_bindgen(setter = acceptedIdMerkleRoot)]
     pub fn set_accepted_id_merkle_root_from_js_value(&mut self, js_value: JsValue) {
-        self.inner_mut().accepted_id_merkle_root =
-            Hash::from_slice(&js_value.try_as_vec_u8().expect("accepted id merkle root"));
+        self.inner_mut().accepted_id_merkle_root = Hash::from_slice(&js_value.try_as_vec_u8().expect("accepted id merkle root"));
     }
 
     #[wasm_bindgen(getter = utxoCommitment)]
@@ -180,8 +178,7 @@ impl Header {
 
     #[wasm_bindgen(setter = utxoCommitment)]
     pub fn set_utxo_commitment_from_js_value(&mut self, js_value: JsValue) {
-        self.inner_mut().utxo_commitment =
-            Hash::from_slice(&js_value.try_as_vec_u8().expect("utxo commitment"));
+        self.inner_mut().utxo_commitment = Hash::from_slice(&js_value.try_as_vec_u8().expect("utxo commitment"));
     }
 
     #[wasm_bindgen(getter = pruningPoint)]
@@ -191,8 +188,7 @@ impl Header {
 
     #[wasm_bindgen(setter = pruningPoint)]
     pub fn set_pruning_point_from_js_value(&mut self, js_value: JsValue) {
-        self.inner_mut().pruning_point =
-            Hash::from_slice(&js_value.try_as_vec_u8().expect("pruning point"));
+        self.inner_mut().pruning_point = Hash::from_slice(&js_value.try_as_vec_u8().expect("pruning point"));
     }
 
     #[wasm_bindgen(getter = parentsByLevel)]
@@ -220,10 +216,7 @@ impl Header {
 
     #[wasm_bindgen(getter = blueWork)]
     pub fn blue_work(&self) -> js_sys::BigInt {
-        self.inner()
-            .blue_work
-            .try_into()
-            .unwrap_or_else(|err| panic!("invalid blue work: {err}"))
+        self.inner().blue_work.try_into().unwrap_or_else(|err| panic!("invalid blue work: {err}"))
     }
 
     #[wasm_bindgen(js_name = getBlueWorkAsHex)]
@@ -233,9 +226,7 @@ impl Header {
 
     #[wasm_bindgen(setter = blueWork)]
     pub fn set_blue_work_from_js_value(&mut self, js_value: JsValue) {
-        self.inner_mut().blue_work = js_value
-            .try_into()
-            .unwrap_or_else(|err| panic!("invalid blue work: {err}"));
+        self.inner_mut().blue_work = js_value.try_into().unwrap_or_else(|err| panic!("invalid blue work: {err}"));
     }
 }
 
@@ -257,10 +248,7 @@ impl TryCastFromJs for Header {
                     .collect::<std::result::Result<Vec<Vec<Hash>>, Error>>()?;
 
                 let header = native::Header {
-                    hash: object
-                        .get_value("hash")?
-                        .try_into_owned()
-                        .unwrap_or_default(),
+                    hash: object.get_value("hash")?.try_into_owned().unwrap_or_default(),
                     version: object.get_u16("version")?,
                     parents_by_level,
                     hash_merkle_root: object
@@ -279,10 +267,7 @@ impl TryCastFromJs for Header {
                     timestamp: object.get_u64("timestamp")?,
                     daa_score: object.get_u64("daaScore")?,
                     bits: object.get_u32("bits")?,
-                    blue_work: object
-                        .get_value("blueWork")?
-                        .try_into()
-                        .map_err(|err| Error::convert("blueWork", err))?,
+                    blue_work: object.get_value("blueWork")?.try_into().map_err(|err| Error::convert("blueWork", err))?,
                     blue_score: object.get_u64("blueScore")?,
                     pruning_point: object
                         .get_value("pruningPoint")?
@@ -292,9 +277,7 @@ impl TryCastFromJs for Header {
 
                 Ok(header.into())
             } else {
-                Err(Error::Custom(
-                    "supplied argument must be an object".to_string(),
-                ))
+                Err(Error::Custom("supplied argument must be an object".to_string()))
             }
         })
     }

@@ -96,20 +96,11 @@ impl TransactionsPool {
     }
 
     /// Add a mempool transaction to the pool
-    pub(crate) fn add_mempool_transaction(
-        &mut self,
-        transaction: MempoolTransaction,
-    ) -> RuleResult<()> {
+    pub(crate) fn add_mempool_transaction(&mut self, transaction: MempoolTransaction) -> RuleResult<()> {
         let id = transaction.id();
 
-        assert!(
-            !self.all_transactions.contains_key(&id),
-            "transaction {id} to be added already exists in the transactions pool"
-        );
-        assert!(
-            transaction.mtx.is_fully_populated(),
-            "transaction {id} to be added in the transactions pool is not fully populated"
-        );
+        assert!(!self.all_transactions.contains_key(&id), "transaction {id} to be added already exists in the transactions pool");
+        assert!(transaction.mtx.is_fully_populated(), "transaction {id} to be added in the transactions pool is not fully populated");
 
         // Create the bijective parent/chained relations.
         // This concerns only the parents of the added transaction.
@@ -132,10 +123,7 @@ impl TransactionsPool {
     }
 
     /// Fully removes the transaction from all relational sets, as well as from the UTXO set
-    pub(crate) fn remove_transaction(
-        &mut self,
-        transaction_id: &TransactionId,
-    ) -> RuleResult<MempoolTransaction> {
+    pub(crate) fn remove_transaction(&mut self, transaction_id: &TransactionId) -> RuleResult<MempoolTransaction> {
         // Remove all bijective parent/chained relations
         if let Some(parents) = self.parent_transactions.get(transaction_id) {
             for parent in parents.iter() {
@@ -159,10 +147,7 @@ impl TransactionsPool {
         self.chained_transactions.remove(transaction_id);
 
         // Remove the transaction itself
-        let removed_tx = self
-            .all_transactions
-            .remove(transaction_id)
-            .ok_or(RuleError::RejectMissingTransaction(*transaction_id))?;
+        let removed_tx = self.all_transactions.remove(transaction_id).ok_or(RuleError::RejectMissingTransaction(*transaction_id))?;
 
         self.ready_transactions.remove(&(&removed_tx).into());
 
@@ -173,8 +158,7 @@ impl TransactionsPool {
         let parent_ids = self.get_parent_transaction_ids_in_pool(&removed_tx.mtx);
 
         // Remove the transaction from the mempool UTXO set
-        self.utxo_set
-            .remove_transaction(&removed_tx.mtx, &parent_ids);
+        self.utxo_set.remove_transaction(&removed_tx.mtx, &parent_ids);
 
         Ok(removed_tx)
     }
@@ -189,8 +173,7 @@ impl TransactionsPool {
 
     /// Dynamically builds a transaction selector based on the specific state of the ready transactions frontier
     pub(crate) fn build_selector(&self) -> Box<dyn TemplateTransactionSelector> {
-        self.ready_transactions
-            .build_selector(&Policy::new(self.config.maximum_mass_per_block))
+        self.ready_transactions.build_selector(&Policy::new(self.config.maximum_mass_per_block))
     }
 
     /// Builds a feerate estimator based on internal state of the ready transactions frontier
@@ -224,11 +207,7 @@ impl TransactionsPool {
         // Returns a vector of transactions to be removed that the caller has to remove actually.
         // The caller is golang validateAndInsertTransaction equivalent.
         // This behavior differs from golang impl.
-        let trim_size = self.len() + free_slots
-            - usize::min(
-                self.len() + free_slots,
-                self.config.maximum_transaction_count as usize,
-            );
+        let trim_size = self.len() + free_slots - usize::min(self.len() + free_slots, self.config.maximum_transaction_count as usize);
         let mut transactions_to_remove = Vec::with_capacity(trim_size);
         if trim_size > 0 {
             // TODO: consider introducing an index on all_transactions low-priority items instead.
@@ -236,27 +215,21 @@ impl TransactionsPool {
             // Sorting this vector here may be sub-optimal compared with maintaining a sorted
             // index of all_transactions low-priority items if the proportion of low-priority txs
             // in all_transactions is important.
-            let low_priority_txs = self.all_transactions.values().filter(|x| {
-                x.priority == Priority::Low
-                    && self.transaction_is_unchained(&x.id())
-                    && !x.is_parent_of(transaction)
-            });
+            let low_priority_txs = self
+                .all_transactions
+                .values()
+                .filter(|x| x.priority == Priority::Low && self.transaction_is_unchained(&x.id()) && !x.is_parent_of(transaction));
 
             if trim_size == 1 {
                 // This is the most likely case. Here we just search the minimum, thus avoiding the need to sort altogether.
-                if let Some(tx) =
-                    low_priority_txs.min_by(|a, b| a.fee_rate().partial_cmp(&b.fee_rate()).unwrap())
-                {
+                if let Some(tx) = low_priority_txs.min_by(|a, b| a.fee_rate().partial_cmp(&b.fee_rate()).unwrap()) {
                     transactions_to_remove.push(tx);
                 }
             } else {
                 let mut low_priority_txs = low_priority_txs.collect::<Vec<_>>();
                 if low_priority_txs.len() > trim_size {
-                    low_priority_txs
-                        .sort_by(|a, b| a.fee_rate().partial_cmp(&b.fee_rate()).unwrap());
-                    transactions_to_remove.extend_from_slice(
-                        &low_priority_txs[0..usize::min(trim_size, low_priority_txs.len())],
-                    );
+                    low_priority_txs.sort_by(|a, b| a.fee_rate().partial_cmp(&b.fee_rate()).unwrap());
+                    transactions_to_remove.extend_from_slice(&low_priority_txs[0..usize::min(trim_size, low_priority_txs.len())]);
                 } else {
                     transactions_to_remove = low_priority_txs;
                 }
@@ -266,10 +239,7 @@ impl TransactionsPool {
         // An error is returned if the mempool is filled with high priority and other unremovable transactions.
         let tx_count = self.len() + free_slots - transactions_to_remove.len();
         if tx_count as u64 > self.config.maximum_transaction_count as u64 {
-            let err = RuleError::RejectMempoolIsFull(
-                tx_count - free_slots,
-                self.config.maximum_transaction_count as u64,
-            );
+            let err = RuleError::RejectMempoolIsFull(tx_count - free_slots, self.config.maximum_transaction_count as u64);
             warn!("{}", err.to_string());
             return Err(err);
         }
@@ -277,26 +247,11 @@ impl TransactionsPool {
         Ok(transactions_to_remove.iter().map(|x| x.id()).collect())
     }
 
-    pub(crate) fn all_transaction_ids_with_priority(
-        &self,
-        priority: Priority,
-    ) -> Vec<TransactionId> {
-        self.all()
-            .values()
-            .filter_map(|x| {
-                if x.priority == priority {
-                    Some(x.id())
-                } else {
-                    None
-                }
-            })
-            .collect()
+    pub(crate) fn all_transaction_ids_with_priority(&self, priority: Priority) -> Vec<TransactionId> {
+        self.all().values().filter_map(|x| if x.priority == priority { Some(x.id()) } else { None }).collect()
     }
 
-    pub(crate) fn get_outpoint_owner_id(
-        &self,
-        outpoint: &TransactionOutpoint,
-    ) -> Option<&TransactionId> {
+    pub(crate) fn get_outpoint_owner_id(&self, outpoint: &TransactionOutpoint) -> Option<&TransactionId> {
         self.utxo_set.get_outpoint_owner_id(outpoint)
     }
 
@@ -306,17 +261,11 @@ impl TransactionsPool {
     }
 
     /// Returns the first double spend of every transaction in the mempool double spending on `transaction`
-    pub(crate) fn get_double_spend_transaction_ids(
-        &self,
-        transaction: &MutableTransaction,
-    ) -> Vec<DoubleSpend> {
+    pub(crate) fn get_double_spend_transaction_ids(&self, transaction: &MutableTransaction) -> Vec<DoubleSpend> {
         self.utxo_set.get_double_spend_transaction_ids(transaction)
     }
 
-    pub(crate) fn get_double_spend_owner<'a>(
-        &'a self,
-        double_spend: &DoubleSpend,
-    ) -> RuleResult<&'a MempoolTransaction> {
+    pub(crate) fn get_double_spend_owner<'a>(&'a self, double_spend: &DoubleSpend) -> RuleResult<&'a MempoolTransaction> {
         match self.get(&double_spend.owner_id) {
             Some(transaction) => Ok(transaction),
             None => {
@@ -329,17 +278,10 @@ impl TransactionsPool {
         }
     }
 
-    pub(crate) fn collect_expired_low_priority_transactions(
-        &mut self,
-        virtual_daa_score: u64,
-    ) -> Vec<TransactionId> {
+    pub(crate) fn collect_expired_low_priority_transactions(&mut self, virtual_daa_score: u64) -> Vec<TransactionId> {
         let now = unix_now();
-        if virtual_daa_score
-            < self.last_expire_scan_daa_score
-                + self.config.transaction_expire_scan_interval_daa_score
-            || now
-                < self.last_expire_scan_time
-                    + self.config.transaction_expire_scan_interval_milliseconds
+        if virtual_daa_score < self.last_expire_scan_daa_score + self.config.transaction_expire_scan_interval_daa_score
+            || now < self.last_expire_scan_time + self.config.transaction_expire_scan_interval_milliseconds
         {
             return vec![];
         }
@@ -353,8 +295,7 @@ impl TransactionsPool {
             .values()
             .filter_map(|x| {
                 if (x.priority == Priority::Low)
-                    && virtual_daa_score
-                        > x.added_at_daa_score + self.config.transaction_expire_interval_daa_score
+                    && virtual_daa_score > x.added_at_daa_score + self.config.transaction_expire_interval_daa_score
                 {
                     Some(x.id())
                 } else {

@@ -5,9 +5,7 @@ use karlsen_consensus_core::{
     tx::{Transaction, TransactionInput, TransactionOutpoint},
 };
 use karlsen_hashes::{HasherBase, TransactionID};
-use karlsen_mining::{
-    model::topological_index::TopologicalIndex, FeerateTransactionKey, Frontier, Policy,
-};
+use karlsen_mining::{model::topological_index::TopologicalIndex, FeerateTransactionKey, Frontier, Policy};
 use rand::{thread_rng, Rng};
 use std::{
     collections::{hash_set::Iter, HashMap, HashSet},
@@ -84,15 +82,7 @@ fn generate_unique_tx(i: u64) -> Arc<Transaction> {
     let mut hasher = TransactionID::new();
     let prev = hasher.update(i.to_le_bytes()).clone().finalize();
     let input = TransactionInput::new(TransactionOutpoint::new(prev, 0), vec![], 0, 0);
-    Arc::new(Transaction::new(
-        0,
-        vec![input],
-        vec![],
-        0,
-        SUBNETWORK_ID_NATIVE,
-        0,
-        vec![],
-    ))
+    Arc::new(Transaction::new(0, vec![input], vec![], 0, SUBNETWORK_ID_NATIVE, 0, vec![]))
 }
 
 fn build_feerate_key(fee: u64, mass: u64, id: u64) -> FeerateTransactionKey {
@@ -105,11 +95,7 @@ pub fn bench_mempool_sampling(c: &mut Criterion) {
     let cap = 1_000_000;
     let mut map = HashMap::with_capacity(cap);
     for i in 0..cap as u64 {
-        let fee: u64 = if i % (cap as u64 / 100000) == 0 {
-            1000000
-        } else {
-            rng.gen_range(1..10000)
-        };
+        let fee: u64 = if i % (cap as u64 / 100000) == 0 { 1000000 } else { rng.gen_range(1..10000) };
         let mass: u64 = 1650;
         let key = build_feerate_key(fee, mass, i);
         map.insert(key.tx.id(), key);
@@ -146,11 +132,7 @@ pub fn bench_mempool_sampling(c: &mut Criterion) {
     });
 
     // Benchmark hashmap insertions and removals for comparison
-    let remove = map
-        .iter()
-        .take(map.len() / 10)
-        .map(|(&k, v)| (k, v.clone()))
-        .collect_vec();
+    let remove = map.iter().take(map.len() / 10).map(|(&k, v)| (k, v.clone())).collect_vec();
     group.bench_function("map remove/add", |b| {
         b.iter(|| {
             black_box({
@@ -171,11 +153,7 @@ pub fn bench_mempool_sampling(c: &mut Criterion) {
     // maintenance (see FeerateWeight)
     #[allow(clippy::mutable_key_type)]
     let mut std_btree = std::collections::BTreeSet::from_iter(map.values().cloned());
-    let remove = map
-        .iter()
-        .take(map.len() / 10)
-        .map(|(&k, v)| (k, v.clone()))
-        .collect_vec();
+    let remove = map.iter().take(map.len() / 10).map(|(&k, v)| (k, v.clone())).collect_vec();
     group.bench_function("std btree remove/add", |b| {
         b.iter(|| {
             black_box({
@@ -204,12 +182,7 @@ pub fn bench_mempool_selectors(c: &mut Criterion) {
         map.insert(key.tx.id(), key);
     }
 
-    for len in [
-        100, 300, 350, 500, 1000, 2000, 5000, 10_000, 100_000, 500_000, 1_000_000,
-    ]
-    .into_iter()
-    .rev()
-    {
+    for len in [100, 300, 350, 500, 1000, 2000, 5000, 10_000, 100_000, 500_000, 1_000_000].into_iter().rev() {
         let mut frontier = Frontier::default();
         for item in map.values().take(len).cloned() {
             frontier.insert(item).then_some(()).unwrap();
@@ -219,11 +192,7 @@ pub fn bench_mempool_selectors(c: &mut Criterion) {
             b.iter(|| {
                 black_box({
                     let mut selector = frontier.build_rebalancing_selector();
-                    selector
-                        .select_transactions()
-                        .iter()
-                        .map(|k| k.gas)
-                        .sum::<u64>()
+                    selector.select_transactions().iter().map(|k| k.gas).sum::<u64>()
                 })
             })
         });
@@ -236,20 +205,13 @@ pub fn bench_mempool_selectors(c: &mut Criterion) {
                 black_box({
                     let mut selector = frontier.build_selector_sample_inplace(&mut collisions);
                     n += 1;
-                    selector
-                        .select_transactions()
-                        .iter()
-                        .map(|k| k.gas)
-                        .sum::<u64>()
+                    selector.select_transactions().iter().map(|k| k.gas).sum::<u64>()
                 })
             })
         });
 
         if n > 0 {
-            println!(
-                "---------------------- \n  Avg collisions: {}",
-                collisions / n
-            );
+            println!("---------------------- \n  Avg collisions: {}", collisions / n);
         }
 
         if frontier.total_mass() <= 500_000 {
@@ -257,11 +219,7 @@ pub fn bench_mempool_selectors(c: &mut Criterion) {
                 b.iter(|| {
                     black_box({
                         let mut selector = frontier.build_selector_take_all();
-                        selector
-                            .select_transactions()
-                            .iter()
-                            .map(|k| k.gas)
-                            .sum::<u64>()
+                        selector.select_transactions().iter().map(|k| k.gas).sum::<u64>()
                     })
                 })
             });
@@ -271,11 +229,7 @@ pub fn bench_mempool_selectors(c: &mut Criterion) {
             b.iter(|| {
                 black_box({
                     let mut selector = frontier.build_selector(&Policy::new(500_000));
-                    selector
-                        .select_transactions()
-                        .iter()
-                        .map(|k| k.gas)
-                        .sum::<u64>()
+                    selector.select_transactions().iter().map(|k| k.gas).sum::<u64>()
                 })
             })
         });
@@ -292,11 +246,7 @@ pub fn bench_inplace_sampling_worst_case(c: &mut Criterion) {
         let cap = 1_000_000;
         let mut map = HashMap::with_capacity(cap);
         for i in 0..cap as u64 {
-            let fee: u64 = if i < 300 {
-                fee_steps[i as usize / subgroup_size]
-            } else {
-                1
-            };
+            let fee: u64 = if i < 300 { fee_steps[i as usize / subgroup_size] } else { 1 };
             let mass: u64 = 1650;
             let key = build_feerate_key(fee, mass, i);
             map.insert(key.tx.id(), key);
@@ -310,31 +260,18 @@ pub fn bench_inplace_sampling_worst_case(c: &mut Criterion) {
         let mut collisions = 0;
         let mut n = 0;
 
-        group.bench_function(
-            format!(
-                "inplace sampling worst case (subgroup size: {})",
-                subgroup_size
-            ),
-            |b| {
-                b.iter(|| {
-                    black_box({
-                        let mut selector = frontier.build_selector_sample_inplace(&mut collisions);
-                        n += 1;
-                        selector
-                            .select_transactions()
-                            .iter()
-                            .map(|k| k.gas)
-                            .sum::<u64>()
-                    })
+        group.bench_function(format!("inplace sampling worst case (subgroup size: {})", subgroup_size), |b| {
+            b.iter(|| {
+                black_box({
+                    let mut selector = frontier.build_selector_sample_inplace(&mut collisions);
+                    n += 1;
+                    selector.select_transactions().iter().map(|k| k.gas).sum::<u64>()
                 })
-            },
-        );
+            })
+        });
 
         if n > 0 {
-            println!(
-                "---------------------- \n  Avg collisions: {}",
-                collisions / n
-            );
+            println!("---------------------- \n  Avg collisions: {}", collisions / n);
         }
     }
 

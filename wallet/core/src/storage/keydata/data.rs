@@ -45,9 +45,7 @@ impl BorshSerialize for PrvKeyDataVariant {
 
 impl BorshDeserialize for PrvKeyDataVariant {
     fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
-        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?
-            .try_magic(Self::MAGIC)?
-            .try_version(Self::VERSION)?;
+        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?.try_magic(Self::MAGIC)?.try_version(Self::VERSION)?;
 
         let kind: PrvKeyDataVariantKind = BorshDeserialize::deserialize(buf)?;
         let string: String = BorshDeserialize::deserialize(buf)?;
@@ -123,31 +121,20 @@ pub struct PrvKeyDataPayload {
 
 impl PrvKeyDataPayload {
     pub fn try_new_with_mnemonic(mnemonic: Mnemonic) -> Result<Self> {
-        Ok(Self {
-            prv_key_variant: PrvKeyDataVariant::from_mnemonic(mnemonic),
-        })
+        Ok(Self { prv_key_variant: PrvKeyDataVariant::from_mnemonic(mnemonic) })
     }
 
     pub fn try_new_with_secret_key(secret_key: SecretKey) -> Result<Self> {
-        Ok(Self {
-            prv_key_variant: PrvKeyDataVariant::from_secret_key(secret_key),
-        })
+        Ok(Self { prv_key_variant: PrvKeyDataVariant::from_secret_key(secret_key) })
     }
 
-    pub fn get_xprv(
-        &self,
-        payment_secret: Option<&Secret>,
-    ) -> Result<ExtendedPrivateKey<SecretKey>> {
-        let payment_secret = payment_secret
-            .map(|s| std::str::from_utf8(s.as_ref()))
-            .transpose()?;
+    pub fn get_xprv(&self, payment_secret: Option<&Secret>) -> Result<ExtendedPrivateKey<SecretKey>> {
+        let payment_secret = payment_secret.map(|s| std::str::from_utf8(s.as_ref())).transpose()?;
 
         match &self.prv_key_variant {
             PrvKeyDataVariant::Mnemonic(mnemonic) => {
                 let mnemonic = Mnemonic::new(mnemonic, Language::English)?;
-                let xkey = ExtendedPrivateKey::<SecretKey>::new(
-                    mnemonic.to_seed(payment_secret.unwrap_or_default()),
-                )?;
+                let xkey = ExtendedPrivateKey::<SecretKey>::new(mnemonic.to_seed(payment_secret.unwrap_or_default()))?;
                 Ok(xkey)
             }
             PrvKeyDataVariant::Bip39Seed(seed) => {
@@ -165,9 +152,7 @@ impl PrvKeyDataPayload {
 
     pub fn as_mnemonic(&self) -> Result<Option<Mnemonic>> {
         match &self.prv_key_variant {
-            PrvKeyDataVariant::Mnemonic(mnemonic) => {
-                Ok(Some(Mnemonic::new(mnemonic.clone(), Language::English)?))
-            }
+            PrvKeyDataVariant::Mnemonic(mnemonic) => Ok(Some(Mnemonic::new(mnemonic.clone(), Language::English)?)),
             _ => Ok(None),
         }
     }
@@ -178,9 +163,7 @@ impl PrvKeyDataPayload {
 
     pub fn as_secret_key(&self) -> Result<Option<SecretKey>> {
         match &self.prv_key_variant {
-            PrvKeyDataVariant::SecretKey(private_key) => {
-                Ok(Some(SecretKey::from_str(private_key)?))
-            }
+            PrvKeyDataVariant::SecretKey(private_key) => Ok(Some(SecretKey::from_str(private_key)?)),
             _ => Ok(None),
         }
     }
@@ -224,10 +207,7 @@ impl PrvKeyData {
         create_xpub_from_xprv(xprv, account_kind, account_index).await
     }
 
-    pub fn get_xprv(
-        &self,
-        payment_secret: Option<&Secret>,
-    ) -> Result<ExtendedPrivateKey<secp256k1::SecretKey>> {
+    pub fn get_xprv(&self, payment_secret: Option<&Secret>) -> Result<ExtendedPrivateKey<secp256k1::SecretKey>> {
         let payload = self.payload.decrypt(payment_secret)?;
         payload.get_xprv(payment_secret)
     }
@@ -237,19 +217,12 @@ impl PrvKeyData {
         payload.as_mnemonic()
     }
 
-    pub fn as_variant(
-        &self,
-        payment_secret: Option<&Secret>,
-    ) -> Result<Zeroizing<PrvKeyDataVariant>> {
+    pub fn as_variant(&self, payment_secret: Option<&Secret>) -> Result<Zeroizing<PrvKeyDataVariant>> {
         let payload = self.payload.decrypt(payment_secret)?;
         Ok(payload.as_variant())
     }
 
-    pub fn try_from_mnemonic(
-        mnemonic: Mnemonic,
-        payment_secret: Option<&Secret>,
-        encryption_kind: EncryptionKind,
-    ) -> Result<Self> {
+    pub fn try_from_mnemonic(mnemonic: Mnemonic, payment_secret: Option<&Secret>, encryption_kind: EncryptionKind) -> Result<Self> {
         let key_data_payload = PrvKeyDataPayload::try_new_with_mnemonic(mnemonic)?;
         let key_data_payload_id = key_data_payload.id();
         let key_data_payload = Encryptable::Plain(key_data_payload);
@@ -284,11 +257,7 @@ impl Drop for PrvKeyData {
 }
 
 impl PrvKeyData {
-    pub fn new(
-        id: PrvKeyDataId,
-        name: Option<String>,
-        payload: Encryptable<PrvKeyDataPayload>,
-    ) -> Self {
+    pub fn new(id: PrvKeyDataId, name: Option<String>, payload: Encryptable<PrvKeyDataPayload>) -> Self {
         Self { id, payload, name }
     }
 
@@ -298,11 +267,7 @@ impl PrvKeyData {
         encryption_kind: EncryptionKind,
     ) -> Result<Self> {
         let payload = PrvKeyDataPayload::try_new_with_mnemonic(mnemonic)?;
-        let mut prv_key_data = Self {
-            id: payload.id(),
-            payload: Encryptable::Plain(payload),
-            name: None,
-        };
+        let mut prv_key_data = Self { id: payload.id(), payload: Encryptable::Plain(payload), name: None };
         if let Some(payment_secret) = payment_secret {
             prv_key_data.encrypt(payment_secret, encryption_kind)?;
         }
@@ -316,11 +281,7 @@ impl PrvKeyData {
         encryption_kind: EncryptionKind,
     ) -> Result<Self> {
         let payload = PrvKeyDataPayload::try_new_with_secret_key(secret_key)?;
-        let mut prv_key_data = Self {
-            id: payload.id(),
-            payload: Encryptable::Plain(payload),
-            name: None,
-        };
+        let mut prv_key_data = Self { id: payload.id(), payload: Encryptable::Plain(payload), name: None };
         if let Some(payment_secret) = payment_secret {
             prv_key_data.encrypt(payment_secret, encryption_kind)?;
         }

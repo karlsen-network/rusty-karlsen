@@ -31,36 +31,23 @@ impl Add for Output {
 
     fn add(mut self, rhs: Self) -> Self::Output {
         if self.amount != rhs.amount {
-            return Err(CombineError::AmountMismatch {
-                this: self.amount,
-                that: rhs.amount,
-            });
+            return Err(CombineError::AmountMismatch { this: self.amount, that: rhs.amount });
         }
         if self.script_public_key != rhs.script_public_key {
-            return Err(CombineError::ScriptPubkeyMismatch {
-                this: self.script_public_key,
-                that: rhs.script_public_key,
-            });
+            return Err(CombineError::ScriptPubkeyMismatch { this: self.script_public_key, that: rhs.script_public_key });
         }
         self.redeem_script = match (self.redeem_script.take(), rhs.redeem_script) {
             (None, None) => None,
             (Some(script), None) | (None, Some(script)) => Some(script),
-            (Some(script_left), Some(script_right)) if script_left == script_right => {
-                Some(script_left)
-            }
+            (Some(script_left), Some(script_right)) if script_left == script_right => Some(script_left),
             (Some(script_left), Some(script_right)) => {
-                return Err(CombineError::NotCompatibleRedeemScripts {
-                    this: script_left,
-                    that: script_right,
-                })
+                return Err(CombineError::NotCompatibleRedeemScripts { this: script_left, that: script_right })
             }
         };
-        self.bip32_derivations =
-            combine_if_no_conflicts(self.bip32_derivations, rhs.bip32_derivations)?;
-        self.proprietaries = combine_if_no_conflicts(self.proprietaries, rhs.proprietaries)
-            .map_err(CombineError::NotCompatibleProprietary)?;
-        self.unknowns = combine_if_no_conflicts(self.unknowns, rhs.unknowns)
-            .map_err(CombineError::NotCompatibleUnknownField)?;
+        self.bip32_derivations = combine_if_no_conflicts(self.bip32_derivations, rhs.bip32_derivations)?;
+        self.proprietaries =
+            combine_if_no_conflicts(self.proprietaries, rhs.proprietaries).map_err(CombineError::NotCompatibleProprietary)?;
+        self.unknowns = combine_if_no_conflicts(self.unknowns, rhs.unknowns).map_err(CombineError::NotCompatibleUnknownField)?;
 
         Ok(self)
     }
@@ -87,9 +74,7 @@ pub enum CombineError {
     NotCompatibleRedeemScripts { this: Vec<u8>, that: Vec<u8> },
 
     #[error("Two different derivations for the same key")]
-    NotCompatibleBip32Derivations(
-        #[from] crate::utils::Error<secp256k1::PublicKey, Option<KeySource>>,
-    ),
+    NotCompatibleBip32Derivations(#[from] crate::utils::Error<secp256k1::PublicKey, Option<KeySource>>),
     #[error("Two different unknown field values")]
     NotCompatibleUnknownField(crate::utils::Error<String, serde_value::Value>),
     #[error("Two different proprietary values")]

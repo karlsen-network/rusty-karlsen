@@ -1,9 +1,8 @@
 //! Extended public keys
 //!
 use crate::{
-    types::*, ChildNumber, DerivationPath, Error, ExtendedKey, ExtendedKeyAttrs,
-    ExtendedPrivateKey, KeyFingerprint, Prefix, PrivateKey, PublicKey, PublicKeyBytes, Result,
-    KEY_SIZE,
+    types::*, ChildNumber, DerivationPath, Error, ExtendedKey, ExtendedKeyAttrs, ExtendedPrivateKey, KeyFingerprint, Prefix,
+    PrivateKey, PublicKey, PublicKeyBytes, Result, KEY_SIZE,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use core::str::FromStr;
@@ -78,8 +77,7 @@ where
     }
 
     pub fn derive_path(self, path: &DerivationPath) -> Result<Self> {
-        path.iter()
-            .try_fold(self, |key, child_num| key.derive_child(child_num))
+        path.iter().try_fold(self, |key, child_num| key.derive_child(child_num))
     }
 
     /// Serialize the raw public key as a byte array (e.g. SEC1-encoded).
@@ -89,11 +87,7 @@ where
 
     /// Serialize this key as an [`ExtendedKey`].
     pub fn to_extended_key(&self, prefix: Prefix) -> ExtendedKey {
-        ExtendedKey {
-            prefix,
-            attrs: self.attrs.clone(),
-            key_bytes: self.to_bytes(),
-        }
+        ExtendedKey { prefix, attrs: self.attrs.clone(), key_bytes: self.to_bytes() }
     }
 
     pub fn to_string(&self, prefix: Option<Prefix>) -> String {
@@ -102,10 +96,7 @@ where
     }
 
     pub fn from_public_key(public_key: K, attrs: &ExtendedKeyAttrs) -> Self {
-        ExtendedPublicKey {
-            public_key,
-            attrs: attrs.clone(),
-        }
+        ExtendedPublicKey { public_key, attrs: attrs.clone() }
     }
 }
 
@@ -114,10 +105,7 @@ where
     K: PrivateKey,
 {
     fn from(xprv: &ExtendedPrivateKey<K>) -> ExtendedPublicKey<K::PublicKey> {
-        ExtendedPublicKey {
-            public_key: xprv.private_key().public_key(),
-            attrs: xprv.attrs().clone(),
-        }
+        ExtendedPublicKey { public_key: xprv.private_key().public_key(), attrs: xprv.attrs().clone() }
     }
 }
 
@@ -140,10 +128,7 @@ where
 
     fn try_from(extended_key: ExtendedKey) -> Result<ExtendedPublicKey<K>> {
         if extended_key.prefix.is_public() {
-            Ok(ExtendedPublicKey {
-                public_key: PublicKey::from_bytes(extended_key.key_bytes)?,
-                attrs: extended_key.attrs.clone(),
-            })
+            Ok(ExtendedPublicKey { public_key: PublicKey::from_bytes(extended_key.key_bytes)?, attrs: extended_key.attrs.clone() })
         } else {
             Err(Error::Crypto(secp256k1::Error::InvalidPublicKey))
         }
@@ -178,11 +163,7 @@ where
     K: PublicKey,
 {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        Header {
-            version: Self::STORAGE_VERSION,
-            magic: Self::STORAGE_MAGIC,
-        }
-        .serialize(writer)?;
+        Header { version: Self::STORAGE_VERSION, magic: Self::STORAGE_MAGIC }.serialize(writer)?;
         writer.write_all(self.public_key.to_bytes().as_slice())?;
         BorshSerialize::serialize(&self.attrs, writer)?;
         Ok(())
@@ -196,25 +177,17 @@ where
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
         let Header { version, magic } = Header::deserialize(buf)?;
         if magic != Self::STORAGE_MAGIC {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Invalid extended public key magic value",
-            ));
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Invalid extended public key magic value"));
         }
         if version != Self::STORAGE_VERSION {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Invalid extended public key version",
-            ));
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Invalid extended public key version"));
         }
 
-        let public_key_bytes: [u8; KEY_SIZE + 1] =
-            buf[..KEY_SIZE + 1].try_into().map_err(|_| {
-                std::io::Error::new(std::io::ErrorKind::Other, "Invalid extended public key")
-            })?;
-        let public_key = K::from_bytes(public_key_bytes).map_err(|_| {
-            std::io::Error::new(std::io::ErrorKind::Other, "Invalid extended public key")
-        })?;
+        let public_key_bytes: [u8; KEY_SIZE + 1] = buf[..KEY_SIZE + 1]
+            .try_into()
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Invalid extended public key"))?;
+        let public_key = K::from_bytes(public_key_bytes)
+            .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Invalid extended public key"))?;
         *buf = &buf[KEY_SIZE + 1..];
         let attrs = ExtendedKeyAttrs::deserialize(buf)?;
         Ok(Self { public_key, attrs })
@@ -247,8 +220,7 @@ where
     type Value = ExtendedPublicKey<K>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter
-            .write_str("a string containing network_type and optional suffix separated by a '-'")
+        formatter.write_str("a string containing network_type and optional suffix separated by a '-'")
     }
 
     fn visit_str<E>(self, value: &str) -> std::result::Result<Self::Value, E>
@@ -267,8 +239,6 @@ where
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_str(ExtendedPublicKeyVisitor::<'de, K> {
-            phantom: std::marker::PhantomData::<&'de K>,
-        })
+        deserializer.deserialize_str(ExtendedPublicKeyVisitor::<'de, K> { phantom: std::marker::PhantomData::<&'de K> })
     }
 }

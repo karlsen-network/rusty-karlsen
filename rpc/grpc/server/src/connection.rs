@@ -8,9 +8,7 @@ use crate::{
         method::RoutingPolicy,
     },
 };
-use async_channel::{
-    bounded, Receiver as MpmcReceiver, Sender as MpmcSender, TrySendError as MpmcTrySendError,
-};
+use async_channel::{bounded, Receiver as MpmcReceiver, Sender as MpmcSender, TrySendError as MpmcTrySendError};
 use itertools::Itertools;
 use karlsen_core::{debug, info, trace, warn};
 use karlsen_grpc_core::{
@@ -60,10 +58,7 @@ struct InnerMutableState {
 
 impl InnerMutableState {
     fn new(shutdown_signal: Option<OneshotSender<()>>) -> Self {
-        Self {
-            shutdown_signal,
-            ..Default::default()
-        }
+        Self { shutdown_signal, ..Default::default() }
     }
 }
 
@@ -134,11 +129,7 @@ struct Router {
 
 impl Router {
     fn new(server_context: ServerContext, interface: Arc<Interface>) -> Self {
-        Self {
-            routing_map: Default::default(),
-            server_context,
-            interface,
-        }
+        Self { routing_map: Default::default(), server_context, interface }
     }
 
     fn get_or_subscribe(&mut self, connection: &Connection, rpc_op: KarlsendPayloadOps) -> &Route {
@@ -162,11 +153,7 @@ impl Router {
                 entry.insert(route);
                 match method.tasks() {
                     1 => {
-                        trace!(
-                            "GRPC, Connection::subscribe - {:?} route is registered, client:{:?}",
-                            rpc_op,
-                            connection.identity()
-                        );
+                        trace!("GRPC, Connection::subscribe - {:?} route is registered, client:{:?}", rpc_op, connection.identity());
                     }
                     n => {
                         trace!(
@@ -183,16 +170,9 @@ impl Router {
         self.routing_map.get(&rpc_op).unwrap()
     }
 
-    async fn route_to_handler(
-        &mut self,
-        connection: &Connection,
-        request: KarlsendRequest,
-    ) -> GrpcServerResult<()> {
+    async fn route_to_handler(&mut self, connection: &Connection, request: KarlsendRequest) -> GrpcServerResult<()> {
         if request.payload.is_none() {
-            debug!(
-                "GRPC, Route to handler got empty payload, client: {}",
-                connection
-            );
+            debug!("GRPC, Route to handler got empty payload, client: {}", connection);
             return Err(GrpcServerError::InvalidRequestPayload);
         }
         let rpc_op = request.payload.as_ref().unwrap().into();
@@ -316,11 +296,7 @@ impl Connection {
             let inner = Arc::downgrade(&connection.inner);
             drop(connection);
 
-            trace!(
-                "GRPC, Connection receive loop - exited, client: {}, client refs: {}",
-                connection_id,
-                inner.strong_count()
-            );
+            trace!("GRPC, Connection receive loop - exited, client: {}, client refs: {}", connection_id, inner.strong_count());
         });
 
         connection_clone
@@ -344,24 +320,12 @@ impl Connection {
 
     pub fn get_or_register_listener_id(&self) -> GrpcServerResult<ListenerId> {
         match self.is_closed() {
-            false => Ok(*self
-                .inner
-                .mutable_state
-                .lock()
-                .listener_id
-                .get_or_insert_with(|| {
-                    let listener_id = self
-                        .inner
-                        .server_context
-                        .notifier
-                        .as_ref()
-                        .register_new_listener(self.clone(), ListenerLifespan::Dynamic);
-                    debug!(
-                        "GRPC, Connection {} registered as notification listener {}",
-                        self, listener_id
-                    );
-                    listener_id
-                })),
+            false => Ok(*self.inner.mutable_state.lock().listener_id.get_or_insert_with(|| {
+                let listener_id =
+                    self.inner.server_context.notifier.as_ref().register_new_listener(self.clone(), ListenerLifespan::Dynamic);
+                debug!("GRPC, Connection {} registered as notification listener {}", self, listener_id);
+                listener_id
+            })),
             true => Err(GrpcServerError::ConnectionClosed),
         }
     }
@@ -369,15 +333,8 @@ impl Connection {
     fn unregister_listener(&self) {
         let listener_id = self.inner.mutable_state.lock().listener_id.take();
         if let Some(listener_id) = listener_id {
-            self.inner
-                .server_context
-                .notifier
-                .unregister_listener(listener_id)
-                .expect("unregister listener");
-            debug!(
-                "GRPC, Connection {} notification listener {} unregistered",
-                self, listener_id
-            );
+            self.inner.server_context.notifier.unregister_listener(listener_id).expect("unregister listener");
+            debug!("GRPC, Connection {} notification listener {} unregistered", self, listener_id);
         }
     }
 
@@ -387,10 +344,7 @@ impl Connection {
 
     /// Enqueues a response to be sent to the client
     pub async fn enqueue(&self, response: KarlsendResponse) -> GrpcServerResult<()> {
-        assert!(
-            response.payload.is_some(),
-            "Karlsend gRPC message should always have a value"
-        );
+        assert!(response.payload.is_some(), "Karlsend gRPC message should always have a value");
         match self.inner.outgoing_route.try_send(response) {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => Err(GrpcServerError::ConnectionClosed),
@@ -398,9 +352,7 @@ impl Connection {
                 // If the outgoing route reaches full capacity, with high probability something is going wrong
                 // with this connection so we disconnect the client.
                 self.close();
-                Err(GrpcServerError::OutgoingRouteCapacityReached(
-                    self.to_string(),
-                ))
+                Err(GrpcServerError::OutgoingRouteCapacityReached(self.to_string()))
             }
         }
     }
@@ -432,17 +384,13 @@ fn match_for_io_error(err_status: &tonic::Status) -> Option<&std::io::Error> {
 fn match_for_h2_no_error(err_status: &tonic::Status) -> bool {
     let err: &(dyn std::error::Error + 'static) = err_status;
     if let Some(reason) = err.downcast_ref::<h2::Error>().and_then(|e| e.reason()) {
-        debug!(
-            "GRPC, found h2 error {}",
-            err.downcast_ref::<h2::Error>().unwrap()
-        );
+        debug!("GRPC, found h2 error {}", err.downcast_ref::<h2::Error>().unwrap());
         return reason == h2::Reason::NO_ERROR;
     }
     if err_status.code() == tonic::Code::Internal {
         let message = err_status.message();
         // FIXME: relying on error messages is unreliable, find a better way
-        return message.contains("h2 protocol error:")
-            && message.contains("not a result of an error");
+        return message.contains("h2 protocol error:") && message.contains("not a result of an error");
     }
     false
 }
@@ -464,10 +412,7 @@ impl ConnectionT for Connection {
         GrpcEncoding::ProtowireResponse
     }
 
-    fn into_message(
-        notification: &karlsen_rpc_core::Notification,
-        _: &Self::Encoding,
-    ) -> Self::Message {
+    fn into_message(notification: &karlsen_rpc_core::Notification, _: &Self::Encoding) -> Self::Message {
         Arc::new((notification).into())
     }
 
@@ -492,10 +437,7 @@ impl ConnectionT for Connection {
             }
             None => {
                 // This means the connection was already closed
-                trace!(
-                    "GRPC, Connection close was called more than once, client: {}",
-                    self
-                );
+                trace!("GRPC, Connection close was called more than once, client: {}", self);
                 false
             }
         }

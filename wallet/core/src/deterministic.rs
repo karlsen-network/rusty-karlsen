@@ -11,20 +11,7 @@ use karlsen_utils::as_slice::AsSlice;
 use secp256k1::PublicKey;
 
 /// Deterministic byte sequence derived from account data (can be used for auxiliary data storage encryption).
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Hash,
-    Ord,
-    PartialOrd,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct AccountStorageKey(pub(crate) Hash);
 
 impl AccountStorageKey {
@@ -47,20 +34,7 @@ impl std::fmt::Display for AccountStorageKey {
 }
 
 /// Deterministic Account Id derived from account data.
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Hash,
-    Ord,
-    PartialOrd,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct AccountId(pub(crate) Hash);
 
 impl AccountId {
@@ -86,9 +60,7 @@ impl FromHex for AccountId {
 impl TryFrom<&JsValue> for AccountId {
     type Error = Error;
     fn try_from(value: &JsValue) -> Result<Self> {
-        let string = value
-            .as_string()
-            .ok_or(Error::InvalidAccountId(format!("{value:?}")))?;
+        let string = value.as_string().ok_or(Error::InvalidAccountId(format!("{value:?}")))?;
         Self::from_hex(&string)
     }
 }
@@ -138,10 +110,7 @@ where
 }
 
 /// Create deterministic hashes from BIP32 account data.
-pub fn from_bip32<const N: usize>(
-    prv_key_data_id: &PrvKeyDataId,
-    data: &bip32::Payload,
-) -> [Hash; N] {
+pub fn from_bip32<const N: usize>(prv_key_data_id: &PrvKeyDataId, data: &bip32::Payload) -> [Hash; N] {
     let hashable = DeterministicHashData {
         account_kind: &bip32::BIP32_ACCOUNT_KIND.into(),
         prv_key_data_ids: &Some([*prv_key_data_id]),
@@ -154,10 +123,7 @@ pub fn from_bip32<const N: usize>(
 }
 
 /// Create deterministic hashes from legacy account data.
-pub fn from_legacy<const N: usize>(
-    prv_key_data_id: &PrvKeyDataId,
-    _data: &legacy::Payload,
-) -> [Hash; N] {
+pub fn from_legacy<const N: usize>(prv_key_data_id: &PrvKeyDataId, _data: &legacy::Payload) -> [Hash; N] {
     let hashable = DeterministicHashData {
         account_kind: &legacy::LEGACY_ACCOUNT_KIND.into(),
         prv_key_data_ids: &Some([*prv_key_data_id]),
@@ -170,10 +136,7 @@ pub fn from_legacy<const N: usize>(
 }
 
 /// Create deterministic hashes from multisig account data.
-pub fn from_multisig<const N: usize>(
-    prv_key_data_ids: &Option<Arc<Vec<PrvKeyDataId>>>,
-    data: &multisig::Payload,
-) -> [Hash; N] {
+pub fn from_multisig<const N: usize>(prv_key_data_ids: &Option<Arc<Vec<PrvKeyDataId>>>, data: &multisig::Payload) -> [Hash; N] {
     let hashable = DeterministicHashData {
         account_kind: &multisig::MULTISIG_ACCOUNT_KIND.into(),
         prv_key_data_ids,
@@ -186,10 +149,7 @@ pub fn from_multisig<const N: usize>(
 }
 
 /// Create deterministic hashes from keypair account data.
-pub(crate) fn from_keypair<const N: usize>(
-    prv_key_data_id: &PrvKeyDataId,
-    data: &keypair::Payload,
-) -> [Hash; N] {
+pub(crate) fn from_keypair<const N: usize>(prv_key_data_id: &PrvKeyDataId, data: &keypair::Payload) -> [Hash; N] {
     let hashable = DeterministicHashData {
         account_kind: &keypair::KEYPAIR_ACCOUNT_KIND.into(),
         prv_key_data_ids: &Some([*prv_key_data_id]),
@@ -202,10 +162,7 @@ pub(crate) fn from_keypair<const N: usize>(
 }
 
 /// Create deterministic hashes from a public key.
-pub fn from_public_key<const N: usize>(
-    account_kind: &AccountKind,
-    public_key: &PublicKey,
-) -> [Hash; N] {
+pub fn from_public_key<const N: usize>(account_kind: &AccountKind, public_key: &PublicKey) -> [Hash; N] {
     let hashable: DeterministicHashData<[PrvKeyDataId; 0]> = DeterministicHashData {
         account_kind,
         prv_key_data_ids: &None,

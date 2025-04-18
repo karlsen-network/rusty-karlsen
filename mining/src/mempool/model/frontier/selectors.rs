@@ -31,21 +31,14 @@ pub struct SequenceSelectorInput {
 
 impl FromIterator<SequenceSelectorTransaction> for SequenceSelectorInput {
     fn from_iter<T: IntoIterator<Item = SequenceSelectorTransaction>>(iter: T) -> Self {
-        Self {
-            inner: BTreeMap::from_iter(
-                iter.into_iter()
-                    .enumerate()
-                    .map(|(i, v)| (i as SequencePriorityIndex, v)),
-            ),
-        }
+        Self { inner: BTreeMap::from_iter(iter.into_iter().enumerate().map(|(i, v)| (i as SequencePriorityIndex, v))) }
     }
 }
 
 impl SequenceSelectorInput {
     pub fn push(&mut self, tx: Arc<Transaction>, mass: u64) {
         let idx = self.inner.len() as SequencePriorityIndex;
-        self.inner
-            .insert(idx, SequenceSelectorTransaction::new(tx, mass));
+        self.inner.insert(idx, SequenceSelectorTransaction::new(tx, mass));
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &SequenceSelectorTransaction> {
@@ -112,11 +105,7 @@ impl TemplateTransactionSelector for SequenceSelector {
                 continue;
             }
             self.total_selected_mass += tx.mass;
-            self.selected_vec.push(SequenceSelectorSelection {
-                tx_id: tx.tx.id(),
-                mass: tx.mass,
-                priority_index,
-            });
+            self.selected_vec.push(SequenceSelectorSelection { tx_id: tx.tx.id(), mass: tx.mass, priority_index });
             transactions.push(tx.tx.as_ref().clone())
         }
         transactions
@@ -124,15 +113,8 @@ impl TemplateTransactionSelector for SequenceSelector {
 
     fn reject_selection(&mut self, tx_id: TransactionId) {
         // Lazy-create the map only when there are actual rejections
-        let selected_map = self.selected_map.get_or_insert_with(|| {
-            self.selected_vec
-                .iter()
-                .map(|tx| (tx.tx_id, tx.mass))
-                .collect()
-        });
-        let mass = selected_map
-            .remove(&tx_id)
-            .expect("only previously selected txs can be rejected (and only once)");
+        let selected_map = self.selected_map.get_or_insert_with(|| self.selected_vec.iter().map(|tx| (tx.tx_id, tx.mass)).collect());
+        let mass = selected_map.remove(&tx_id).expect("only previously selected txs can be rejected (and only once)");
         // Selections must be counted in total selected mass, so this subtraction cannot underflow
         self.total_selected_mass -= mass;
         self.overall_rejections += 1;
@@ -144,10 +126,8 @@ impl TemplateTransactionSelector for SequenceSelector {
 
         // We consider the operation successful if either mass occupation is above 80% or rejection rate is below 20%
         self.overall_rejections == 0
-            || (self.total_selected_mass as f64)
-                > self.policy.max_block_mass as f64 * SUFFICIENT_MASS_THRESHOLD
-            || (self.overall_rejections as f64)
-                < self.overall_candidates as f64 * LOW_REJECTION_FRACTION
+            || (self.total_selected_mass as f64) > self.policy.max_block_mass as f64 * SUFFICIENT_MASS_THRESHOLD
+            || (self.overall_rejections as f64) < self.overall_candidates as f64 * LOW_REJECTION_FRACTION
     }
 }
 

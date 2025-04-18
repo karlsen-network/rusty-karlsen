@@ -6,12 +6,7 @@ use crate::wizards;
 pub struct Wallet;
 
 impl Wallet {
-    async fn main(
-        self: Arc<Self>,
-        ctx: &Arc<dyn Context>,
-        mut argv: Vec<String>,
-        cmd: &str,
-    ) -> Result<()> {
+    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, mut argv: Vec<String>, cmd: &str) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 
         if argv.is_empty() {
@@ -91,10 +86,7 @@ impl Wallet {
                         store.set_user_hint(Some(hint.into())).await?;
                     }
                 } else {
-                    tprintln!(
-                        ctx,
-                        "usage:\n'wallet hint <text>' or 'wallet hint remove' to remove the hint"
-                    );
+                    tprintln!(ctx, "usage:\n'wallet hint <text>' or 'wallet hint remove' to remove the hint");
                 }
             }
             v => {
@@ -119,10 +111,7 @@ impl Wallet {
                 Legacy wallets can only be imported as accounts. \
                 \r\n",
                 ),
-                (
-                    "open [<name>]",
-                    "Open an existing wallet (shorthand: 'open [<name>]')",
-                ),
+                ("open [<name>]", "Open an existing wallet (shorthand: 'open [<name>]')"),
                 ("close", "Close an opened wallet (shorthand: 'close')"),
                 ("hint", "Change the wallet phishing hint"),
             ],

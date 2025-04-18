@@ -29,10 +29,7 @@ where
     I: Send + Sync + 'static + Sized + Debug,
 {
     pub fn new() -> Self {
-        Self {
-            _incoming: PhantomData,
-            _notification: PhantomData,
-        }
+        Self { _incoming: PhantomData, _notification: PhantomData }
     }
 }
 

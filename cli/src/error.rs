@@ -51,9 +51,7 @@ pub enum Error {
     #[error("account '{0}' not found")]
     AccountNotFound(String),
 
-    #[error(
-        "ambiguous selection, pattern '{0}' matches too many accounts, please be more specific"
-    )]
+    #[error("ambiguous selection, pattern '{0}' matches too many accounts, please be more specific")]
     AmbiguousAccount(String),
 
     #[error("please create a wallet")]

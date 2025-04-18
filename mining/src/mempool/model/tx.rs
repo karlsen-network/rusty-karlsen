@@ -1,7 +1,5 @@
 use crate::mempool::tx::{Priority, RbfPolicy};
-use karlsen_consensus_core::tx::{
-    MutableTransaction, Transaction, TransactionId, TransactionOutpoint,
-};
+use karlsen_consensus_core::tx::{MutableTransaction, Transaction, TransactionId, TransactionOutpoint};
 use karlsen_mining_errors::mempool::RuleError;
 use std::{
     fmt::{Display, Formatter},
@@ -15,17 +13,9 @@ pub(crate) struct MempoolTransaction {
 }
 
 impl MempoolTransaction {
-    pub(crate) fn new(
-        mtx: MutableTransaction,
-        priority: Priority,
-        added_at_daa_score: u64,
-    ) -> Self {
+    pub(crate) fn new(mtx: MutableTransaction, priority: Priority, added_at_daa_score: u64) -> Self {
         assert_eq!(mtx.tx.inputs.len(), mtx.entries.len());
-        Self {
-            mtx,
-            priority,
-            added_at_daa_score,
-        }
+        Self { mtx, priority, added_at_daa_score }
     }
 
     pub(crate) fn id(&self) -> TransactionId {
@@ -34,20 +24,13 @@ impl MempoolTransaction {
 
     pub(crate) fn fee_rate(&self) -> f64 {
         let contextual_mass = self.mtx.tx.mass();
-        assert!(
-            contextual_mass > 0,
-            "expected to be called for validated txs only"
-        );
+        assert!(contextual_mass > 0, "expected to be called for validated txs only");
         self.mtx.calculated_fee.unwrap() as f64 / contextual_mass as f64
     }
 
     pub(crate) fn is_parent_of(&self, transaction: &MutableTransaction) -> bool {
         let parent_id = self.id();
-        transaction
-            .tx
-            .inputs
-            .iter()
-            .any(|x| x.previous_outpoint.transaction_id == parent_id)
+        transaction.tx.inputs.iter().any(|x| x.previous_outpoint.transaction_id == parent_id)
     }
 }
 
@@ -119,9 +102,7 @@ impl TxRemovalReason {
             TxRemovalReason::Expired => "expired",
             TxRemovalReason::DoubleSpend => "double spend",
             TxRemovalReason::InvalidInBlockTemplate => "invalid in block template",
-            TxRemovalReason::RevalidationWithMissingOutpoints => {
-                "revalidation with missing outpoints"
-            }
+            TxRemovalReason::RevalidationWithMissingOutpoints => "revalidation with missing outpoints",
             TxRemovalReason::ReplacedByFee => "replaced by fee",
         }
     }

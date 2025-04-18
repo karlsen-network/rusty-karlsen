@@ -38,12 +38,7 @@ impl State {
         //let fishhasher = PowFishHash::new();
         let header_version = header.version;
 
-        Self {
-            matrix,
-            target,
-            hasher,
-            /*fishhasher,*/ header_version,
-        }
+        Self { matrix, target, hasher, /*fishhasher,*/ header_version }
     }
 
     fn calculate_pow_khashv1(&self, nonce: u64) -> Uint256 {

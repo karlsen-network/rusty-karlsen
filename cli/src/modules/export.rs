@@ -6,12 +6,7 @@ use karlsen_wallet_core::account::{multisig::MultiSig, Account, MULTISIG_ACCOUNT
 pub struct Export;
 
 impl Export {
-    async fn main(
-        self: Arc<Self>,
-        ctx: &Arc<dyn Context>,
-        argv: Vec<String>,
-        _cmd: &str,
-    ) -> Result<()> {
+    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, argv: Vec<String>, _cmd: &str) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 
         if argv.is_empty() || argv.first() == Some(&"help".to_string()) {
@@ -40,14 +35,7 @@ async fn export_multisig_account(ctx: Arc<KarlsenCli>, account: Arc<MultiSig>) -
         None => Err(Error::KeyDataNotFound),
         Some(v) if v.is_empty() => Err(Error::KeyDataNotFound),
         Some(prv_key_data_ids) => {
-            let wallet_secret = Secret::new(
-                ctx.term()
-                    .ask(true, "Enter wallet password: ")
-                    .await?
-                    .trim()
-                    .as_bytes()
-                    .to_vec(),
-            );
+            let wallet_secret = Secret::new(ctx.term().ask(true, "Enter wallet password: ").await?.trim().as_bytes().to_vec());
             if wallet_secret.as_ref().is_empty() {
                 return Err(Error::WalletSecretRequired);
             }
@@ -58,10 +46,7 @@ async fn export_multisig_account(ctx: Arc<KarlsenCli>, account: Arc<MultiSig>) -
             let prv_key_data_store = ctx.store().as_prv_key_data_store()?;
             let mut generated_xpub_keys = Vec::with_capacity(prv_key_data_ids.len());
             for (id, prv_key_data_id) in prv_key_data_ids.iter().enumerate() {
-                let prv_key_data = prv_key_data_store
-                    .load_key_data(&wallet_secret, prv_key_data_id)
-                    .await?
-                    .unwrap();
+                let prv_key_data = prv_key_data_store.load_key_data(&wallet_secret, prv_key_data_id).await?.unwrap();
                 let mnemonic = prv_key_data.as_mnemonic(None).unwrap().unwrap();
 
                 tprintln!(ctx, "mnemonic {}:", id + 1);
@@ -69,16 +54,11 @@ async fn export_multisig_account(ctx: Arc<KarlsenCli>, account: Arc<MultiSig>) -
                 tprintln!(ctx, "{}", mnemonic.phrase());
                 tprintln!(ctx, "");
 
-                let xpub_key = prv_key_data
-                    .create_xpub(None, MULTISIG_ACCOUNT_KIND.into(), 0)
-                    .await?; // todo it can be done concurrently
+                let xpub_key = prv_key_data.create_xpub(None, MULTISIG_ACCOUNT_KIND.into(), 0).await?; // todo it can be done concurrently
                 generated_xpub_keys.push(xpub_key);
             }
 
-            let additional = account
-                .xpub_keys()
-                .iter()
-                .filter(|xpub| !generated_xpub_keys.contains(xpub));
+            let additional = account.xpub_keys().iter().filter(|xpub| !generated_xpub_keys.contains(xpub));
             additional.enumerate().for_each(|(idx, xpub)| {
                 if idx == 0 {
                     tprintln!(ctx, "additional xpubs: ");
@@ -93,35 +73,17 @@ async fn export_multisig_account(ctx: Arc<KarlsenCli>, account: Arc<MultiSig>) -
 async fn export_single_key_account(ctx: Arc<KarlsenCli>, account: Arc<dyn Account>) -> Result<()> {
     let prv_key_data_id = account.prv_key_data_id()?;
 
-    let wallet_secret = Secret::new(
-        ctx.term()
-            .ask(true, "Enter wallet password: ")
-            .await?
-            .trim()
-            .as_bytes()
-            .to_vec(),
-    );
+    let wallet_secret = Secret::new(ctx.term().ask(true, "Enter wallet password: ").await?.trim().as_bytes().to_vec());
     if wallet_secret.as_ref().is_empty() {
         return Err(Error::WalletSecretRequired);
     }
 
-    let prv_key_data = ctx
-        .store()
-        .as_prv_key_data_store()?
-        .load_key_data(&wallet_secret, prv_key_data_id)
-        .await?;
+    let prv_key_data = ctx.store().as_prv_key_data_store()?.load_key_data(&wallet_secret, prv_key_data_id).await?;
     let Some(keydata) = prv_key_data else {
         return Err(Error::KeyDataNotFound);
     };
     let payment_secret = if keydata.payload.is_encrypted() {
-        let payment_secret = Secret::new(
-            ctx.term()
-                .ask(true, "Enter payment password: ")
-                .await?
-                .trim()
-                .as_bytes()
-                .to_vec(),
-        );
+        let payment_secret = Secret::new(ctx.term().ask(true, "Enter payment password: ").await?.trim().as_bytes().to_vec());
         if payment_secret.as_ref().is_empty() {
             return Err(Error::PaymentSecretRequired);
         } else {

@@ -1,10 +1,7 @@
 use karlsen_bip32::{secp256k1, DerivationPath, KeyFingerprint};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use std::{
-    collections::BTreeMap, fmt::Display, fmt::Formatter, future::Future, marker::PhantomData,
-    ops::Deref,
-};
+use std::{collections::BTreeMap, fmt::Display, fmt::Formatter, future::Future, marker::PhantomData, ops::Deref};
 
 mod error;
 mod global;
@@ -22,10 +19,7 @@ use karlsen_consensus_core::tx::UtxoEntry;
 use karlsen_consensus_core::{
     hashing::{sighash::SigHashReusedValues, sighash_type::SigHashType},
     subnets::SUBNETWORK_ID_NATIVE,
-    tx::{
-        MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionInput,
-        TransactionOutput,
-    },
+    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutput},
 };
 use karlsen_txscript::{caches::Cache, TxScriptEngine};
 pub use output::{Output, OutputBuilder};
@@ -67,10 +61,7 @@ pub struct KeySource {
 
 impl KeySource {
     pub fn new(key_fingerprint: KeyFingerprint, derivation_path: DerivationPath) -> Self {
-        Self {
-            key_fingerprint,
-            derivation_path,
-        }
+        Self { key_fingerprint, derivation_path }
     }
 }
 
@@ -101,10 +92,7 @@ pub struct PSKT<ROLE> {
 
 impl<ROLE> Clone for PSKT<ROLE> {
     fn clone(&self) -> Self {
-        PSKT {
-            inner_pskt: self.inner_pskt.clone(),
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: self.inner_pskt.clone(), role: Default::default() }
     }
 }
 
@@ -122,43 +110,26 @@ impl<R> PSKT<R> {
             self.global.tx_version,
             self.inputs
                 .iter()
-                .map(
-                    |Input {
-                         previous_outpoint,
-                         sequence,
-                         sig_op_count,
-                         ..
-                     }| TransactionInput {
-                        previous_outpoint: *previous_outpoint,
-                        signature_script: vec![],
-                        sequence: sequence.unwrap_or(u64::MAX),
-                        sig_op_count: sig_op_count.unwrap_or(0),
-                    },
-                )
+                .map(|Input { previous_outpoint, sequence, sig_op_count, .. }| TransactionInput {
+                    previous_outpoint: *previous_outpoint,
+                    signature_script: vec![],
+                    sequence: sequence.unwrap_or(u64::MAX),
+                    sig_op_count: sig_op_count.unwrap_or(0),
+                })
                 .collect(),
             self.outputs
                 .iter()
-                .map(
-                    |Output {
-                         amount,
-                         script_public_key,
-                         ..
-                     }: &Output| TransactionOutput {
-                        value: *amount,
-                        script_public_key: script_public_key.clone(),
-                    },
-                )
+                .map(|Output { amount, script_public_key, .. }: &Output| TransactionOutput {
+                    value: *amount,
+                    script_public_key: script_public_key.clone(),
+                })
                 .collect(),
             self.determine_lock_time(),
             SUBNETWORK_ID_NATIVE,
             0,
             vec![],
         );
-        let entries = self
-            .inputs
-            .iter()
-            .filter_map(|Input { utxo_entry, .. }| utxo_entry.clone())
-            .collect();
+        let entries = self.inputs.iter().filter_map(|Input { utxo_entry, .. }| utxo_entry.clone()).collect();
         SignableTransaction::with_entries(tx, entries)
     }
 
@@ -167,21 +138,13 @@ impl<R> PSKT<R> {
     }
 
     fn determine_lock_time(&self) -> u64 {
-        self.inputs
-            .iter()
-            .map(|input: &Input| input.min_time)
-            .max()
-            .unwrap_or(self.global.fallback_lock_time)
-            .unwrap_or(0)
+        self.inputs.iter().map(|input: &Input| input.min_time).max().unwrap_or(self.global.fallback_lock_time).unwrap_or(0)
     }
 }
 
 impl Default for PSKT<Creator> {
     fn default() -> Self {
-        PSKT {
-            inner_pskt: Default::default(),
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: Default::default(), role: Default::default() }
     }
 }
 
@@ -206,10 +169,7 @@ impl PSKT<Creator> {
     }
 
     pub fn constructor(self) -> PSKT<Constructor> {
-        PSKT {
-            inner_pskt: self.inner_pskt,
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: self.inner_pskt, role: Default::default() }
     }
 }
 
@@ -244,10 +204,7 @@ impl PSKT<Constructor> {
     /// Returns a PSKT [`Updater`] once construction is completed.
     pub fn updater(self) -> PSKT<Updater> {
         let pskt = self.no_more_inputs().no_more_outputs();
-        PSKT {
-            inner_pskt: pskt.inner_pskt,
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: pskt.inner_pskt, role: Default::default() }
     }
 
     pub fn signer(self) -> PSKT<Signer> {
@@ -255,35 +212,22 @@ impl PSKT<Constructor> {
     }
 
     pub fn combiner(self) -> PSKT<Combiner> {
-        PSKT {
-            inner_pskt: self.inner_pskt,
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: self.inner_pskt, role: Default::default() }
     }
 }
 
 impl PSKT<Updater> {
     pub fn set_sequence(mut self, n: u64, input_index: usize) -> Result<Self, Error> {
-        self.inner_pskt
-            .inputs
-            .get_mut(input_index)
-            .ok_or(Error::OutOfBounds)?
-            .sequence = Some(n);
+        self.inner_pskt.inputs.get_mut(input_index).ok_or(Error::OutOfBounds)?.sequence = Some(n);
         Ok(self)
     }
 
     pub fn signer(self) -> PSKT<Signer> {
-        PSKT {
-            inner_pskt: self.inner_pskt,
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: self.inner_pskt, role: Default::default() }
     }
 
     pub fn combiner(self) -> PSKT<Combiner> {
-        PSKT {
-            inner_pskt: self.inner_pskt,
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: self.inner_pskt, role: Default::default() }
     }
 }
 
@@ -296,23 +240,12 @@ impl PSKT<Signer> {
     {
         let unsigned_tx = self.unsigned_tx();
         let sighashes = self.inputs.iter().map(|input| input.sighash_type).collect();
-        self.inner_pskt
-            .inputs
-            .iter_mut()
-            .zip(sign_fn(unsigned_tx, sighashes)?)
-            .for_each(
-                |(
-                    input,
-                    SignInputOk {
-                        signature,
-                        pub_key,
-                        key_source,
-                    },
-                )| {
-                    input.bip32_derivations.insert(pub_key, key_source);
-                    input.partial_sigs.insert(pub_key, signature);
-                },
-            );
+        self.inner_pskt.inputs.iter_mut().zip(sign_fn(unsigned_tx, sighashes)?).for_each(
+            |(input, SignInputOk { signature, pub_key, key_source })| {
+                input.bip32_derivations.insert(pub_key, key_source);
+                input.partial_sigs.insert(pub_key, signature);
+            },
+        );
 
         Ok(self)
     }
@@ -325,23 +258,12 @@ impl PSKT<Signer> {
     {
         let unsigned_tx = self.unsigned_tx();
         let sighashes = self.inputs.iter().map(|input| input.sighash_type).collect();
-        self.inner_pskt
-            .inputs
-            .iter_mut()
-            .zip(sign_fn(unsigned_tx, sighashes).await?)
-            .for_each(
-                |(
-                    input,
-                    SignInputOk {
-                        signature,
-                        pub_key,
-                        key_source,
-                    },
-                )| {
-                    input.bip32_derivations.insert(pub_key, key_source);
-                    input.partial_sigs.insert(pub_key, signature);
-                },
-            );
+        self.inner_pskt.inputs.iter_mut().zip(sign_fn(unsigned_tx, sighashes).await?).for_each(
+            |(input, SignInputOk { signature, pub_key, key_source })| {
+                input.bip32_derivations.insert(pub_key, key_source);
+                input.partial_sigs.insert(pub_key, signature);
+            },
+        );
         Ok(self)
     }
 
@@ -350,17 +272,11 @@ impl PSKT<Signer> {
     }
 
     pub fn finalizer(self) -> PSKT<Finalizer> {
-        PSKT {
-            inner_pskt: self.inner_pskt,
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: self.inner_pskt, role: Default::default() }
     }
 
     pub fn combiner(self) -> PSKT<Combiner> {
-        PSKT {
-            inner_pskt: self.inner_pskt,
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: self.inner_pskt, role: Default::default() }
     }
 }
 
@@ -379,51 +295,33 @@ impl<R> std::ops::Add<PSKT<R>> for PSKT<Combiner> {
         macro_rules! combine {
             ($left:expr, $right:expr, $err: ty) => {
                 if $left.len() > $right.len() {
-                    $left.iter_mut().zip($right.iter_mut()).try_for_each(
-                        |(left, right)| -> Result<(), $err> {
-                            *left = (std::mem::take(left) + std::mem::take(right))?;
-                            Ok(())
-                        },
-                    )?;
+                    $left.iter_mut().zip($right.iter_mut()).try_for_each(|(left, right)| -> Result<(), $err> {
+                        *left = (std::mem::take(left) + std::mem::take(right))?;
+                        Ok(())
+                    })?;
                     $left
                 } else {
-                    $right.iter_mut().zip($left.iter_mut()).try_for_each(
-                        |(left, right)| -> Result<(), $err> {
-                            *left = (std::mem::take(left) + std::mem::take(right))?;
-                            Ok(())
-                        },
-                    )?;
+                    $right.iter_mut().zip($left.iter_mut()).try_for_each(|(left, right)| -> Result<(), $err> {
+                        *left = (std::mem::take(left) + std::mem::take(right))?;
+                        Ok(())
+                    })?;
                     $right
                 }
             };
         }
         // todo add sort to build deterministic combination
-        self.inner_pskt.inputs = combine!(
-            self.inner_pskt.inputs,
-            rhs.inner_pskt.inputs,
-            input::CombineError
-        );
-        self.inner_pskt.outputs = combine!(
-            self.inner_pskt.outputs,
-            rhs.inner_pskt.outputs,
-            output::CombineError
-        );
+        self.inner_pskt.inputs = combine!(self.inner_pskt.inputs, rhs.inner_pskt.inputs, input::CombineError);
+        self.inner_pskt.outputs = combine!(self.inner_pskt.outputs, rhs.inner_pskt.outputs, output::CombineError);
         Ok(self)
     }
 }
 
 impl PSKT<Combiner> {
     pub fn signer(self) -> PSKT<Signer> {
-        PSKT {
-            inner_pskt: self.inner_pskt,
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: self.inner_pskt, role: Default::default() }
     }
     pub fn finalizer(self) -> PSKT<Finalizer> {
-        PSKT {
-            inner_pskt: self.inner_pskt,
-            role: Default::default(),
-        }
+        PSKT { inner_pskt: self.inner_pskt, role: Default::default() }
     }
 }
 
@@ -454,65 +352,44 @@ impl PSKT<Finalizer> {
         if self.global.id.is_none() {
             Err(TxNotFinalized {})
         } else {
-            Ok(PSKT {
-                inner_pskt: self.inner_pskt,
-                role: Default::default(),
-            })
+            Ok(PSKT { inner_pskt: self.inner_pskt, role: Default::default() })
         }
     }
 
-    fn finalize_internal<E: Display>(
-        mut self,
-        sigs: Result<Vec<Vec<u8>>, E>,
-    ) -> Result<Self, FinalizeError<E>> {
+    fn finalize_internal<E: Display>(mut self, sigs: Result<Vec<Vec<u8>>, E>) -> Result<Self, FinalizeError<E>> {
         let sigs = sigs?;
         if sigs.len() != self.inputs.len() {
-            return Err(FinalizeError::WrongFinalizedSigsCount {
-                expected: self.inputs.len(),
-                actual: sigs.len(),
-            });
+            return Err(FinalizeError::WrongFinalizedSigsCount { expected: self.inputs.len(), actual: sigs.len() });
         }
-        self.inner_pskt
-            .inputs
-            .iter_mut()
-            .enumerate()
-            .zip(sigs)
-            .try_for_each(|((idx, input), sig)| {
-                if sig.is_empty() {
-                    return Err(FinalizeError::EmptySignature(idx));
-                }
-                input.sequence = Some(input.sequence.unwrap_or(u64::MAX)); // todo discussable
-                input.final_script_sig = Some(sig);
-                Ok(())
-            })?;
+        self.inner_pskt.inputs.iter_mut().enumerate().zip(sigs).try_for_each(|((idx, input), sig)| {
+            if sig.is_empty() {
+                return Err(FinalizeError::EmptySignature(idx));
+            }
+            input.sequence = Some(input.sequence.unwrap_or(u64::MAX)); // todo discussable
+            input.final_script_sig = Some(sig);
+            Ok(())
+        })?;
         self.inner_pskt.global.id = Some(self.calculate_id_internal());
         Ok(self)
     }
 }
 
 impl PSKT<Extractor> {
-    pub fn extract_tx_unchecked(
-        self,
-    ) -> Result<impl FnOnce(u64) -> (Transaction, Vec<Option<UtxoEntry>>), TxNotFinalized> {
+    pub fn extract_tx_unchecked(self) -> Result<impl FnOnce(u64) -> (Transaction, Vec<Option<UtxoEntry>>), TxNotFinalized> {
         let tx = self.unsigned_tx();
         let entries = tx.entries;
         let mut tx = tx.tx;
-        tx.inputs
-            .iter_mut()
-            .zip(self.inner_pskt.inputs)
-            .try_for_each(|(dest, src)| {
-                dest.signature_script = src.final_script_sig.ok_or(TxNotFinalized {})?;
-                Ok(())
-            })?;
+        tx.inputs.iter_mut().zip(self.inner_pskt.inputs).try_for_each(|(dest, src)| {
+            dest.signature_script = src.final_script_sig.ok_or(TxNotFinalized {})?;
+            Ok(())
+        })?;
         Ok(move |mass| {
             tx.set_mass(mass);
             (tx, entries)
         })
     }
 
-    pub fn extract_tx(
-        self,
-    ) -> Result<impl FnOnce(u64) -> (Transaction, Vec<Option<UtxoEntry>>), ExtractError> {
+    pub fn extract_tx(self) -> Result<impl FnOnce(u64) -> (Transaction, Vec<Option<UtxoEntry>>), ExtractError> {
         let (tx, entries) = self.extract_tx_unchecked()?(0);
 
         let tx = MutableTransaction::with_entries(tx, entries.into_iter().flatten().collect());
@@ -522,20 +399,10 @@ impl PSKT<Extractor> {
             let cache = Cache::new(10_000);
             let mut reused_values = SigHashReusedValues::new();
 
-            tx.populated_inputs()
-                .enumerate()
-                .try_for_each(|(idx, (input, entry))| {
-                    TxScriptEngine::from_transaction_input(
-                        &tx,
-                        input,
-                        idx,
-                        entry,
-                        &mut reused_values,
-                        &cache,
-                    )?
-                    .execute()?;
-                    <Result<(), ExtractError>>::Ok(())
-                })?;
+            tx.populated_inputs().enumerate().try_for_each(|(idx, (input, entry))| {
+                TxScriptEngine::from_transaction_input(&tx, input, idx, entry, &mut reused_values, &cache)?.execute()?;
+                <Result<(), ExtractError>>::Ok(())
+            })?;
         }
         let entries = tx.entries;
         let tx = tx.tx;

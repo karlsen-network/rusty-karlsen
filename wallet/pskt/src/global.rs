@@ -41,24 +41,13 @@ impl Add for Global {
 
     fn add(mut self, rhs: Self) -> Self::Output {
         if self.version != rhs.version {
-            return Err(CombineError::VersionMismatch {
-                this: self.version,
-                that: rhs.version,
-            });
+            return Err(CombineError::VersionMismatch { this: self.version, that: rhs.version });
         }
         if self.tx_version != rhs.tx_version {
-            return Err(CombineError::TxVersionMismatch {
-                this: self.tx_version,
-                that: rhs.tx_version,
-            });
+            return Err(CombineError::TxVersionMismatch { this: self.tx_version, that: rhs.tx_version });
         }
         self.fallback_lock_time = match (self.fallback_lock_time, rhs.fallback_lock_time) {
-            (Some(lhs), Some(rhs)) if lhs != rhs => {
-                return Err(CombineError::LockTimeMismatch {
-                    this: lhs,
-                    that: rhs,
-                })
-            }
+            (Some(lhs), Some(rhs)) if lhs != rhs => return Err(CombineError::LockTimeMismatch { this: lhs, that: rhs }),
             (Some(v), _) | (_, Some(v)) => Some(v),
             _ => None,
         };
@@ -71,14 +60,7 @@ impl Add for Global {
         //          the specification. It can pick arbitrarily when conflicts occur.
 
         // Merging xpubs
-        for (
-            xpub,
-            KeySource {
-                key_fingerprint: fingerprint1,
-                derivation_path: derivation1,
-            },
-        ) in rhs.xpubs
-        {
+        for (xpub, KeySource { key_fingerprint: fingerprint1, derivation_path: derivation1 }) in rhs.xpubs {
             match self.xpubs.entry(xpub) {
                 btree_map::Entry::Vacant(entry) => {
                     entry.insert(KeySource::new(fingerprint1, derivation1));
@@ -93,20 +75,14 @@ impl Add for Global {
                     //      is not the strict suffix of the longer one
                     // 3) choose longest derivation otherwise
 
-                    let KeySource {
-                        key_fingerprint: fingerprint2,
-                        derivation_path: derivation2,
-                    } = entry.get().clone();
+                    let KeySource { key_fingerprint: fingerprint2, derivation_path: derivation2 } = entry.get().clone();
 
                     if (derivation1 == derivation2 && fingerprint1 == fingerprint2)
                         || (derivation1.len() < derivation2.len()
-                            && derivation1.as_ref()
-                                == &derivation2.as_ref()[derivation2.len() - derivation1.len()..])
+                            && derivation1.as_ref() == &derivation2.as_ref()[derivation2.len() - derivation1.len()..])
                     {
                         continue;
-                    } else if derivation2.as_ref()
-                        == &derivation1.as_ref()[derivation1.len() - derivation2.len()..]
-                    {
+                    } else if derivation2.as_ref() == &derivation1.as_ref()[derivation1.len() - derivation2.len()..] {
                         entry.insert(KeySource::new(fingerprint1, derivation1));
                         continue;
                     }
@@ -115,20 +91,14 @@ impl Add for Global {
             }
         }
         self.id = match (self.id, rhs.id) {
-            (Some(lhs), Some(rhs)) if lhs != rhs => {
-                return Err(CombineError::TransactionIdMismatch {
-                    this: lhs,
-                    that: rhs,
-                })
-            }
+            (Some(lhs), Some(rhs)) if lhs != rhs => return Err(CombineError::TransactionIdMismatch { this: lhs, that: rhs }),
             (Some(v), _) | (_, Some(v)) => Some(v),
             _ => None,
         };
 
-        self.proprietaries = combine_if_no_conflicts(self.proprietaries, rhs.proprietaries)
-            .map_err(CombineError::NotCompatibleProprietary)?;
-        self.unknowns = combine_if_no_conflicts(self.unknowns, rhs.unknowns)
-            .map_err(CombineError::NotCompatibleUnknownField)?;
+        self.proprietaries =
+            combine_if_no_conflicts(self.proprietaries, rhs.proprietaries).map_err(CombineError::NotCompatibleProprietary)?;
+        self.unknowns = combine_if_no_conflicts(self.unknowns, rhs.unknowns).map_err(CombineError::NotCompatibleUnknownField)?;
         Ok(self)
     }
 }

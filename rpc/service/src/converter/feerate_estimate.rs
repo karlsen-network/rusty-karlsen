@@ -10,10 +10,7 @@ pub trait FeerateBucketConverter {
 
 impl FeerateBucketConverter for FeerateBucket {
     fn into_rpc(self) -> RpcFeerateBucket {
-        RpcFeerateBucket {
-            feerate: self.feerate,
-            estimated_seconds: self.estimated_seconds,
-        }
+        RpcFeerateBucket { feerate: self.feerate, estimated_seconds: self.estimated_seconds }
     }
 }
 
@@ -25,16 +22,8 @@ impl FeeEstimateConverter for FeerateEstimations {
     fn into_rpc(self) -> RpcFeeEstimate {
         RpcFeeEstimate {
             priority_bucket: self.priority_bucket.into_rpc(),
-            normal_buckets: self
-                .normal_buckets
-                .into_iter()
-                .map(FeerateBucketConverter::into_rpc)
-                .collect(),
-            low_buckets: self
-                .low_buckets
-                .into_iter()
-                .map(FeerateBucketConverter::into_rpc)
-                .collect(),
+            normal_buckets: self.normal_buckets.into_iter().map(FeerateBucketConverter::into_rpc).collect(),
+            low_buckets: self.low_buckets.into_iter().map(FeerateBucketConverter::into_rpc).collect(),
         }
     }
 }

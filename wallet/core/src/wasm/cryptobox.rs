@@ -29,9 +29,7 @@ impl CryptoBoxPrivateKey {
     }
 
     pub fn to_public_key(&self) -> CryptoBoxPublicKey {
-        CryptoBoxPublicKey {
-            public_key: self.secret_key.public_key(),
-        }
+        CryptoBoxPublicKey { public_key: self.secret_key.public_key() }
     }
 }
 
@@ -43,9 +41,7 @@ impl TryCastFromJs for CryptoBoxPrivateKey {
             if secret_key.len() != KEY_SIZE {
                 return Err(Error::InvalidPrivateKeyLength);
             }
-            Ok(Self {
-                secret_key: SecretKey::from_slice(&secret_key)?,
-            })
+            Ok(Self { secret_key: SecretKey::from_slice(&secret_key)? })
         })
     }
 }
@@ -73,9 +69,7 @@ impl TryCastFromJs for CryptoBoxPublicKey {
             if public_key.len() != KEY_SIZE {
                 Err(Error::InvalidPublicKeyLength)
             } else {
-                Ok(Self {
-                    public_key: PublicKey::from_slice(&public_key)?,
-                })
+                Ok(Self { public_key: PublicKey::from_slice(&public_key)? })
             }
         })
     }
@@ -120,15 +114,10 @@ pub struct CryptoBox {
 impl CryptoBox {
     #[wasm_bindgen(constructor)]
     #[allow(non_snake_case)]
-    pub fn ctor(
-        secretKey: CryptoBoxPrivateKeyT,
-        peerPublicKey: CryptoBoxPublicKeyT,
-    ) -> Result<CryptoBox> {
+    pub fn ctor(secretKey: CryptoBoxPrivateKeyT, peerPublicKey: CryptoBoxPublicKeyT) -> Result<CryptoBox> {
         let secret_key = CryptoBoxPrivateKey::try_cast_from(secretKey)?;
         let peer_public_key = CryptoBoxPublicKey::try_cast_from(peerPublicKey)?;
-        Ok(Self {
-            inner: Arc::new(NativeCryptoBox::new(&secret_key, &peer_public_key)),
-        })
+        Ok(Self { inner: Arc::new(NativeCryptoBox::new(&secret_key, &peer_public_key)) })
     }
 
     #[wasm_bindgen(getter, js_name = "publicKey")]

@@ -65,15 +65,7 @@ impl BlockMinerTask {
         pay_address: Address,
         stopper: Stopper,
     ) -> Arc<Self> {
-        Arc::new(Self::new(
-            client,
-            bps,
-            block_count,
-            sender,
-            template,
-            pay_address,
-            stopper,
-        ))
+        Arc::new(Self::new(client, bps, block_count, sender, template, pay_address, stopper))
     }
 
     pub fn sender(&self) -> Sender<RpcBlock> {
@@ -124,10 +116,7 @@ impl Task for BlockMinerTask {
                 let c_pay_address = pay_address.clone();
                 tokio::spawn(async move {
                     // We used the current template so let's refetch a new template with new txs
-                    let response = c_client
-                        .get_block_template(c_pay_address, vec![])
-                        .await
-                        .unwrap();
+                    let response = c_client.get_block_template(c_pay_address, vec![]).await.unwrap();
                     *c_template.lock() = response;
                 });
 

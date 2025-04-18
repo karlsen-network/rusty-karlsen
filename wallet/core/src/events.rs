@@ -5,9 +5,7 @@
 //!
 
 use crate::imports::*;
-use crate::storage::{
-    Hint, PrvKeyDataInfo, StorageDescriptor, TransactionRecord, WalletDescriptor,
-};
+use crate::storage::{Hint, PrvKeyDataInfo, StorageDescriptor, TransactionRecord, WalletDescriptor};
 use crate::utxo::context::UtxoContextId;
 use transaction::TransactionRecordNotification;
 
@@ -241,9 +239,7 @@ impl Events {
             | Events::Reorg { record }
             | Events::Stasis { record }
             | Events::Maturity { record }
-            | Events::Discovery { record } => {
-                TransactionRecordNotification::new(self.kind(), record.clone()).into()
-            }
+            | Events::Discovery { record } => TransactionRecordNotification::new(self.kind(), record.clone()).into(),
             _ => serde_wasm_bindgen::to_value(self).unwrap(),
         }
     }
@@ -366,9 +362,7 @@ impl FromStr for EventKind {
 impl TryFrom<JsValue> for EventKind {
     type Error = Error;
     fn try_from(js_value: JsValue) -> Result<Self> {
-        let s = js_value
-            .as_string()
-            .ok_or_else(|| Error::custom("Invalid event kind"))?;
+        let s = js_value.as_string().ok_or_else(|| Error::custom("Invalid event kind"))?;
         EventKind::from_str(&s)
     }
 }

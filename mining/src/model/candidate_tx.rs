@@ -16,10 +16,6 @@ pub struct CandidateTransaction {
 
 impl CandidateTransaction {
     pub fn from_key(key: FeerateTransactionKey) -> Self {
-        Self {
-            tx: key.tx,
-            calculated_fee: key.fee,
-            calculated_mass: key.mass,
-        }
+        Self { tx: key.tx, calculated_fee: key.fee, calculated_mass: key.mass }
     }
 }

@@ -15,19 +15,7 @@ use workflow_core::enums::Describe;
 /// own versioning.
 pub const RPC_API_VERSION: [u16; 4] = [0, 1, 0, 0];
 
-#[derive(
-    Describe,
-    Clone,
-    Copy,
-    Debug,
-    PartialEq,
-    Eq,
-    Hash,
-    BorshSerialize,
-    BorshDeserialize,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Describe, Clone, Copy, Debug, PartialEq, Eq, Hash, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum RpcApiOps {
     /// Ping the node to check if connection is alive
@@ -172,9 +160,7 @@ impl From<EventType> for RpcApiOps {
             EventType::UtxosChanged => RpcApiOps::UtxosChangedNotification,
             EventType::SinkBlueScoreChanged => RpcApiOps::SinkBlueScoreChangedNotification,
             EventType::VirtualDaaScoreChanged => RpcApiOps::VirtualDaaScoreChangedNotification,
-            EventType::PruningPointUtxoSetOverride => {
-                RpcApiOps::PruningPointUtxoSetOverrideNotification
-            }
+            EventType::PruningPointUtxoSetOverride => RpcApiOps::PruningPointUtxoSetOverrideNotification,
             EventType::NewBlockTemplate => RpcApiOps::NewBlockTemplateNotification,
         }
     }

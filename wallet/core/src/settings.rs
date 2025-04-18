@@ -27,10 +27,7 @@ pub enum WalletSettings {
 #[async_trait]
 impl DefaultSettings for WalletSettings {
     async fn defaults() -> Vec<(Self, Value)> {
-        vec![
-            (Self::Server, to_value("public").unwrap()),
-            (Self::Wallet, to_value("karlsen").unwrap()),
-        ]
+        vec![(Self::Server, to_value("public").unwrap()), (Self::Wallet, to_value("karlsen").unwrap())]
     }
 }
 
@@ -54,19 +51,11 @@ where
     K: DefaultSettings + Clone + Serialize + DeserializeOwned + Send + Sync + 'static,
 {
     pub fn try_new(filename: &str) -> Result<Self> {
-        Ok(Self {
-            map: DashMap::default(),
-            storage: Storage::try_new(&format!("{filename}.settings"))?,
-            phantom: PhantomData,
-        })
+        Ok(Self { map: DashMap::default(), storage: Storage::try_new(&format!("{filename}.settings"))?, phantom: PhantomData })
     }
 
     pub fn new_with_storage(storage: Storage) -> Self {
-        Self {
-            map: DashMap::default(),
-            storage,
-            phantom: PhantomData,
-        }
+        Self { map: DashMap::default(), storage, phantom: PhantomData }
     }
 
     pub fn get<V>(&self, key: K) -> Option<V>
@@ -104,9 +93,7 @@ where
 
     pub async fn try_load(&self) -> Result<()> {
         let list: Option<Value> = if self.storage.exists().await? {
-            let v: Result<Value> = workflow_store::fs::read_json(self.storage.filename())
-                .await
-                .map_err(|err| err.into());
+            let v: Result<Value> = workflow_store::fs::read_json(self.storage.filename()).await.map_err(|err| err.into());
             match v {
                 Ok(v) => v.is_object().then_some(v),
                 Err(err) => {
@@ -121,17 +108,12 @@ where
         let list = if let Some(value) = list {
             value
         } else {
-            Value::Object(Map::from_iter(
-                <K as DefaultSettings>::defaults()
-                    .await
-                    .into_iter()
-                    .map(|(k, v)| {
-                        let ks = to_value(k).unwrap();
-                        let ks = ks.as_str().expect("Unable to convert key to string");
+            Value::Object(Map::from_iter(<K as DefaultSettings>::defaults().await.into_iter().map(|(k, v)| {
+                let ks = to_value(k).unwrap();
+                let ks = ks.as_str().expect("Unable to convert key to string");
 
-                        (ks.to_string(), v)
-                    }),
-            ))
+                (ks.to_string(), v)
+            })))
         };
 
         self.map.clear();

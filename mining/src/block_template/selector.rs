@@ -75,11 +75,8 @@ impl RebalancingWeightedTransactionSelector {
         };
 
         // Create the selectable transactions
-        selector.selectable_txs = selector
-            .transactions
-            .iter()
-            .map(|x| SelectableTransaction::new(selector.calc_tx_value(x), 0, ALPHA))
-            .collect();
+        selector.selectable_txs =
+            selector.transactions.iter().map(|x| SelectableTransaction::new(selector.calc_tx_value(x), 0, ALPHA)).collect();
         // Prepare the initial candidate list
         selector.candidate_list = CandidateList::new(&selector.selectable_txs);
 
@@ -128,11 +125,7 @@ impl RebalancingWeightedTransactionSelector {
             // Select a candidate tx at random
             let r = rng.gen::<f64>() * self.candidate_list.total_p;
             let selected_candidate_idx = self.candidate_list.find(r);
-            let selected_candidate = self
-                .candidate_list
-                .candidates
-                .get_mut(selected_candidate_idx)
-                .unwrap();
+            let selected_candidate = self.candidate_list.candidates.get_mut(selected_candidate_idx).unwrap();
 
             // If is_marked_for_deletion is set, it means we got a collision.
             // Ignore and select another Tx.
@@ -145,10 +138,7 @@ impl RebalancingWeightedTransactionSelector {
             // Also check for overflow.
             let next_total_mass = self.total_mass.checked_add(selected_tx.calculated_mass);
             if next_total_mass.is_none() || next_total_mass.unwrap() > self.policy.max_block_mass {
-                trace!(
-                    "Tx {0} would exceed the max block mass. As such, stopping.",
-                    selected_tx.tx.id()
-                );
+                trace!("Tx {0} would exceed the max block mass. As such, stopping.", selected_tx.tx.id());
                 break;
             }
 
@@ -159,10 +149,7 @@ impl RebalancingWeightedTransactionSelector {
                 let gas_usage = self.gas_usage_map.entry(subnetwork_id.clone()).or_insert(0);
                 let tx_gas = selected_tx.tx.gas;
                 let next_gas_usage = (*gas_usage).checked_add(tx_gas);
-                if next_gas_usage.is_none()
-                    || next_gas_usage.unwrap()
-                        > self.selectable_txs[selected_candidate.index].gas_limit
-                {
+                if next_gas_usage.is_none() || next_gas_usage.unwrap() > self.selectable_txs[selected_candidate.index].gas_limit {
                     trace!(
                         "Tx {0} would exceed the gas limit in subnetwork {1}. Removing all remaining txs from this subnetwork.",
                         selected_tx.tx.id(),
@@ -195,11 +182,7 @@ impl RebalancingWeightedTransactionSelector {
             self.total_mass += selected_tx.calculated_mass;
             self.total_fees += selected_tx.calculated_fee;
 
-            trace!(
-                "Adding tx {0} (fee per gram: {1})",
-                selected_tx.tx.id(),
-                selected_tx.calculated_fee / selected_tx.calculated_mass
-            );
+            trace!("Adding tx {0} (fee per gram: {1})", selected_tx.tx.id(), selected_tx.calculated_fee / selected_tx.calculated_mass);
 
             // Mark for deletion
             selected_candidate.is_marked_for_deletion = true;
@@ -214,10 +197,7 @@ impl RebalancingWeightedTransactionSelector {
 
     fn get_transactions(&self) -> Vec<Transaction> {
         // These transactions leave the selector so we clone
-        self.selected_txs
-            .iter()
-            .map(|x| self.transactions[*x].tx.as_ref().clone())
-            .collect()
+        self.selected_txs.iter().map(|x| self.transactions[*x].tx.as_ref().clone()).collect()
     }
 
     fn reset_selection(&mut self) {
@@ -260,17 +240,12 @@ impl TemplateTransactionSelector for RebalancingWeightedTransactionSelector {
                     .map(|&x| (self.transactions[x].tx.id(), x))
                     .collect()
             });
-        let tx_index = selected_txs_map
-            .remove(&tx_id)
-            .expect("only previously selected txs can be rejected (and only once)");
+        let tx_index = selected_txs_map.remove(&tx_id).expect("only previously selected txs can be rejected (and only once)");
         let tx = &self.transactions[tx_index];
         self.total_mass -= tx.calculated_mass;
         self.total_fees -= tx.calculated_fee;
         if !tx.tx.subnetwork_id.is_builtin_or_native() {
-            *self
-                .gas_usage_map
-                .get_mut(&tx.tx.subnetwork_id)
-                .expect("previously selected txs have an entry") -= tx.tx.gas;
+            *self.gas_usage_map.get_mut(&tx.tx.subnetwork_id).expect("previously selected txs have an entry") -= tx.tx.gas;
         }
         self.overall_rejections += 1;
     }
@@ -281,10 +256,8 @@ impl TemplateTransactionSelector for RebalancingWeightedTransactionSelector {
 
         // We consider the operation successful if either mass occupation is above 80% or rejection rate is below 20%
         self.overall_rejections == 0
-            || (self.total_mass as f64)
-                > self.policy.max_block_mass as f64 * SUFFICIENT_MASS_THRESHOLD
-            || (self.overall_rejections as f64)
-                < self.transactions.len() as f64 * LOW_REJECTION_FRACTION
+            || (self.total_mass as f64) > self.policy.max_block_mass as f64 * SUFFICIENT_MASS_THRESHOLD
+            || (self.overall_rejections as f64) < self.transactions.len() as f64 * LOW_REJECTION_FRACTION
     }
 }
 
@@ -296,9 +269,7 @@ mod tests {
         constants::{MAX_TX_IN_SEQUENCE_NUM, SOMPI_PER_KARLSEN, TX_VERSION},
         mass::transaction_estimated_serialized_size,
         subnets::SUBNETWORK_ID_NATIVE,
-        tx::{
-            Transaction, TransactionId, TransactionInput, TransactionOutpoint, TransactionOutput,
-        },
+        tx::{Transaction, TransactionId, TransactionInput, TransactionOutpoint, TransactionOutput},
     };
     use karlsen_txscript::{pay_to_script_hash_signature_script, test_helpers::op_true_script};
     use std::{collections::HashSet, sync::Arc};
@@ -306,9 +277,7 @@ mod tests {
     use crate::{
         mempool::{
             config::DEFAULT_MINIMUM_RELAY_TRANSACTION_FEE,
-            model::frontier::selectors::{
-                SequenceSelector, SequenceSelectorInput, SequenceSelectorTransaction,
-            },
+            model::frontier::selectors::{SequenceSelector, SequenceSelectorInput, SequenceSelectorTransaction},
         },
         model::candidate_tx::CandidateTransaction,
     };
@@ -318,24 +287,14 @@ mod tests {
         const TX_INITIAL_COUNT: usize = 1_000;
 
         // Create a vector of transactions differing by output value so they have unique ids
-        let transactions = (0..TX_INITIAL_COUNT)
-            .map(|i| create_transaction(SOMPI_PER_KARLSEN * (i + 1) as u64))
-            .collect_vec();
-        let masses: HashMap<_, _> = transactions
-            .iter()
-            .map(|tx| (tx.tx.id(), tx.calculated_mass))
-            .collect();
-        let sequence: SequenceSelectorInput = transactions
-            .iter()
-            .map(|tx| SequenceSelectorTransaction::new(tx.tx.clone(), tx.calculated_mass))
-            .collect();
+        let transactions = (0..TX_INITIAL_COUNT).map(|i| create_transaction(SOMPI_PER_KARLSEN * (i + 1) as u64)).collect_vec();
+        let masses: HashMap<_, _> = transactions.iter().map(|tx| (tx.tx.id(), tx.calculated_mass)).collect();
+        let sequence: SequenceSelectorInput =
+            transactions.iter().map(|tx| SequenceSelectorTransaction::new(tx.tx.clone(), tx.calculated_mass)).collect();
 
         let policy = Policy::new(100_000);
         let selectors: [Box<dyn TemplateTransactionSelector>; 2] = [
-            Box::new(RebalancingWeightedTransactionSelector::new(
-                policy.clone(),
-                transactions,
-            )),
+            Box::new(RebalancingWeightedTransactionSelector::new(policy.clone(), transactions)),
             Box::new(SequenceSelector::new(sequence, policy.clone())),
         ];
 
@@ -355,25 +314,15 @@ mod tests {
                 }
                 for tx in selected_txs.iter() {
                     total_mass += masses[&tx.id()];
-                    kept.insert(tx.id())
-                        .then_some(())
-                        .expect("selected txs should never repeat themselves");
-                    assert!(
-                        !rejected.contains(&tx.id()),
-                        "selected txs should never repeat themselves"
-                    );
+                    kept.insert(tx.id()).then_some(()).expect("selected txs should never repeat themselves");
+                    assert!(!rejected.contains(&tx.id()), "selected txs should never repeat themselves");
                 }
                 assert!(total_mass <= policy.max_block_mass);
                 selected_txs.iter().take(reject_count).for_each(|x| {
                     total_mass -= masses[&x.id()];
                     selector.reject_selection(x.id());
-                    kept.remove(&x.id())
-                        .then_some(())
-                        .expect("was just inserted");
-                    rejected
-                        .insert(x.id())
-                        .then_some(())
-                        .expect("was just verified");
+                    kept.remove(&x.id()).then_some(()).expect("was just inserted");
+                    rejected.insert(x.id()).then_some(()).expect("was just verified");
                 });
             }
         }
@@ -382,35 +331,14 @@ mod tests {
     fn create_transaction(value: u64) -> CandidateTransaction {
         let previous_outpoint = TransactionOutpoint::new(TransactionId::default(), 0);
         let (script_public_key, redeem_script) = op_true_script();
-        let signature_script = pay_to_script_hash_signature_script(redeem_script, vec![])
-            .expect("the redeem script is canonical");
+        let signature_script = pay_to_script_hash_signature_script(redeem_script, vec![]).expect("the redeem script is canonical");
 
-        let input = TransactionInput::new(
-            previous_outpoint,
-            signature_script,
-            MAX_TX_IN_SEQUENCE_NUM,
-            1,
-        );
-        let output = TransactionOutput::new(
-            value - DEFAULT_MINIMUM_RELAY_TRANSACTION_FEE,
-            script_public_key,
-        );
-        let tx = Arc::new(Transaction::new(
-            TX_VERSION,
-            vec![input],
-            vec![output],
-            0,
-            SUBNETWORK_ID_NATIVE,
-            0,
-            vec![],
-        ));
+        let input = TransactionInput::new(previous_outpoint, signature_script, MAX_TX_IN_SEQUENCE_NUM, 1);
+        let output = TransactionOutput::new(value - DEFAULT_MINIMUM_RELAY_TRANSACTION_FEE, script_public_key);
+        let tx = Arc::new(Transaction::new(TX_VERSION, vec![input], vec![output], 0, SUBNETWORK_ID_NATIVE, 0, vec![]));
         let calculated_mass = transaction_estimated_serialized_size(&tx);
         let calculated_fee = DEFAULT_MINIMUM_RELAY_TRANSACTION_FEE;
 
-        CandidateTransaction {
-            tx,
-            calculated_fee,
-            calculated_mass,
-        }
+        CandidateTransaction { tx, calculated_fee, calculated_mass }
     }
 }

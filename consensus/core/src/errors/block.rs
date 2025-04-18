@@ -13,11 +13,7 @@ use thiserror::Error;
 pub struct VecDisplay<T: Display>(pub Vec<T>);
 impl<T: Display> Display for VecDisplay<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "[{}]",
-            self.0.iter().map(|item| item.to_string()).join(", ")
-        )
+        write!(f, "[{}]", self.0.iter().map(|item| item.to_string()).join(", "))
     }
 }
 
@@ -25,15 +21,7 @@ impl<T: Display> Display for VecDisplay<T> {
 pub struct TwoDimVecDisplay<T: Display + Clone>(pub Vec<Vec<T>>);
 impl<T: Display + Clone> Display for TwoDimVecDisplay<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "[\n\t{}\n]",
-            self.0
-                .iter()
-                .cloned()
-                .map(|item| VecDisplay(item).to_string())
-                .join(", \n\t")
-        )
+        write!(f, "[\n\t{}\n]", self.0.iter().cloned().map(|item| VecDisplay(item).to_string()).join(", \n\t"))
     }
 }
 

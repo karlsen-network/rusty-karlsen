@@ -6,9 +6,7 @@ use karlsen_consensus_core::{
 use karlsen_hashes::Hash;
 use karlsen_utils::hashmap::NestedHashMapExtensions;
 
-use crate::model::{
-    CirculatingSupplyDiff, CompactUtxoEntry, UtxoChanges, UtxoSetByScriptPublicKey,
-};
+use crate::model::{CirculatingSupplyDiff, CompactUtxoEntry, UtxoChanges, UtxoSetByScriptPublicKey};
 
 /// A struct holding all changes to the utxoindex with on-the-fly conversions and processing.
 pub struct UtxoIndexChanges {
@@ -21,10 +19,7 @@ impl UtxoIndexChanges {
     /// Create a new [`UtxoIndexChanges`] struct
     pub fn new() -> Self {
         Self {
-            utxo_changes: UtxoChanges::new(
-                UtxoSetByScriptPublicKey::new(),
-                UtxoSetByScriptPublicKey::new(),
-            ),
+            utxo_changes: UtxoChanges::new(UtxoSetByScriptPublicKey::new(), UtxoSetByScriptPublicKey::new()),
             supply_change: 0,
             tips: BlockHashSet::new(),
         }
@@ -43,11 +38,7 @@ impl UtxoIndexChanges {
             self.utxo_changes.added.insert_into_nested(
                 utxo_entry.script_public_key,
                 transaction_outpoint,
-                CompactUtxoEntry::new(
-                    utxo_entry.amount,
-                    utxo_entry.block_daa_score,
-                    utxo_entry.is_coinbase,
-                ),
+                CompactUtxoEntry::new(utxo_entry.amount, utxo_entry.block_daa_score, utxo_entry.is_coinbase),
             );
         }
 
@@ -57,11 +48,7 @@ impl UtxoIndexChanges {
             self.utxo_changes.removed.insert_into_nested(
                 utxo_entry.script_public_key,
                 transaction_outpoint,
-                CompactUtxoEntry::new(
-                    utxo_entry.amount,
-                    utxo_entry.block_daa_score,
-                    utxo_entry.is_coinbase,
-                ),
+                CompactUtxoEntry::new(utxo_entry.amount, utxo_entry.block_daa_score, utxo_entry.is_coinbase),
             );
         }
     }
@@ -76,11 +63,7 @@ impl UtxoIndexChanges {
             self.utxo_changes.added.insert_into_nested(
                 utxo_entry.script_public_key,
                 transaction_outpoint,
-                CompactUtxoEntry::new(
-                    utxo_entry.amount,
-                    utxo_entry.block_daa_score,
-                    utxo_entry.is_coinbase,
-                ),
+                CompactUtxoEntry::new(utxo_entry.amount, utxo_entry.block_daa_score, utxo_entry.is_coinbase),
             );
         }
     }

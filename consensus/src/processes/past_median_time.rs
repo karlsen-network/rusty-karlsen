@@ -12,10 +12,7 @@ pub struct FullPastMedianTimeManager<T: HeaderStoreReader> {
 
 impl<T: HeaderStoreReader> FullPastMedianTimeManager<T> {
     pub fn new(headers_store: Arc<T>, genesis_timestamp: u64) -> Self {
-        Self {
-            headers_store,
-            genesis_timestamp,
-        }
+        Self { headers_store, genesis_timestamp }
     }
 
     pub fn calc_past_median_time(&self, window: &BlockWindowHeap) -> Result<u64, RuleError> {
@@ -23,10 +20,8 @@ impl<T: HeaderStoreReader> FullPastMedianTimeManager<T> {
             return Ok(self.genesis_timestamp);
         }
 
-        let mut window_timestamps: Vec<u64> = window
-            .iter()
-            .map(|item| self.headers_store.get_timestamp(item.0.hash).unwrap())
-            .collect();
+        let mut window_timestamps: Vec<u64> =
+            window.iter().map(|item| self.headers_store.get_timestamp(item.0.hash).unwrap()).collect();
         window_timestamps.sort_unstable(); // This is deterministic because we sort u64
         Ok(window_timestamps[window_timestamps.len() / 2])
     }
@@ -42,10 +37,7 @@ pub struct SampledPastMedianTimeManager<T: HeaderStoreReader> {
 
 impl<T: HeaderStoreReader> SampledPastMedianTimeManager<T> {
     pub fn new(headers_store: Arc<T>, genesis_timestamp: u64) -> Self {
-        Self {
-            headers_store,
-            genesis_timestamp,
-        }
+        Self { headers_store, genesis_timestamp }
     }
 
     pub fn calc_past_median_time(&self, window: &BlockWindowHeap) -> Result<u64, RuleError> {
@@ -57,17 +49,13 @@ impl<T: HeaderStoreReader> SampledPastMedianTimeManager<T> {
             return Ok(self.genesis_timestamp);
         }
 
-        let mut window_timestamps: Vec<u64> = window
-            .iter()
-            .map(|item| self.headers_store.get_timestamp(item.0.hash).unwrap())
-            .collect();
+        let mut window_timestamps: Vec<u64> =
+            window.iter().map(|item| self.headers_store.get_timestamp(item.0.hash).unwrap()).collect();
         window_timestamps.sort_unstable(); // This is deterministic because we sort u64
         let avg_frame_size = window_timestamps.len().min(AVERAGE_FRAME_SIZE);
         // Define the slice so that the average is the highest among the 2 possible solutions in case of an even frame size
         let ending_index = (window_timestamps.len() + avg_frame_size + 1) / 2;
-        let timestamp = (window_timestamps[ending_index - avg_frame_size..ending_index]
-            .iter()
-            .sum::<u64>()
+        let timestamp = (window_timestamps[ending_index - avg_frame_size..ending_index].iter().sum::<u64>()
             + avg_frame_size as u64 / 2)
             / avg_frame_size as u64;
         Ok(timestamp)

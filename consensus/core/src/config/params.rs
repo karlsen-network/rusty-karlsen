@@ -1,9 +1,7 @@
 pub use super::{
     bps::{Bps, Testnet11Bps},
     constants::consensus::*,
-    genesis::{
-        GenesisBlock, DEVNET_GENESIS, GENESIS, SIMNET_GENESIS, TESTNET11_GENESIS, TESTNET_GENESIS,
-    },
+    genesis::{GenesisBlock, DEVNET_GENESIS, GENESIS, SIMNET_GENESIS, TESTNET11_GENESIS, TESTNET_GENESIS},
 };
 use crate::{
     constants::STORAGE_MASS_PARAMETER,
@@ -97,10 +95,7 @@ pub struct Params {
 }
 
 fn unix_now() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as u64
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64
 }
 
 impl Params {
@@ -205,9 +200,7 @@ impl Params {
         if selected_parent_daa_score < self.sampling_activation_daa_score {
             self.target_time_per_block * self.legacy_difficulty_window_size as u64
         } else {
-            self.target_time_per_block
-                * self.difficulty_sample_rate
-                * self.sampled_difficulty_window_size as u64
+            self.target_time_per_block * self.difficulty_sample_rate * self.sampled_difficulty_window_size as u64
         }
     }
 
@@ -235,8 +228,7 @@ impl Params {
             // We consider the node close to being synced if the sink (virtual selected parent) block
             // timestamp is within DAA window duration far in the past. Blocks mined over such DAG state would
             // enter the DAA window of fully-synced nodes and thus contribute to overall network difficulty
-            unix_now()
-                < sink_timestamp + self.expected_daa_window_duration_in_milliseconds(sink_daa_score)
+            unix_now() < sink_timestamp + self.expected_daa_window_duration_in_milliseconds(sink_daa_score)
         } else {
             // For testnets we consider the node to be synced if the sink timestamp is within a time range which
             // is overwhelmingly unlikely to pass without mined blocks even if net hashrate decreased dramatically.
@@ -245,8 +237,7 @@ impl Params {
             // with significant testnet hashrate does not overwhelm the network with deep side-DAGs.
             //
             // We use DAA duration as baseline and scale it down with BPS (and divide by 3 for mining only when very close to current time on TN11)
-            let max_expected_duration_without_blocks_in_milliseconds =
-                self.target_time_per_block * NEW_DIFFICULTY_WINDOW_DURATION / 3; // = DAA duration in milliseconds / bps / 3
+            let max_expected_duration_without_blocks_in_milliseconds = self.target_time_per_block * NEW_DIFFICULTY_WINDOW_DURATION / 3; // = DAA duration in milliseconds / bps / 3
             unix_now() < sink_timestamp + max_expected_duration_without_blocks_in_milliseconds
         }
     }
@@ -300,10 +291,7 @@ impl From<NetworkId> for Params {
 }
 
 pub const MAINNET_PARAMS: Params = Params {
-    dns_seeders: &[
-        "mainnet-dnsseed-1.karlsencoin.com",
-        "mainnet-dnsseed-2.karlsencoin.com",
-    ],
+    dns_seeders: &["mainnet-dnsseed-1.karlsencoin.com", "mainnet-dnsseed-2.karlsencoin.com"],
     net: NetworkId::new(NetworkType::Mainnet),
     genesis: GENESIS,
     ghostdag_k: LEGACY_DEFAULT_GHOSTDAG_K,
@@ -491,11 +479,7 @@ pub const SIMNET_PARAMS: Params = Params {
     past_median_time_sample_rate: Testnet11Bps::past_median_time_sample_rate(),
     difficulty_sample_rate: Testnet11Bps::difficulty_adjustment_sample_rate(),
     // For simnet, we deviate from TN11 configuration and allow at least 64 parents in order to support mempool benchmarks out of the box
-    max_block_parents: if Testnet11Bps::max_block_parents() > 64 {
-        Testnet11Bps::max_block_parents()
-    } else {
-        64
-    },
+    max_block_parents: if Testnet11Bps::max_block_parents() > 64 { Testnet11Bps::max_block_parents() } else { 64 },
     mergeset_size_limit: Testnet11Bps::mergeset_size_limit(),
     merge_depth: Testnet11Bps::merge_depth_bound(),
     finality_depth: Testnet11Bps::finality_depth(),

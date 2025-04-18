@@ -3,8 +3,7 @@ use crate::{
     tasks::{
         notify::notification_drainer::NotificationDrainerTask,
         subscription::{
-            address_subscriber::AddressSubscriberTask, basic_subscriber::BasicSubscriberTask,
-            submitter::SubscriptionSubmitterTask,
+            address_subscriber::AddressSubscriberTask, basic_subscriber::BasicSubscriberTask, submitter::SubscriptionSubmitterTask,
         },
         Task,
     },
@@ -31,12 +30,7 @@ impl SubscriberGroupTask {
         address_subscriber: Arc<AddressSubscriberTask>,
         notification_drainer: Arc<NotificationDrainerTask>,
     ) -> Self {
-        Self {
-            submitter,
-            basic_subscriber,
-            address_subscriber,
-            notification_drainer,
-        }
+        Self { submitter, basic_subscriber, address_subscriber, notification_drainer }
     }
 
     pub async fn build(
@@ -52,23 +46,14 @@ impl SubscriberGroupTask {
     ) -> Arc<Self> {
         // Clients
         assert!(!addresses.is_empty());
-        let clients = client_manager
-            .new_clients(addresses.len())
-            .await
-            .into_iter()
-            .map(Arc::new)
-            .collect_vec();
+        let clients = client_manager.new_clients(addresses.len()).await.into_iter().map(Arc::new).collect_vec();
 
         // Block submitter
         let submitter = SubscriptionSubmitterTask::build(workers, addresses.len(), bps);
 
         // Basic subscriber
-        let basic_subscriber = BasicSubscriberTask::build(
-            clients.clone(),
-            basic_subscriptions,
-            submitter.sender(),
-            basic_initial_secs_delay,
-        );
+        let basic_subscriber =
+            BasicSubscriberTask::build(clients.clone(), basic_subscriptions, submitter.sender(), basic_initial_secs_delay);
 
         // Address subscriber
         let address_subscriber = AddressSubscriberTask::build(
@@ -83,12 +68,7 @@ impl SubscriberGroupTask {
         // Notification drainer
         let notification_drainer = NotificationDrainerTask::build(clients);
 
-        Arc::new(Self::new(
-            submitter,
-            basic_subscriber,
-            address_subscriber,
-            notification_drainer,
-        ))
+        Arc::new(Self::new(submitter, basic_subscriber, address_subscriber, notification_drainer))
     }
 }
 

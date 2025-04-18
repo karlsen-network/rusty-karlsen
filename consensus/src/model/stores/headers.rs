@@ -35,12 +35,7 @@ impl MemSizeEstimator for HeaderWithBlockLevel {
 
 pub trait HeaderStore: HeaderStoreReader {
     // This is append only
-    fn insert(
-        &self,
-        hash: Hash,
-        header: Arc<Header>,
-        block_level: BlockLevel,
-    ) -> Result<(), StoreError>;
+    fn insert(&self, hash: Hash, header: Arc<Header>, block_level: BlockLevel) -> Result<(), StoreError>;
     fn delete(&self, hash: Hash) -> Result<(), StoreError>;
 }
 
@@ -56,12 +51,7 @@ impl MemSizeEstimator for CompactHeaderData {}
 
 impl From<&Header> for CompactHeaderData {
     fn from(header: &Header) -> Self {
-        Self {
-            daa_score: header.daa_score,
-            timestamp: header.timestamp,
-            bits: header.bits,
-            blue_score: header.blue_score,
-        }
+        Self { daa_score: header.daa_score, timestamp: header.timestamp, bits: header.bits, blue_score: header.blue_score }
     }
 }
 
@@ -82,19 +72,11 @@ impl DbHeadersStore {
                 compact_cache_policy,
                 DatabaseStorePrefixes::HeadersCompact.into(),
             ),
-            headers_access: CachedDbAccess::new(
-                db,
-                cache_policy,
-                DatabaseStorePrefixes::Headers.into(),
-            ),
+            headers_access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::Headers.into()),
         }
     }
 
-    pub fn clone_with_new_cache(
-        &self,
-        cache_policy: CachePolicy,
-        compact_cache_policy: CachePolicy,
-    ) -> Self {
+    pub fn clone_with_new_cache(&self, cache_policy: CachePolicy, compact_cache_policy: CachePolicy) -> Self {
         Self::new(Arc::clone(&self.db), cache_policy, compact_cache_policy)
     }
 
@@ -112,25 +94,13 @@ impl DbHeadersStore {
         if self.headers_access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.headers_access.write(
-            BatchDbWriter::new(batch),
-            hash,
-            HeaderWithBlockLevel {
-                header: header.clone(),
-                block_level,
-            },
-        )?;
-        self.compact_headers_access.write(
-            BatchDbWriter::new(batch),
-            hash,
-            header.as_ref().into(),
-        )?;
+        self.headers_access.write(BatchDbWriter::new(batch), hash, HeaderWithBlockLevel { header: header.clone(), block_level })?;
+        self.compact_headers_access.write(BatchDbWriter::new(batch), hash, header.as_ref().into())?;
         Ok(())
     }
 
     pub fn delete_batch(&self, batch: &mut WriteBatch, hash: Hash) -> Result<(), StoreError> {
-        self.compact_headers_access
-            .delete(BatchDbWriter::new(batch), hash)?;
+        self.compact_headers_access.delete(BatchDbWriter::new(batch), hash)?;
         self.headers_access.delete(BatchDbWriter::new(batch), hash)
     }
 }
@@ -186,35 +156,19 @@ impl HeaderStore for DbHeadersStore {
             return Err(StoreError::HashAlreadyExists(hash));
         }
         if self.compact_headers_access.has(hash)? {
-            return Err(StoreError::DataInconsistency(format!(
-                "store has compact data for {} but is missing full data",
-                hash
-            )));
+            return Err(StoreError::DataInconsistency(format!("store has compact data for {} but is missing full data", hash)));
         }
         let mut batch = WriteBatch::default();
-        self.compact_headers_access.write(
-            BatchDbWriter::new(&mut batch),
-            hash,
-            header.as_ref().into(),
-        )?;
-        self.headers_access.write(
-            BatchDbWriter::new(&mut batch),
-            hash,
-            HeaderWithBlockLevel {
-                header,
-                block_level,
-            },
-        )?;
+        self.compact_headers_access.write(BatchDbWriter::new(&mut batch), hash, header.as_ref().into())?;
+        self.headers_access.write(BatchDbWriter::new(&mut batch), hash, HeaderWithBlockLevel { header, block_level })?;
         self.db.write(batch)?;
         Ok(())
     }
 
     fn delete(&self, hash: Hash) -> Result<(), StoreError> {
         let mut batch = WriteBatch::default();
-        self.compact_headers_access
-            .delete(BatchDbWriter::new(&mut batch), hash)?;
-        self.headers_access
-            .delete(BatchDbWriter::new(&mut batch), hash)?;
+        self.compact_headers_access.delete(BatchDbWriter::new(&mut batch), hash)?;
+        self.headers_access.delete(BatchDbWriter::new(&mut batch), hash)?;
         self.db.write(batch)?;
         Ok(())
     }

@@ -98,12 +98,7 @@ impl Add for Input {
             (None, None) => None,
             (Some(utxo), None) | (None, Some(utxo)) => Some(utxo),
             (Some(left), Some(right)) if left == right => Some(left),
-            (Some(left), Some(right)) => {
-                return Err(CombineError::NotCompatibleUtxos {
-                    this: left,
-                    that: right,
-                })
-            }
+            (Some(left), Some(right)) => return Err(CombineError::NotCompatibleUtxos { this: left, that: right }),
         };
 
         // todo discuss merging. if sequence is equal - combine, otherwise use input which has bigger sequence number as is
@@ -116,14 +111,9 @@ impl Add for Input {
         self.redeem_script = match (self.redeem_script.take(), rhs.redeem_script) {
             (None, None) => None,
             (Some(script), None) | (None, Some(script)) => Some(script),
-            (Some(script_left), Some(script_right)) if script_left == script_right => {
-                Some(script_left)
-            }
+            (Some(script_left), Some(script_right)) if script_left == script_right => Some(script_left),
             (Some(script_left), Some(script_right)) => {
-                return Err(CombineError::NotCompatibleRedeemScripts {
-                    this: script_left,
-                    that: script_right,
-                })
+                return Err(CombineError::NotCompatibleRedeemScripts { this: script_left, that: script_right })
             }
         };
 
@@ -131,23 +121,16 @@ impl Add for Input {
         self.final_script_sig = match (self.final_script_sig.take(), rhs.final_script_sig) {
             (None, None) => None,
             (Some(script), None) | (None, Some(script)) => Some(script),
-            (Some(script_left), Some(script_right)) if script_left == script_right => {
-                Some(script_left)
-            }
+            (Some(script_left), Some(script_right)) if script_left == script_right => Some(script_left),
             (Some(script_left), Some(script_right)) => {
-                return Err(CombineError::NotCompatibleRedeemScripts {
-                    this: script_left,
-                    that: script_right,
-                })
+                return Err(CombineError::NotCompatibleRedeemScripts { this: script_left, that: script_right })
             }
         };
 
-        self.bip32_derivations =
-            combine_if_no_conflicts(self.bip32_derivations, rhs.bip32_derivations)?;
-        self.proprietaries = combine_if_no_conflicts(self.proprietaries, rhs.proprietaries)
-            .map_err(CombineError::NotCompatibleProprietary)?;
-        self.unknowns = combine_if_no_conflicts(self.unknowns, rhs.unknowns)
-            .map_err(CombineError::NotCompatibleUnknownField)?;
+        self.bip32_derivations = combine_if_no_conflicts(self.bip32_derivations, rhs.bip32_derivations)?;
+        self.proprietaries =
+            combine_if_no_conflicts(self.proprietaries, rhs.proprietaries).map_err(CombineError::NotCompatibleProprietary)?;
+        self.unknowns = combine_if_no_conflicts(self.unknowns, rhs.unknowns).map_err(CombineError::NotCompatibleUnknownField)?;
 
         Ok(self)
     }

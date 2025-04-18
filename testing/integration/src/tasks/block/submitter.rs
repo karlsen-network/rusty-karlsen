@@ -21,11 +21,7 @@ impl BlockSubmitterTask {
         Self { pool, stopper }
     }
 
-    pub async fn build(
-        client_manager: Arc<ClientManager>,
-        pool_size: usize,
-        stopper: Stopper,
-    ) -> Arc<Self> {
+    pub async fn build(client_manager: Arc<ClientManager>, pool_size: usize, stopper: Stopper) -> Arc<Self> {
         let pool = client_manager.new_client_pool(pool_size, 100).await;
         Arc::new(Self::new(pool, stopper))
     }
@@ -43,10 +39,7 @@ impl Task for BlockSubmitterTask {
             loop {
                 match c.submit_block(block.clone(), false).await {
                     Ok(response) => {
-                        assert_eq!(
-                            response.report,
-                            karlsen_rpc_core::SubmitBlockReport::Success
-                        );
+                        assert_eq!(response.report, karlsen_rpc_core::SubmitBlockReport::Success);
                         break;
                     }
                     Err(_) => {

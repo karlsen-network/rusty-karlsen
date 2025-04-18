@@ -7,12 +7,7 @@ use karlsen_wallet_core::storage::Binding;
 pub struct History;
 
 impl History {
-    async fn main(
-        self: Arc<Self>,
-        ctx: &Arc<dyn Context>,
-        mut argv: Vec<String>,
-        _cmd: &str,
-    ) -> Result<()> {
+    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, mut argv: Vec<String>, _cmd: &str) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
 
         if argv.is_empty() {
@@ -39,14 +34,7 @@ impl History {
                 match store.load_single(&binding, &network_id, &txid).await {
                     Ok(tx) => {
                         let lines = tx
-                            .format_transaction_with_args(
-                                &ctx.wallet(),
-                                None,
-                                current_daa_score,
-                                true,
-                                true,
-                                Some(account.clone()),
-                            )
+                            .format_transaction_with_args(&ctx.wallet(), None, current_daa_score, true, true, Some(account.clone()))
                             .await;
                         lines.iter().for_each(|line| tprintln!(ctx, "{line}"));
                     }
@@ -58,19 +46,11 @@ impl History {
                 return Ok(());
             }
             "list" => {
-                let last = if argv.is_empty() {
-                    None
-                } else {
-                    argv[0].parse::<usize>().ok()
-                };
+                let last = if argv.is_empty() { None } else { argv[0].parse::<usize>().ok() };
                 (last, false)
             }
             "details" => {
-                let last = if argv.is_empty() {
-                    None
-                } else {
-                    argv[0].parse::<usize>().ok()
-                };
+                let last = if argv.is_empty() { None } else { argv[0].parse::<usize>().ok() };
                 (last, true)
             }
             v => {
@@ -159,14 +139,8 @@ impl History {
         ctx.term().help(
             &[
                 ("list [<last N transactions>]", "List transactions"),
-                (
-                    "details [<last N transactions>]",
-                    "List transactions with UTXO details",
-                ),
-                (
-                    "lookup <transaction id>",
-                    "Lookup transaction in the history",
-                ),
+                ("details [<last N transactions>]", "List transactions with UTXO details"),
+                ("lookup <transaction id>", "Lookup transaction in the history"),
             ],
             None,
         )?;

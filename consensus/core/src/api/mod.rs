@@ -5,9 +5,7 @@ use std::sync::Arc;
 use crate::{
     acceptance_data::AcceptanceData,
     api::args::{TransactionValidationArgs, TransactionValidationBatchArgs},
-    block::{
-        Block, BlockTemplate, TemplateBuildMode, TemplateTransactionSelector, VirtualStateApproxId,
-    },
+    block::{Block, BlockTemplate, TemplateBuildMode, TemplateTransactionSelector, VirtualStateApproxId},
     blockstatus::BlockStatus,
     coinbase::MinerData,
     daa_score_timestamp::DaaScoreTimestamp,
@@ -67,11 +65,7 @@ pub trait ConsensusApi: Send + Sync {
 
     /// Populates the mempool transaction with maximally found UTXO entry data and proceeds to full transaction
     /// validation if all are found. If validation is successful, also `transaction.calculated_fee` is expected to be populated.
-    fn validate_mempool_transaction(
-        &self,
-        transaction: &mut MutableTransaction,
-        args: &TransactionValidationArgs,
-    ) -> TxResult<()> {
+    fn validate_mempool_transaction(&self, transaction: &mut MutableTransaction, args: &TransactionValidationArgs) -> TxResult<()> {
         unimplemented!()
     }
 
@@ -91,10 +85,7 @@ pub trait ConsensusApi: Send + Sync {
     }
 
     /// Populates the mempool transactions with maximally found UTXO entry data.
-    fn populate_mempool_transactions_in_parallel(
-        &self,
-        transactions: &mut [MutableTransaction],
-    ) -> Vec<TxResult<()>> {
+    fn populate_mempool_transactions_in_parallel(&self, transactions: &mut [MutableTransaction]) -> Vec<TxResult<()>> {
         unimplemented!()
     }
 
@@ -195,11 +186,7 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn modify_coinbase_payload(
-        &self,
-        payload: Vec<u8>,
-        miner_data: &MinerData,
-    ) -> CoinbaseResult<Vec<u8>> {
+    fn modify_coinbase_payload(&self, payload: Vec<u8>, miner_data: &MinerData) -> CoinbaseResult<Vec<u8>> {
         unimplemented!()
     }
 
@@ -211,11 +198,7 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn apply_pruning_proof(
-        &self,
-        proof: PruningPointProof,
-        trusted_set: &[TrustedBlock],
-    ) -> PruningImportResult<()> {
+    fn apply_pruning_proof(&self, proof: PruningPointProof, trusted_set: &[TrustedBlock]) -> PruningImportResult<()> {
         unimplemented!()
     }
 
@@ -223,19 +206,11 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn append_imported_pruning_point_utxos(
-        &self,
-        utxoset_chunk: &[(TransactionOutpoint, UtxoEntry)],
-        current_multiset: &mut MuHash,
-    ) {
+    fn append_imported_pruning_point_utxos(&self, utxoset_chunk: &[(TransactionOutpoint, UtxoEntry)], current_multiset: &mut MuHash) {
         unimplemented!()
     }
 
-    fn import_pruning_point_utxo_set(
-        &self,
-        new_pruning_point: Hash,
-        imported_utxo_multiset: MuHash,
-    ) -> PruningImportResult<()> {
+    fn import_pruning_point_utxo_set(&self, new_pruning_point: Hash, imported_utxo_multiset: MuHash) -> PruningImportResult<()> {
         unimplemented!()
     }
 
@@ -243,12 +218,7 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn get_hashes_between(
-        &self,
-        low: Hash,
-        high: Hash,
-        max_blocks: usize,
-    ) -> ConsensusResult<(Vec<Hash>, Hash)> {
+    fn get_hashes_between(&self, low: Hash, high: Hash, max_blocks: usize) -> ConsensusResult<(Vec<Hash>, Hash)> {
         unimplemented!()
     }
 
@@ -263,12 +233,7 @@ pub trait ConsensusApi: Send + Sync {
     /// Returns the antipast of block `hash` from the POV of `context`, i.e. `antipast(hash) ∩ past(context)`.
     /// Since this might be an expensive operation for deep blocks, we allow the caller to specify a limit
     /// `max_traversal_allowed` on the maximum amount of blocks to traverse for obtaining the answer
-    fn get_antipast_from_pov(
-        &self,
-        hash: Hash,
-        context: Hash,
-        max_traversal_allowed: Option<u64>,
-    ) -> ConsensusResult<Vec<Hash>> {
+    fn get_antipast_from_pov(&self, hash: Hash, context: Hash, max_traversal_allowed: Option<u64>) -> ConsensusResult<Vec<Hash>> {
         unimplemented!()
     }
 
@@ -281,19 +246,11 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn create_virtual_selected_chain_block_locator(
-        &self,
-        low: Option<Hash>,
-        high: Option<Hash>,
-    ) -> ConsensusResult<Vec<Hash>> {
+    fn create_virtual_selected_chain_block_locator(&self, low: Option<Hash>, high: Option<Hash>) -> ConsensusResult<Vec<Hash>> {
         unimplemented!()
     }
 
-    fn create_block_locator_from_pruning_point(
-        &self,
-        high: Hash,
-        limit: usize,
-    ) -> ConsensusResult<Vec<Hash>> {
+    fn create_block_locator_from_pruning_point(&self, high: Hash, limit: usize) -> ConsensusResult<Vec<Hash>> {
         unimplemented!()
     }
 
@@ -301,9 +258,7 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn get_pruning_point_anticone_and_trusted_data(
-        &self,
-    ) -> ConsensusResult<Arc<PruningPointTrustedData>> {
+    fn get_pruning_point_anticone_and_trusted_data(&self) -> ConsensusResult<Arc<PruningPointTrustedData>> {
         unimplemented!()
     }
 
@@ -338,10 +293,7 @@ pub trait ConsensusApi: Send + Sync {
     /// Returns acceptance data for a set of blocks belonging to the selected parent chain.
     ///
     /// See `self::get_virtual_chain`
-    fn get_blocks_acceptance_data(
-        &self,
-        hashes: &[Hash],
-    ) -> ConsensusResult<Vec<Arc<AcceptanceData>>> {
+    fn get_blocks_acceptance_data(&self, hashes: &[Hash]) -> ConsensusResult<Vec<Arc<AcceptanceData>>> {
         unimplemented!()
     }
 
@@ -374,18 +326,11 @@ pub trait ConsensusApi: Send + Sync {
 
     // TODO: Think of a better name.
     // TODO: Delete this function once there's no need for go-karlsend backward compatibility.
-    fn get_trusted_block_associated_ghostdag_data_block_hashes(
-        &self,
-        hash: Hash,
-    ) -> ConsensusResult<Vec<Hash>> {
+    fn get_trusted_block_associated_ghostdag_data_block_hashes(&self, hash: Hash) -> ConsensusResult<Vec<Hash>> {
         unimplemented!()
     }
 
-    fn estimate_network_hashes_per_second(
-        &self,
-        start_hash: Option<Hash>,
-        window_size: usize,
-    ) -> ConsensusResult<u64> {
+    fn estimate_network_hashes_per_second(&self, start_hash: Option<Hash>, window_size: usize) -> ConsensusResult<u64> {
         unimplemented!()
     }
 

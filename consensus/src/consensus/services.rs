@@ -2,25 +2,18 @@ use super::storage::ConsensusStorage;
 use crate::{
     config::Config,
     model::{
-        services::{
-            reachability::MTReachabilityService, relations::MTRelationsService,
-            statuses::MTStatusesService,
-        },
+        services::{reachability::MTReachabilityService, relations::MTRelationsService, statuses::MTStatusesService},
         stores::{
-            block_window_cache::BlockWindowCacheStore, daa::DbDaaStore, depth::DbDepthStore,
-            ghostdag::DbGhostdagStore, headers::DbHeadersStore,
-            headers_selected_tip::DbHeadersSelectedTipStore,
-            past_pruning_points::DbPastPruningPointsStore, pruning::DbPruningStore,
-            reachability::DbReachabilityStore, relations::DbRelationsStore,
+            block_window_cache::BlockWindowCacheStore, daa::DbDaaStore, depth::DbDepthStore, ghostdag::DbGhostdagStore,
+            headers::DbHeadersStore, headers_selected_tip::DbHeadersSelectedTipStore, past_pruning_points::DbPastPruningPointsStore,
+            pruning::DbPruningStore, reachability::DbReachabilityStore, relations::DbRelationsStore,
             selected_chain::DbSelectedChainStore, statuses::DbStatusesStore, DB,
         },
     },
     processes::{
-        block_depth::BlockDepthManager, coinbase::CoinbaseManager,
-        ghostdag::protocol::GhostdagManager, mass::MassCalculator, parents_builder::ParentsManager,
-        pruning::PruningPointManager, pruning_proof::PruningProofManager, sync::SyncManager,
-        transaction_validator::TransactionValidator, traversal_manager::DagTraversalManager,
-        window::DualWindowManager,
+        block_depth::BlockDepthManager, coinbase::CoinbaseManager, ghostdag::protocol::GhostdagManager, mass::MassCalculator,
+        parents_builder::ParentsManager, pruning::PruningPointManager, pruning_proof::PruningProofManager, sync::SyncManager,
+        transaction_validator::TransactionValidator, traversal_manager::DagTraversalManager, window::DualWindowManager,
     },
 };
 
@@ -28,18 +21,12 @@ use itertools::Itertools;
 use karlsen_txscript::caches::TxScriptCacheCounters;
 use std::sync::{atomic::AtomicBool, Arc};
 
-pub type DbGhostdagManager = GhostdagManager<
-    DbGhostdagStore,
-    MTRelationsService<DbRelationsStore>,
-    MTReachabilityService<DbReachabilityStore>,
-    DbHeadersStore,
->;
+pub type DbGhostdagManager =
+    GhostdagManager<DbGhostdagStore, MTRelationsService<DbRelationsStore>, MTReachabilityService<DbReachabilityStore>, DbHeadersStore>;
 
-pub type DbDagTraversalManager =
-    DagTraversalManager<DbGhostdagStore, DbReachabilityStore, MTRelationsService<DbRelationsStore>>;
+pub type DbDagTraversalManager = DagTraversalManager<DbGhostdagStore, DbReachabilityStore, MTRelationsService<DbRelationsStore>>;
 
-pub type DbWindowManager =
-    DualWindowManager<DbGhostdagStore, BlockWindowCacheStore, DbHeadersStore, DbDaaStore>;
+pub type DbWindowManager = DualWindowManager<DbGhostdagStore, BlockWindowCacheStore, DbHeadersStore, DbDaaStore>;
 
 pub type DbSyncManager = SyncManager<
     MTRelationsService<DbRelationsStore>,
@@ -51,17 +38,10 @@ pub type DbSyncManager = SyncManager<
     DbStatusesStore,
 >;
 
-pub type DbPruningPointManager = PruningPointManager<
-    DbGhostdagStore,
-    DbReachabilityStore,
-    DbHeadersStore,
-    DbPastPruningPointsStore,
-    DbHeadersSelectedTipStore,
->;
-pub type DbBlockDepthManager =
-    BlockDepthManager<DbDepthStore, DbReachabilityStore, DbGhostdagStore>;
-pub type DbParentsManager =
-    ParentsManager<DbHeadersStore, DbReachabilityStore, MTRelationsService<DbRelationsStore>>;
+pub type DbPruningPointManager =
+    PruningPointManager<DbGhostdagStore, DbReachabilityStore, DbHeadersStore, DbPastPruningPointsStore, DbHeadersSelectedTipStore>;
+pub type DbBlockDepthManager = BlockDepthManager<DbDepthStore, DbReachabilityStore, DbGhostdagStore>;
+pub type DbParentsManager = ParentsManager<DbHeadersStore, DbReachabilityStore, MTRelationsService<DbRelationsStore>>;
 
 pub struct ConsensusServices {
     // Underlying storage
@@ -96,9 +76,8 @@ impl ConsensusServices {
         let params = &config.params;
 
         let statuses_service = MTStatusesService::new(storage.statuses_store.clone());
-        let relations_services = (0..=params.max_block_level)
-            .map(|level| MTRelationsService::new(storage.relations_stores.clone(), level))
-            .collect_vec();
+        let relations_services =
+            (0..=params.max_block_level).map(|level| MTRelationsService::new(storage.relations_stores.clone(), level)).collect_vec();
         let relations_service = relations_services[0].clone();
         let reachability_service = MTReachabilityService::new(storage.reachability_store.clone());
         let dag_traversal_manager = DagTraversalManager::new(

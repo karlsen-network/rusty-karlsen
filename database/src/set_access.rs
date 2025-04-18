@@ -55,10 +55,7 @@ where
     W: BuildHasher + Default + Send + Sync,
 {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy, prefix: Vec<u8>) -> Self {
-        Self {
-            inner: DbSetAccess::new(db, prefix),
-            cache: Cache::new(cache_policy),
-        }
+        Self { inner: DbSetAccess::new(db, prefix), cache: Cache::new(cache_policy) }
     }
 
     pub fn read_from_cache(&self, key: TKey) -> Option<ReadLock<HashSet<TData, W>>> {
@@ -70,10 +67,7 @@ where
         if let Some(data) = self.cache.get(&key) {
             Ok(data)
         } else {
-            let data: HashSet<TData, _> = self
-                .inner
-                .bucket_iterator(key.clone())
-                .collect::<Result<_, _>>()?;
+            let data: HashSet<TData, _> = self.inner.bucket_iterator(key.clone()).collect::<Result<_, _>>()?;
             let data = Arc::new(RwLock::new(data));
             self.cache.insert(key, data.clone());
             Ok(data)
@@ -86,10 +80,9 @@ where
 
     pub fn write(&self, writer: impl DbWriter, key: TKey, data: TData) -> Result<(), StoreError> {
         // We cache the new item only if the set entry already exists in the cache
-        self.cache
-            .update_if_entry_exists(key.clone(), |locked_entry| {
-                locked_entry.write().insert(data.clone());
-            });
+        self.cache.update_if_entry_exists(key.clone(), |locked_entry| {
+            locked_entry.write().insert(data.clone());
+        });
         self.inner.write(writer, key, data)
     }
 
@@ -100,10 +93,9 @@ where
 
     pub fn delete(&self, writer: impl DbWriter, key: TKey, data: TData) -> Result<(), StoreError> {
         // We remove the item from cache only if the full set entry already exists in the cache
-        self.cache
-            .update_if_entry_exists(key.clone(), |locked_entry| {
-                locked_entry.write().remove(&data);
-            });
+        self.cache.update_if_entry_exists(key.clone(), |locked_entry| {
+            locked_entry.write().remove(&data);
+        });
         self.inner.delete(writer, key, data)?;
         Ok(())
     }
@@ -134,19 +126,10 @@ where
     TData: Clone + std::hash::Hash + Eq + Send + Sync + DeserializeOwned + Serialize,
 {
     pub fn new(db: Arc<DB>, prefix: Vec<u8>) -> Self {
-        Self {
-            db,
-            prefix,
-            _phantom: Default::default(),
-        }
+        Self { db, prefix, _phantom: Default::default() }
     }
 
-    pub fn write(
-        &self,
-        mut writer: impl DbWriter,
-        key: TKey,
-        data: TData,
-    ) -> Result<(), StoreError> {
+    pub fn write(&self, mut writer: impl DbWriter, key: TKey, data: TData) -> Result<(), StoreError> {
         writer.put(self.get_db_key(&key, &data)?, [])?;
         Ok(())
     }
@@ -163,12 +146,7 @@ where
         Ok(())
     }
 
-    pub fn delete(
-        &self,
-        mut writer: impl DbWriter,
-        key: TKey,
-        data: TData,
-    ) -> Result<(), StoreError> {
+    pub fn delete(&self, mut writer: impl DbWriter, key: TKey, data: TData) -> Result<(), StoreError> {
         writer.delete(self.get_db_key(&key, &data)?)?;
         Ok(())
     }
@@ -208,11 +186,10 @@ where
         TKey: Clone + AsRef<[u8]>,
         TData: DeserializeOwned,
     {
-        self.seek_iterator(key, usize::MAX, false)
-            .map(|res| match res {
-                Ok(data) => Ok(bincode::deserialize(&data)?),
-                Err(err) => Err(err),
-            })
+        self.seek_iterator(key, usize::MAX, false).map(|res| match res {
+            Ok(data) => Ok(bincode::deserialize(&data)?),
+            Err(err) => Err(err),
+        })
     }
 }
 
@@ -233,23 +210,17 @@ mod tests {
 
         for i in 0..16 {
             for j in 0..2 {
-                access
-                    .write(DirectDbWriter::new(&db), i.into(), i + j)
-                    .unwrap();
+                access.write(DirectDbWriter::new(&db), i.into(), i + j).unwrap();
             }
         }
         for i in 0..16 {
             assert_eq!(2, access.bucket_iterator(i.into()).count());
         }
-        access
-            .delete_bucket(DirectDbWriter::new(&db), 3.into())
-            .unwrap();
+        access.delete_bucket(DirectDbWriter::new(&db), 3.into()).unwrap();
         assert_eq!(0, access.bucket_iterator(3.into()).count());
 
         let mut batch = WriteBatch::default();
-        access
-            .delete_bucket(BatchDbWriter::new(&mut batch), 6.into())
-            .unwrap();
+        access.delete_bucket(BatchDbWriter::new(&mut batch), 6.into()).unwrap();
         db.write(batch).unwrap();
         assert_eq!(0, access.bucket_iterator(6.into()).count());
     }

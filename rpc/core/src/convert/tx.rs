@@ -10,11 +10,7 @@ impl From<&Transaction> for RpcTransaction {
         Self {
             version: item.version,
             inputs: item.inputs.iter().map(RpcTransactionInput::from).collect(),
-            outputs: item
-                .outputs
-                .iter()
-                .map(RpcTransactionOutput::from)
-                .collect(),
+            outputs: item.outputs.iter().map(RpcTransactionOutput::from).collect(),
             lock_time: item.lock_time,
             subnetwork_id: item.subnetwork_id.clone(),
             gas: item.gas,
@@ -87,11 +83,6 @@ impl TryFrom<&RpcTransactionOutput> for TransactionOutput {
 impl TryFrom<&RpcTransactionInput> for TransactionInput {
     type Error = RpcError;
     fn try_from(item: &RpcTransactionInput) -> RpcResult<Self> {
-        Ok(Self::new(
-            item.previous_outpoint,
-            item.signature_script.clone(),
-            item.sequence,
-            item.sig_op_count,
-        ))
+        Ok(Self::new(item.previous_outpoint, item.signature_script.clone(), item.sequence, item.sig_op_count))
     }
 }

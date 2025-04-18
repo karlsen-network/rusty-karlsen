@@ -23,12 +23,7 @@ impl FeerateTransactionKey {
         // NOTE: any change to the way this weight is calculated (such as scaling by some factor)
         // requires a reversed update to total_weight in `Frontier::build_feerate_estimator`. This
         // is because the math methods in FeeEstimator assume this specific weight function.
-        Self {
-            fee,
-            mass,
-            weight: (fee as f64 / mass as f64).powi(ALPHA),
-            tx,
-        }
+        Self { fee, mass, weight: (fee as f64 / mass as f64).powi(ALPHA), tx }
     }
 
     pub fn feerate(&self) -> f64 {
@@ -83,14 +78,8 @@ impl Ord for FeerateTransactionKey {
 impl From<&MempoolTransaction> for FeerateTransactionKey {
     fn from(tx: &MempoolTransaction) -> Self {
         let mass = tx.mtx.tx.mass();
-        let fee = tx
-            .mtx
-            .calculated_fee
-            .expect("fee is expected to be populated");
-        assert_ne!(
-            mass, 0,
-            "mass field is expected to be set when inserting to the mempool"
-        );
+        let fee = tx.mtx.calculated_fee.expect("fee is expected to be populated");
+        assert_ne!(mass, 0, "mass field is expected to be set when inserting to the mempool");
         Self::new(fee, mass, tx.mtx.tx.clone())
     }
 }
@@ -109,15 +98,7 @@ pub(crate) mod tests {
         let mut hasher = TransactionID::new();
         let prev = hasher.update(i.to_le_bytes()).clone().finalize();
         let input = TransactionInput::new(TransactionOutpoint::new(prev, 0), vec![], 0, 0);
-        Arc::new(Transaction::new(
-            0,
-            vec![input],
-            vec![],
-            0,
-            SUBNETWORK_ID_NATIVE,
-            0,
-            vec![],
-        ))
+        Arc::new(Transaction::new(0, vec![input], vec![], 0, SUBNETWORK_ID_NATIVE, 0, vec![]))
     }
 
     /// Test helper for generating a feerate key with a unique tx (per u64 id)

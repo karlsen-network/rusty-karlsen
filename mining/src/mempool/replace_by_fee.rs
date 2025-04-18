@@ -27,17 +27,14 @@ impl Mempool {
 
             RbfPolicy::Allowed => {
                 // When RBF is allowed, never fails since both insertion and replacement are possible
-                let double_spends = self
-                    .transaction_pool
-                    .get_double_spend_transaction_ids(transaction);
+                let double_spends = self.transaction_pool.get_double_spend_transaction_ids(transaction);
                 if double_spends.is_empty() {
                     Ok(None)
                 } else {
                     let mut feerate_threshold = 0f64;
                     for double_spend in double_spends {
                         // We take the max over all double spends as the required threshold
-                        feerate_threshold =
-                            feerate_threshold.max(self.get_double_spend_feerate(&double_spend)?);
+                        feerate_threshold = feerate_threshold.max(self.get_double_spend_feerate(&double_spend)?);
                     }
                     Ok(Some(feerate_threshold))
                 }
@@ -45,9 +42,7 @@ impl Mempool {
 
             RbfPolicy::Mandatory => {
                 // When RBF is mandatory, fails early if we do not have exactly one double spending transaction
-                let double_spends = self
-                    .transaction_pool
-                    .get_double_spend_transaction_ids(transaction);
+                let double_spends = self.transaction_pool.get_double_spend_transaction_ids(transaction);
                 match double_spends.len() {
                     0 => Err(RuleError::RejectRbfNoDoubleSpend),
                     1 => {
@@ -79,17 +74,11 @@ impl Mempool {
             }
 
             RbfPolicy::Allowed => {
-                let double_spends = self
-                    .transaction_pool
-                    .get_double_spend_transaction_ids(transaction);
+                let double_spends = self.transaction_pool.get_double_spend_transaction_ids(transaction);
                 match double_spends.is_empty() {
                     true => Ok(None),
                     false => {
-                        let removed = self
-                            .validate_double_spending_transaction(transaction, &double_spends[0])?
-                            .mtx
-                            .tx
-                            .clone();
+                        let removed = self.validate_double_spending_transaction(transaction, &double_spends[0])?.mtx.tx.clone();
                         for double_spend in double_spends.iter().skip(1) {
                             // Validate the feerate threshold is passed for all double spends
                             self.validate_double_spending_transaction(transaction, double_spend)?;
@@ -109,17 +98,11 @@ impl Mempool {
             }
 
             RbfPolicy::Mandatory => {
-                let double_spends = self
-                    .transaction_pool
-                    .get_double_spend_transaction_ids(transaction);
+                let double_spends = self.transaction_pool.get_double_spend_transaction_ids(transaction);
                 match double_spends.len() {
                     0 => Err(RuleError::RejectRbfNoDoubleSpend),
                     1 => {
-                        let removed = self
-                            .validate_double_spending_transaction(transaction, &double_spends[0])?
-                            .mtx
-                            .tx
-                            .clone();
+                        let removed = self.validate_double_spending_transaction(transaction, &double_spends[0])?.mtx.tx.clone();
                         self.remove_transaction(
                             &double_spends[0].owner_id,
                             true,
@@ -150,10 +133,9 @@ impl Mempool {
         double_spend: &DoubleSpend,
     ) -> RuleResult<&'a MempoolTransaction> {
         let owner = self.transaction_pool.get_double_spend_owner(double_spend)?;
-        if let (Some(transaction_feerate), Some(double_spend_feerate)) = (
-            transaction.calculated_feerate(),
-            owner.mtx.calculated_feerate(),
-        ) {
+        if let (Some(transaction_feerate), Some(double_spend_feerate)) =
+            (transaction.calculated_feerate(), owner.mtx.calculated_feerate())
+        {
             if transaction_feerate > double_spend_feerate {
                 return Ok(owner);
             } else {

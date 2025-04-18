@@ -16,10 +16,7 @@ mod trace {
 
     #[inline]
     pub(super) fn sys_now() -> u64 {
-        SystemTime::now()
-            .duration_since(*SYS_START)
-            .unwrap_or_default()
-            .as_micros() as u64
+        SystemTime::now().duration_since(*SYS_START).unwrap_or_default().as_micros() as u64
     }
 
     #[derive(Debug, Default)]
@@ -39,8 +36,7 @@ mod trace {
             let start = self.readers_start.load(Ordering::Relaxed);
             let now = sys_now();
             if start < now {
-                let readers_time =
-                    self.readers_time.fetch_add(now - start, Ordering::Relaxed) + now - start;
+                let readers_time = self.readers_time.fetch_add(now - start, Ordering::Relaxed) + now - start;
                 let log_time = self.log_time.load(Ordering::Relaxed);
                 if log_time + (Duration::from_secs(10).as_micros() as u64) < now {
                     let log_value = self.log_value.load(Ordering::Relaxed);
@@ -109,12 +105,7 @@ impl Semaphore {
                 return None;
             }
 
-            match self.counter.compare_exchange_weak(
-                count,
-                count - permits,
-                Ordering::AcqRel,
-                Ordering::Acquire,
-            ) {
+            match self.counter.compare_exchange_weak(count, count - permits, Ordering::AcqRel, Ordering::Acquire) {
                 Ok(_) => {
                     #[cfg(feature = "semaphore-trace")]
                     if permits == 1 && count == Self::MAX_PERMITS {

@@ -38,23 +38,12 @@ impl State {
         let matrix = Matrix::generate(pre_pow_hash);
         let header_version = header.version;
 
-        Self {
-            inner: crate::State {
-                matrix,
-                target,
-                hasher,
-                header_version,
-            },
-            pre_pow_hash,
-        }
+        Self { inner: crate::State { matrix, target, hasher, header_version }, pre_pow_hash }
     }
 
     #[wasm_bindgen(getter)]
     pub fn target(&self) -> Result<BigInt> {
-        self.inner
-            .target
-            .try_into()
-            .map_err(|err| Error::Custom(format!("{err:?}")))
+        self.inner.target.try_into().map_err(|err| Error::Custom(format!("{err:?}")))
     }
 
     #[wasm_bindgen(js_name=checkPow)]
@@ -63,11 +52,7 @@ impl State {
         let (c, v) = self.inner.check_pow(nonce);
         let array = js_sys::Array::new();
         array.push(&JsValue::from(c));
-        array.push(
-            &v.to_bigint()
-                .map_err(|err| Error::Custom(format!("{err:?}")))?
-                .into(),
-        );
+        array.push(&v.to_bigint().map_err(|err| Error::Custom(format!("{err:?}")))?.into());
 
         Ok(array)
     }

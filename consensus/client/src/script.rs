@@ -361,11 +361,7 @@ impl ScriptBuilder {
 
 impl Default for ScriptBuilder {
     fn default() -> Self {
-        Self {
-            script_builder: Rc::new(RefCell::new(
-                karlsen_txscript::script_builder::ScriptBuilder::new(),
-            )),
-        }
+        Self { script_builder: Rc::new(RefCell::new(karlsen_txscript::script_builder::ScriptBuilder::new())) }
     }
 }
 

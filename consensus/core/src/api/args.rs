@@ -21,14 +21,10 @@ pub struct TransactionValidationBatchArgs {
 }
 
 impl TransactionValidationBatchArgs {
-    const DEFAULT_ARGS: TransactionValidationArgs = TransactionValidationArgs {
-        feerate_threshold: None,
-    };
+    const DEFAULT_ARGS: TransactionValidationArgs = TransactionValidationArgs { feerate_threshold: None };
 
     pub fn new() -> Self {
-        Self {
-            tx_args: HashMap::new(),
-        }
+        Self { tx_args: HashMap::new() }
     }
 
     /// Set some fee/mass threshold for transaction `transaction_id`.
@@ -40,9 +36,7 @@ impl TransactionValidationBatchArgs {
     }
 
     pub fn get(&self, transaction_id: &TransactionId) -> &TransactionValidationArgs {
-        self.tx_args
-            .get(transaction_id)
-            .unwrap_or(&Self::DEFAULT_ARGS)
+        self.tx_args.get(transaction_id).unwrap_or(&Self::DEFAULT_ARGS)
     }
 }
 
