@@ -37,6 +37,7 @@ use karlsen_index_core::{
     connection::IndexChannelConnection, indexed_utxos::UtxoSetByScriptPublicKey,
     notification::Notification as IndexNotification, notifier::IndexNotifier,
 };
+use karlsen_mining::feerate::FeeEstimateVerbose;
 use karlsen_mining::model::tx_query::TransactionQuery;
 use karlsen_mining::{manager::MiningManagerProxy, mempool::tx::Orphan};
 use karlsen_notify::listener::ListenerLifespan;
@@ -115,7 +116,9 @@ pub struct RpcCoreService {
     p2p_tower_counters: Arc<TowerConnectionCounters>,
     grpc_tower_counters: Arc<TowerConnectionCounters>,
     fee_estimate_cache: ExpiringCache<RpcFeeEstimate>,
-    fee_estimate_verbose_cache: ExpiringCache<GetFeeEstimateExperimentalResponse>,
+    fee_estimate_verbose_cache: ExpiringCache<
+        karlsen_mining::errors::MiningManagerResult<GetFeeEstimateExperimentalResponse>,
+    >,
 }
 
 const RPC_CORE: &str = "rpc-core";
@@ -945,15 +948,19 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
     ) -> RpcResult<GetFeeEstimateExperimentalResponse> {
         if request.verbose {
             let mining_manager = self.mining_manager.clone();
+            let consensus_manager = self.consensus_manager.clone();
+            let prefix = self.config.prefix();
+
             let response = self
                 .fee_estimate_verbose_cache
                 .get(async move {
+                    let session = consensus_manager.consensus().unguarded_session();
                     mining_manager
-                        .get_realtime_feerate_estimations_verbose()
+                        .get_realtime_feerate_estimations_verbose(&session, prefix)
                         .await
-                        .into_rpc()
+                        .map(FeeEstimateVerbose::into_rpc)
                 })
-                .await;
+                .await?;
             Ok(response)
         } else {
             let estimate = self

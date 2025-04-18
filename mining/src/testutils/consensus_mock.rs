@@ -123,6 +123,7 @@ impl ConsensusApi for ConsensusMock {
             now,
             0,
             ZERO_HASH,
+            vec![],
         ))
     }
 

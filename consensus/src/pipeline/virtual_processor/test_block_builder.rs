@@ -72,6 +72,6 @@ impl TestBlockBuilder {
             &pov_virtual_utxo_view,
         )?;
         drop(virtual_read);
-        self.build_block_template_from_virtual_state(pov_virtual_state, miner_data, txs)
+        self.build_block_template_from_virtual_state(pov_virtual_state, miner_data, txs, vec![])
     }
 }
