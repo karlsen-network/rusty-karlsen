@@ -314,30 +314,15 @@ impl std::fmt::Debug for Inner {
             .field("sig_op_count", &self.sig_op_count)
             .field("minimum_signatures", &self.minimum_signatures)
             .field("change_address", &self.change_address)
-            .field(
-                "standard_change_output_compute_mass",
-                &self.standard_change_output_compute_mass,
-            )
+            .field("standard_change_output_compute_mass", &self.standard_change_output_compute_mass)
             .field("signature_mass_per_input", &self.signature_mass_per_input)
             // .field("final_transaction", &self.final_transaction)
-            .field(
-                "final_transaction_priority_fee",
-                &self.final_transaction_priority_fee,
-            )
+            .field("final_transaction_priority_fee", &self.final_transaction_priority_fee)
             .field("final_transaction_outputs", &self.final_transaction_outputs)
-            .field(
-                "final_transaction_outputs_harmonic",
-                &self.final_transaction_outputs_harmonic,
-            )
-            .field(
-                "final_transaction_outputs_compute_mass",
-                &self.final_transaction_outputs_compute_mass,
-            )
+            .field("final_transaction_outputs_harmonic", &self.final_transaction_outputs_harmonic)
+            .field("final_transaction_outputs_compute_mass", &self.final_transaction_outputs_compute_mass)
             .field("final_transaction_payload", &self.final_transaction_payload)
-            .field(
-                "final_transaction_payload_mass",
-                &self.final_transaction_payload_mass,
-            )
+            .field("final_transaction_payload_mass", &self.final_transaction_payload_mass)
             // .field("context", &self.context)
             .finish()
     }
@@ -603,9 +588,9 @@ impl Generator {
        4. Check if the transaction mass threshold has been reached, if so, yield the transaction.
        5. Register input with the [`Data`] structures.
        6. Check if the final transaction amount has been reached, if so, yield the transaction.
+
     }
     */
-
     fn generate_transaction_data(&self, context: &mut Context, stage: &mut Stage) -> Result<(DataKind, Data)> {
         let calc = &self.inner.mass_calculator;
         let mut data = Data::new(calc);

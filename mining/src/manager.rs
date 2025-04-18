@@ -1074,7 +1074,7 @@ fn feerate_stats(transactions: Vec<Transaction>, calculated_fees: Vec<u64>) -> O
 mod tests {
     use super::*;
     use karlsen_consensus_core::subnets;
-    use std::iter::repeat;
+    use std::iter::repeat_n;
 
     fn transactions(length: usize) -> Vec<Transaction> {
         let tx = || {
@@ -1082,7 +1082,7 @@ mod tests {
             tx.set_mass(2);
             tx
         };
-        let mut txs = repeat(tx()).take(length).collect_vec();
+        let mut txs = repeat_n(tx(), length).collect_vec();
         txs[0].subnetwork_id = subnets::SUBNETWORK_ID_COINBASE;
         txs
     }
