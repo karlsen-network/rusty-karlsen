@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion, SamplingMode};
 use karlsen_addresses::{Address, Prefix, Version};
-use karlsen_consensus::processes::transaction_validator::transaction_validator_populated::{
+use karlsen_consensus::processes::transaction_validator::tx_validation_in_utxo_context::{
     check_scripts_par_iter, check_scripts_par_iter_pool, check_scripts_sequential,
 };
 use karlsen_consensus_core::hashing::sighash::{calc_schnorr_signature_hash, SigHashReusedValuesUnsync};
