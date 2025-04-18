@@ -62,7 +62,7 @@ members = [
 ]
 
 [workspace.package]
-rust-version = "1.81.0"
+rust-version = "1.82.0"
 version = "2.1.0"
 authors = ["Karlsen developers"]
 license = "ISC"
