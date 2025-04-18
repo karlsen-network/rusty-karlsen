@@ -18,6 +18,7 @@ faster-hex.workspace = true
 futures-util.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
+karlsen-addresses.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-consensus-notify.workspace = true
 karlsen-consensusmanager.workspace = true

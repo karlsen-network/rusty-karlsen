@@ -643,6 +643,7 @@ impl RpcApi for KarlsenRpcClient {
             GetSubnetwork,
             GetSyncStatus,
             GetSystemInfo,
+            GetUtxoReturnAddress,
             GetUtxosByAddresses,
             GetVirtualChainFromBlock,
             ResolveFinalityConflict,
