@@ -131,6 +131,9 @@ pub struct Params {
     pub max_block_level: BlockLevel,
     pub pruning_proof_m: u64,
     pub hf_daa_score: u64,
+
+    /// Activation rules for when to enable using the payload field in transactions
+    pub payload_activation: ForkActivation,
 }
 
 fn unix_now() -> u64 {
@@ -385,6 +388,8 @@ pub const MAINNET_PARAMS: Params = Params {
     max_block_level: 225,
     pruning_proof_m: 1000,
     hf_daa_score: 26962009, // HF DAAscore to switch to khashv2 (Fri Sep 13 01:37:00 PM UTC 2024)
+
+    payload_activation: ForkActivation::never(),
 };
 
 pub const TESTNET_PARAMS: Params = Params {
@@ -442,6 +447,8 @@ pub const TESTNET_PARAMS: Params = Params {
     max_block_level: 250,
     pruning_proof_m: 1000,
     hf_daa_score: 43200, // HF DAAscore to switch to khashv2 (12 hours after testnet launch)
+
+    payload_activation: ForkActivation::never(),
 };
 
 pub const TESTNET11_PARAMS: Params = Params {
@@ -495,6 +502,8 @@ pub const TESTNET11_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     hf_daa_score: 0,
+
+    payload_activation: ForkActivation::never(),
 };
 
 pub const SIMNET_PARAMS: Params = Params {
@@ -550,6 +559,8 @@ pub const SIMNET_PARAMS: Params = Params {
     skip_proof_of_work: true, // For simnet only, PoW can be simulated by default
     max_block_level: 250,
     hf_daa_score: 3600,
+
+    payload_activation: ForkActivation::never(),
 };
 
 pub const DEVNET_PARAMS: Params = Params {
@@ -608,4 +619,6 @@ pub const DEVNET_PARAMS: Params = Params {
     max_block_level: 250,
     pruning_proof_m: 1000,
     hf_daa_score: 3600,
+
+    payload_activation: ForkActivation::never(),
 };
