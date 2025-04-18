@@ -3,10 +3,10 @@ use itertools::Itertools;
 use karlsen_consensus::consensus::Consensus;
 use karlsen_consensus::model::stores::virtual_state::VirtualStateStoreReader;
 use karlsen_consensus::params::Params;
-use karlsen_consensus::processes::mass::MassCalculator;
 use karlsen_consensus_core::api::ConsensusApi;
 use karlsen_consensus_core::block::{Block, TemplateBuildMode, TemplateTransactionSelector};
 use karlsen_consensus_core::coinbase::MinerData;
+use karlsen_consensus_core::mass::{Kip9Version, MassCalculator};
 use karlsen_consensus_core::sign::sign;
 use karlsen_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
 use karlsen_consensus_core::tx::{
@@ -151,10 +151,7 @@ impl Miner {
             .into_par_iter()
             .map(|mutable_tx| {
                 let signed_tx = sign(mutable_tx, schnorr_key);
-                let mass = self
-                    .mass_calculator
-                    .calc_tx_overall_mass(&signed_tx.as_verifiable(), None, karlsen_consensus::processes::mass::Kip9Version::Alpha)
-                    .unwrap();
+                let mass = self.mass_calculator.calc_tx_overall_mass(&signed_tx.as_verifiable(), None, Kip9Version::Alpha).unwrap();
                 signed_tx.tx.set_mass(mass);
                 let mut signed_tx = signed_tx.tx;
                 signed_tx.finalize();

@@ -11,13 +11,13 @@ use crate::{
         },
     },
     processes::{
-        block_depth::BlockDepthManager, coinbase::CoinbaseManager, ghostdag::protocol::GhostdagManager, mass::MassCalculator,
+        block_depth::BlockDepthManager, coinbase::CoinbaseManager, ghostdag::protocol::GhostdagManager,
         parents_builder::ParentsManager, pruning::PruningPointManager, pruning_proof::PruningProofManager, sync::SyncManager,
         transaction_validator::TransactionValidator, traversal_manager::DagTraversalManager, window::DualWindowManager,
     },
 };
-
 use itertools::Itertools;
+use karlsen_consensus_core::mass::MassCalculator;
 use karlsen_txscript::caches::TxScriptCacheCounters;
 use std::sync::{atomic::AtomicBool, Arc};
 

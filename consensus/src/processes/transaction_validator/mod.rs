@@ -11,7 +11,7 @@ use karlsen_txscript::{
     SigCacheKey,
 };
 
-use super::mass::MassCalculator;
+use karlsen_consensus_core::mass::MassCalculator;
 
 #[derive(Clone)]
 pub struct TransactionValidator {
