@@ -614,6 +614,7 @@ impl RpcApi for KarlsenRpcClient {
             GetBlockDagInfo,
             GetBlocks,
             GetBlockTemplate,
+            GetCurrentBlockColor,
             GetCoinSupply,
             GetConnectedPeerInfo,
             GetConnections,

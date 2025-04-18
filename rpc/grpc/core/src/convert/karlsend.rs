@@ -62,6 +62,7 @@ pub mod karlsend_request_convert {
     impl_into_karlsend_request!(GetDaaScoreTimestampEstimate);
     impl_into_karlsend_request!(GetFeeEstimate);
     impl_into_karlsend_request!(GetFeeEstimateExperimental);
+    impl_into_karlsend_request!(GetCurrentBlockColor);
 
     impl_into_karlsend_request!(NotifyBlockAdded);
     impl_into_karlsend_request!(NotifyNewBlockTemplate);
@@ -198,6 +199,7 @@ pub mod karlsend_response_convert {
     impl_into_karlsend_response!(GetDaaScoreTimestampEstimate);
     impl_into_karlsend_response!(GetFeeEstimate);
     impl_into_karlsend_response!(GetFeeEstimateExperimental);
+    impl_into_karlsend_response!(GetCurrentBlockColor);
 
     impl_into_karlsend_notify_response!(NotifyBlockAdded);
     impl_into_karlsend_notify_response!(NotifyNewBlockTemplate);
