@@ -57,7 +57,7 @@ karlsen-txscript-errors.workspace = true
 karlsen-addresses.workspace = true
 
 [[bench]]
-name = "hash_benchmarks"
+name = "parallel_muhash"
 harness = false
 
 [[bench]]
