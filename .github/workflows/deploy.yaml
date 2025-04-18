@@ -11,15 +11,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            TARGET: linux-gnu/amd64
-          - os: ubuntu-latest
-            TARGET: linux-gnu/aarch64
-          - os: ubuntu-latest
             TARGET: linux-musl/amd64
-          - os: ubuntu-latest
-            TARGET: linux-musl/aarch64
-          - os: windows-latest
-            TARGET: windows-gnullvm/amd64
           - os: windows-latest
             TARGET: windows-msvc/amd64
           - os: macos-latest
@@ -38,7 +30,7 @@ jobs:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache
+      - name: Cache Cargo Build Outputs
         uses: actions/cache@v4
         with:
           path: |
@@ -49,9 +41,14 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install zig on Linux
-        if: runner.os == 'Linux'
-        uses: goto-bus-stop/setup-zig@v2 # needed for cargo-zigbuild
+      - name: Cache Toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/x-tools
+          key: ${{ runner.os }}-musl-${{ hashFiles('**/musl-toolchain/preset.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-musl-
 
       - name: Install protoc on Linux
         if: runner.os == 'Linux'
@@ -72,104 +69,24 @@ jobs:
           msystem: clang64
           install: mingw-w64-clang-x86_64-clang mingw-w64-clang-x86_64-protobuf zip
 
-      - name: Build on Linux for linux-gnu/amd64
-        if: matrix.TARGET == 'linux-gnu/amd64'
-        env:
-          TARGET_CC: x86_64-linux-gnu-gcc
-          TARGET_CXX: x86_64-linux-gnu-g++
-          RUSTFLAGS: -C linker=x86_64-linux-gnu-gcc
-        run: |
-          rustup target add x86_64-unknown-linux-gnu
-          cargo build --target x86_64-unknown-linux-gnu --bin karlsend --release
-          cargo build --target x86_64-unknown-linux-gnu --bin simpa --release
-          cargo build --target x86_64-unknown-linux-gnu --bin rothschild --release
-          cargo build --target x86_64-unknown-linux-gnu --bin karlsen-wallet --release
-          mkdir bin || true
-          cp target/x86_64-unknown-linux-gnu/release/karlsend bin/
-          cp target/x86_64-unknown-linux-gnu/release/simpa bin/
-          cp target/x86_64-unknown-linux-gnu/release/rothschild bin/
-          cp target/x86_64-unknown-linux-gnu/release/karlsen-wallet bin/
-          archive="bin/rusty-karlsen-${{ github.event.release.tag_name }}-linux-gnu-amd64.zip"
-          zip -r "${archive}" ./bin/*
-
-      - name: Build on Linux for linux-gnu/aarch64
-        if: matrix.TARGET == 'linux-gnu/aarch64'
-        env:
-          TARGET_CC: aarch64-linux-gnu-gcc
-          TARGET_CXX: aarch64-linux-gnu-g++
-          RUSTFLAGS: -C linker=aarch64-linux-gnu-gcc
-        run: |
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          rustup target add aarch64-unknown-linux-gnu
-          cargo build --target aarch64-unknown-linux-gnu --bin karlsend --release
-          cargo build --target aarch64-unknown-linux-gnu --bin simpa --release
-          cargo build --target aarch64-unknown-linux-gnu --bin rothschild --release
-          cargo build --target aarch64-unknown-linux-gnu --bin karlsen-wallet --release
-          mkdir bin || true
-          cp target/aarch64-unknown-linux-gnu/release/karlsend bin/
-          cp target/aarch64-unknown-linux-gnu/release/simpa bin/
-          cp target/aarch64-unknown-linux-gnu/release/rothschild bin/
-          cp target/aarch64-unknown-linux-gnu/release/karlsen-wallet bin/
-          archive="bin/rusty-karlsen-${{ github.event.release.tag_name }}-linux-gnu-aarch64.zip"
-          zip -r "${archive}" ./bin/*
-
-      - name: Build on Linux for linux-musl/amd64
+      - name: Build on Linux
         if: matrix.TARGET == 'linux-musl/amd64'
-
-        # We're using musl to make the binaries statically linked and portable.
-        env:
-          RUSTFLAGS: -C target-feature=-crt-static
+        # We're using musl to make the binaries statically linked and portable
         run: |
-          rustup target add x86_64-unknown-linux-musl
-          cargo install cargo-zigbuild
-          cargo --verbose zigbuild --bin karlsend --bin simpa --bin rothschild --bin karlsen-wallet --release --target x86_64-unknown-linux-musl
+          # Run build script for musl toolchain
+          source musl-toolchain/build.sh
+
+          # Build for musl
+          cargo --verbose build --bin karlsend --bin rothschild --bin karlsen-wallet --release --target x86_64-unknown-linux-musl
           mkdir bin || true
           cp target/x86_64-unknown-linux-musl/release/karlsend bin/
-          cp target/x86_64-unknown-linux-musl/release/simpa bin/
           cp target/x86_64-unknown-linux-musl/release/rothschild bin/
           cp target/x86_64-unknown-linux-musl/release/karlsen-wallet bin/
           archive="bin/rusty-karlsen-${{ github.event.release.tag_name }}-linux-musl-amd64.zip"
+          asset_name="rusty-karlsen-${{ github.event.release.tag_name }}-linux-musl-amd64.zip"
           zip -r "${archive}" ./bin/*
-
-      - name: Build on Linux for linux-musl/aarch64
-        if: matrix.TARGET == 'linux-musl/aarch64'
-
-        # We're using musl to make the binaries statically linked and portable.
-        env:
-          RUSTFLAGS: -C target-feature=-crt-static
-        run: |
-          rustup target add aarch64-unknown-linux-musl
-          cargo install cargo-zigbuild
-          cargo --verbose zigbuild --bin karlsend --bin simpa --bin rothschild --bin karlsen-wallet --release --target aarch64-unknown-linux-musl
-          mkdir bin || true
-          cp target/aarch64-unknown-linux-musl/release/karlsend bin/
-          cp target/aarch64-unknown-linux-musl/release/simpa bin/
-          cp target/aarch64-unknown-linux-musl/release/rothschild bin/
-          cp target/aarch64-unknown-linux-musl/release/karlsen-wallet bin/
-          archive="bin/rusty-karlsen-${{ github.event.release.tag_name }}-linux-musl-aarch64.zip"
-          zip -r "${archive}" ./bin/*
-
-      - name: Build on Windows for windows-gnullvm/amd64
-        if: matrix.TARGET == 'windows-gnullvm/amd64'
-
-        # We're using clang to link only the ucrt library statically.
-        env:
-          RUSTFLAGS: -L/clang64/lib -lstatic=c++
-        shell: msys2 {0}
-        run: |
-          export PATH="${PATH}:/c/Users/runneradmin/.cargo/bin" # manually override path to select proper msys2 build tools.
-          rustup target add x86_64-pc-windows-gnullvm
-          cargo build --target x86_64-pc-windows-gnullvm --bin karlsend --release
-          cargo build --target x86_64-pc-windows-gnullvm --bin simpa --release
-          cargo build --target x86_64-pc-windows-gnullvm --bin rothschild --release
-          cargo build --target x86_64-pc-windows-gnullvm --bin karlsen-wallet --release
-          mkdir bin || true
-          cp target/x86_64-pc-windows-gnullvm/release/karlsend.exe bin/
-          cp target/x86_64-pc-windows-gnullvm/release/simpa.exe bin/
-          cp target/x86_64-pc-windows-gnullvm/release/rothschild.exe bin/
-          cp target/x86_64-pc-windows-gnullvm/release/karlsen-wallet.exe bin/
-          archive="bin/rusty-karlsen-${{ github.event.release.tag_name }}-windows-gnullvm-amd64.zip"
-          zip -r "${archive}" ./bin/*
+          echo "archive=${archive}" >> $GITHUB_ENV
+          echo "asset_name=${asset_name}" >> $GITHUB_ENV
 
       - name: Build on Windows for windows-msvc/amd64
         if: matrix.TARGET == 'windows-msvc/amd64'
@@ -178,12 +95,10 @@ jobs:
           export PATH="${PATH}:/c/Users/runneradmin/.cargo/bin" # manually override path to select proper msys2 build tools.
           rustup target add x86_64-pc-windows-msvc
           cargo build --target x86_64-pc-windows-msvc --bin karlsend --release
-          cargo build --target x86_64-pc-windows-msvc --bin simpa --release
           cargo build --target x86_64-pc-windows-msvc --bin rothschild --release
           cargo build --target x86_64-pc-windows-msvc --bin karlsen-wallet --release
           mkdir bin || true
           cp target/x86_64-pc-windows-msvc/release/karlsend.exe bin/
-          cp target/x86_64-pc-windows-msvc/release/simpa.exe bin/
           cp target/x86_64-pc-windows-msvc/release/rothschild.exe bin/
           cp target/x86_64-pc-windows-msvc/release/karlsen-wallet.exe bin/
           archive="bin/rusty-karlsen-${{ github.event.release.tag_name }}-windows-msvc-amd64.zip"
@@ -194,12 +109,10 @@ jobs:
         run: |
           rustup target add x86_64-apple-darwin
           cargo build --target x86_64-apple-darwin --bin karlsend --release
-          cargo build --target x86_64-apple-darwin --bin simpa --release
           cargo build --target x86_64-apple-darwin --bin rothschild --release
           cargo build --target x86_64-apple-darwin --bin karlsen-wallet --release
           mkdir bin || true
           cp target/x86_64-apple-darwin/release/karlsend bin/
-          cp target/x86_64-apple-darwin/release/simpa bin/
           cp target/x86_64-apple-darwin/release/rothschild bin/
           cp target/x86_64-apple-darwin/release/karlsen-wallet bin/
           archive="bin/rusty-karlsen-${{ github.event.release.tag_name }}-macos-amd64.zip"
@@ -210,12 +123,10 @@ jobs:
         run: |
           rustup target add aarch64-apple-darwin
           cargo build --target aarch64-apple-darwin --bin karlsend --release
-          cargo build --target aarch64-apple-darwin --bin simpa --release
           cargo build --target aarch64-apple-darwin --bin rothschild --release
           cargo build --target aarch64-apple-darwin --bin karlsen-wallet --release
           mkdir bin || true
           cp target/aarch64-apple-darwin/release/karlsend bin/
-          cp target/aarch64-apple-darwin/release/simpa bin/
           cp target/aarch64-apple-darwin/release/rothschild bin/
           cp target/aarch64-apple-darwin/release/karlsen-wallet bin/
           archive="bin/rusty-karlsen-${{ github.event.release.tag_name }}-macos-aarch64.zip"
