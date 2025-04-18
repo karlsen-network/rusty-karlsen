@@ -7,9 +7,10 @@ mod tests {
         mempool::{
             config::{Config, DEFAULT_MINIMUM_RELAY_TRANSACTION_FEE},
             errors::RuleError,
+            model::frontier::selectors::TakeAllSelector,
             tx::{Orphan, Priority, RbfPolicy},
         },
-        model::{candidate_tx::CandidateTransaction, tx_query::TransactionQuery},
+        model::tx_query::TransactionQuery,
         testutils::consensus_mock::ConsensusMock,
         MiningCounters,
     };
@@ -1273,7 +1274,7 @@ mod tests {
 
         // Collect all parent transactions for the next block template.
         // They are ready since they have no parents in the mempool.
-        let transactions = mining_manager.block_candidate_transactions();
+        let transactions = mining_manager.build_selector().select_transactions();
         assert_eq!(
             TX_PAIRS_COUNT,
             transactions.len(),
@@ -1281,7 +1282,7 @@ mod tests {
         );
         parent_txs.iter().for_each(|x| {
             assert!(
-                transactions.iter().any(|tx| tx.tx.id() == x.id()),
+                transactions.iter().any(|tx| tx.id() == x.id()),
                 "the parent transaction {} should be candidate for the next block template",
                 x.id()
             );
@@ -1302,8 +1303,9 @@ mod tests {
         consensus: &dyn ConsensusApi,
         address_prefix: Prefix,
         mining_manager: &MiningManager,
-        transactions: Vec<CandidateTransaction>,
+        transactions: Vec<Transaction>,
     ) {
+        let transactions = transactions.into_iter().map(Arc::new).collect::<Vec<_>>();
         for _ in 0..4 {
             // Run a few times to get more randomness
             compare_modified_template_to_built(
@@ -1377,7 +1379,7 @@ mod tests {
         consensus: &dyn ConsensusApi,
         address_prefix: Prefix,
         mining_manager: &MiningManager,
-        transactions: Vec<CandidateTransaction>,
+        transactions: Vec<Arc<Transaction>>,
         first_op: OpType,
         second_op: OpType,
     ) {
@@ -1389,7 +1391,7 @@ mod tests {
         let result = builder.build_block_template(
             consensus,
             &miner_data_2,
-            transactions,
+            Box::new(TakeAllSelector::new(transactions)),
             TemplateBuildMode::Standard,
         );
         assert!(

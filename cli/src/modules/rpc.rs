@@ -284,6 +284,23 @@ impl Rpc {
                     }
                 }
             }
+            RpcApiOps::GetFeeEstimate => {
+                let result = rpc.get_fee_estimate_call(GetFeeEstimateRequest {}).await?;
+                self.println(&ctx, result);
+            }
+            RpcApiOps::GetFeeEstimateExperimental => {
+                let verbose = if argv.is_empty() {
+                    false
+                } else {
+                    argv.remove(0).parse().unwrap_or(false)
+                };
+                let result = rpc
+                    .get_fee_estimate_experimental_call(GetFeeEstimateExperimentalRequest {
+                        verbose,
+                    })
+                    .await?;
+                self.println(&ctx, result);
+            }
             _ => {
                 tprintln!(
                     ctx,

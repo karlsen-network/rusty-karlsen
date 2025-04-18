@@ -4,7 +4,6 @@ use karlsen_consensus_core::tx::{
 };
 use karlsen_mining_errors::mempool::RuleError;
 use std::{
-    cmp::Ordering,
     fmt::{Display, Formatter},
     sync::Arc,
 };
@@ -49,28 +48,6 @@ impl MempoolTransaction {
             .inputs
             .iter()
             .any(|x| x.previous_outpoint.transaction_id == parent_id)
-    }
-}
-
-impl Ord for MempoolTransaction {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.fee_rate()
-            .total_cmp(&other.fee_rate())
-            .then(self.id().cmp(&other.id()))
-    }
-}
-
-impl Eq for MempoolTransaction {}
-
-impl PartialOrd for MempoolTransaction {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl PartialEq for MempoolTransaction {
-    fn eq(&self, other: &Self) -> bool {
-        self.fee_rate() == other.fee_rate()
     }
 }
 

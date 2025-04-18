@@ -84,6 +84,8 @@ pub enum KarlsendPayloadOps {
     GetServerInfo,
     GetSyncStatus,
     GetDaaScoreTimestampEstimate,
+    GetFeeEstimate,
+    GetFeeEstimateExperimental,
 
     // Subscription commands for starting/stopping notifications
     NotifyBlockAdded,

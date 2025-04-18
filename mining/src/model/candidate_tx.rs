@@ -1,10 +1,11 @@
-use karlsen_consensus_core::tx::{MutableTransaction, Transaction};
+use crate::FeerateTransactionKey;
+use karlsen_consensus_core::tx::Transaction;
 use std::sync::Arc;
 
 /// Transaction with additional metadata needed in order to be a candidate
 /// in the transaction selection algorithm
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct CandidateTransaction {
+pub struct CandidateTransaction {
     /// The actual transaction
     pub tx: Arc<Transaction>,
     /// Populated fee
@@ -14,16 +15,11 @@ pub(crate) struct CandidateTransaction {
 }
 
 impl CandidateTransaction {
-    pub(crate) fn from_mutable(tx: &MutableTransaction) -> Self {
-        let mass = tx.tx.mass();
-        assert_ne!(
-            mass, 0,
-            "mass field is expected to be set when inserting to the mempool"
-        );
+    pub fn from_key(key: FeerateTransactionKey) -> Self {
         Self {
-            tx: tx.tx.clone(),
-            calculated_fee: tx.calculated_fee.expect("fee is expected to be populated"),
-            calculated_mass: mass,
+            tx: key.tx,
+            calculated_fee: key.fee,
+            calculated_mass: key.mass,
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::{
+    feerate::{FeerateEstimator, FeerateEstimatorArgs},
     model::{
-        candidate_tx::CandidateTransaction,
         owner_txs::{GroupedOwnerTransactions, ScriptPublicKeySet},
         tx_query::TransactionQuery,
     },
@@ -15,7 +15,10 @@ use self::{
     },
     tx::Priority,
 };
-use karlsen_consensus_core::tx::{MutableTransaction, TransactionId};
+use karlsen_consensus_core::{
+    block::TemplateTransactionSelector,
+    tx::{MutableTransaction, TransactionId},
+};
 use karlsen_core::time::Stopwatch;
 use std::sync::Arc;
 
@@ -153,9 +156,23 @@ impl Mempool {
         count
     }
 
-    pub(crate) fn block_candidate_transactions(&self) -> Vec<CandidateTransaction> {
-        let _sw = Stopwatch::<10>::with_threshold("block_candidate_transactions op");
-        self.transaction_pool.all_ready_transactions()
+    pub(crate) fn ready_transaction_count(&self) -> usize {
+        self.transaction_pool.ready_transaction_count()
+    }
+
+    pub(crate) fn ready_transaction_total_mass(&self) -> u64 {
+        self.transaction_pool.ready_transaction_total_mass()
+    }
+
+    /// Dynamically builds a transaction selector based on the specific state of the ready transactions frontier
+    pub(crate) fn build_selector(&self) -> Box<dyn TemplateTransactionSelector> {
+        let _sw = Stopwatch::<10>::with_threshold("build_selector op");
+        self.transaction_pool.build_selector()
+    }
+
+    /// Builds a feerate estimator based on internal state of the ready transactions frontier
+    pub(crate) fn build_feerate_estimator(&self, args: FeerateEstimatorArgs) -> FeerateEstimator {
+        self.transaction_pool.build_feerate_estimator(args)
     }
 
     pub(crate) fn all_transaction_ids_with_priority(

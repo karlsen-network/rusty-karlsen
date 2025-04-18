@@ -84,6 +84,8 @@ impl Factory {
                 GetServerInfo,
                 GetSyncStatus,
                 GetDaaScoreTimestampEstimate,
+                GetFeeEstimate,
+                GetFeeEstimateExperimental,
                 NotifyBlockAdded,
                 NotifyNewBlockTemplate,
                 NotifyFinalityConflict,
