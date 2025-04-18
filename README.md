@@ -41,49 +41,43 @@ in the primary codebase will be shared back.
 The Karlsen Network team believes in decentralization and small-scale
 miners. We will ensure long-term GPU-friendly mining.
 
-### Hashing Function
+## Hashing Functions
 
-We initially started with `kHeavyHash` and `blake3` modifications
-on-top. This algorithm is called `KarlsenHashv1`.
+### KarlsenHashv1 (Legacy)
 
-`KarlsenHashv1` is currently used in [mainnet](https://github.com/karlsen-network/karlsend/releases/tag/v1.1.0)
-and can be mined using the following miners maintained by the Karlsen
-developers:
+The network initially used `KarlsenHashv1`, which combined `kHeavyHash`
+with `blake3` modifications. This algorithm was used from network
+launch until the hardfork on September 12, 2024.
 
-* Karlsen [CPU miner](https://github.com/karlsen-network/karlsend) from Golang `karlsend`
-* Karlsen [GPU miner](https://github.com/karlsen-network/karlsen-miner)
-  as reference implementation of `kHeavyHash` with `blake3`.
+### KarlsenHashv2 (Current)
 
-The following third-party miners are available and have added
-`KarlsenHashv1`:
+On September 12, 2024, the network successfully upgraded to `KarlsenHashv2`
+at DAA score `26,962,009`. This new algorithm is based on @Lolliedieb's innovative
+[FishHash algorithm](https://github.com/iron-fish/fish-hash/blob/main/FishHash.pdf)
+and was written from scratch and integrated in [rusty-karlsen](https://github.com/karlsen-network/rusty-karlsen).
 
-* [lolMiner](https://github.com/Lolliedieb/lolMiner-releases)
-* [Team Red Miner](https://github.com/todxx/teamredminer)
-* [SRBMiner](https://github.com/doktor83/SRBMiner-Multi)
-* [BzMiner](https://github.com/bzminer/bzminer)
-* [Rigel](https://github.com/rigelminer/rigel)
-* [GMiner](https://github.com/develsoftware/GMinerRelease)
+During testnet experiments, three algorithms were evaluated: `khashv1` (Blockversion 1),
+`khashv1.5` (based on FishHash), and `khashv2` (Blockversion 2, based on FishHashPlus).
+After security review of FishHash ([audit proposal](https://github.com/Lolliedieb/FishHashMiner/tree/audit_proposal)),
+FishHashPlus was selected as the foundation for KarlsenHashv2.
 
-`KarlsenHashv2` will become active via hardfork at DAA score `26.962.009`.
-It is based on [FishHash](https://github.com/iron-fish/fish-hash/blob/main/FishHash.pdf)
-written from scratch in our Rust node implementation. It is FPGA/ASIC
-resistent. It is the worlds first implementation of FishHash in Rust in
-`mainnet` in a 1bps blockchain.
+KarlsenHashv2 is designed to be GPU-friendly, fostering a more
+decentralized mining landscape by reducing the effectiveness
+of other hardware. It is FPGA/ASIC resistant and represents
+the world's first implementation of FishHash in Rust on a
+mainnet 1bps DAG.
 
-`KarlsenHashv2` is currently used in [mainnet](https://github.com/karlsen-network/karlsend/releases/tag/v2.1.0)
-and can be mined using the following miners maintained by the Karlsen
-developers:
+For the current KarlsenHashv2 algorithm, miners can use:
 
-* Karlsen [CPU miner](https://github.com/karlsen-network/karlsend/releases/tag/v2.1.0) from Golang `karlsend`
-* Karlsen [GPU miner](https://github.com/karlsen-network/karlsen-miner/releases/tag/v2.0.0)
-  as bleeding edge and unoptimized reference implementation of
-  `KarlsenHashv2`. Please follow the steps in the [README.md](https://github.com/karlsen-network/karlsen-miner/blob/main/README.md)
-  to generate a DAG file.
-
-The following third-party miners are available and have added
-`KarlsenHashv2`:
-
-* [SRBMiner](https://github.com/doktor83/SRBMiner-Multi)
+- **Official miners:**
+  - [CPU miner](https://github.com/karlsen-network/karlsend/releases/latest) (integrated in Golang `karlsend` v2.1.0+)
+  - [GPU miner](https://github.com/karlsen-network/karlsen-miner/releases/latest) (reference implementation)
+    - Note: Users must generate a DAG file following instructions in the [README.md](https://github.com/karlsen-network/karlsend/blob/master/README.md?plain=1#L82)
+- **Third-party miners with KarlsenHashv2 support:**
+  - [lolMiner](https://github.com/Lolliedieb/lolMiner-releases)
+  - [BzMiner](https://github.com/bzminer/bzminer)
+  - [SRBMiner](https://github.com/doktor83/SRBMiner-Multi)
+  - [Rigel](https://github.com/rigelminer/rigel)
 
 ## Smart Contracts
 
