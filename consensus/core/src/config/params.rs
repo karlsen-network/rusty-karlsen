@@ -134,6 +134,7 @@ pub struct Params {
 
     /// Activation rules for when to enable using the payload field in transactions
     pub payload_activation: ForkActivation,
+    pub runtime_sig_op_counting: ForkActivation,
 }
 
 fn unix_now() -> u64 {
@@ -390,6 +391,7 @@ pub const MAINNET_PARAMS: Params = Params {
     hf_daa_score: 26962009, // HF DAAscore to switch to khashv2 (Fri Sep 13 01:37:00 PM UTC 2024)
 
     payload_activation: ForkActivation::never(),
+    runtime_sig_op_counting: ForkActivation::never(),
 };
 
 pub const TESTNET_PARAMS: Params = Params {
@@ -449,6 +451,7 @@ pub const TESTNET_PARAMS: Params = Params {
     hf_daa_score: 43200, // HF DAAscore to switch to khashv2 (12 hours after testnet launch)
 
     payload_activation: ForkActivation::never(),
+    runtime_sig_op_counting: ForkActivation::never(),
 };
 
 pub const TESTNET11_PARAMS: Params = Params {
@@ -499,6 +502,7 @@ pub const TESTNET11_PARAMS: Params = Params {
     storage_mass_activation: ForkActivation::always(),
     kip10_activation: ForkActivation::never(),
     payload_activation: ForkActivation::never(),
+    runtime_sig_op_counting: ForkActivation::never(),
 
     skip_proof_of_work: false,
     max_block_level: 250,
@@ -560,6 +564,7 @@ pub const SIMNET_PARAMS: Params = Params {
     hf_daa_score: 3600,
 
     payload_activation: ForkActivation::never(),
+    runtime_sig_op_counting: ForkActivation::never(),
 };
 
 pub const DEVNET_PARAMS: Params = Params {
@@ -620,4 +625,5 @@ pub const DEVNET_PARAMS: Params = Params {
     hf_daa_score: 3600,
 
     payload_activation: ForkActivation::never(),
+    runtime_sig_op_counting: ForkActivation::never(),
 };
