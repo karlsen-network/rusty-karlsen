@@ -75,6 +75,7 @@ jobs:
         run: |
           # Run build script for musl toolchain
           source musl-toolchain/build.sh
+          cd $GITHUB_WORKSPACE
 
           # Build for musl
           cargo --verbose build --bin karlsend --bin rothschild --bin karlsen-wallet --release --target x86_64-unknown-linux-musl
