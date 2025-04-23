@@ -9,7 +9,6 @@ use karlsen_hashes::Hash;
 use karlsen_utils::mem_size::MemSizeEstimator;
 use rocksdb::WriteBatch;
 use serde::{Deserialize, Serialize};
-use std::mem::size_of;
 use std::sync::Arc;
 
 pub trait BlockTransactionsStoreReader {
@@ -28,9 +27,7 @@ struct BlockBody(Arc<Vec<Transaction>>);
 impl MemSizeEstimator for BlockBody {
     fn estimate_mem_bytes(&self) -> usize {
         const NORMAL_SIG_SIZE: usize = 66;
-        let (inputs, outputs) = self.0.iter().fold((0, 0), |(ins, outs), tx| {
-            (ins + tx.inputs.len(), outs + tx.outputs.len())
-        });
+        let (inputs, outputs) = self.0.iter().fold((0, 0), |(ins, outs), tx| (ins + tx.inputs.len(), outs + tx.outputs.len()));
         // TODO: consider tracking transactions by bytes accurately (preferably by saving the size in a field)
         // We avoid zooming in another level and counting exact bytes for sigs and scripts for performance reasons.
         // Outliers with longer signatures are rare enough and their size is eventually bounded by mempool standards
@@ -53,14 +50,7 @@ pub struct DbBlockTransactionsStore {
 
 impl DbBlockTransactionsStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self {
-            db: Arc::clone(&db),
-            access: CachedDbAccess::new(
-                db,
-                cache_policy,
-                DatabaseStorePrefixes::BlockTransactions.into(),
-            ),
-        }
+        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::BlockTransactions.into()) }
     }
 
     pub fn clone_with_new_cache(&self, cache_policy: CachePolicy) -> Self {
@@ -71,17 +61,11 @@ impl DbBlockTransactionsStore {
         self.access.has(hash)
     }
 
-    pub fn insert_batch(
-        &self,
-        batch: &mut WriteBatch,
-        hash: Hash,
-        transactions: Arc<Vec<Transaction>>,
-    ) -> Result<(), StoreError> {
+    pub fn insert_batch(&self, batch: &mut WriteBatch, hash: Hash, transactions: Arc<Vec<Transaction>>) -> Result<(), StoreError> {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access
-            .write(BatchDbWriter::new(batch), hash, BlockBody(transactions))?;
+        self.access.write(BatchDbWriter::new(batch), hash, BlockBody(transactions))?;
         Ok(())
     }
 
@@ -101,8 +85,7 @@ impl BlockTransactionsStore for DbBlockTransactionsStore {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access
-            .write(DirectDbWriter::new(&self.db), hash, BlockBody(transactions))?;
+        self.access.write(DirectDbWriter::new(&self.db), hash, BlockBody(transactions))?;
         Ok(())
     }
 

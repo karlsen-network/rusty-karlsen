@@ -61,10 +61,7 @@ impl WordList {
     }
 
     pub fn iter(&self) -> WordListIterator<'_> {
-        WordListIterator {
-            wordlist: self,
-            index: 0,
-        }
+        WordListIterator { wordlist: self, index: 0 }
     }
 }
 
@@ -104,18 +101,12 @@ mod lazy {
 
     /// lazy generation of the word map
     fn gen_wordmap(wordlist: &WordList) -> WordMap {
-        let inner = wordlist
-            .inner
-            .iter()
-            .enumerate()
-            .map(|(i, item)| (*item, Bits11::from(i as u16)))
-            .collect();
+        let inner = wordlist.inner.iter().enumerate().map(|(i, item)| (*item, Bits11::from(i as u16))).collect();
 
         WordMap { inner }
     }
 
-    pub(crate) static WORDLIST_ENGLISH: Lazy<WordList> =
-        Lazy::new(|| gen_wordlist(include_str!("words/english.txt")));
+    pub(crate) static WORDLIST_ENGLISH: Lazy<WordList> = Lazy::new(|| gen_wordlist(include_str!("words/english.txt")));
 
     pub(crate) static WORDMAP_ENGLISH: Lazy<WordMap> = Lazy::new(|| gen_wordmap(&WORDLIST_ENGLISH));
 }

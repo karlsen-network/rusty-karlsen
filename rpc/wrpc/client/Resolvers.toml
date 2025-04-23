@@ -1,7 +1,45 @@
 [[resolver]]
-url = "https://ping.karlsencoin.com"
 enable = true
+address = "https://ping.karlsencoin.com"
 
 [[resolver]]
-url = "http://127.0.0.1:8888"
 enable = false
+address = "http://127.0.0.1:8888"
+
+[[group]]
+template = "https://*.karlsencoin.com"
+nodes = ["eric","maxim","sean","troy"]
+
+# [[group]]
+# template = "https://*.karlsen.red"
+# nodes = ["john", "mike", "paul", "alex"]
+
+# [[group]]
+# template = "https://*.karlsen.green"
+# nodes = ["jake", "mark", "adam", "liam"]
+
+# [[group]]
+# template = "https://*.karlsen.blue"
+# nodes = ["noah", "ryan", "jack", "luke"]
+
+# [[group]]
+# enable = true
+# template = "https://*.karlsen-ng.org"
+# nodes = ["cole", "ivan", "oscar", "zane"]
+
+# [[group]]
+# enable = true
+# template = "https://*.karlsen-ng.io"
+# nodes = ["gary", "hugo", "finn", "evan"]
+
+# [[group]]
+# enable = true
+# template = "https://*.karlsen-ng.net"
+# nodes = ["neil", "dave", "kyle", "toby"]
+
+# ---
+
+# [[group]]
+# enable = false
+# template = "https://*."
+# nodes = ["rudy", "todd", "clay", "walt"]

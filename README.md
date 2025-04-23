@@ -19,7 +19,7 @@ shaping a platform designed for scalability and speed without
 compromising on decentralization.
 
 Your feedback, contributions, and issue reports will be integral to
-evolving this codebase from its Alpha phase into a mature and reliable
+evolving this codebase and continuing Alpha its maturity as a reliable
 node in the Karlsen network.
 
 ## Overview
@@ -41,49 +41,43 @@ in the primary codebase will be shared back.
 The Karlsen Network team believes in decentralization and small-scale
 miners. We will ensure long-term GPU-friendly mining.
 
-### Hashing Function
+## Hashing Functions
 
-We initially started with `kHeavyHash` and `blake3` modifications
-on-top. This algorithm is called `KarlsenHashv1`.
+### KarlsenHashv1 (Legacy)
 
-`KarlsenHashv1` is currently used in [mainnet](https://github.com/karlsen-network/karlsend/releases/tag/v1.1.0)
-and can be mined using the following miners maintained by the Karlsen
-developers:
+The network initially used `KarlsenHashv1`, which combined `kHeavyHash`
+with `blake3` modifications. This algorithm was used from network
+launch until the hardfork on September 12, 2024.
 
-* Karlsen [CPU miner](https://github.com/karlsen-network/karlsend) from Golang `karlsend`
-* Karlsen [GPU miner](https://github.com/karlsen-network/karlsen-miner)
-  as reference implementation of `kHeavyHash` with `blake3`.
+### KarlsenHashv2 (Current)
 
-The following third-party miners are available and have added
-`KarlsenHashv1`:
+On September 12, 2024, the network successfully upgraded to `KarlsenHashv2`
+at DAA score `26,962,009`. This new algorithm is based on @Lolliedieb's innovative
+[FishHash algorithm](https://github.com/iron-fish/fish-hash/blob/main/FishHash.pdf)
+and was written from scratch and integrated in [rusty-karlsen](https://github.com/karlsen-network/rusty-karlsen).
 
-* [lolMiner](https://github.com/Lolliedieb/lolMiner-releases)
-* [Team Red Miner](https://github.com/todxx/teamredminer)
-* [SRBMiner](https://github.com/doktor83/SRBMiner-Multi)
-* [BzMiner](https://github.com/bzminer/bzminer)
-* [Rigel](https://github.com/rigelminer/rigel)
-* [GMiner](https://github.com/develsoftware/GMinerRelease)
+During testnet experiments, three algorithms were evaluated: `khashv1` (Blockversion 1),
+`khashv1.5` (based on FishHash), and `khashv2` (Blockversion 2, based on FishHashPlus).
+After security review of FishHash ([audit proposal](https://github.com/Lolliedieb/FishHashMiner/tree/audit_proposal)),
+FishHashPlus was selected as the foundation for KarlsenHashv2.
 
-`KarlsenHashv2` will become active via hardfork at DAA score `26.962.009`.
-It is based on [FishHash](https://github.com/iron-fish/fish-hash/blob/main/FishHash.pdf)
-written from scratch in our Rust node implementation. It is FPGA/ASIC
-resistent. It is the worlds first implementation of FishHash in Rust in
-`mainnet` in a 1bps blockchain.
+KarlsenHashv2 is designed to be GPU-friendly, fostering a more
+decentralized mining landscape by reducing the effectiveness
+of other hardware. It is FPGA/ASIC resistant and represents
+the world's first implementation of FishHash in Rust on a
+mainnet 1bps DAG.
 
-`KarlsenHashv2` is currently used in [mainnet](https://github.com/karlsen-network/karlsend/releases/tag/v2.1.0)
-and can be mined using the following miners maintained by the Karlsen
-developers:
+For the current KarlsenHashv2 algorithm, miners can use:
 
-* Karlsen [CPU miner](https://github.com/karlsen-network/karlsend/releases/tag/v2.1.0) from Golang `karlsend`
-* Karlsen [GPU miner](https://github.com/karlsen-network/karlsen-miner/releases/tag/v2.0.0)
-  as bleeding edge and unoptimized reference implementation of
-  `KarlsenHashv2`. Please follow the steps in the [README.md](https://github.com/karlsen-network/karlsen-miner/blob/main/README.md)
-  to generate a DAG file.
-
-The following third-party miners are available and have added
-`KarlsenHashv2`:
-
-* [SRBMiner](https://github.com/doktor83/SRBMiner-Multi)
+- **Official miners:**
+  - [CPU miner](https://github.com/karlsen-network/karlsend/releases/latest) (integrated in Golang `karlsend` v2.1.0+)
+  - [GPU miner](https://github.com/karlsen-network/karlsen-miner/releases/latest) (reference implementation)
+    - Note: Users must generate a DAG file following instructions in the [README.md](https://github.com/karlsen-network/karlsend/blob/master/README.md?plain=1#L82)
+- **Third-party miners with KarlsenHashv2 support:**
+  - [lolMiner](https://github.com/Lolliedieb/lolMiner-releases)
+  - [BzMiner](https://github.com/bzminer/bzminer)
+  - [SRBMiner](https://github.com/doktor83/SRBMiner-Multi)
+  - [Rigel](https://github.com/rigelminer/rigel)
 
 ## Smart Contracts
 
@@ -136,7 +130,7 @@ developers, users, and investors within the Cosmos ecosystem.
 ## Installation
 
 ### Building on Linux
-  
+
 1. Install general prerequisites
 
    ```bash
@@ -144,7 +138,7 @@ developers, users, and investors within the Cosmos ecosystem.
    ```
 
 2. Install Protobuf (required for gRPC)
-  
+
    ```bash
    sudo apt install protobuf-compiler libprotobuf-dev #Required for gRPC
    ```
@@ -162,24 +156,24 @@ developers, users, and investors within the Cosmos ecosystem.
    llvm python3-clang
    ```
 
-3. Install the [rust toolchain](https://rustup.rs/)
-     
+4. Install the [rust toolchain](https://rustup.rs/)
+
    If you already have rust installed, update it by running:
    `rustup update`
 
-4. Install wasm-pack
+5. Install wasm-pack
 
    ```bash
    cargo install wasm-pack
    ```
 
-4. Install wasm32 target
+6. Install wasm32 target
 
    ```bash
    rustup target add wasm32-unknown-unknown
    ```
 
-5. Clone the repo
+7. Clone the repo
 
    ```bash
    git clone https://github.com/karlsen-network/rusty-karlsen
@@ -196,7 +190,7 @@ developers, users, and investors within the Cosmos ecosystem.
 
    Add the `bin` directory of the LLVM installation
    (`C:\Program Files\LLVM\bin`) to PATH
-    
+
    Set `LIBCLANG_PATH` environment variable to point to the `bin`
    directory as well
 
@@ -209,9 +203,9 @@ developers, users, and investors within the Cosmos ecosystem.
    WASM32 targets). Currently, the best way to address this, is as
    follows: after installing LLVM on Windows, go to the target `bin`
    installation directory and copy or rename `LLVM_AR.exe` to `AR.exe`.
-  
+
 4. Install the [rust toolchain](https://rustup.rs/)
-     
+
    If you already have rust installed, update it by running:
    `rustup update`
 
@@ -243,7 +237,7 @@ developers, users, and investors within the Cosmos ecosystem.
    ```
 
 2. Install llvm.
-  
+
    The default XCode installation of `llvm` does not support WASM
    build targets. To build WASM on MacOS you need to install `llvm`
    from homebrew (at the time of writing, the llvm version for MacOS
@@ -288,7 +282,7 @@ developers, users, and investors within the Cosmos ecosystem.
    ```
 
 3. Install the [rust toolchain](https://rustup.rs/)
-     
+
    If you already have rust installed, update it by running:
    `rustup update`
 
@@ -298,13 +292,13 @@ developers, users, and investors within the Cosmos ecosystem.
    cargo install wasm-pack
    ```
 
-4. Install wasm32 target
+5. Install wasm32 target
 
    ```bash
    rustup target add wasm32-unknown-unknown
    ```
 
-5. Clone the repo
+6. Clone the repo
 
    ```bash
    git clone https://github.com/karlsen-network/rusty-karlsen
@@ -351,6 +345,8 @@ are compatible with WASM SDK Wallet API and Karlsen NG projects.
 ```bash
 cd cli
 cargo run --release
+# or with UTXO-index enabled (needed when using wallets)
+cargo run --release --bin karlsend -- --utxoindex
 ```
 
 ## Local Web Wallet
@@ -382,6 +378,7 @@ cargo run --release --bin karlsend
 ```bash
 cargo run --release --bin karlsend -- --testnet
 ```
+
 Using a configuration file
 
 ```bash
@@ -432,6 +429,8 @@ Borsh protocol:
 
 ```bash
 --rpclisten-borsh = <interface:port>
+# or use the defaults for current network
+--rpclisten-borsh = default
 ```
 
 ### Sidenote
@@ -454,41 +453,16 @@ using any WebSocket library. Built-in RPC clients for JavaScript and
 TypeScript capable of running in web browsers and Node.js are
 available as a part of the Karlsen WASM framework.
 
-**wRPC to gRPC Proxy is deprecated and no longer supported.**
-
-## Mining
-
-Mining is currently supported only on testnet, so once you've setup a
-test node, follow these instructions.
-
-1. Download and unzip the latest binaries bundle of [karlsen-network/karlsend](https://github.com/karlsen-network/karlsend/releases).
-
-2. In a separate terminal run the karlsen-network/karlsend miner:
-
-   ```
-   karlsenminer --testnet --miningaddr karlsentest:qrcqat6l9zcjsu7swnaztqzrv0s7hu04skpaezxk43y4etj8ncwfk308jlcew
-   ```
-
-This will create and feed a DAG with the miner getting block templates
-from the node and submitting them back when mined. The node processes
-and stores the blocks while applying all currently implemented logic.
-Execution can be stopped and resumed, the data is persisted in a
-database. You can replace the above mining address with your own
-address.
-
 ## Benchmarking & Testing
 
 ### Simulation framework (Simpa)
-
-Logging in `karlsend` and `simpa` can be [filtered](https://docs.rs/env_logger/0.10.0/env_logger/#filtering-results)
-by either:
 
 The current codebase supports a full in-process network simulation,
 building an actual DAG over virtual time with virtual delay and
 benchmarking validation time (following the simulation generation).
 To see the available commands
 
-```bash 
+```bash
 cargo run --release --bin simpa -- --help
 ```
 

@@ -23,11 +23,7 @@ pub struct CachedDbItem<T> {
 
 impl<T> CachedDbItem<T> {
     pub fn new(db: Arc<DB>, key: Vec<u8>) -> Self {
-        Self {
-            db,
-            key,
-            cached_item: Arc::new(RwLock::new(None)),
-        }
+        Self { db, key, cached_item: Arc::new(RwLock::new(None)) }
     }
 
     pub fn read(&self) -> Result<T, StoreError>
@@ -109,10 +105,7 @@ where
     S: BuildHasher + Default,
 {
     pub fn new(db: Arc<DB>, key: Vec<u8>) -> Self {
-        Self {
-            access: DbSetAccess::new(db, key),
-            cached_set: Arc::new(RwLock::new(None)),
-        }
+        Self { access: DbSetAccess::new(db, key), cached_set: Arc::new(RwLock::new(None)) }
     }
 
     fn read_locked_set(&self) -> Result<LockedSet<T, S>, StoreError>
@@ -122,10 +115,7 @@ where
         if let Some(item) = self.cached_set.read().clone() {
             return Ok(item);
         }
-        let set = self
-            .access
-            .bucket_iterator(EmptyKey)
-            .collect::<Result<HashSet<_, _>, _>>()?;
+        let set = self.access.bucket_iterator(EmptyKey).collect::<Result<HashSet<_, _>, _>>()?;
         let set = Arc::new(RwLock::new(set));
         self.cached_set.write().replace(set.clone());
         Ok(set)

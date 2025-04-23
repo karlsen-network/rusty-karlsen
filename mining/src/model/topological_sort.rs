@@ -29,9 +29,7 @@ impl<T: AsRef<Transaction> + Clone> TopologicalSort for Vec<T> {
         self.iter().enumerate().for_each(|(destination_idx, tx)| {
             tx.as_ref().inputs.iter().for_each(|input| {
                 if let Some(origin_idx) = index.get(&input.previous_outpoint.transaction_id) {
-                    all_edges[*origin_idx]
-                        .get_or_insert_with(IndexSet::new)
-                        .insert(destination_idx);
+                    all_edges[*origin_idx].get_or_insert_with(IndexSet::new).insert(destination_idx);
                 }
             })
         });
@@ -67,11 +65,7 @@ impl<T: AsRef<Transaction> + Clone> TopologicalSort for Vec<T> {
             }
             sorted.push(self[current].clone());
         }
-        assert_eq!(
-            sorted.len(),
-            self.len(),
-            "by definition, cryptographically no cycle can exist in a DAG of transactions"
-        );
+        assert_eq!(sorted.len(), self.len(), "by definition, cryptographically no cycle can exist in a DAG of transactions");
 
         sorted
     }
@@ -116,18 +110,13 @@ impl<'a, T: AsRef<Transaction>> TopologicalIter<'a, T> {
 
         // Transaction edges
         let mut edges: Vec<Option<IndexSet>> = vec![None; transactions.len()];
-        transactions
-            .iter()
-            .enumerate()
-            .for_each(|(destination_idx, tx)| {
-                tx.as_ref().inputs.iter().for_each(|input| {
-                    if let Some(origin_idx) = index.get(&input.previous_outpoint.transaction_id) {
-                        edges[*origin_idx]
-                            .get_or_insert_with(IndexSet::new)
-                            .insert(destination_idx);
-                    }
-                })
-            });
+        transactions.iter().enumerate().for_each(|(destination_idx, tx)| {
+            tx.as_ref().inputs.iter().for_each(|input| {
+                if let Some(origin_idx) = index.get(&input.previous_outpoint.transaction_id) {
+                    edges[*origin_idx].get_or_insert_with(IndexSet::new).insert(destination_idx);
+                }
+            })
+        });
 
         // Degrees
         (0..transactions.len()).for_each(|origin_idx| {
@@ -145,13 +134,7 @@ impl<'a, T: AsRef<Transaction>> TopologicalIter<'a, T> {
                 queue.push_back(destination_idx);
             }
         });
-        Self {
-            transactions,
-            in_degree,
-            edges,
-            queue,
-            yields_count: 0,
-        }
+        Self { transactions, in_degree, edges, queue, yields_count: 0 }
     }
 }
 
@@ -178,14 +161,13 @@ impl<'a, T: AsRef<Transaction>> Iterator for TopologicalIter<'a, T> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let items_remaining =
-            self.transactions.len() - self.yields_count.min(self.transactions.len());
+        let items_remaining = self.transactions.len() - self.yields_count.min(self.transactions.len());
         (self.yields_count, Some(items_remaining))
     }
 }
 
-impl<'a, T: AsRef<Transaction>> FusedIterator for TopologicalIter<'a, T> {}
-impl<'a, T: AsRef<Transaction>> ExactSizeIterator for TopologicalIter<'a, T> {
+impl<T: AsRef<Transaction>> FusedIterator for TopologicalIter<'_, T> {}
+impl<T: AsRef<Transaction>> ExactSizeIterator for TopologicalIter<'_, T> {
     fn len(&self) -> usize {
         self.transactions.len()
     }
@@ -238,24 +220,13 @@ impl<T: AsRef<Transaction>> TopologicalIntoIter<T> {
 
         // Transaction edges
         let mut edges: Vec<Option<IndexSet>> = vec![None; transactions.len()];
-        transactions
-            .iter()
-            .enumerate()
-            .for_each(|(destination_idx, tx)| {
-                tx.as_ref()
-                    .unwrap()
-                    .as_ref()
-                    .inputs
-                    .iter()
-                    .for_each(|input| {
-                        if let Some(origin_idx) = index.get(&input.previous_outpoint.transaction_id)
-                        {
-                            edges[*origin_idx]
-                                .get_or_insert_with(IndexSet::new)
-                                .insert(destination_idx);
-                        }
-                    })
-            });
+        transactions.iter().enumerate().for_each(|(destination_idx, tx)| {
+            tx.as_ref().unwrap().as_ref().inputs.iter().for_each(|input| {
+                if let Some(origin_idx) = index.get(&input.previous_outpoint.transaction_id) {
+                    edges[*origin_idx].get_or_insert_with(IndexSet::new).insert(destination_idx);
+                }
+            })
+        });
 
         // Degrees
         (0..transactions.len()).for_each(|origin_idx| {
@@ -273,13 +244,7 @@ impl<T: AsRef<Transaction>> TopologicalIntoIter<T> {
                 queue.push_back(destination_idx);
             }
         });
-        Self {
-            transactions,
-            in_degree,
-            edges,
-            queue,
-            yields_count: 0,
-        }
+        Self { transactions, in_degree, edges, queue, yields_count: 0 }
     }
 }
 
@@ -306,8 +271,7 @@ impl<T: AsRef<Transaction>> Iterator for TopologicalIntoIter<T> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let items_remaining =
-            self.transactions.len() - self.yields_count.min(self.transactions.len());
+        let items_remaining = self.transactions.len() - self.yields_count.min(self.transactions.len());
         (self.yields_count, Some(items_remaining))
     }
 }

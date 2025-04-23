@@ -87,11 +87,7 @@ impl AsyncService for GrpcService {
                     debug!("GRPC, Adaptor terminated successfully");
                 }
                 Err(err) => {
-                    warn!(
-                        "{} error while stopping the connection handler: {}",
-                        Self::IDENT,
-                        err
-                    );
+                    warn!("{} error while stopping the connection handler: {}", Self::IDENT, err);
                 }
             }
 

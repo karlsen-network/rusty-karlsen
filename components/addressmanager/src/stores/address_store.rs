@@ -28,11 +28,7 @@ pub trait AddressesStoreReader {
 pub trait AddressesStore: AddressesStoreReader {
     fn set(&mut self, key: AddressKey, entry: Entry) -> StoreResult<()>;
     #[allow(dead_code)]
-    fn set_failed_count(
-        &mut self,
-        key: AddressKey,
-        connection_failed_count: u64,
-    ) -> StoreResult<()>;
+    fn set_failed_count(&mut self, key: AddressKey, connection_failed_count: u64) -> StoreResult<()>;
     fn remove(&mut self, key: AddressKey) -> StoreResult<()>;
 }
 
@@ -84,26 +80,19 @@ pub struct DbAddressesStore {
 
 impl DbAddressesStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self {
-            db: Arc::clone(&db),
-            access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::Addresses.into()),
-        }
+        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::Addresses.into()) }
     }
 
-    pub fn iterator(
-        &self,
-    ) -> impl Iterator<Item = Result<(AddressKey, Entry), Box<dyn Error>>> + '_ {
+    pub fn iterator(&self) -> impl Iterator<Item = Result<(AddressKey, Entry), Box<dyn Error>>> + '_ {
         self.access.iterator().map(|iter_result| match iter_result {
-            Ok((key_bytes, connection_failed_count)) => {
-                match <[u8; ADDRESS_KEY_SIZE]>::try_from(&key_bytes[..]) {
-                    Ok(address_key_slice) => {
-                        let addr_key = DbAddressKey(address_key_slice);
-                        let address: AddressKey = addr_key.into();
-                        Ok((address, connection_failed_count))
-                    }
-                    Err(e) => Err(e.into()),
+            Ok((key_bytes, connection_failed_count)) => match <[u8; ADDRESS_KEY_SIZE]>::try_from(&key_bytes[..]) {
+                Ok(address_key_slice) => {
+                    let addr_key = DbAddressKey(address_key_slice);
+                    let address: AddressKey = addr_key.into();
+                    Ok((address, connection_failed_count))
                 }
-            }
+                Err(e) => Err(e.into()),
+            },
             Err(e) => Err(e),
         })
     }
@@ -117,27 +106,15 @@ impl AddressesStoreReader for DbAddressesStore {
 
 impl AddressesStore for DbAddressesStore {
     fn set(&mut self, key: AddressKey, entry: Entry) -> StoreResult<()> {
-        self.access
-            .write(DirectDbWriter::new(&self.db), key.into(), entry)
+        self.access.write(DirectDbWriter::new(&self.db), key.into(), entry)
     }
 
     fn remove(&mut self, key: AddressKey) -> StoreResult<()> {
-        self.access
-            .delete(DirectDbWriter::new(&self.db), key.into())
+        self.access.delete(DirectDbWriter::new(&self.db), key.into())
     }
 
-    fn set_failed_count(
-        &mut self,
-        key: AddressKey,
-        connection_failed_count: u64,
-    ) -> StoreResult<()> {
+    fn set_failed_count(&mut self, key: AddressKey, connection_failed_count: u64) -> StoreResult<()> {
         let entry = self.get(key)?;
-        self.set(
-            key,
-            Entry {
-                connection_failed_count,
-                address: entry.address,
-            },
-        )
+        self.set(key, Entry { connection_failed_count, address: entry.address })
     }
 }

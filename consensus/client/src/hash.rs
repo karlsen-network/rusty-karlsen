@@ -1,3 +1,10 @@
+//!
+//! WASM bindings for transaction hashers: [`TransactionSigningHash`](native::TransactionSigningHash)
+//! and [`TransactionSigningHashECDSA`](native::TransactionSigningHashECDSA).
+//!
+
+#![allow(non_snake_case)]
+
 use crate::imports::*;
 use crate::result::Result;
 use karlsen_hashes as native;
@@ -15,9 +22,7 @@ pub struct TransactionSigningHash {
 impl TransactionSigningHash {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        Self {
-            hasher: native::TransactionSigningHash::new(),
-        }
+        Self { hasher: native::TransactionSigningHash::new() }
     }
 
     pub fn update(&mut self, data: BinaryT) -> Result<()> {
@@ -42,9 +47,7 @@ pub struct TransactionSigningHashECDSA {
 impl TransactionSigningHashECDSA {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        Self {
-            hasher: native::TransactionSigningHashECDSA::new(),
-        }
+        Self { hasher: native::TransactionSigningHashECDSA::new() }
     }
 
     pub fn update(&mut self, data: BinaryT) -> Result<()> {

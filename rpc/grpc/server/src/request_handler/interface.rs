@@ -12,8 +12,7 @@ use std::fmt::Debug;
 use std::{collections::HashMap, sync::Arc};
 
 pub type KarlsendMethod = Method<ServerContext, Connection, KarlsendRequest, KarlsendResponse>;
-pub type DynKarlsendMethod =
-    Arc<dyn MethodTrait<ServerContext, Connection, KarlsendRequest, KarlsendResponse>>;
+pub type DynKarlsendMethod = Arc<dyn MethodTrait<ServerContext, Connection, KarlsendRequest, KarlsendResponse>>;
 pub type KarlsendDropFn = DropFn<KarlsendRequest, KarlsendResponse>;
 pub type KarlsendRoutingPolicy = RoutingPolicy<KarlsendRequest, KarlsendResponse>;
 
@@ -33,27 +32,20 @@ pub struct Interface {
 
 impl Interface {
     pub fn new(server_ctx: ServerContext) -> Self {
-        let method_not_implemented =
-            Arc::new(Method::new(|_, _, karlsend_request: KarlsendRequest| {
-                Box::pin(async move {
-                    match karlsend_request.payload {
-                        Some(ref request) => {
-                            Ok(KarlsendResponse {
-                                id: karlsend_request.id,
-                                payload: Some(KarlsendPayloadOps::from(request).to_error_response(
-                                    GrpcServerError::MethodNotImplemented.into(),
-                                )),
-                            })
-                        }
-                        None => Err(GrpcServerError::InvalidRequestPayload),
-                    }
-                })
-            }));
-        Self {
-            server_ctx,
-            methods: Default::default(),
-            method_not_implemented,
-        }
+        let method_not_implemented = Arc::new(Method::new(|_, _, karlsend_request: KarlsendRequest| {
+            Box::pin(async move {
+                match karlsend_request.payload {
+                    Some(ref request) => Ok(KarlsendResponse {
+                        id: karlsend_request.id,
+                        payload: Some(
+                            KarlsendPayloadOps::from(request).to_error_response(GrpcServerError::MethodNotImplemented.into()),
+                        ),
+                    }),
+                    None => Err(GrpcServerError::InvalidRequestPayload),
+                }
+            })
+        }));
+        Self { server_ctx, methods: Default::default(), method_not_implemented }
     }
 
     pub fn method(&mut self, op: KarlsendPayloadOps, method: KarlsendMethod) {
@@ -78,9 +70,7 @@ impl Interface {
         self.methods.entry(op).and_modify(|x| {
             let method: Method<ServerContext, Connection, KarlsendRequest, KarlsendResponse> =
                 Method::with_properties(x.method_fn(), tasks, queue_size, routing_policy);
-            let method: Arc<
-                dyn MethodTrait<ServerContext, Connection, KarlsendRequest, KarlsendResponse>,
-            > = Arc::new(method);
+            let method: Arc<dyn MethodTrait<ServerContext, Connection, KarlsendRequest, KarlsendResponse>> = Arc::new(method);
             *x = method;
         });
     }
@@ -91,18 +81,11 @@ impl Interface {
         connection: Connection,
         request: KarlsendRequest,
     ) -> GrpcServerResult<KarlsendResponse> {
-        self.methods
-            .get(op)
-            .unwrap_or(&self.method_not_implemented)
-            .call(self.server_ctx.clone(), connection, request)
-            .await
+        self.methods.get(op).unwrap_or(&self.method_not_implemented).call(self.server_ctx.clone(), connection, request).await
     }
 
     pub fn get_method(&self, op: &KarlsendPayloadOps) -> DynKarlsendMethod {
-        self.methods
-            .get(op)
-            .unwrap_or(&self.method_not_implemented)
-            .clone()
+        self.methods.get(op).unwrap_or(&self.method_not_implemented).clone()
     }
 }
 

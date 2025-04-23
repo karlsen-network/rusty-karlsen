@@ -35,21 +35,11 @@ pub async fn locate_binaries(root: &str, name: &str) -> Result<Vec<PathBuf>> {
         return Err(Error::Platform);
     }
 
-    let name = if runtime::is_windows() {
-        name.to_string() + ".exe"
-    } else {
-        name.to_string()
-    };
+    let name = if runtime::is_windows() { name.to_string() + ".exe" } else { name.to_string() };
 
     let locations = LOCATIONS
         .iter()
-        .map(|path| {
-            PathBuf::from(&root)
-                .join(path)
-                .join(&name)
-                .normalize()
-                .map_err(|e| e.into())
-        })
+        .map(|path| PathBuf::from(&root).join(path).join(&name).normalize().map_err(|e| e.into()))
         .collect::<Result<Vec<_>>>()?;
 
     let mut list = Vec::new();
@@ -77,10 +67,7 @@ pub struct Daemons {
 
 impl Daemons {
     pub fn new() -> Self {
-        Self {
-            karlsend: None,
-            cpu_miner: None,
-        }
+        Self { karlsend: None, cpu_miner: None }
     }
 
     pub fn with_karlsend(mut self, karlsend: Arc<dyn KarlsendCtl + Send + Sync + 'static>) -> Self {
@@ -88,19 +75,13 @@ impl Daemons {
         self
     }
 
-    pub fn with_cpu_miner(
-        mut self,
-        cpu_miner: Arc<dyn CpuMinerCtl + Send + Sync + 'static>,
-    ) -> Self {
+    pub fn with_cpu_miner(mut self, cpu_miner: Arc<dyn CpuMinerCtl + Send + Sync + 'static>) -> Self {
         self.cpu_miner = Some(cpu_miner);
         self
     }
 
     pub fn karlsend(&self) -> Arc<dyn KarlsendCtl + Send + Sync + 'static> {
-        self.karlsend
-            .as_ref()
-            .expect("accessing Daemons::karlsend while karlsend option is None")
-            .clone()
+        self.karlsend.as_ref().expect("accessing Daemons::karlsend while karlsend option is None").clone()
     }
 
     pub fn try_karlsend(&self) -> Option<Arc<dyn KarlsendCtl + Send + Sync + 'static>> {
@@ -108,10 +89,7 @@ impl Daemons {
     }
 
     pub fn cpu_miner(&self) -> Arc<dyn CpuMinerCtl + Send + Sync + 'static> {
-        self.cpu_miner
-            .as_ref()
-            .expect("accessing Daemons::cpu_miner while cpu_miner option is None")
-            .clone()
+        self.cpu_miner.as_ref().expect("accessing Daemons::cpu_miner while cpu_miner option is None").clone()
     }
 
     pub fn try_cpu_miner(&self) -> Option<Arc<dyn CpuMinerCtl + Send + Sync + 'static>> {
@@ -164,14 +142,8 @@ fn format_duration(seconds: u64) -> String {
     let seconds = seconds % 60;
 
     if days > 0 {
-        format!(
-            "{0} days {1:02} hours, {2:02} minutes, {3:02} seconds",
-            days, hours, minutes, seconds
-        )
+        format!("{0} days {1:02} hours, {2:02} minutes, {3:02} seconds", days, hours, minutes, seconds)
     } else {
-        format!(
-            "{0:02} hours, {1:02} minutes, {2:02} seconds",
-            hours, minutes, seconds
-        )
+        format!("{0:02} hours, {1:02} minutes, {2:02} seconds", hours, minutes, seconds)
     }
 }

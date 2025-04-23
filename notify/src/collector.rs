@@ -55,11 +55,7 @@ impl<C> CollectorFrom<C>
 where
     C: Converter + 'static,
 {
-    pub fn new(
-        name: &'static str,
-        recv_channel: CollectorNotificationReceiver<C::Incoming>,
-        converter: Arc<C>,
-    ) -> Self {
+    pub fn new(name: &'static str, recv_channel: CollectorNotificationReceiver<C::Incoming>, converter: Arc<C>) -> Self {
         Self {
             name,
             recv_channel,
@@ -75,11 +71,7 @@ where
 
     fn spawn_collecting_task(self: Arc<Self>, notifier: DynNotify<C::Outgoing>) {
         // The task can only be spawned once
-        if self
-            .is_started
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_err()
-        {
+        if self.is_started.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
             return;
         }
         let collect_shutdown = self.collect_shutdown.clone();
@@ -93,11 +85,7 @@ where
                 match notifier.notify(converter.convert(notification).await) {
                     Ok(_) => (),
                     Err(err) => {
-                        trace!(
-                            "[Collector {}] notification sender error: {}",
-                            self.name,
-                            err
-                        );
+                        trace!("[Collector {}] notification sender error: {}", self.name, err);
                     }
                 }
             }
@@ -140,9 +128,7 @@ mod tests {
         notifier::test_helpers::NotifyMock,
         subscription::{
             context::SubscriptionContext,
-            single::{
-                OverallSubscription, UtxosChangedSubscription, VirtualChainChangedSubscription,
-            },
+            single::{OverallSubscription, UtxosChangedSubscription, VirtualChainChangedSubscription},
         },
     };
     use derive_more::Display;
@@ -169,11 +155,7 @@ mod tests {
     }
 
     impl crate::notification::Notification for OutgoingNotification {
-        fn apply_overall_subscription(
-            &self,
-            _: &OverallSubscription,
-            _: &SubscriptionContext,
-        ) -> Option<Self> {
+        fn apply_overall_subscription(&self, _: &OverallSubscription, _: &SubscriptionContext) -> Option<Self> {
             unimplemented!()
         }
 
@@ -185,11 +167,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn apply_utxos_changed_subscription(
-            &self,
-            _: &UtxosChangedSubscription,
-            _: &SubscriptionContext,
-        ) -> Option<Self> {
+        fn apply_utxos_changed_subscription(&self, _: &UtxosChangedSubscription, _: &SubscriptionContext) -> Option<Self> {
             unimplemented!()
         }
 
@@ -202,11 +180,8 @@ mod tests {
     async fn test_collector_from() {
         type TestConverter = ConverterFrom<IncomingNotification, OutgoingNotification>;
         let incoming = Channel::default();
-        let collector: Arc<CollectorFrom<TestConverter>> = Arc::new(CollectorFrom::new(
-            "test",
-            incoming.receiver(),
-            Arc::new(TestConverter::new()),
-        ));
+        let collector: Arc<CollectorFrom<TestConverter>> =
+            Arc::new(CollectorFrom::new("test", incoming.receiver(), Arc::new(TestConverter::new())));
         let outgoing = Channel::default();
         let notifier = Arc::new(NotifyMock::new(outgoing.sender()));
         collector.clone().start(notifier);

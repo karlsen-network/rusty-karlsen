@@ -1,7 +1,9 @@
+use std::collections::HashSet;
+
 use crate::{
     mempool::{
-        errors::{RuleError, RuleResult},
-        model::map::OutpointIndex,
+        errors::RuleResult,
+        model::{map::OutpointIndex, tx::DoubleSpend},
     },
     model::TransactionIdSet,
 };
@@ -18,10 +20,7 @@ pub(crate) struct MempoolUtxoSet {
 
 impl MempoolUtxoSet {
     pub(crate) fn new() -> Self {
-        Self {
-            pool_unspent_outputs: UtxoCollection::default(),
-            outpoint_owner_id: OutpointIndex::default(),
-        }
+        Self { pool_unspent_outputs: UtxoCollection::default(), outpoint_owner_id: OutpointIndex::default() }
     }
 
     pub(crate) fn add_transaction(&mut self, transaction: &MutableTransaction) {
@@ -36,27 +35,17 @@ impl MempoolUtxoSet {
             // it was created in the DAG (a.k.a. in consensus).
             self.pool_unspent_outputs.remove(&outpoint);
 
-            self.outpoint_owner_id
-                .insert(input.previous_outpoint, transaction_id);
+            self.outpoint_owner_id.insert(input.previous_outpoint, transaction_id);
         }
 
         for (i, output) in transaction.tx.outputs.iter().enumerate() {
             let outpoint = TransactionOutpoint::new(transaction_id, i as u32);
-            let entry = UtxoEntry::new(
-                output.value,
-                output.script_public_key.clone(),
-                UNACCEPTED_DAA_SCORE,
-                false,
-            );
+            let entry = UtxoEntry::new(output.value, output.script_public_key.clone(), UNACCEPTED_DAA_SCORE, false);
             self.pool_unspent_outputs.insert(outpoint, entry);
         }
     }
 
-    pub(crate) fn remove_transaction(
-        &mut self,
-        transaction: &MutableTransaction,
-        parent_ids_in_pool: &TransactionIdSet,
-    ) {
+    pub(crate) fn remove_transaction(&mut self, transaction: &MutableTransaction, parent_ids_in_pool: &TransactionIdSet) {
         let transaction_id = transaction.id();
         // We cannot assume here that the transaction is fully populated.
         // Notably, this is not the case when revalidate_transaction fails and leads the execution path here.
@@ -64,8 +53,7 @@ impl MempoolUtxoSet {
             if let Some(ref entry) = transaction.entries[i] {
                 // If the transaction creating the output spent by this input is in the mempool - restore it's UTXO
                 if parent_ids_in_pool.contains(&input.previous_outpoint.transaction_id) {
-                    self.pool_unspent_outputs
-                        .insert(input.previous_outpoint, entry.clone());
+                    self.pool_unspent_outputs.insert(input.previous_outpoint, entry.clone());
                 }
             }
             self.outpoint_owner_id.remove(&input.previous_outpoint);
@@ -78,28 +66,42 @@ impl MempoolUtxoSet {
         }
     }
 
-    pub(crate) fn get_outpoint_owner_id(
-        &self,
-        outpoint: &TransactionOutpoint,
-    ) -> Option<&TransactionId> {
+    pub(crate) fn get_outpoint_owner_id(&self, outpoint: &TransactionOutpoint) -> Option<&TransactionId> {
         self.outpoint_owner_id.get(outpoint)
     }
 
     /// Make sure no other transaction in the mempool is already spending an output which one of this transaction inputs spends
     pub(crate) fn check_double_spends(&self, transaction: &MutableTransaction) -> RuleResult<()> {
+        match self.get_first_double_spend(transaction) {
+            Some(double_spend) => Err(double_spend.into()),
+            None => Ok(()),
+        }
+    }
+
+    pub(crate) fn get_first_double_spend(&self, transaction: &MutableTransaction) -> Option<DoubleSpend> {
         let transaction_id = transaction.id();
         for input in transaction.tx.inputs.iter() {
-            if let Some(existing_transaction_id) =
-                self.get_outpoint_owner_id(&input.previous_outpoint)
-            {
+            if let Some(existing_transaction_id) = self.get_outpoint_owner_id(&input.previous_outpoint) {
                 if *existing_transaction_id != transaction_id {
-                    return Err(RuleError::RejectDoubleSpendInMempool(
-                        input.previous_outpoint,
-                        *existing_transaction_id,
-                    ));
+                    return Some(DoubleSpend::new(input.previous_outpoint, *existing_transaction_id));
                 }
             }
         }
-        Ok(())
+        None
+    }
+
+    /// Returns the first double spend of every transaction in the mempool double spending on `transaction`
+    pub(crate) fn get_double_spend_transaction_ids(&self, transaction: &MutableTransaction) -> Vec<DoubleSpend> {
+        let transaction_id = transaction.id();
+        let mut double_spends = vec![];
+        let mut visited = HashSet::new();
+        for input in transaction.tx.inputs.iter() {
+            if let Some(existing_transaction_id) = self.get_outpoint_owner_id(&input.previous_outpoint) {
+                if *existing_transaction_id != transaction_id && visited.insert(*existing_transaction_id) {
+                    double_spends.push(DoubleSpend::new(input.previous_outpoint, *existing_transaction_id));
+                }
+            }
+        }
+        double_spends
     }
 }

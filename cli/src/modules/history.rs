@@ -7,13 +7,11 @@ use karlsen_wallet_core::storage::Binding;
 pub struct History;
 
 impl History {
-    async fn main(
-        self: Arc<Self>,
-        ctx: &Arc<dyn Context>,
-        mut argv: Vec<String>,
-        _cmd: &str,
-    ) -> Result<()> {
+    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, mut argv: Vec<String>, _cmd: &str) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
+
+        let guard = ctx.wallet().guard();
+        let guard = guard.lock().await;
 
         if argv.is_empty() {
             self.display_help(ctx, argv).await?;
@@ -46,6 +44,7 @@ impl History {
                                 true,
                                 true,
                                 Some(account.clone()),
+                                &guard,
                             )
                             .await;
                         lines.iter().for_each(|line| tprintln!(ctx, "{line}"));
@@ -58,19 +57,11 @@ impl History {
                 return Ok(());
             }
             "list" => {
-                let last = if argv.is_empty() {
-                    None
-                } else {
-                    argv[0].parse::<usize>().ok()
-                };
+                let last = if argv.is_empty() { None } else { argv[0].parse::<usize>().ok() };
                 (last, false)
             }
             "details" => {
-                let last = if argv.is_empty() {
-                    None
-                } else {
-                    argv[0].parse::<usize>().ok()
-                };
+                let last = if argv.is_empty() { None } else { argv[0].parse::<usize>().ok() };
                 (last, true)
             }
             v => {
@@ -95,15 +86,7 @@ impl History {
             }
         };
         let length = ids.size_hint().0;
-        let skip = if let Some(last) = last {
-            if last > length {
-                0
-            } else {
-                length - last
-            }
-        } else {
-            0
-        };
+        let skip = if let Some(last) = last { length.saturating_sub(last) } else { 0 };
         let mut index = 0;
         let page = 25;
 
@@ -136,6 +119,7 @@ impl History {
                                 include_utxo,
                                 true,
                                 Some(account.clone()),
+                                &guard,
                             )
                             .await;
                         lines.iter().for_each(|line| tprintln!(ctx, "{line}"));
@@ -159,14 +143,8 @@ impl History {
         ctx.term().help(
             &[
                 ("list [<last N transactions>]", "List transactions"),
-                (
-                    "details [<last N transactions>]",
-                    "List transactions with UTXO details",
-                ),
-                (
-                    "lookup <transaction id>",
-                    "Lookup transaction in the history",
-                ),
+                ("details [<last N transactions>]", "List transactions with UTXO details"),
+                ("lookup <transaction id>", "Lookup transaction in the history"),
             ],
             None,
         )?;

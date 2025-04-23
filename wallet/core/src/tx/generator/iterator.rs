@@ -11,9 +11,7 @@ pub struct PendingTransactionIterator {
 
 impl PendingTransactionIterator {
     pub fn new(generator: &Generator) -> Self {
-        Self {
-            generator: generator.clone(),
-        }
+        Self { generator: generator.clone() }
     }
 }
 

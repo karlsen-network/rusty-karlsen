@@ -15,7 +15,7 @@ macro_rules! construct_uint {
             pub const MIN: Self = Self::ZERO;
             pub const MAX: Self = $name([u64::MAX; $n_words]);
             pub const BITS: u32 = $n_words * u64::BITS;
-            pub const BYTES: usize = $n_words * core::mem::size_of::<u64>();
+            pub const BYTES: usize = $n_words * size_of::<u64>();
             pub const LIMBS: usize = $n_words;
 
             #[inline]
@@ -156,6 +156,18 @@ macro_rules! construct_uint {
                     carry = carry_out;
                 }
                 (self, carry)
+            }
+
+            #[inline]
+            pub fn saturating_sub(self, other: Self) -> Self {
+                let (sum, carry) = self.overflowing_sub(other);
+                if carry { Self::ZERO } else { sum }
+            }
+
+            #[inline]
+            pub fn saturating_add(self, other: Self) -> Self {
+                let (sum, carry) = self.overflowing_add(other);
+                if carry { Self::MAX } else { sum }
             }
 
             /// Multiplication by u64
@@ -1076,11 +1088,7 @@ mod tests {
             assert_equal(mine2, default2, check_fmt);
 
             let mine = mine.overflowing_add(mine2).0.overflowing_mul(mine2).0;
-            let default = default
-                .overflowing_add(default2)
-                .0
-                .overflowing_mul(default2)
-                .0;
+            let default = default.overflowing_add(default2).0.overflowing_mul(default2).0;
             assert_equal(mine, default, check_fmt);
             let shift = rng.next_u32() % 4096;
             {
@@ -1111,10 +1119,7 @@ mod tests {
             {
                 let rand_u64 = rng.next_u64();
                 let mine_divrem = mine.div_rem_u64(rand_u64);
-                let default_divrem = (
-                    default / u128::from(rand_u64),
-                    default % u128::from(rand_u64),
-                );
+                let default_divrem = (default / u128::from(rand_u64), default % u128::from(rand_u64));
                 assert_equal(mine_divrem.0, default_divrem.0, check_fmt);
                 assert_eq!(mine_divrem.1, u64::try_from(default_divrem.1).unwrap());
             }
@@ -1155,6 +1160,19 @@ mod tests {
                 assert_eq!(mine, Uint128::from_hex(&str_buf).unwrap());
             }
         }
+    }
+
+    #[test]
+    fn test_saturating_ops() {
+        let u1 = Uint128::from_u128(u128::MAX);
+        let u2 = Uint128::from_u64(u64::MAX);
+        // Sub
+        assert_eq!(u1.saturating_sub(u2), Uint128::from_u128(u128::MAX - u64::MAX as u128));
+        assert_eq!(u1.saturating_sub(u2).as_u128(), u128::MAX - u64::MAX as u128);
+        assert_eq!(u2.saturating_sub(u1), Uint128::ZERO);
+        // Add
+        assert_eq!(u1.saturating_add(Uint128::from_u64(1)), Uint128::MAX);
+        assert_eq!(u2.saturating_add(Uint128::from_u64(1)), Uint128::from_u128(u64::MAX as u128 + 1));
     }
 
     #[test]

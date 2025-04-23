@@ -1,7 +1,5 @@
 use crate::{convert::error::ConversionError, core::peer::PeerKey, KarlsendMessagePayloadType};
-use karlsen_consensus_core::errors::{
-    block::RuleError, consensus::ConsensusError, pruning::PruningImportError,
-};
+use karlsen_consensus_core::errors::{block::RuleError, consensus::ConsensusError, pruning::PruningImportError};
 use karlsen_mining_errors::manager::MiningManagerError;
 use std::time::Duration;
 use thiserror::Error;
@@ -88,10 +86,7 @@ impl ProtocolError {
     }
 
     pub fn can_send_outgoing_message(&self) -> bool {
-        !matches!(
-            self,
-            Self::ConnectionClosed | Self::OutgoingRouteCapacityReached(_)
-        )
+        !matches!(self, Self::ConnectionClosed | Self::OutgoingRouteCapacityReached(_))
     }
 
     pub fn to_reject_message(&self) -> String {
@@ -105,6 +100,10 @@ impl ProtocolError {
     pub fn from_reject_message(reason: String) -> Self {
         if reason == LOOPBACK_CONNECTION_MESSAGE || reason == DUPLICATE_CONNECTION_MESSAGE {
             ProtocolError::IgnorableReject(reason)
+        } else if reason.contains("cannot find full block") {
+            let hint = "Hint: If this error persists, it might be due to the other peer having pruned block data after syncing headers and UTXOs. In such a case, you may need to reset the database.";
+            let detailed_reason = format!("{}. {}", reason, hint);
+            ProtocolError::Rejected(detailed_reason)
         } else {
             ProtocolError::Rejected(reason)
         }
@@ -127,33 +126,21 @@ macro_rules! make_message {
     }};
 
     ($pattern:path, $msg:expr, $response_id:expr, $request_id: expr) => {{
-        $crate::pb::KarlsendMessage {
-            payload: Some($pattern($msg)),
-            response_id: $response_id,
-            request_id: $request_id,
-        }
+        $crate::pb::KarlsendMessage { payload: Some($pattern($msg)), response_id: $response_id, request_id: $request_id }
     }};
 }
 
 #[macro_export]
 macro_rules! make_response {
     ($pattern:path, $msg:expr, $response_id:expr) => {{
-        $crate::pb::KarlsendMessage {
-            payload: Some($pattern($msg)),
-            response_id: $response_id,
-            request_id: 0,
-        }
+        $crate::pb::KarlsendMessage { payload: Some($pattern($msg)), response_id: $response_id, request_id: 0 }
     }};
 }
 
 #[macro_export]
 macro_rules! make_request {
     ($pattern:path, $msg:expr, $request_id:expr) => {{
-        $crate::pb::KarlsendMessage {
-            payload: Some($pattern($msg)),
-            response_id: 0,
-            request_id: $request_id,
-        }
+        $crate::pb::KarlsendMessage { payload: Some($pattern($msg)), response_id: 0, request_id: $request_id }
     }};
 }
 
@@ -169,10 +156,7 @@ macro_rules! unwrap_message {
             if let Some($pattern(inner_msg)) = msg.payload {
                 Ok(inner_msg)
             } else {
-                Err($crate::common::ProtocolError::UnexpectedMessage(
-                    stringify!($pattern),
-                    msg.payload.as_ref().map(|v| v.into()),
-                ))
+                Err($crate::common::ProtocolError::UnexpectedMessage(stringify!($pattern), msg.payload.as_ref().map(|v| v.into())))
             }
         } else {
             Err($crate::common::ProtocolError::ConnectionClosed)
@@ -187,10 +171,7 @@ macro_rules! unwrap_message_with_request_id {
             if let Some($pattern(inner_msg)) = msg.payload {
                 Ok((inner_msg, msg.request_id))
             } else {
-                Err($crate::common::ProtocolError::UnexpectedMessage(
-                    stringify!($pattern),
-                    msg.payload.as_ref().map(|v| v.into()),
-                ))
+                Err($crate::common::ProtocolError::UnexpectedMessage(stringify!($pattern), msg.payload.as_ref().map(|v| v.into())))
             }
         } else {
             Err($crate::common::ProtocolError::ConnectionClosed)
@@ -212,9 +193,7 @@ macro_rules! dequeue_with_timeout {
             Ok(op) => {
                 $crate::unwrap_message!(op, $pattern)
             }
-            Err(_) => Err($crate::common::ProtocolError::Timeout(
-                $crate::common::DEFAULT_TIMEOUT,
-            )),
+            Err(_) => Err($crate::common::ProtocolError::Timeout($crate::common::DEFAULT_TIMEOUT)),
         }
     }};
     ($receiver:expr, $pattern:path, $timeout_duration:expr) => {{

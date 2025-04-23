@@ -6,6 +6,7 @@ use core::{
     fmt::{self, Display},
     str::FromStr,
 };
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 /// Prefix for all derivation paths.
 const PREFIX: &str = "m";
@@ -14,6 +15,45 @@ const PREFIX: &str = "m";
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct DerivationPath {
     path: Vec<ChildNumber>,
+}
+
+impl<'de> Deserialize<'de> for DerivationPath {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<DerivationPath, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct DerivationPathVisitor;
+        impl<'de> de::Visitor<'de> for DerivationPathVisitor {
+            type Value = DerivationPath;
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a string containing list of permissions separated by a '+'")
+            }
+
+            fn visit_str<E>(self, value: &str) -> std::result::Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                DerivationPath::from_str(value).map_err(|err| de::Error::custom(err.to_string()))
+            }
+            fn visit_borrowed_str<E>(self, v: &'de str) -> std::result::Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                DerivationPath::from_str(v).map_err(|err| de::Error::custom(err.to_string()))
+            }
+        }
+
+        deserializer.deserialize_str(DerivationPathVisitor)
+    }
+}
+
+impl Serialize for DerivationPath {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
 }
 
 impl DerivationPath {
@@ -83,14 +123,10 @@ impl FromStr for DerivationPath {
         let mut path = path.split('/');
 
         if path.next() != Some(PREFIX) {
-            return Err(Error::String(format!(
-                "Derivation don't start with `{PREFIX}/`"
-            )));
+            return Err(Error::String(format!("Derivation don't start with `{PREFIX}/`")));
         }
 
-        Ok(DerivationPath {
-            path: path.map(str::parse).collect::<Result<_>>()?,
-        })
+        Ok(DerivationPath { path: path.map(str::parse).collect::<Result<_>>()? })
     }
 }
 
@@ -113,50 +149,26 @@ mod tests {
     #[test]
     fn round_trip() {
         let path_m = "m";
-        assert_eq!(
-            path_m.parse::<DerivationPath>().unwrap().to_string(),
-            path_m
-        );
+        assert_eq!(path_m.parse::<DerivationPath>().unwrap().to_string(), path_m);
 
         let path_m_0 = "m/0";
-        assert_eq!(
-            path_m_0.parse::<DerivationPath>().unwrap().to_string(),
-            path_m_0
-        );
+        assert_eq!(path_m_0.parse::<DerivationPath>().unwrap().to_string(), path_m_0);
 
         let path_m_0_2147483647h = "m/0/2147483647'";
-        assert_eq!(
-            path_m_0_2147483647h
-                .parse::<DerivationPath>()
-                .unwrap()
-                .to_string(),
-            path_m_0_2147483647h
-        );
+        assert_eq!(path_m_0_2147483647h.parse::<DerivationPath>().unwrap().to_string(), path_m_0_2147483647h);
 
         let path_m_0_2147483647h_1 = "m/0/2147483647'/1";
-        assert_eq!(
-            path_m_0_2147483647h_1
-                .parse::<DerivationPath>()
-                .unwrap()
-                .to_string(),
-            path_m_0_2147483647h_1
-        );
+        assert_eq!(path_m_0_2147483647h_1.parse::<DerivationPath>().unwrap().to_string(), path_m_0_2147483647h_1);
 
         let path_m_0_2147483647h_1_2147483646h = "m/0/2147483647'/1/2147483646'";
         assert_eq!(
-            path_m_0_2147483647h_1_2147483646h
-                .parse::<DerivationPath>()
-                .unwrap()
-                .to_string(),
+            path_m_0_2147483647h_1_2147483646h.parse::<DerivationPath>().unwrap().to_string(),
             path_m_0_2147483647h_1_2147483646h
         );
 
         let path_m_0_2147483647h_1_2147483646h_2 = "m/0/2147483647'/1/2147483646'/2";
         assert_eq!(
-            path_m_0_2147483647h_1_2147483646h_2
-                .parse::<DerivationPath>()
-                .unwrap()
-                .to_string(),
+            path_m_0_2147483647h_1_2147483646h_2.parse::<DerivationPath>().unwrap().to_string(),
             path_m_0_2147483647h_1_2147483646h_2
         );
     }

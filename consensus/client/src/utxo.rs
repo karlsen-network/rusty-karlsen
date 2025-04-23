@@ -1,3 +1,13 @@
+//!
+//! # UTXO client-side data structures.
+//!
+//! This module provides client-side data structures for UTXO management.
+//! In particular, the [`UtxoEntry`] and [`UtxoEntryReference`] structs
+//! are used to represent UTXO entries in the wallet subsystem and WASM bindings.
+//!
+
+#![allow(non_snake_case)]
+
 use crate::imports::*;
 use crate::outpoint::{TransactionOutpoint, TransactionOutpointInner};
 use crate::result::Result;
@@ -29,16 +39,22 @@ export interface IUtxoEntry {
 
 #[wasm_bindgen]
 extern "C" {
+    /// WASM type representing an array of [`UtxoEntryReference`] objects (i.e. `UtxoEntryReference[]`)
     #[wasm_bindgen(extends = Array, typescript_type = "UtxoEntryReference[]")]
     pub type UtxoEntryReferenceArrayT;
+    /// WASM type representing a UTXO entry interface (a UTXO-like object)
     #[wasm_bindgen(typescript_type = "IUtxoEntry")]
     pub type IUtxoEntry;
+    /// WASM type representing an array of UTXO entries (i.e. `IUtxoEntry[]`)
     #[wasm_bindgen(typescript_type = "IUtxoEntry[]")]
     pub type IUtxoEntryArray;
 }
 
+/// A UTXO entry Id is a unique identifier for a UTXO entry defined by the `txid+output_index`.
 pub type UtxoEntryId = TransactionOutpointInner;
 
+/// [`UtxoEntry`] struct represents a client-side UTXO entry.
+///
 /// @category Wallet SDK
 #[derive(Clone, Debug, Serialize, Deserialize, CastFromJs)]
 #[serde(rename_all = "camelCase")]
@@ -88,22 +104,22 @@ impl UtxoEntry {
         }
 
         let outpoint = js_sys::Object::new();
-        outpoint.set(
-            "transactionId",
-            &self.outpoint.transaction_id().to_string().into(),
-        )?;
+        outpoint.set("transactionId", &self.outpoint.transaction_id().to_string().into())?;
         outpoint.set("index", &self.outpoint.index().into())?;
 
         obj.set("amount", &self.amount.to_string().into())?;
         obj.set("outpoint", &outpoint.into())?;
-        obj.set(
-            "scriptPublicKey",
-            &workflow_wasm::serde::to_value(&self.script_public_key)?,
-        )?;
+        obj.set("scriptPublicKey", &workflow_wasm::serde::to_value(&self.script_public_key)?)?;
         obj.set("blockDaaScore", &self.block_daa_score.to_string().into())?;
         obj.set("isCoinbase", &self.is_coinbase.into())?;
 
         Ok(obj)
+    }
+}
+
+impl AsRef<UtxoEntry> for UtxoEntry {
+    fn as_ref(&self) -> &UtxoEntry {
+        self
     }
 }
 
@@ -119,6 +135,8 @@ impl From<&UtxoEntry> for cctx::UtxoEntry {
     }
 }
 
+/// [`Arc`] reference to a [`UtxoEntry`] used by the wallet subsystems.
+///
 /// @category Wallet SDK
 #[derive(Clone, Debug, Serialize, Deserialize, CastFromJs)]
 #[wasm_bindgen(inspectable)]
@@ -142,14 +160,14 @@ impl UtxoEntryReference {
         self.as_ref().clone()
     }
 
-    #[wasm_bindgen(js_name = "getTransactionId")]
-    pub fn transaction_id_as_string(&self) -> String {
-        self.utxo.outpoint.get_transaction_id_as_string()
+    #[wasm_bindgen(getter)]
+    pub fn outpoint(&self) -> TransactionOutpoint {
+        self.utxo.outpoint.clone()
     }
 
-    #[wasm_bindgen(js_name = "getId")]
-    pub fn id_string(&self) -> String {
-        self.utxo.outpoint.id_string()
+    #[wasm_bindgen(getter)]
+    pub fn address(&self) -> Option<Address> {
+        self.utxo.address.clone()
     }
 
     #[wasm_bindgen(getter)]
@@ -165,6 +183,11 @@ impl UtxoEntryReference {
     #[wasm_bindgen(getter, js_name = "blockDaaScore")]
     pub fn block_daa_score(&self) -> u64 {
         self.utxo.block_daa_score
+    }
+
+    #[wasm_bindgen(getter, js_name = "scriptPublicKey")]
+    pub fn script_public_key(&self) -> ScriptPublicKey {
+        self.utxo.script_public_key.clone()
     }
 }
 
@@ -222,9 +245,7 @@ impl From<&UtxoEntryReference> for cctx::UtxoEntry {
 
 impl From<UtxoEntry> for UtxoEntryReference {
     fn from(entry: UtxoEntry) -> Self {
-        Self {
-            utxo: Arc::new(entry),
-        }
+        Self { utxo: Arc::new(entry) }
     }
 }
 
@@ -248,22 +269,23 @@ impl PartialOrd for UtxoEntryReference {
     }
 }
 
+/// An extension trait to convert a JS value into a vec of UTXO entry references.
 pub trait TryIntoUtxoEntryReferences {
     fn try_into_utxo_entry_references(&self) -> Result<Vec<UtxoEntryReference>>;
 }
 
 impl TryIntoUtxoEntryReferences for JsValue {
     fn try_into_utxo_entry_references(&self) -> Result<Vec<UtxoEntryReference>> {
-        Array::from(self)
-            .iter()
-            .map(UtxoEntryReference::try_owned_from)
-            .collect()
+        Array::from(self).iter().map(UtxoEntryReference::try_owned_from).collect()
     }
 }
 
 impl TryCastFromJs for UtxoEntry {
     type Error = Error;
-    fn try_cast_from(value: impl AsRef<JsValue>) -> Result<Cast<Self>, Self::Error> {
+    fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>, Self::Error>
+    where
+        R: AsRef<JsValue> + 'a,
+    {
         Ok(Self::try_ref_from_js_value_as_cast(value)?)
     }
 }
@@ -299,12 +321,7 @@ impl UtxoEntries {
 
     #[wasm_bindgen(getter = items)]
     pub fn get_items_as_js_array(&self) -> JsValue {
-        let items = self
-            .0
-            .as_ref()
-            .clone()
-            .into_iter()
-            .map(<UtxoEntryReference as Into<JsValue>>::into);
+        let items = self.0.as_ref().clone().into_iter().map(<UtxoEntryReference as Into<JsValue>>::into);
         Array::from_iter(items).into()
     }
 
@@ -313,8 +330,7 @@ impl UtxoEntries {
         let items = Array::from(js_value)
             .iter()
             .map(|js_value| {
-                UtxoEntryReference::try_owned_from(&js_value)
-                    .unwrap_or_else(|err| panic!("invalid UtxoEntryReference: {err}"))
+                UtxoEntryReference::try_owned_from(&js_value).unwrap_or_else(|err| panic!("invalid UtxoEntryReference: {err}"))
             })
             .collect::<Vec<_>>();
         self.0 = Arc::new(items);
@@ -342,34 +358,19 @@ impl UtxoEntries {
 
 impl From<UtxoEntries> for Vec<Option<UtxoEntry>> {
     fn from(value: UtxoEntries) -> Self {
-        value
-            .0
-            .as_ref()
-            .iter()
-            .map(|entry| Some(entry.as_ref().clone()))
-            .collect::<Vec<_>>()
+        value.0.as_ref().iter().map(|entry| Some(entry.as_ref().clone())).collect::<Vec<_>>()
     }
 }
 
 impl From<Vec<UtxoEntry>> for UtxoEntries {
     fn from(items: Vec<UtxoEntry>) -> Self {
-        Self(Arc::new(
-            items
-                .into_iter()
-                .map(UtxoEntryReference::from)
-                .collect::<_>(),
-        ))
+        Self(Arc::new(items.into_iter().map(UtxoEntryReference::from).collect::<_>()))
     }
 }
 
 impl From<UtxoEntries> for Vec<Option<cctx::UtxoEntry>> {
     fn from(value: UtxoEntries) -> Self {
-        value
-            .0
-            .as_ref()
-            .iter()
-            .map(|entry| Some(entry.utxo.as_ref().into()))
-            .collect::<Vec<_>>()
+        value.0.as_ref().iter().map(|entry| Some(entry.utxo.as_ref().into())).collect::<Vec<_>>()
     }
 }
 
@@ -378,13 +379,7 @@ impl TryFrom<Vec<Option<UtxoEntry>>> for UtxoEntries {
     fn try_from(value: Vec<Option<UtxoEntry>>) -> std::result::Result<Self, Self::Error> {
         let mut list = vec![];
         for entry in value.into_iter() {
-            list.push(
-                entry
-                    .ok_or(Error::Custom(
-                        "Unable to cast `Vec<Option<UtxoEntry>>` into `UtxoEntries`.".to_string(),
-                    ))?
-                    .into(),
-            );
+            list.push(entry.ok_or(Error::Custom("Unable to cast `Vec<Option<UtxoEntry>>` into `UtxoEntries`.".to_string()))?.into());
         }
 
         Ok(Self(Arc::new(list)))
@@ -410,28 +405,44 @@ impl TryFrom<JsValue> for UtxoEntries {
 
 impl TryCastFromJs for UtxoEntryReference {
     type Error = Error;
-    fn try_cast_from(value: impl AsRef<JsValue>) -> Result<Cast<Self>, Self::Error> {
-        Self::resolve(&value, || {
+    fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>, Self::Error>
+    where
+        R: AsRef<JsValue> + 'a,
+    {
+        Self::resolve(value, || {
             if let Ok(utxo_entry) = UtxoEntry::try_ref_from_js_value(&value) {
                 Ok(Self::from(utxo_entry.clone()))
             } else if let Some(object) = Object::try_from(value.as_ref()) {
-                let address = object.get_cast::<Address>("address")?.into_owned();
-                let outpoint =
-                    TransactionOutpoint::try_from(object.get_value("outpoint")?.as_ref())?;
+                let address = object.try_cast_into::<Address>("address")?;
+                let outpoint = TransactionOutpoint::try_from(object.get_value("outpoint")?.as_ref())?;
                 let utxo_entry = Object::from(object.get_value("utxoEntry")?);
-                let amount = utxo_entry.get_u64("amount")?;
-                let script_public_key =
-                    ScriptPublicKey::try_owned_from(utxo_entry.get_value("scriptPublicKey")?)?;
-                let block_daa_score = utxo_entry.get_u64("blockDaaScore")?;
-                let is_coinbase = utxo_entry.get_bool("isCoinbase")?;
 
-                let utxo_entry = UtxoEntry {
-                    address: Some(address),
-                    outpoint,
-                    amount,
-                    script_public_key,
-                    block_daa_score,
-                    is_coinbase,
+                let utxo_entry = if !utxo_entry.is_undefined() {
+                    let amount = utxo_entry.get_u64("amount").map_err(|_| {
+                        Error::custom("Supplied object does not contain `utxoEntry.amount` property (or it is not a numerical value)")
+                    })?;
+                    let script_public_key = ScriptPublicKey::try_owned_from(utxo_entry.get_value("scriptPublicKey")?)
+                        .map_err(|_|Error::custom("Supplied object does not contain `utxoEntry.scriptPublicKey` property (or it is not a hex string or a ScriptPublicKey class)"))?;
+                    let block_daa_score = utxo_entry.get_u64("blockDaaScore").map_err(|_| {
+                        Error::custom(
+                            "Supplied object does not contain `utxoEntry.blockDaaScore` property (or it is not a numerical value)",
+                        )
+                    })?;
+                    let is_coinbase = utxo_entry.get_bool("isCoinbase")?;
+
+                    UtxoEntry { address, outpoint, amount, script_public_key, block_daa_score, is_coinbase }
+                } else {
+                    let amount = object.get_u64("amount").map_err(|_| {
+                        Error::custom("Supplied object does not contain `amount` property (or it is not a numerical value)")
+                    })?;
+                    let script_public_key = ScriptPublicKey::try_owned_from(object.get_value("scriptPublicKey")?)
+                        .map_err(|_|Error::custom("Supplied object does not contain `scriptPublicKey` property (or it is not a hex string or a ScriptPublicKey class)"))?;
+                    let block_daa_score = object.get_u64("blockDaaScore").map_err(|_| {
+                        Error::custom("Supplied object does not contain `blockDaaScore` property (or it is not a numerical value)")
+                    })?;
+                    let is_coinbase = object.try_get_bool("isCoinbase")?.unwrap_or(false);
+
+                    UtxoEntry { address, outpoint, amount, script_public_key, block_daa_score, is_coinbase }
                 };
 
                 Ok(UtxoEntryReference::from(utxo_entry))
@@ -445,11 +456,7 @@ impl TryCastFromJs for UtxoEntryReference {
 impl UtxoEntryReference {
     pub fn simulated(amount: u64) -> Self {
         use karlsen_addresses::{Prefix, Version};
-        let address = Address::new(
-            Prefix::Testnet,
-            Version::PubKey,
-            &rand::random::<[u8; 32]>(),
-        );
+        let address = Address::new(Prefix::Testnet, Version::PubKey, &rand::random::<[u8; 32]>());
         Self::simulated_with_address(amount, &address)
     }
 
@@ -457,16 +464,10 @@ impl UtxoEntryReference {
         let outpoint = TransactionOutpoint::simulated();
         let script_public_key = karlsen_txscript::pay_to_address_script(address);
         let block_daa_score = 0;
-        let is_coinbase = true;
+        let is_coinbase = false;
 
-        let utxo_entry = UtxoEntry {
-            address: Some(address.clone()),
-            outpoint,
-            amount,
-            script_public_key,
-            block_daa_score,
-            is_coinbase,
-        };
+        let utxo_entry =
+            UtxoEntry { address: Some(address.clone()), outpoint, amount, script_public_key, block_daa_score, is_coinbase };
 
         UtxoEntryReference::from(utxo_entry)
     }

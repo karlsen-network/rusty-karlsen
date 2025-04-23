@@ -33,7 +33,7 @@ impl<const BPS: u64> Bps<BPS> {
     }
 
     /// Returns the GHOSTDAG K value which was pre-computed for this BPS
-    /// (see [`calculate_ghostdag_k`] and [`gen_ghostdag_table`] for the full calculation)
+    /// (see [`calculate_ghostdag_k`] and `gen_ghostdag_table` for the full calculation)
     #[rustfmt::skip]
     pub const fn ghostdag_k() -> KType {
         match BPS {
@@ -99,7 +99,7 @@ impl<const BPS: u64> Bps<BPS> {
     }
 
     pub const fn pruning_depth() -> u64 {
-        // Based on the analysis at https://github.com/karlsen-network/docs/blob/main/Reference/prunality/Prunality.pdf
+        // Based on the analysis at https://github.com/kaspanet/docs/blob/main/Reference/prunality/Prunality.pdf
         // and on the decomposition of merge depth (rule R-I therein) from finality depth (φ)
         // We add an additional merge depth unit as a safety margin for anticone finalization
         Self::finality_depth()
@@ -158,16 +158,8 @@ mod tests {
     fn gen_ghostdag_table() {
         println!("[BPS => K]");
         (1..=32).for_each(|bps| {
-            let k = calculate_ghostdag_k(
-                2.0 * NETWORK_DELAY_BOUND as f64 * bps as f64,
-                GHOSTDAG_TAIL_DELTA,
-            );
-            print!(
-                "{} => {},{}",
-                bps,
-                k,
-                if bps % 10 == 0 { '\n' } else { ' ' }
-            );
+            let k = calculate_ghostdag_k(2.0 * NETWORK_DELAY_BOUND as f64 * bps as f64, GHOSTDAG_TAIL_DELTA);
+            print!("{} => {},{}", bps, k, if bps % 10 == 0 { '\n' } else { ' ' });
         });
         println!();
 

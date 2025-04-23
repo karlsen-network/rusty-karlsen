@@ -36,23 +36,14 @@ impl WalletStorage {
         metadata: Vec<AccountMetadata>,
     ) -> Result<Self> {
         let payload = Decrypted::new(payload).encrypt(secret, encryption_kind)?;
-        Ok(Self {
-            title,
-            encryption_kind,
-            payload,
-            metadata,
-            user_hint,
-            transactions: None,
-        })
+        Ok(Self { title, encryption_kind, payload, metadata, user_hint, transactions: None })
     }
 
     pub fn payload(&self, secret: &Secret) -> Result<Decrypted<Payload>> {
-        self.payload
-            .decrypt::<Payload>(secret)
-            .map_err(|err| match err {
-                Error::Chacha20poly1305(e) => Error::WalletDecrypt(e),
-                _ => err,
-            })
+        self.payload.decrypt::<Payload>(secret).map_err(|err| match err {
+            Error::Chacha20poly1305(e) => Error::WalletDecrypt(e),
+            _ => err,
+        })
     }
 
     pub async fn try_load(store: &Storage) -> Result<WalletStorage> {
@@ -70,7 +61,7 @@ impl WalletStorage {
 
         cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
-                let serialized = BorshSerialize::try_to_vec(self)?;
+                let serialized = borsh::to_vec(self)?;
                 fs::write(store.filename(), serialized.as_slice()).await?;
             } else {
                 // make this platform-specific to avoid creating
@@ -83,17 +74,9 @@ impl WalletStorage {
     }
 
     /// Obtain [`PrvKeyData`] using [`PrvKeyDataId`]
-    pub async fn try_get_prv_key_data(
-        &self,
-        secret: &Secret,
-        prv_key_data_id: &PrvKeyDataId,
-    ) -> Result<Option<PrvKeyData>> {
+    pub async fn try_get_prv_key_data(&self, secret: &Secret, prv_key_data_id: &PrvKeyDataId) -> Result<Option<PrvKeyData>> {
         let payload = self.payload.decrypt::<Payload>(secret)?;
-        let idx = payload
-            .as_ref()
-            .prv_key_data
-            .iter()
-            .position(|keydata| &keydata.id == prv_key_data_id);
+        let idx = payload.as_ref().prv_key_data.iter().position(|keydata| &keydata.id == prv_key_data_id);
         let keydata = idx.map(|idx| payload.as_ref().prv_key_data.get(idx).unwrap().clone());
         Ok(keydata)
     }
@@ -118,8 +101,8 @@ impl BorshSerialize for WalletStorage {
 }
 
 impl BorshDeserialize for WalletStorage {
-    fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
-        let StorageHeader { magic, version, .. } = StorageHeader::deserialize(buf)?;
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> IoResult<Self> {
+        let StorageHeader { magic, version, .. } = StorageHeader::deserialize_reader(reader)?;
 
         if magic != Self::STORAGE_MAGIC {
             return Err(IoError::new(
@@ -135,21 +118,14 @@ impl BorshDeserialize for WalletStorage {
             ));
         }
 
-        let title = BorshDeserialize::deserialize(buf)?;
-        let user_hint = BorshDeserialize::deserialize(buf)?;
-        let encryption_kind = BorshDeserialize::deserialize(buf)?;
-        let payload = BorshDeserialize::deserialize(buf)?;
-        let metadata = BorshDeserialize::deserialize(buf)?;
-        let transactions = BorshDeserialize::deserialize(buf)?;
+        let title = BorshDeserialize::deserialize_reader(reader)?;
+        let user_hint = BorshDeserialize::deserialize_reader(reader)?;
+        let encryption_kind = BorshDeserialize::deserialize_reader(reader)?;
+        let payload = BorshDeserialize::deserialize_reader(reader)?;
+        let metadata = BorshDeserialize::deserialize_reader(reader)?;
+        let transactions = BorshDeserialize::deserialize_reader(reader)?;
 
-        Ok(Self {
-            title,
-            user_hint,
-            encryption_kind,
-            payload,
-            metadata,
-            transactions,
-        })
+        Ok(Self { title, user_hint, encryption_kind, payload, metadata, transactions })
     }
 }
 

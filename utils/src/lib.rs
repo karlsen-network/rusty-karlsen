@@ -1,13 +1,19 @@
+//!
+//! # Karlsen Utilities
+//!
+//! General purpose utilities and various type extensions used across the Rusty Karlsen codebase.
+//!
+
 pub mod any;
 pub mod arc;
 pub mod binary_heap;
 pub mod channel;
+pub mod expiring_cache;
 pub mod hashmap;
 pub mod hex;
 pub mod iter;
 pub mod mem_size;
 pub mod networking;
-pub mod option;
 pub mod refs;
 
 pub mod as_slice;
@@ -67,6 +73,7 @@ pub mod as_slice;
 /// assert_eq!(test_struct, from_json);
 /// ```
 pub mod serde_bytes;
+pub mod serde_bytes_optional;
 
 /// # Examples
 ///
@@ -190,4 +197,9 @@ pub mod sync;
 pub mod triggers;
 pub mod vec;
 
+pub mod git;
+
+#[cfg(not(target_arch = "wasm32"))]
 pub mod fd_budget;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod sysinfo;

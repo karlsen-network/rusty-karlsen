@@ -65,6 +65,15 @@ interface IGeneratorSettingsObject {
      */
     entries: IUtxoEntry[] | UtxoEntryReference[] | UtxoContext;
     /**
+     * Optional UTXO entries that will be consumed before those available in `entries`.
+     * You can use this property to apply custom input selection logic.
+     * Please note that these inputs are consumed first, then `entries` are consumed
+     * to generate a desirable transaction output amount.  If transaction mass
+     * overflows, these inputs will be consumed into a batch/sweep transaction
+     * where the destination if the `changeAddress`.
+     */
+    priorityEntries?: IUtxoEntry[] | UtxoEntryReference[],
+    /**
      * Optional number of signature operations in the transaction.
      */
     sigOpCount?: number;
@@ -147,6 +156,7 @@ impl Generator {
         let GeneratorSettings {
             network_id,
             source,
+            priority_utxo_entries,
             multiplexer,
             final_transaction_destination,
             change_address,
@@ -158,21 +168,16 @@ impl Generator {
 
         let settings = match source {
             GeneratorSource::UtxoEntries(utxo_entries) => {
-                let change_address = change_address.ok_or_else(|| {
-                    Error::custom(
-                        "changeAddress is required for Generator constructor with UTXO entries",
-                    )
-                })?;
+                let change_address = change_address
+                    .ok_or_else(|| Error::custom("changeAddress is required for Generator constructor with UTXO entries"))?;
 
-                let network_id = network_id.ok_or_else(|| {
-                    Error::custom(
-                        "networkId is required for Generator constructor with UTXO entries",
-                    )
-                })?;
+                let network_id =
+                    network_id.ok_or_else(|| Error::custom("networkId is required for Generator constructor with UTXO entries"))?;
 
                 native::GeneratorSettings::try_new_with_iterator(
                     network_id,
                     Box::new(utxo_entries.into_iter()),
+                    priority_utxo_entries,
                     change_address,
                     sig_op_count,
                     minimum_signatures,
@@ -183,14 +188,12 @@ impl Generator {
                 )?
             }
             GeneratorSource::UtxoContext(utxo_context) => {
-                let change_address = change_address.ok_or_else(|| {
-                    Error::custom(
-                        "changeAddress is required for Generator constructor with UTXO entries",
-                    )
-                })?;
+                let change_address = change_address
+                    .ok_or_else(|| Error::custom("changeAddress is required for Generator constructor with UTXO entries"))?;
 
                 native::GeneratorSettings::try_new_with_context(
                     utxo_context.into(),
+                    priority_utxo_entries,
                     change_address,
                     sig_op_count,
                     minimum_signatures,
@@ -208,9 +211,7 @@ impl Generator {
         let abortable = Abortable::default();
         let generator = native::Generator::try_new(settings, None, Some(&abortable))?;
 
-        Ok(Self {
-            inner: Arc::new(generator),
-        })
+        Ok(Self { inner: Arc::new(generator) })
     }
 
     /// Generate next transaction
@@ -255,6 +256,7 @@ enum GeneratorSource {
 struct GeneratorSettings {
     pub network_id: Option<NetworkId>,
     pub source: GeneratorSource,
+    pub priority_utxo_entries: Option<Vec<UtxoEntryReference>>,
     pub multiplexer: Option<Multiplexer<Box<Events>>>,
     pub final_transaction_destination: PaymentDestination,
     pub change_address: Option<Address>,
@@ -271,43 +273,30 @@ impl TryFrom<IGeneratorSettingsObject> for GeneratorSettings {
 
         // lack of outputs results in a sweep transaction compounding utxos into the change address
         let outputs = args.get_value("outputs")?;
-        let final_transaction_destination: PaymentDestination = if outputs.is_undefined() {
-            PaymentDestination::Change
-        } else {
-            PaymentOutputs::try_owned_from(outputs)?.into()
-        };
+        let final_transaction_destination: PaymentDestination =
+            if outputs.is_undefined() { PaymentDestination::Change } else { PaymentOutputs::try_owned_from(outputs)?.into() };
 
-        let change_address = args
-            .try_get_cast::<Address>("changeAddress")?
-            .map(Cast::into_owned);
+        let change_address = args.try_cast_into::<Address>("changeAddress")?;
 
         let final_priority_fee = args.get::<IFees>("priorityFee")?.try_into()?;
 
-        let generator_source =
-            if let Ok(Some(context)) = args.try_get_cast::<UtxoContext>("entries") {
-                GeneratorSource::UtxoContext(context.into_owned())
-            } else if let Some(utxo_entries) = args.try_get_value("entries")? {
-                GeneratorSource::UtxoEntries(utxo_entries.try_into_utxo_entry_references()?)
-            } else {
-                return Err(Error::custom(
-                    "'entries', 'context' or 'account' property is required for Generator",
-                ));
-            };
+        let generator_source = if let Ok(Some(context)) = args.try_cast_into::<UtxoContext>("entries") {
+            GeneratorSource::UtxoContext(context)
+        } else if let Some(utxo_entries) = args.try_get_value("entries")? {
+            GeneratorSource::UtxoEntries(utxo_entries.try_into_utxo_entry_references()?)
+        } else {
+            return Err(Error::custom("'entries' property is required for Generator"));
+        };
+
+        let priority_utxo_entries = args.try_get_value("priorityEntries")?.map(|v| v.try_into_utxo_entry_references()).transpose()?;
 
         let sig_op_count = args.get_value("sigOpCount")?;
-        let sig_op_count = if !sig_op_count.is_undefined() {
-            sig_op_count
-                .as_f64()
-                .expect("sigOpCount should be a number") as u8
-        } else {
-            1
-        };
+        let sig_op_count =
+            if !sig_op_count.is_undefined() { sig_op_count.as_f64().expect("sigOpCount should be a number") as u8 } else { 1 };
 
         let minimum_signatures = args.get_value("minimumSignatures")?;
         let minimum_signatures = if !minimum_signatures.is_undefined() {
-            minimum_signatures
-                .as_f64()
-                .expect("minimumSignatures should be a number") as u16
+            minimum_signatures.as_f64().expect("minimumSignatures should be a number") as u16
         } else {
             1
         };
@@ -317,6 +306,7 @@ impl TryFrom<IGeneratorSettingsObject> for GeneratorSettings {
         let settings = GeneratorSettings {
             network_id,
             source: generator_source,
+            priority_utxo_entries,
             multiplexer: None,
             final_transaction_destination,
             change_address,

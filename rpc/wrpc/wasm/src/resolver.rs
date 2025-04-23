@@ -1,3 +1,7 @@
+//! [`Resolver`](NativeResolver) bindings for obtaining public Karlsen wRPC URL endpoints.
+
+#![allow(non_snake_case)]
+
 use crate::client::{RpcClient, RpcConfig};
 use crate::imports::*;
 use js_sys::Array;
@@ -21,6 +25,20 @@ declare! {
          * Optional URLs for one or multiple resolvers.
          */
         urls?: string[];
+        /**
+         * Use strict TLS for RPC connections.
+         * If not set or `false` (default), the resolver will
+         * provide the best available connection regardless of
+         * whether this connection supports TLS or not.
+         * If set to `true`, the resolver will only provide
+         * TLS-enabled connections.
+         * 
+         * This setting is ignored in the browser environment
+         * when the browser navigator location is `https`.
+         * In which case the resolver will always use TLS-enabled
+         * connections.
+         */
+        tls?: boolean;
     }
     "#,
 }
@@ -57,10 +75,7 @@ impl TryFrom<IResolverConnect> for ResolverConnect {
     type Error = Error;
     fn try_from(config: IResolverConnect) -> Result<Self> {
         if let Ok(network_id) = NetworkId::try_owned_from(&config) {
-            Ok(Self {
-                encoding: None,
-                network_id,
-            })
+            Ok(Self { encoding: None, network_id })
         } else {
             Ok(serde_wasm_bindgen::from_value(config.into())?)
         }
@@ -122,13 +137,9 @@ impl Resolver {
     #[wasm_bindgen(constructor)]
     pub fn ctor(args: Option<IResolverConfig>) -> Result<Resolver> {
         if let Some(args) = args {
-            Ok(Self {
-                resolver: NativeResolver::try_from(args)?,
-            })
+            Ok(Self { resolver: NativeResolver::try_from(args)? })
         } else {
-            Ok(Self {
-                resolver: NativeResolver::default(),
-            })
+            Ok(Self { resolver: NativeResolver::default() })
         }
     }
 }
@@ -137,52 +148,30 @@ impl Resolver {
 impl Resolver {
     /// List of public Karlsen Resolver URLs.
     #[wasm_bindgen(getter)]
-    pub fn urls(&self) -> ResolverArrayT {
-        Array::from_iter(
-            self.resolver
-                .urls()
-                .iter()
-                .map(|v| JsValue::from(v.as_str())),
-        )
-        .unchecked_into()
+    pub fn urls(&self) -> Option<ResolverArrayT> {
+        self.resolver.urls().map(|urls| Array::from_iter(urls.iter().map(|v| JsValue::from(v.as_str()))).unchecked_into())
     }
 
     /// Fetches a public Karlsen wRPC endpoint for the given encoding and network identifier.
     /// @see {@link Encoding}, {@link NetworkId}, {@link Node}
     #[wasm_bindgen(js_name = getNode)]
-    pub async fn get_node(
-        &self,
-        encoding: Encoding,
-        network_id: NetworkIdT,
-    ) -> Result<NodeDescriptor> {
-        self.resolver
-            .get_node(encoding, *network_id.try_into_cast()?)
-            .await
+    pub async fn get_node(&self, encoding: Encoding, network_id: NetworkIdT) -> Result<NodeDescriptor> {
+        self.resolver.get_node(encoding, *network_id.try_into_cast()?).await
     }
 
     /// Fetches a public Karlsen wRPC endpoint URL for the given encoding and network identifier.
     /// @see {@link Encoding}, {@link NetworkId}
     #[wasm_bindgen(js_name = getUrl)]
     pub async fn get_url(&self, encoding: Encoding, network_id: NetworkIdT) -> Result<String> {
-        self.resolver
-            .get_url(encoding, *network_id.try_into_cast()?)
-            .await
+        self.resolver.get_url(encoding, *network_id.try_into_cast()?).await
     }
 
     /// Connect to a public Karlsen wRPC endpoint for the given encoding and network identifier
     /// supplied via {@link IResolverConnect} interface.
     /// @see {@link IResolverConnect}, {@link RpcClient}
     pub async fn connect(&self, options: IResolverConnect) -> Result<RpcClient> {
-        let ResolverConnect {
-            encoding,
-            network_id,
-        } = options.try_into()?;
-        let config = RpcConfig {
-            resolver: Some(self.clone()),
-            url: None,
-            encoding,
-            network_id: Some(network_id),
-        };
+        let ResolverConnect { encoding, network_id } = options.try_into()?;
+        let config = RpcConfig { resolver: Some(self.clone()), url: None, encoding, network_id: Some(network_id) };
         let client = RpcClient::new(Some(config))?;
         client.connect(None).await?;
         Ok(client)
@@ -192,30 +181,27 @@ impl Resolver {
 impl TryFrom<IResolverConfig> for NativeResolver {
     type Error = Error;
     fn try_from(config: IResolverConfig) -> Result<Self> {
-        let resolver = config
+        let tls = config.get_bool("tls").unwrap_or(false);
+        let urls = config
             .get_vec("urls")
-            .map(|urls| {
-                urls.into_iter()
-                    .map(|v| v.as_string())
-                    .collect::<Option<Vec<_>>>()
-            })
-            .or_else(|_| {
-                config.dyn_into::<Array>().map(|urls| {
-                    urls.into_iter()
-                        .map(|v| v.as_string())
-                        .collect::<Option<Vec<_>>>()
-                })
-            })
-            .map_err(|_| Error::custom("Invalid or missing resolver URL"))?
-            .map(|urls| NativeResolver::new(urls.into_iter().map(Arc::new).collect()));
+            .map(|urls| urls.into_iter().map(|v| v.as_string()).collect::<Option<Vec<_>>>())
+            .or_else(|_| config.dyn_into::<Array>().map(|urls| urls.into_iter().map(|v| v.as_string()).collect::<Option<Vec<_>>>()))
+            .map_err(|_| Error::custom("Invalid or missing resolver URL"))?;
 
-        Ok(resolver.unwrap_or_default())
+        if let Some(urls) = urls {
+            Ok(NativeResolver::new(Some(urls.into_iter().map(Arc::new).collect()), tls))
+        } else {
+            Ok(NativeResolver::new(None, tls))
+        }
     }
 }
 
 impl TryCastFromJs for Resolver {
     type Error = Error;
-    fn try_cast_from(value: impl AsRef<JsValue>) -> Result<Cast<Self>> {
+    fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>>
+    where
+        R: AsRef<JsValue> + 'a,
+    {
         Ok(Self::try_ref_from_js_value_as_cast(value)?)
     }
 }

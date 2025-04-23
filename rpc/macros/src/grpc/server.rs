@@ -60,14 +60,8 @@ impl ToTokens for RpcTable {
         let payload_ops = &self.payload_ops;
 
         for handler in self.handlers.elems.iter() {
-            let Handler {
-                fn_call,
-                request_type,
-                is_subscription,
-                response_message_type,
-                fallback_request_type,
-                ..
-            } = Handler::new(handler);
+            let Handler { fn_call, request_type, is_subscription, response_message_type, fallback_request_type, .. } =
+                Handler::new(handler);
 
             match is_subscription {
                 false => {
@@ -78,7 +72,8 @@ impl ToTokens for RpcTable {
                                 Box::pin(async move {
                                     let mut response: #karlsend_response_type = match request.payload {
                                         Some(Payload::#request_type(ref request)) => match request.try_into() {
-                                            Ok(request) => server_ctx.core_service.#fn_call(request).await.into(),
+                                            // TODO: RPC-CONNECTION
+                                            Ok(request) => server_ctx.core_service.#fn_call(None,request).await.into(),
                                             Err(err) => #response_message_type::from(err).into(),
                                         },
                                         _ => {
@@ -134,7 +129,7 @@ impl ToTokens for RpcTable {
             {
                 let mut interface = Interface::new(#server_ctx);
 
-                for op in #payload_ops::list() {
+                for op in #payload_ops::iter() {
                     match op {
                         #(#targets)*
                     }

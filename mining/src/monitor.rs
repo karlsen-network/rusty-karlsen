@@ -1,4 +1,5 @@
 use super::MiningCounters;
+use crate::manager::MiningManagerProxy;
 use karlsen_core::{
     debug, info,
     task::{
@@ -13,6 +14,8 @@ use std::{sync::Arc, time::Duration};
 const MONITOR: &str = "mempool-monitor";
 
 pub struct MiningMonitor {
+    mining_manager: MiningManagerProxy,
+
     // Counters
     counters: Arc<MiningCounters>,
 
@@ -24,15 +27,12 @@ pub struct MiningMonitor {
 
 impl MiningMonitor {
     pub fn new(
+        mining_manager: MiningManagerProxy,
         counters: Arc<MiningCounters>,
         tx_script_cache_counters: Arc<TxScriptCacheCounters>,
         tick_service: Arc<TickService>,
     ) -> MiningMonitor {
-        MiningMonitor {
-            counters,
-            tx_script_cache_counters,
-            tick_service,
-        }
+        MiningMonitor { mining_manager, counters, tx_script_cache_counters, tick_service }
     }
 
     pub async fn worker(self: &Arc<MiningMonitor>) {
@@ -40,11 +40,7 @@ impl MiningMonitor {
         let mut last_tx_script_cache_snapshot = self.tx_script_cache_counters.snapshot();
         let snapshot_interval = 10;
         loop {
-            if let TickReason::Shutdown = self
-                .tick_service
-                .tick(Duration::from_secs(snapshot_interval))
-                .await
-            {
+            if let TickReason::Shutdown = self.tick_service.tick(Duration::from_secs(snapshot_interval)).await {
                 // Let the system print final logs before exiting
                 tokio::time::sleep(Duration::from_millis(500)).await;
                 break;
@@ -70,6 +66,14 @@ impl MiningMonitor {
                     delta.low_priority_tx_counts,
                     delta.tx_accepted_counts,
                 );
+                let feerate_estimations = self.mining_manager.clone().get_realtime_feerate_estimations().await;
+                debug!("Realtime feerate estimations: {}", feerate_estimations);
+            }
+            if delta.tx_evicted_counts > 0 {
+                info!(
+                    "Mempool stats: {} transactions were evicted from the mempool in favor of incoming higher feerate transactions",
+                    delta.tx_evicted_counts
+                );
             }
             if tx_script_cache_snapshot != last_tx_script_cache_snapshot {
                 debug!(
@@ -84,10 +88,7 @@ impl MiningMonitor {
             if delta.txs_sample + delta.orphans_sample > 0 {
                 debug!(
                     "Mempool sample: {} ready out of {} txs, {} orphans, {} cached as accepted",
-                    delta.ready_txs_sample,
-                    delta.txs_sample,
-                    delta.orphans_sample,
-                    delta.accepted_sample
+                    delta.ready_txs_sample, delta.txs_sample, delta.orphans_sample, delta.accepted_sample
                 );
             }
 

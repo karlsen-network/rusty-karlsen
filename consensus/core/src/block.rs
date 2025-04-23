@@ -5,6 +5,7 @@ use crate::{
     BlueWorkType,
 };
 use karlsen_hashes::Hash;
+use karlsen_utils::mem_size::MemSizeEstimator;
 use std::sync::Arc;
 
 /// A mutable block structure where header and transactions within can still be mutated.
@@ -16,10 +17,7 @@ pub struct MutableBlock {
 
 impl MutableBlock {
     pub fn new(header: Header, txs: Vec<Transaction>) -> Self {
-        Self {
-            header,
-            transactions: txs,
-        }
+        Self { header, transactions: txs }
     }
 
     pub fn from_header(header: Header) -> Self {
@@ -42,31 +40,19 @@ pub struct Block {
 
 impl Block {
     pub fn new(header: Header, txs: Vec<Transaction>) -> Self {
-        Self {
-            header: Arc::new(header),
-            transactions: Arc::new(txs),
-        }
+        Self { header: Arc::new(header), transactions: Arc::new(txs) }
     }
 
     pub fn from_arcs(header: Arc<Header>, transactions: Arc<Vec<Transaction>>) -> Self {
-        Self {
-            header,
-            transactions,
-        }
+        Self { header, transactions }
     }
 
     pub fn from_header_arc(header: Arc<Header>) -> Self {
-        Self {
-            header,
-            transactions: Arc::new(Vec::new()),
-        }
+        Self { header, transactions: Arc::new(Vec::new()) }
     }
 
     pub fn from_header(header: Header) -> Self {
-        Self {
-            header: Arc::new(header),
-            transactions: Arc::new(Vec::new()),
-        }
+        Self { header: Arc::new(header), transactions: Arc::new(Vec::new()) }
     }
 
     pub fn is_header_only(&self) -> bool {
@@ -80,6 +66,20 @@ impl Block {
     /// WARNING: To be used for test purposes only
     pub fn from_precomputed_hash(hash: Hash, parents: Vec<Hash>) -> Block {
         Block::from_header(Header::from_precomputed_hash(hash, parents))
+    }
+
+    pub fn asses_for_cache(&self) -> Option<()> {
+        (self.estimate_mem_bytes() < 1_000_000).then_some(())
+    }
+}
+
+impl MemSizeEstimator for Block {
+    fn estimate_mem_bytes(&self) -> usize {
+        // Calculates mem bytes of the block (for cache tracking purposes)
+        size_of::<Self>()
+            + self.header.estimate_mem_bytes()
+            + size_of::<Vec<Transaction>>()
+            + self.transactions.iter().map(Transaction::estimate_mem_bytes).sum::<usize>()
     }
 }
 
@@ -120,6 +120,8 @@ pub struct BlockTemplate {
     pub selected_parent_timestamp: u64,
     pub selected_parent_daa_score: u64,
     pub selected_parent_hash: Hash,
+    /// Expected length is one less than txs length due to lack of coinbase transaction
+    pub calculated_fees: Vec<u64>,
 }
 
 impl BlockTemplate {
@@ -130,6 +132,7 @@ impl BlockTemplate {
         selected_parent_timestamp: u64,
         selected_parent_daa_score: u64,
         selected_parent_hash: Hash,
+        calculated_fees: Vec<u64>,
     ) -> Self {
         Self {
             block,
@@ -138,15 +141,12 @@ impl BlockTemplate {
             selected_parent_timestamp,
             selected_parent_daa_score,
             selected_parent_hash,
+            calculated_fees,
         }
     }
 
     pub fn to_virtual_state_approx_id(&self) -> VirtualStateApproxId {
-        VirtualStateApproxId::new(
-            self.block.header.daa_score,
-            self.block.header.blue_work,
-            self.selected_parent_hash,
-        )
+        VirtualStateApproxId::new(self.block.header.daa_score, self.block.header.blue_work, self.selected_parent_hash)
     }
 }
 
@@ -162,10 +162,6 @@ pub struct VirtualStateApproxId {
 
 impl VirtualStateApproxId {
     pub fn new(daa_score: u64, blue_work: BlueWorkType, sink: Hash) -> Self {
-        Self {
-            daa_score,
-            blue_work,
-            sink,
-        }
+        Self { daa_score, blue_work, sink }
     }
 }

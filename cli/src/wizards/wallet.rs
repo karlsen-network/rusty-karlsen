@@ -2,70 +2,50 @@ use crate::cli::KarlsenCli;
 use crate::imports::*;
 use crate::result::Result;
 use karlsen_bip32::{Language, Mnemonic, WordCount};
-use karlsen_wallet_core::storage::{make_filename, Hint};
+use karlsen_wallet_core::{
+    storage::{make_filename, Hint},
+    wallet::WalletGuard,
+};
 
 pub(crate) async fn create(
     ctx: &Arc<KarlsenCli>,
+    wallet_guard: Option<WalletGuard<'_>>,
     name: Option<&str>,
     import_with_mnemonic: bool,
 ) -> Result<()> {
     let term = ctx.term();
     let wallet = ctx.wallet();
+    let local_guard = ctx.wallet().guard();
 
+    let guard = match wallet_guard {
+        Some(locked_guard) => locked_guard,
+        None => local_guard.lock().await,
+    };
     // TODO @aspect
     let word_count = WordCount::Words12;
 
     if let Err(err) = wallet.network_id() {
         tprintln!(ctx);
-        tprintln!(
-            ctx,
-            "Before creating a wallet, you need to select a Karlsen network."
-        );
-        tprintln!(
-            ctx,
-            "Please use 'network <name>' command to select a network."
-        );
-        tprintln!(
-            ctx,
-            "Currently available networks are 'mainnet', 'testnet-1' and 'testnet-11'"
-        );
+        tprintln!(ctx, "Before creating a wallet, you need to select a Karlsen network.");
+        tprintln!(ctx, "Please use 'network <name>' command to select a network.");
+        tprintln!(ctx, "Currently available networks are 'mainnet', 'testnet-1' and 'testnet-11'");
         tprintln!(ctx);
         return Err(err.into());
     }
     let filename = make_filename(&name.map(String::from), &None);
     if wallet.exists(Some(&filename)).await? {
-        tprintln!(
-            ctx,
-            "{}",
-            style("WARNING - A previously created wallet already exists!")
-                .red()
-                .to_string()
-        );
-        tprintln!(
-            ctx,
-            "NOTE: You can create a differently named wallet by using 'wallet create <name>'"
-        );
+        tprintln!(ctx, "{}", style("WARNING - A previously created wallet already exists!").red().to_string());
+        tprintln!(ctx, "NOTE: You can create a differently named wallet by using 'wallet create <name>'");
         tprintln!(ctx);
 
-        let overwrite = term
-            .ask(
-                false,
-                "Are you sure you want to overwrite it (type 'y' to approve)?: ",
-            )
-            .await?
-            .trim()
-            .to_string()
-            .to_lowercase();
+        let overwrite =
+            term.ask(false, "Are you sure you want to overwrite it (type 'y' to approve)?: ").await?.trim().to_string().to_lowercase();
         if overwrite.ne("y") {
             return Ok(());
         }
     }
 
-    let account_name = term
-        .ask(false, "Default account title: ")
-        .await?
-        .trim()
-        .to_string();
+    let account_name = term.ask(false, "Default account title: ").await?.trim().to_string();
     let account_name = account_name.is_not_empty().then_some(account_name);
 
     tpara!(
@@ -81,34 +61,16 @@ pub(crate) async fn create(
         ",
     );
 
-    let hint = term
-        .ask(
-            false,
-            "Create phishing hint (optional, press <enter> to skip): ",
-        )
-        .await?
-        .trim()
-        .to_string();
+    let hint = term.ask(false, "Create phishing hint (optional, press <enter> to skip): ").await?.trim().to_string();
     let hint = hint.is_not_empty().then_some(hint).map(Hint::from);
     //if hint.is_empty() { None } else { Some(hint) };
 
-    let wallet_secret = Secret::new(
-        term.ask(true, "Enter wallet encryption password: ")
-            .await?
-            .trim()
-            .as_bytes()
-            .to_vec(),
-    );
+    let wallet_secret = Secret::new(term.ask(true, "Enter wallet encryption password: ").await?.trim().as_bytes().to_vec());
     if wallet_secret.as_ref().is_empty() {
         return Err(Error::WalletSecretRequired);
     }
-    let wallet_secret_validate = Secret::new(
-        term.ask(true, "Re-enter wallet encryption password: ")
-            .await?
-            .trim()
-            .as_bytes()
-            .to_vec(),
-    );
+    let wallet_secret_validate =
+        Secret::new(term.ask(true, "Re-enter wallet encryption password: ").await?.trim().as_bytes().to_vec());
     if wallet_secret_validate.as_ref() != wallet_secret.as_ref() {
         return Err(Error::WalletSecretMatch);
     }
@@ -137,7 +99,7 @@ pub(crate) async fn create(
             "\
             PLEASE NOTE: The optional bip39 mnemonic passphrase, if provided, will be required to \
             issue transactions. This passphrase will also be required when recovering your wallet \
-            in addition to your private key or mnemonic. If you loose this passphrase, you will not \
+            in addition to your private key or mnemonic. If you lose this passphrase, you will not \
             be able to use or recover your wallet! \
             \
             If you do not want to use bip39 recovery passphrase, press ENTER.\
@@ -145,23 +107,13 @@ pub(crate) async fn create(
         );
     }
 
-    let payment_secret = term
-        .ask(true, "Enter bip39 mnemonic passphrase (optional): ")
-        .await?;
-    let payment_secret = if payment_secret.trim().is_empty() {
-        None
-    } else {
-        Some(Secret::new(payment_secret.trim().as_bytes().to_vec()))
-    };
+    let payment_secret = term.ask(true, "Enter bip39 mnemonic passphrase (optional): ").await?;
+    let payment_secret =
+        if payment_secret.trim().is_empty() { None } else { Some(Secret::new(payment_secret.trim().as_bytes().to_vec())) };
 
     if let Some(payment_secret) = payment_secret.as_ref() {
-        let payment_secret_validate = Secret::new(
-            term.ask(true, "Please re-enter mnemonic passphrase: ")
-                .await?
-                .trim()
-                .as_bytes()
-                .to_vec(),
-        );
+        let payment_secret_validate =
+            Secret::new(term.ask(true, "Please re-enter mnemonic passphrase: ").await?.trim().as_bytes().to_vec());
         if payment_secret_validate.as_ref() != payment_secret.as_ref() {
             return Err(Error::PaymentSecretMatch);
         }
@@ -187,30 +139,12 @@ pub(crate) async fn create(
     // suspend commits for multiple operations
     wallet.store().batch().await?;
 
-    let wallet_args = WalletCreateArgs::new(
-        name.map(String::from),
-        None,
-        EncryptionKind::XChaCha20Poly1305,
-        hint,
-        true,
-    );
-    let (_wallet_descriptor, storage_descriptor) = ctx
-        .wallet()
-        .create_wallet(&wallet_secret, wallet_args)
-        .await?;
-    let prv_key_data_id = wallet
-        .create_prv_key_data(&wallet_secret, prv_key_data_args)
-        .await?;
+    let wallet_args = WalletCreateArgs::new(name.map(String::from), None, EncryptionKind::XChaCha20Poly1305, hint, true);
+    let (_wallet_descriptor, storage_descriptor) = ctx.wallet().create_wallet(&wallet_secret, wallet_args).await?;
+    let prv_key_data_id = wallet.create_prv_key_data(&wallet_secret, prv_key_data_args).await?;
 
     let account_args = AccountCreateArgsBip32::new(account_name, None);
-    let account = wallet
-        .create_account_bip32(
-            &wallet_secret,
-            prv_key_data_id,
-            payment_secret.as_ref(),
-            account_args,
-        )
-        .await?;
+    let account = wallet.create_account_bip32(&wallet_secret, prv_key_data_id, payment_secret.as_ref(), account_args).await?;
 
     // flush data to storage
     wallet.store().flush(&wallet_secret).await?;
@@ -238,16 +172,9 @@ pub(crate) async fn create(
 
         // descriptor
 
-        [
-            "",
-            "Never share your mnemonic with anyone!",
-            "---",
-            "",
-            "Your default wallet account mnemonic:",
-            mnemonic_phrase.as_str()?,
-        ]
-        .into_iter()
-        .for_each(|line| term.writeln(line));
+        ["", "Never share your mnemonic with anyone!", "---", "", "Your default wallet account mnemonic:", mnemonic_phrase.as_str()?]
+            .into_iter()
+            .for_each(|line| term.writeln(line));
     }
 
     term.writeln("");
@@ -259,14 +186,8 @@ pub(crate) async fn create(
     term.writeln(style(receive_address).blue().to_string());
     term.writeln("");
 
-    wallet
-        .open(
-            &wallet_secret,
-            name.map(String::from),
-            WalletOpenArgs::default_with_legacy_accounts(),
-        )
-        .await?;
-    wallet.activate_accounts(None).await?;
+    wallet.open(&wallet_secret, name.map(String::from), WalletOpenArgs::default_with_legacy_accounts(), &guard).await?;
+    wallet.activate_accounts(None, &guard).await?;
 
     Ok(())
 }

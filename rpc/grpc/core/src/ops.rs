@@ -1,6 +1,4 @@
-use crate::protowire::{
-    karlsend_request::Payload as RequestPayload, karlsend_response::Payload as ResponsePayload, *,
-};
+use crate::protowire::{karlsend_request::Payload as RequestPayload, karlsend_response::Payload as ResponsePayload, *};
 use karlsen_rpc_core::RpcError;
 use workflow_core::enums::Describe;
 
@@ -63,6 +61,7 @@ pub enum KarlsendPayloadOps {
     GetConnectedPeerInfo,
     AddPeer,
     SubmitTransaction,
+    SubmitTransactionReplacement,
     GetSubnetwork,
     GetVirtualChainFromBlock,
     GetBlockCount,
@@ -80,9 +79,15 @@ pub enum KarlsendPayloadOps {
     GetCoinSupply,
     Ping,
     GetMetrics,
+    GetConnections,
+    GetSystemInfo,
     GetServerInfo,
     GetSyncStatus,
     GetDaaScoreTimestampEstimate,
+    GetFeeEstimate,
+    GetFeeEstimateExperimental,
+    GetCurrentBlockColor,
+    GetUtxoReturnAddress,
 
     // Subscription commands for starting/stopping notifications
     NotifyBlockAdded,

@@ -5,7 +5,7 @@ use karlsen_database::{
     registry::DatabaseStorePrefixes,
 };
 
-use crate::model::CirculatingSupply;
+use crate::model::{CirculatingSupply, CirculatingSupplyDiff};
 
 /// Reader API for `UtxoIndexTipsStore`.
 pub trait CirculatingSupplyStoreReader {
@@ -13,7 +13,7 @@ pub trait CirculatingSupplyStoreReader {
 }
 
 pub trait CirculatingSupplyStore: CirculatingSupplyStoreReader {
-    fn update_circulating_supply(&mut self, to_add: CirculatingSupply) -> StoreResult<u64>;
+    fn update_circulating_supply(&mut self, supply_delta: CirculatingSupplyDiff) -> StoreResult<u64>;
     fn insert(&mut self, circulating_supply: u64) -> StoreResult<()>;
     fn remove(&mut self) -> StoreResult<()>;
 }
@@ -27,10 +27,7 @@ pub struct DbCirculatingSupplyStore {
 
 impl DbCirculatingSupplyStore {
     pub fn new(db: Arc<DB>) -> Self {
-        Self {
-            db: Arc::clone(&db),
-            access: CachedDbItem::new(db, DatabaseStorePrefixes::CirculatingSupply.into()),
-        }
+        Self { db: Arc::clone(&db), access: CachedDbItem::new(db, DatabaseStorePrefixes::CirculatingSupply.into()) }
     }
 }
 
@@ -41,23 +38,20 @@ impl CirculatingSupplyStoreReader for DbCirculatingSupplyStore {
 }
 
 impl CirculatingSupplyStore for DbCirculatingSupplyStore {
-    fn update_circulating_supply(&mut self, to_add: CirculatingSupply) -> StoreResult<u64> {
-        if to_add == 0 {
+    fn update_circulating_supply(&mut self, supply_delta: CirculatingSupplyDiff) -> StoreResult<u64> {
+        if supply_delta == 0 {
             return self.get();
         }
 
-        let circulating_supply =
-            self.access
-                .update(DirectDbWriter::new(&self.db), move |circulating_supply| {
-                    circulating_supply + (to_add) //note: this only works because we force monotonic in `UtxoIndex::update`.
-                });
+        let circulating_supply = self
+            .access
+            .update(DirectDbWriter::new(&self.db), move |circulating_supply| circulating_supply.saturating_add_signed(supply_delta));
 
         circulating_supply
     }
 
     fn insert(&mut self, circulating_supply: CirculatingSupply) -> StoreResult<()> {
-        self.access
-            .write(DirectDbWriter::new(&self.db), &circulating_supply)
+        self.access.write(DirectDbWriter::new(&self.db), &circulating_supply)
     }
 
     fn remove(&mut self) -> StoreResult<()> {

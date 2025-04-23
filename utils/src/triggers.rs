@@ -30,9 +30,6 @@ pub struct DuplexTrigger {
 
 impl DuplexTrigger {
     pub fn new() -> DuplexTrigger {
-        DuplexTrigger {
-            request: SingleTrigger::new(),
-            response: SingleTrigger::new(),
-        }
+        DuplexTrigger { request: SingleTrigger::new(), response: SingleTrigger::new() }
     }
 }

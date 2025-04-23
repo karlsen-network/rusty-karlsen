@@ -4,9 +4,7 @@
 //!
 
 use crate::imports::*;
-use crate::utxo::{
-    Maturity, UtxoContext, UtxoEntryId, UtxoEntryReference, UtxoEntryReferenceExtension,
-};
+use crate::utxo::{Maturity, UtxoContext, UtxoEntryId, UtxoEntryReference, UtxoEntryReferenceExtension};
 
 pub struct PendingUtxoEntryReferenceInner {
     pub entry: UtxoEntryReference,
@@ -20,12 +18,7 @@ pub struct PendingUtxoEntryReference {
 
 impl PendingUtxoEntryReference {
     pub fn new(entry: UtxoEntryReference, utxo_context: UtxoContext) -> Self {
-        Self {
-            inner: Arc::new(PendingUtxoEntryReferenceInner {
-                entry,
-                utxo_context,
-            }),
-        }
+        Self { inner: Arc::new(PendingUtxoEntryReferenceInner { entry, utxo_context }) }
     }
 
     #[inline(always)]

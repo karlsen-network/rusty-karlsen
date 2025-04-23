@@ -26,6 +26,7 @@ pub mod network;
 pub mod node;
 pub mod open;
 pub mod ping;
+pub mod pskb;
 pub mod reload;
 pub mod rpc;
 pub mod select;
@@ -56,9 +57,8 @@ pub fn register_handlers(cli: &Arc<KarlsenCli>) -> Result<()> {
         cli,
         cli.handlers(),
         [
-            account, address, close, connect, details, disconnect, estimate, exit, export, guide,
-            help, history, rpc, list, miner, message, monitor, mute, network, node, open, ping,
-            reload, select, send, server, settings, sweep, track, transfer,
+            account, address, close, connect, details, disconnect, estimate, exit, export, guide, help, history, rpc, list, miner,
+            message, monitor, mute, network, node, open, ping, pskb, reload, select, send, server, settings, sweep, track, transfer,
             wallet,
             // halt,
             // theme,  start, stop

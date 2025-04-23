@@ -28,13 +28,8 @@ impl Default for ConnBuilder<Unspecified, false, Unspecified, Unspecified> {
     }
 }
 
-impl<Path, const STATS_ENABLED: bool, StatsPeriod, FDLimit>
-    ConnBuilder<Path, STATS_ENABLED, StatsPeriod, FDLimit>
-{
-    pub fn with_db_path(
-        self,
-        db_path: PathBuf,
-    ) -> ConnBuilder<PathBuf, STATS_ENABLED, StatsPeriod, FDLimit> {
+impl<Path, const STATS_ENABLED: bool, StatsPeriod, FDLimit> ConnBuilder<Path, STATS_ENABLED, StatsPeriod, FDLimit> {
+    pub fn with_db_path(self, db_path: PathBuf) -> ConnBuilder<PathBuf, STATS_ENABLED, StatsPeriod, FDLimit> {
         ConnBuilder {
             db_path,
             files_limit: self.files_limit,
@@ -44,37 +39,16 @@ impl<Path, const STATS_ENABLED: bool, StatsPeriod, FDLimit>
             stats_period: self.stats_period,
         }
     }
-    pub fn with_create_if_missing(
-        self,
-        create_if_missing: bool,
-    ) -> ConnBuilder<Path, STATS_ENABLED, StatsPeriod, FDLimit> {
-        ConnBuilder {
-            create_if_missing,
-            ..self
-        }
+    pub fn with_create_if_missing(self, create_if_missing: bool) -> ConnBuilder<Path, STATS_ENABLED, StatsPeriod, FDLimit> {
+        ConnBuilder { create_if_missing, ..self }
     }
-    pub fn with_parallelism(
-        self,
-        parallelism: impl Into<usize>,
-    ) -> ConnBuilder<Path, STATS_ENABLED, StatsPeriod, FDLimit> {
-        ConnBuilder {
-            parallelism: parallelism.into(),
-            ..self
-        }
+    pub fn with_parallelism(self, parallelism: impl Into<usize>) -> ConnBuilder<Path, STATS_ENABLED, StatsPeriod, FDLimit> {
+        ConnBuilder { parallelism: parallelism.into(), ..self }
     }
-    pub fn with_mem_budget(
-        self,
-        mem_budget: impl Into<usize>,
-    ) -> ConnBuilder<Path, STATS_ENABLED, StatsPeriod, FDLimit> {
-        ConnBuilder {
-            mem_budget: mem_budget.into(),
-            ..self
-        }
+    pub fn with_mem_budget(self, mem_budget: impl Into<usize>) -> ConnBuilder<Path, STATS_ENABLED, StatsPeriod, FDLimit> {
+        ConnBuilder { mem_budget: mem_budget.into(), ..self }
     }
-    pub fn with_files_limit(
-        self,
-        files_limit: impl Into<i32>,
-    ) -> ConnBuilder<Path, STATS_ENABLED, StatsPeriod, i32> {
+    pub fn with_files_limit(self, files_limit: impl Into<i32>) -> ConnBuilder<Path, STATS_ENABLED, StatsPeriod, i32> {
         ConnBuilder {
             db_path: self.db_path,
             files_limit: files_limit.into(),
@@ -110,10 +84,7 @@ impl<Path, StatsPeriod, FDLimit> ConnBuilder<Path, true, StatsPeriod, FDLimit> {
             stats_period: Unspecified,
         }
     }
-    pub fn with_stats_period(
-        self,
-        stats_period: impl Into<u32>,
-    ) -> ConnBuilder<Path, true, u32, FDLimit> {
+    pub fn with_stats_period(self, stats_period: impl Into<u32>) -> ConnBuilder<Path, true, u32, FDLimit> {
         ConnBuilder {
             db_path: self.db_path,
             create_if_missing: self.create_if_missing,
@@ -143,10 +114,7 @@ macro_rules! default_opts {
 impl ConnBuilder<PathBuf, false, Unspecified, i32> {
     pub fn build(self) -> Result<Arc<DB>, karlsen_utils::fd_budget::Error> {
         let (opts, guard) = default_opts!(self)?;
-        let db = Arc::new(DB::new(
-            <DBWithThreadMode<MultiThreaded>>::open(&opts, self.db_path.to_str().unwrap()).unwrap(),
-            guard,
-        ));
+        let db = Arc::new(DB::new(<DBWithThreadMode<MultiThreaded>>::open(&opts, self.db_path.to_str().unwrap()).unwrap(), guard));
         Ok(db)
     }
 }
@@ -155,10 +123,7 @@ impl ConnBuilder<PathBuf, true, Unspecified, i32> {
     pub fn build(self) -> Result<Arc<DB>, karlsen_utils::fd_budget::Error> {
         let (mut opts, guard) = default_opts!(self)?;
         opts.enable_statistics();
-        let db = Arc::new(DB::new(
-            <DBWithThreadMode<MultiThreaded>>::open(&opts, self.db_path.to_str().unwrap()).unwrap(),
-            guard,
-        ));
+        let db = Arc::new(DB::new(<DBWithThreadMode<MultiThreaded>>::open(&opts, self.db_path.to_str().unwrap()).unwrap(), guard));
         Ok(db)
     }
 }
@@ -169,10 +134,7 @@ impl ConnBuilder<PathBuf, true, u32, i32> {
         opts.enable_statistics();
         opts.set_report_bg_io_stats(true);
         opts.set_stats_dump_period_sec(self.stats_period);
-        let db = Arc::new(DB::new(
-            <DBWithThreadMode<MultiThreaded>>::open(&opts, self.db_path.to_str().unwrap()).unwrap(),
-            guard,
-        ));
+        let db = Arc::new(DB::new(<DBWithThreadMode<MultiThreaded>>::open(&opts, self.db_path.to_str().unwrap()).unwrap(), guard));
         Ok(db)
     }
 }

@@ -8,23 +8,16 @@ use std::sync::Arc;
 pub struct ArrayBuilder {}
 
 impl ArrayBuilder {
-    pub fn single(
-        listener_id: ListenerId,
-        utxos_changed_capacity: Option<usize>,
-    ) -> EventArray<DynSubscription> {
+    pub fn single(listener_id: ListenerId, utxos_changed_capacity: Option<usize>) -> EventArray<DynSubscription> {
         EventArray::from_fn(|i| {
             let event_type = EventType::try_from(i).unwrap();
             let subscription: DynSubscription = match event_type {
-                EventType::VirtualChainChanged => {
-                    Arc::<single::VirtualChainChangedSubscription>::default()
-                }
-                EventType::UtxosChanged => {
-                    Arc::new(single::UtxosChangedSubscription::with_capacity(
-                        single::UtxosChangedState::None,
-                        listener_id,
-                        utxos_changed_capacity.unwrap_or_default(),
-                    ))
-                }
+                EventType::VirtualChainChanged => Arc::<single::VirtualChainChangedSubscription>::default(),
+                EventType::UtxosChanged => Arc::new(single::UtxosChangedSubscription::with_capacity(
+                    single::UtxosChangedState::None,
+                    listener_id,
+                    utxos_changed_capacity.unwrap_or_default(),
+                )),
                 _ => Arc::new(single::OverallSubscription::new(event_type, false)),
             };
             subscription
@@ -35,13 +28,9 @@ impl ArrayBuilder {
         EventArray::from_fn(|i| {
             let event_type = EventType::try_from(i).unwrap();
             let subscription: CompoundedSubscription = match event_type {
-                EventType::VirtualChainChanged => {
-                    Box::<compounded::VirtualChainChangedSubscription>::default()
-                }
+                EventType::VirtualChainChanged => Box::<compounded::VirtualChainChangedSubscription>::default(),
                 EventType::UtxosChanged => {
-                    Box::new(compounded::UtxosChangedSubscription::with_capacity(
-                        utxos_changed_capacity.unwrap_or_default(),
-                    ))
+                    Box::new(compounded::UtxosChangedSubscription::with_capacity(utxos_changed_capacity.unwrap_or_default()))
                 }
                 _ => Box::new(compounded::OverallSubscription::new(event_type)),
             };

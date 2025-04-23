@@ -13,11 +13,7 @@ use thiserror::Error;
 pub struct VecDisplay<T: Display>(pub Vec<T>);
 impl<T: Display> Display for VecDisplay<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "[{}]",
-            self.0.iter().map(|item| item.to_string()).join(", ")
-        )
+        write!(f, "[{}]", self.0.iter().map(|item| item.to_string()).join(", "))
     }
 }
 
@@ -25,15 +21,7 @@ impl<T: Display> Display for VecDisplay<T> {
 pub struct TwoDimVecDisplay<T: Display + Clone>(pub Vec<Vec<T>>);
 impl<T: Display + Clone> Display for TwoDimVecDisplay<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "[\n\t{}\n]",
-            self.0
-                .iter()
-                .cloned()
-                .map(|item| VecDisplay(item).to_string())
-                .join(", \n\t")
-        )
+        write!(f, "[\n\t{}\n]", self.0.iter().cloned().map(|item| VecDisplay(item).to_string()).join(", \n\t"))
     }
 }
 
@@ -75,8 +63,8 @@ pub enum RuleError {
     #[error("expected header blue work {0} but got {1}")]
     UnexpectedHeaderBlueWork(BlueWorkType, BlueWorkType),
 
-    #[error("block difficulty of {0} is not the expected value of {1}")]
-    UnexpectedDifficulty(u32, u32),
+    #[error("block {0} difficulty of {1} is not the expected value of {2}")]
+    UnexpectedDifficulty(Hash, u32, u32),
 
     #[error("block timestamp of {0} is not after expected {1}")]
     TimeTooOld(u64, u64),
@@ -158,6 +146,10 @@ pub enum RuleError {
 
     #[error("DAA window data has only {0} entries")]
     InsufficientDaaWindowSize(usize),
+
+    /// Currently this error is never created because it is impossible to submit such a block
+    #[error("cannot add block body to a pruned block")]
+    PrunedBlock,
 }
 
 pub type BlockProcessResult<T> = std::result::Result<T, RuleError>;

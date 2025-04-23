@@ -1,3 +1,11 @@
+//!
+//! Karlsen [`Address`] implementation.
+//!
+//! In it's string form, the Karlsen [`Address`] is represented by a `bech32`-encoded
+//! address string combined with a network type.  The `bech32` string encoding is
+//! comprised of a public key, the public key version and the resulting checksum.
+//!
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smallvec::SmallVec;
@@ -11,6 +19,7 @@ use workflow_wasm::{
 
 mod bech32;
 
+/// Error type produced by [`Address`] operations.
 #[derive(Error, PartialEq, Eq, Debug, Clone)]
 pub enum AddressError {
     #[error("The address has an invalid prefix {0}")]
@@ -28,8 +37,14 @@ pub enum AddressError {
     #[error("The address contains an invalid character {0}")]
     DecodingError(char),
 
+    #[error("The address checksum is invalid (must be exactly 8 bytes)")]
+    BadChecksumSize,
+
     #[error("The address checksum is invalid")]
     BadChecksum,
+
+    #[error("The address payload is invalid")]
+    BadPayload,
 
     #[error("The address is invalid")]
     InvalidAddress,
@@ -48,20 +63,8 @@ impl From<workflow_wasm::error::Error> for AddressError {
 }
 
 /// Address prefix identifying the network type this address belongs to (such as `karlsen`, `karlsentest`, `karlsensim`, `karlsendev`).
-#[derive(
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Clone,
-    Copy,
-    Debug,
-    Hash,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[borsh(use_discriminant = true)]
 pub enum Prefix {
     #[serde(rename = "karlsen")]
     Mainnet,
@@ -128,21 +131,9 @@ impl TryFrom<&str> for Prefix {
 ///  Karlsen `Address` version (`PubKey`, `PubKey ECDSA`, `ScriptHash`)
 ///
 /// @category Address
-#[derive(
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Clone,
-    Copy,
-    Debug,
-    Hash,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[repr(u8)]
+#[borsh(use_discriminant = true)]
 #[wasm_bindgen(js_name = "AddressVersion")]
 pub enum Version {
     /// PubKey addresses always have the version byte set to 0
@@ -208,7 +199,8 @@ pub const PAYLOAD_VECTOR_SIZE: usize = 36;
 /// Used as the underlying type for address payload, optimized for the largest version length (33).
 pub type PayloadVec = SmallVec<[u8; PAYLOAD_VECTOR_SIZE]>;
 
-/// Karlsen `Address` struct that serializes to and from an address format string: `karlsen:qz0s...t8cv`.
+/// Karlsen [`Address`] struct that serializes to and from an address format string: `karlsen:qz0s...t8cv`.
+///
 /// @category Address
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash, CastFromJs)]
 #[wasm_bindgen(inspectable)]
@@ -236,11 +228,7 @@ impl Address {
         if !prefix.is_test() {
             assert_eq!(payload.len(), version.public_key_len());
         }
-        Self {
-            prefix,
-            payload: PayloadVec::from_slice(payload),
-            version,
-        }
+        Self { prefix, payload: PayloadVec::from_slice(payload), version }
     }
 }
 
@@ -248,12 +236,7 @@ impl Address {
 impl Address {
     #[wasm_bindgen(constructor)]
     pub fn constructor(address: &str) -> Address {
-        address.try_into().unwrap_or_else(|err| {
-            panic!(
-                "Address::constructor() - address error `{}`: {err}",
-                address
-            )
-        })
+        address.try_into().unwrap_or_else(|err| panic!("Address::constructor() - address error `{}`: {err}", address))
     }
 
     #[wasm_bindgen(js_name=validate)]
@@ -279,8 +262,7 @@ impl Address {
 
     #[wasm_bindgen(setter, js_name = "setPrefix")]
     pub fn set_prefix_from_str(&mut self, prefix: &str) {
-        self.prefix = Prefix::try_from(prefix)
-            .unwrap_or_else(|err| panic!("Address::prefix() - invalid prefix `{prefix}`: {err}"));
+        self.prefix = Prefix::try_from(prefix).unwrap_or_else(|err| panic!("Address::prefix() - invalid prefix `{prefix}`: {err}"));
     }
 
     #[wasm_bindgen(getter, js_name = "payload")]
@@ -291,12 +273,7 @@ impl Address {
     pub fn short(&self, n: usize) -> String {
         let payload = self.encode_payload();
         let n = std::cmp::min(n, payload.len() / 4);
-        format!(
-            "{}:{}....{}",
-            self.prefix,
-            &payload[0..n],
-            &payload[payload.len() - n..]
-        )
+        format!("{}:{}....{}", self.prefix, &payload[0..n], &payload[payload.len() - n..])
     }
 }
 
@@ -322,11 +299,10 @@ impl BorshSerialize for Address {
 }
 
 impl BorshDeserialize for Address {
-    fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
-        // Deserialize into vec first since we have no custom smallvec support
-        let prefix: Prefix = borsh::BorshDeserialize::deserialize(buf)?;
-        let version: Version = borsh::BorshDeserialize::deserialize(buf)?;
-        let payload: Vec<u8> = borsh::BorshDeserialize::deserialize(buf)?;
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let prefix: Prefix = borsh::BorshDeserialize::deserialize_reader(reader)?;
+        let version: Version = borsh::BorshDeserialize::deserialize_reader(reader)?;
+        let payload: Vec<u8> = borsh::BorshDeserialize::deserialize_reader(reader)?;
         Ok(Self::new(prefix, version, &payload))
     }
 }
@@ -391,10 +367,7 @@ impl<'de> Deserialize<'de> for Address {
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 {
-                    write!(
-                        formatter,
-                        "string-type: string, str; bytes-type: slice of bytes, vec of bytes; map"
-                    )
+                    write!(formatter, "string-type: string, str; bytes-type: slice of bytes, vec of bytes; map")
                 }
             }
 
@@ -499,11 +472,7 @@ impl<'de> Deserialize<'de> for Address {
 
                 while let Some((key, value)) = access.next_entry::<String, String>()? {
                     #[cfg(test)]
-                    web_sys::console::log_3(
-                        &"key value: ".into(),
-                        &key.clone().into(),
-                        &value.clone().into(),
-                    );
+                    web_sys::console::log_3(&"key value: ".into(), &key.clone().into(), &value.clone().into());
 
                     match key.as_ref() {
                         "prefix" => {
@@ -514,10 +483,7 @@ impl<'de> Deserialize<'de> for Address {
                         }
                         "version" => continue,
                         unknown_field => {
-                            return Err(serde::de::Error::unknown_field(
-                                unknown_field,
-                                &["prefix", "payload", "version"],
-                            ))
+                            return Err(serde::de::Error::unknown_field(unknown_field, &["prefix", "payload", "version"]))
                         }
                     }
                     if prefix.is_some() && payload.is_some() {
@@ -529,14 +495,8 @@ impl<'de> Deserialize<'de> for Address {
                     (None, _) => return Err(serde::de::Error::missing_field("prefix")),
                     (_, None) => return Err(serde::de::Error::missing_field("payload")),
                 };
-                Address::decode_payload(
-                    prefix
-                        .as_str()
-                        .try_into()
-                        .map_err(serde::de::Error::custom)?,
-                    &payload,
-                )
-                .map_err(serde::de::Error::custom)
+                Address::decode_payload(prefix.as_str().try_into().map_err(serde::de::Error::custom)?, &payload)
+                    .map_err(serde::de::Error::custom)
             }
         }
 
@@ -546,8 +506,11 @@ impl<'de> Deserialize<'de> for Address {
 
 impl TryCastFromJs for Address {
     type Error = AddressError;
-    fn try_cast_from(value: impl AsRef<JsValue>) -> Result<Cast<Self>, Self::Error> {
-        Self::resolve(&value, || {
+    fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>, Self::Error>
+    where
+        R: AsRef<JsValue> + 'a,
+    {
+        Self::resolve(value, || {
             if let Some(string) = value.as_ref().as_string() {
                 Address::try_from(string)
             } else if let Some(object) = js_sys::Object::try_from(value.as_ref()) {
@@ -563,22 +526,33 @@ impl TryCastFromJs for Address {
 
 #[wasm_bindgen]
 extern "C" {
+    /// WASM (TypeScript) type representing an Address-like object: `Address | string`.
+    ///
+    /// @category Address
     #[wasm_bindgen(extends = js_sys::Array, typescript_type = "Address | string")]
     pub type AddressT;
+    /// WASM (TypeScript) type representing an array of Address-like objects: `(Address | string)[]`.
+    ///
+    /// @category Address
     #[wasm_bindgen(extends = js_sys::Array, typescript_type = "(Address | string)[]")]
     pub type AddressOrStringArrayT;
+    /// WASM (TypeScript) type representing an array of [`Address`] objects: `Address[]`.
+    ///
+    /// @category Address
     #[wasm_bindgen(extends = js_sys::Array, typescript_type = "Address[]")]
     pub type AddressArrayT;
+    /// WASM (TypeScript) type representing an [`Address`] or an undefined value: `Address | undefined`.
+    ///
+    /// @category Address
+    #[wasm_bindgen(typescript_type = "Address | undefined")]
+    pub type AddressOrUndefinedT;
 }
 
 impl TryFrom<AddressOrStringArrayT> for Vec<Address> {
     type Error = AddressError;
     fn try_from(js_value: AddressOrStringArrayT) -> Result<Self, Self::Error> {
         if js_value.is_array() {
-            js_value
-                .iter()
-                .map(Address::try_owned_from)
-                .collect::<Result<Vec<Address>, AddressError>>()
+            js_value.iter().map(Address::try_owned_from).collect::<Result<Vec<Address>, AddressError>>()
         } else {
             Err(AddressError::InvalidAddressArray)
         }
@@ -632,52 +606,48 @@ mod tests {
     #[test]
     fn test_errors() {
         // cspell:disable
-        let address_str: String =
-            "karlsen:qqqqqqqqqqqqq1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
+        let address_str: String = "karlsen:qqqqqqqqqqqqq1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::DecodingError('1')), address);
 
         let invalid_char = 124u8 as char;
-        let address_str: String = format!(
-            "karlsen:qqqqqqqqqqqqq{invalid_char}qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e"
-        );
+        let address_str: String = format!("karlsen:qqqqqqqqqqqqq{invalid_char}qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e");
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::DecodingError(invalid_char)), address);
 
         let invalid_char = 129u8 as char;
-        let address_str: String = format!(
-            "karlsen:qqqqqqqqqqqqq{invalid_char}qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e"
-        );
+        let address_str: String = format!("karlsen:qqqqqqqqqqqqq{invalid_char}qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e");
         let address: Result<Address, AddressError> = address_str.try_into();
         assert!(matches!(address, Err(AddressError::DecodingError(_))));
 
-        let address_str: String =
-            "karlsen1:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
+        let address_str: String = "karlsen1:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::InvalidPrefix("karlsen1".into())), address);
 
-        let address_str: String =
-            "karlsenqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
+        let address_str: String = "karlsenqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::MissingPrefix), address);
 
-        let address_str: String =
-            "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4l".to_string();
+        let address_str: String = "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4l".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::BadChecksum), address);
 
-        let address_str: String =
-            "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
+        let address_str: String = "karlsen:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e".to_string();
         let address: Result<Address, AddressError> = address_str.try_into();
         assert_eq!(Err(AddressError::BadChecksum), address);
         // cspell:enable
     }
 
+    #[cfg(target_arch = "wasm32")]
     use js_sys::Object;
+    #[cfg(target_arch = "wasm32")]
     use wasm_bindgen::{JsValue, __rt::IntoJsResult};
+    #[cfg(target_arch = "wasm32")]
     use wasm_bindgen_test::wasm_bindgen_test;
+    #[cfg(target_arch = "wasm32")]
     use workflow_wasm::{extensions::ObjectExtension, serde::from_value, serde::to_value};
 
+    #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen_test]
     pub fn test_wasm_serde_constructor() {
         let str = "karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j";
@@ -689,11 +659,10 @@ mod tests {
         assert_eq!(a, from_value(value).unwrap());
     }
 
+    #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen_test]
     pub fn test_wasm_js_serde_object() {
-        let expected = Address::constructor(
-            "karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j",
-        );
+        let expected = Address::constructor("karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j");
 
         use web_sys::console;
         console::log_4(
@@ -706,11 +675,7 @@ mod tests {
         let obj = Object::new();
         obj.set("version", &JsValue::from_str("PubKey")).unwrap();
         obj.set("prefix", &JsValue::from_str("karlsen")).unwrap();
-        obj.set(
-            "payload",
-            &JsValue::from_str("qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j"),
-        )
-        .unwrap();
+        obj.set("payload", &JsValue::from_str("qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j")).unwrap();
 
         assert_eq!(JsValue::from_str("object"), obj.js_typeof());
 
@@ -719,13 +684,12 @@ mod tests {
         assert_eq!(expected, actual);
     }
 
+    #[cfg(target_arch = "wasm32")]
     #[wasm_bindgen_test]
     pub fn test_wasm_serde_object() {
         use wasm_bindgen::convert::IntoWasmAbi;
 
-        let expected = Address::constructor(
-            "karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j",
-        );
+        let expected = Address::constructor("karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j");
         let wasm_js_value: JsValue = expected.clone().into_abi().into();
 
         let actual = from_value(wasm_js_value).unwrap();

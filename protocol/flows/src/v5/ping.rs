@@ -32,11 +32,7 @@ impl Flow for ReceivePingsFlow {
 
 impl ReceivePingsFlow {
     pub fn new(ctx: FlowContext, router: Arc<Router>, incoming_route: IncomingRoute) -> Self {
-        Self {
-            _ctx: ctx,
-            router,
-            incoming_route,
-        }
+        Self { _ctx: ctx, router, incoming_route }
     }
 
     async fn start_impl(&mut self) -> Result<(), ProtocolError> {
@@ -76,12 +72,7 @@ impl Flow for SendPingsFlow {
 impl SendPingsFlow {
     pub fn new(ctx: FlowContext, router: Arc<Router>, incoming_route: IncomingRoute) -> Self {
         let peer = router.to_string();
-        Self {
-            ctx,
-            router: Arc::downgrade(&router),
-            peer,
-            incoming_route,
-        }
+        Self { ctx, router: Arc::downgrade(&router), peer, incoming_route }
     }
 
     async fn start_impl(&mut self) -> Result<(), ProtocolError> {
@@ -103,10 +94,7 @@ impl SendPingsFlow {
             if pong.nonce != nonce {
                 return Err(ProtocolError::Other("nonce mismatch between ping and pong"));
             } else {
-                debug!(
-                    "Successful ping with peer {} (nonce: {})",
-                    self.peer, pong.nonce
-                );
+                debug!("Successful ping with peer {} (nonce: {})", self.peer, pong.nonce);
             }
             router.set_last_ping_duration(ping_time.elapsed().as_millis() as u64);
         }

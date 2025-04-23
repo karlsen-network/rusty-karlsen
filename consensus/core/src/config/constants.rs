@@ -36,8 +36,7 @@ pub mod consensus {
 
     /// Size of the **sampled** median time window (independent of BPS)
     pub const MEDIAN_TIME_SAMPLED_WINDOW_SIZE: u64 =
-        ((2 * NEW_TIMESTAMP_DEVIATION_TOLERANCE - 1) + PAST_MEDIAN_TIME_SAMPLE_INTERVAL - 1)
-            / PAST_MEDIAN_TIME_SAMPLE_INTERVAL;
+        (2 * NEW_TIMESTAMP_DEVIATION_TOLERANCE - 1).div_ceil(PAST_MEDIAN_TIME_SAMPLE_INTERVAL);
 
     //
     // ~~~~~~~~~~~~~~~~~~~~~~~~~ Max difficulty target ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,12 +46,8 @@ pub mod consensus {
     /// This value is: 2^255 - 1.
     ///
     /// Computed value: `Uint256::from_u64(1).wrapping_shl(255) - 1.into()`
-    pub const MAX_DIFFICULTY_TARGET: Uint256 = Uint256([
-        18446744073709551615,
-        18446744073709551615,
-        18446744073709551615,
-        9223372036854775807,
-    ]);
+    pub const MAX_DIFFICULTY_TARGET: Uint256 =
+        Uint256([18446744073709551615, 18446744073709551615, 18446744073709551615, 9223372036854775807]);
 
     /// Highest proof of work difficulty target as a floating number
     pub const MAX_DIFFICULTY_TARGET_AS_F64: f64 = 5.78960446186581e76;
@@ -76,9 +71,7 @@ pub mod consensus {
     pub const DIFFICULTY_WINDOW_SAMPLE_INTERVAL: u64 = 4;
 
     /// Size of the **sampled** difficulty window (independent of BPS)
-    pub const DIFFICULTY_SAMPLED_WINDOW_SIZE: u64 =
-        (NEW_DIFFICULTY_WINDOW_DURATION + DIFFICULTY_WINDOW_SAMPLE_INTERVAL - 1)
-            / DIFFICULTY_WINDOW_SAMPLE_INTERVAL;
+    pub const DIFFICULTY_SAMPLED_WINDOW_SIZE: u64 = NEW_DIFFICULTY_WINDOW_DURATION.div_ceil(DIFFICULTY_WINDOW_SAMPLE_INTERVAL);
 
     //
     // ~~~~~~~~~~~~~~~~~~~ Finality & Pruning ~~~~~~~~~~~~~~~~~~~
@@ -123,11 +116,11 @@ pub mod perf {
 
     /// The default slack interval used by the reachability
     /// algorithm to encounter for blocks out of the selected chain.
-    pub const DEFAULT_REINDEX_SLACK: u64 = 1 << 12;
+    pub const DEFAULT_REINDEX_SLACK: u64 = 1 << 14;
 
     const BASELINE_HEADER_DATA_CACHE_SIZE: usize = 10_000;
     const BASELINE_BLOCK_DATA_CACHE_SIZE: usize = 200;
-    const BASELINE_BLOCK_WINDOW_CACHE_SIZE: usize = 2000;
+    const BASELINE_BLOCK_WINDOW_CACHE_SIZE: usize = 2_000;
     const BASELINE_UTXOSET_CACHE_SIZE: usize = 10_000;
 
     #[derive(Clone, Debug)]
@@ -185,10 +178,7 @@ mod tests {
 
     #[test]
     fn test_difficulty_max_consts() {
-        assert_eq!(
-            MAX_DIFFICULTY_TARGET,
-            Uint256::from_u64(1).wrapping_shl(255) - 1.into()
-        );
+        assert_eq!(MAX_DIFFICULTY_TARGET, Uint256::from_u64(1).wrapping_shl(255) - 1.into());
         assert_eq!(MAX_DIFFICULTY_TARGET_AS_F64, MAX_DIFFICULTY_TARGET.as_f64());
     }
 }
