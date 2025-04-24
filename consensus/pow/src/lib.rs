@@ -10,6 +10,8 @@ use std::cmp::max;
 
 use crate::matrix::Matrix;
 use karlsen_consensus_core::{constants, hashing, header::Header, BlockLevel};
+//use karlsen_consensus_core::errors::block::RuleError;
+//use karlsen_hashes::Pow;
 use karlsen_hashes::{PowB3Hash, PowFishHash};
 use karlsen_math::Uint256;
 
@@ -75,13 +77,14 @@ impl State {
     #[must_use]
     /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
-        match self.header_version {
-            constants::BLOCK_VERSION_KHASHV1 => self.calculate_pow_khashv1(nonce),
-            constants::BLOCK_VERSION_KHASHV2 => self.calculate_pow_khashv2plus(nonce),
-            _ => {
-                // Fallback to v1
-                self.calculate_pow_khashv1(nonce)
-            }
+        if self.header_version == constants::BLOCK_VERSION_KHASHV1 {
+            self.calculate_pow_khashv1(nonce)
+        } else if self.header_version == constants::BLOCK_VERSION_KHASHV2 {
+            self.calculate_pow_khashv2plus(nonce)
+        } else {
+            // TODO handle block version error
+            //Err(RuleError::WrongBlockVersion(self.header_version));
+            self.calculate_pow_khashv1(nonce)
         }
     }
 
