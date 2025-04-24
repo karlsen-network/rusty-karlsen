@@ -32,7 +32,7 @@ pub mod consensus {
 
     /// Size of the **sampled** median time window (independent of BPS)
     pub const MEDIAN_TIME_SAMPLED_WINDOW_SIZE: u64 =
-    (2 * TIMESTAMP_DEVIATION_TOLERANCE - 1).div_ceil(PAST_MEDIAN_TIME_SAMPLE_INTERVAL);
+        (2 * TIMESTAMP_DEVIATION_TOLERANCE - 1).div_ceil(PAST_MEDIAN_TIME_SAMPLE_INTERVAL);
 
     //
     // ~~~~~~~~~~~~~~~~~~~~~~~~~ Max difficulty target ~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -392,8 +392,8 @@ pub fn calc_storage_mass(
         let harmonic_ins = inputs
             .map(|UtxoCell { plurality, amount }| storm_param * plurality * plurality / amount) // we assume no overflow (see verify_utxo_plurality_limits)
             .fold(0u64, |total, current| total.saturating_add(current));
-       // max(0, harmonic_outs - harmonic_ins)
-       return Some(harmonic_outs.saturating_sub(harmonic_ins));
+        // max(0, harmonic_outs - harmonic_ins)
+        return Some(harmonic_outs.saturating_sub(harmonic_ins));
     }
 
     // Otherwise, we calculate the arithmetic portion for inputs:

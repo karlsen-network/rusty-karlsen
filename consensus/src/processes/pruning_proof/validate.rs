@@ -117,7 +117,6 @@ impl PruningProofManager {
                     {
                         return Err(PruningImportError::PruningProofInsufficientBlueWork);
                     }
-
                 }
 
                 return Ok(());
@@ -177,7 +176,7 @@ impl PruningProofManager {
         // [Crescendo]: decide on ghostdag K based on proof pruning point DAA score
         let proof_pp_daa_score = proof[0].last().expect("checked if empty").daa_score;
         let ghostdag_k = self.ghostdag_k.get(proof_pp_daa_score);
-                
+
         let headers_estimate = self.estimate_proof_unique_size(proof);
 
         let (db_lifetime, db) = karlsen_database::create_temp_db!(ConnBuilder::default().with_files_limit(10));

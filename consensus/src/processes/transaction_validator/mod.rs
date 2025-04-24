@@ -14,7 +14,6 @@ use karlsen_consensus_core::{
     mass::MassCalculator,
 };
 
-
 #[derive(Clone)]
 pub struct TransactionValidator {
     max_tx_inputs: ForkedParam<usize>,

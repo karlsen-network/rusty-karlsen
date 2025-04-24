@@ -86,7 +86,7 @@ impl BlockBodyProcessor {
         }
         Ok(())
     }
-    
+
     fn check_coinbase_blue_score_and_subsidy(self: &Arc<Self>, block: &Block) -> BlockProcessResult<()> {
         match self.coinbase_manager.deserialize_coinbase_payload(&block.transactions[0].payload) {
             Ok(data) => {

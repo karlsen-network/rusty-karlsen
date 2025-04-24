@@ -48,7 +48,7 @@ pub struct PruningPointManager<
     /// Note that this quantity represents here the interval between pruning point samples and is not tightly coupled with the
     /// actual concept of finality as used by virtual processor to reject deep reorgs   
     finality_depth: ForkedParam<u64>,
-    
+
     genesis_hash: Hash,
 
     reachability_service: MTReachabilityService<T>,
@@ -441,7 +441,7 @@ impl<
 
         for i in (0..=current_pruning_point_index).rev() {
             let past_pp = self.past_pruning_points_store.get(i).unwrap();
-            
+
             // [Crescendo]: shortly after fork activation, R is not guaranteed to comply with the new
             // increased pruning depth, so we must manually verify not to go below it
             if sp_pp_blue_score >= self.headers_store.get_blue_score(past_pp).unwrap() {

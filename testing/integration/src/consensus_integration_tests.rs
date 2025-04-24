@@ -1270,10 +1270,10 @@ async fn bounded_merge_depth_test() {
         })
         .build();
 
-        assert!(
-            (config.ghostdag_k().before() as u64) < config.prior_merge_depth,
-            "K must be smaller than merge depth for this test to run"
-        );
+    assert!(
+        (config.ghostdag_k().before() as u64) < config.prior_merge_depth,
+        "K must be smaller than merge depth for this test to run"
+    );
 
     let consensus = TestConsensus::new(&config);
     let wait_handles = consensus.init();
@@ -1918,7 +1918,7 @@ async fn payload_test() {
         0,
         vec![0; (config.params.max_block_mass / TRANSIENT_BYTE_TO_MASS_FACTOR / 2) as usize],
     );
-    
+
     // Create a tx with transient mass over the block limit
     txx.payload = vec![0; (2 * config.params.max_block_mass / TRANSIENT_BYTE_TO_MASS_FACTOR) as usize];
     let mut tx = MutableTransaction::from_tx(txx.clone());

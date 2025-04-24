@@ -34,7 +34,7 @@ pub enum ConsensusError {
 
     #[error("{0}")]
     General(&'static str),
-    
+
     #[error("{0}")]
     GeneralOwned(String),
 }

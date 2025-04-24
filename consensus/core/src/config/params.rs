@@ -51,7 +51,6 @@ impl ForkActivation {
         self != Self::always() && self.is_active(current_daa_score) && current_daa_score < self.0 + range
     }
 
-    
     /// Checks if the fork is expected to be activated "soon", i.e., in the time frame of the provided range.
     /// Returns the distance from activation if so, or `None` otherwise.  
     pub fn is_within_range_before_activation(self, current_daa_score: u64, range: u64) -> Option<u64> {
@@ -167,7 +166,6 @@ pub struct CrescendoParams {
     pub max_script_public_key_len: usize,
 
     pub coinbase_maturity: u64,
-
 }
 
 pub const CRESCENDO: CrescendoParams = CrescendoParams {
@@ -235,7 +233,7 @@ pub struct Params {
 
     pub coinbase_payload_script_public_key_max_len: u8,
     pub max_coinbase_payload_len: usize,
-    
+
     pub prior_max_tx_inputs: usize,
     pub prior_max_tx_outputs: usize,
     pub prior_max_signature_script_len: usize,

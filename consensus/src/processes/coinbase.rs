@@ -395,7 +395,7 @@ mod tests {
         }
     }
 
- /// Takes over 60 seconds, run with the following command line:
+    /// Takes over 60 seconds, run with the following command line:
     /// `cargo test --release --package kaspa-consensus --lib -- processes::coinbase::tests::verify_crescendo_emission_schedule --exact --nocapture --ignored`
     #[test]
     #[ignore = "long"]

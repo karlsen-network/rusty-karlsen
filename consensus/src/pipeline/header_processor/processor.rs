@@ -210,7 +210,7 @@ impl HeaderProcessor {
             task_manager: BlockTaskDependencyManager::new(),
             pruning_lock,
             counters,
-            
+
             timestamp_deviation_tolerance: params.timestamp_deviation_tolerance,
             max_block_parents: params.max_block_parents(),
             mergeset_size_limit: params.mergeset_size_limit(),

@@ -103,7 +103,7 @@ impl TransactionValidator {
             Ok(())
         }
     }
-    
+
     fn check_transaction_outputs_count_ctx(&self, tx: &Transaction, ctx_daa_score: u64) -> TxResult<()> {
         // TODO (post HF): move back to in isolation validation
         if tx.is_coinbase() {

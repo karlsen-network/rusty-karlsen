@@ -103,11 +103,11 @@ impl<const BPS: u64> Bps<BPS> {
             + 2 * Self::ghostdag_k() as u64
             + 2;
 
-            if lower_bound > BPS * NEW_PRUNING_DURATION {
-                lower_bound
-            } else {
-                BPS * NEW_PRUNING_DURATION
-            }
+        if lower_bound > BPS * NEW_PRUNING_DURATION {
+            lower_bound
+        } else {
+            BPS * NEW_PRUNING_DURATION
+        }
     }
 
     /// Sample rate for sampling blocks to the median time window (in block units, hence dependent on BPS)

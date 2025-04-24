@@ -67,7 +67,6 @@ impl AppenderSpec {
     }
 }
 
-
 pub const CRESCENDO_KEYWORD: &str = "crescendo";
 const CRESCENDO_LOG_LINE_PATTERN_COLORED: &str = "{d(%Y-%m-%d %H:%M:%S%.3f%:z)} [{h({(CRND):5.5})}] {m}{n}";
 
