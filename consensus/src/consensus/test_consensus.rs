@@ -1,5 +1,6 @@
 use async_channel::Sender;
 use karlsen_consensus_core::coinbase::MinerData;
+use karlsen_consensus_core::constants;
 use karlsen_consensus_core::tx::ScriptPublicKey;
 use karlsen_consensus_core::{
     api::ConsensusApi, block::MutableBlock, blockstatus::BlockStatus, header::Header, merkle::calc_hash_merkle_root,
@@ -128,6 +129,12 @@ impl TestConsensus {
         header.timestamp = self.consensus.services.window_manager.calc_past_median_time(&ghostdag_data).unwrap().0 + 1;
         header.blue_score = ghostdag_data.blue_score;
         header.blue_work = ghostdag_data.blue_work;
+
+        if self.params.khashv2_activation.is_active(header.daa_score) {
+            header.version = constants::BLOCK_VERSION_KHASHV2;
+        } else {
+            header.version = constants::BLOCK_VERSION_KHASHV1;
+        }
 
         header
     }
