@@ -1,8 +1,8 @@
 use crate::{
     consensus::{
         services::{
-            ConsensusServices, DbBlockDepthManager, DbDagTraversalManager, DbGhostdagManager,
-            DbParentsManager, DbPruningPointManager, DbWindowManager,
+            ConsensusServices, DbBlockDepthManager, DbDagTraversalManager, DbGhostdagManager, DbParentsManager, DbPruningPointManager,
+            DbWindowManager,
         },
         storage::ConsensusStorage,
     },
@@ -10,7 +10,7 @@ use crate::{
     model::{
         services::reachability::MTReachabilityService,
         stores::{
-            block_window_cache::{BlockWindowCacheStore, BlockWindowHeap},
+            block_window_cache::{BlockWindowCacheStore, BlockWindowCacheWriter, BlockWindowHeap},
             daa::DbDaaStore,
             depth::DbDepthStore,
             ghostdag::{DbGhostdagStore, GhostdagData, GhostdagStoreReader},
@@ -19,20 +19,13 @@ use crate::{
             pruning::{DbPruningStore, PruningPointInfo, PruningStoreReader},
             reachability::{DbReachabilityStore, StagingReachabilityStore},
             relations::{DbRelationsStore, RelationsStoreReader},
-            statuses::{
-                DbStatusesStore, StatusesStore, StatusesStoreBatchExtensions, StatusesStoreReader,
-            },
+            statuses::{DbStatusesStore, StatusesStore, StatusesStoreBatchExtensions, StatusesStoreReader},
             DB,
         },
     },
     params::Params,
-    pipeline::deps_manager::{
-        BlockProcessingMessage, BlockTask, BlockTaskDependencyManager, TaskId,
-    },
-    processes::{
-        ghostdag::ordering::SortableBlock, reachability::inquirer as reachability,
-        relations::RelationsStoreExtensions,
-    },
+    pipeline::deps_manager::{BlockProcessingMessage, BlockTask, BlockTaskDependencyManager, TaskId},
+    processes::{ghostdag::ordering::SortableBlock, reachability::inquirer as reachability, relations::RelationsStoreExtensions},
 };
 use crossbeam_channel::{Receiver, Sender};
 use itertools::Itertools;
@@ -62,7 +55,7 @@ pub struct HeaderProcessingContext {
     pub known_parents: Vec<BlockHashes>,
 
     // Staging data
-    pub ghostdag_data: Option<Vec<Arc<GhostdagData>>>,
+    pub ghostdag_data: Option<Arc<GhostdagData>>,
     pub block_window_for_difficulty: Option<Arc<BlockWindowHeap>>,
     pub block_window_for_past_median_time: Option<Arc<BlockWindowHeap>>,
     pub mergeset_non_daa: Option<BlockHashSet>,
@@ -106,7 +99,7 @@ impl HeaderProcessingContext {
     /// Returns the primary (level 0) GHOSTDAG data of this header.
     /// NOTE: is expected to be called only after GHOSTDAG computation was pushed into the context
     pub fn ghostdag_data(&self) -> &Arc<GhostdagData> {
-        &self.ghostdag_data.as_ref().unwrap()[0]
+        self.ghostdag_data.as_ref().unwrap()
     }
 }
 
@@ -126,7 +119,7 @@ pub struct HeaderProcessor {
     pub(super) mergeset_size_limit: u64,
     pub(super) skip_proof_of_work: bool,
     pub(super) max_block_level: BlockLevel,
-    pub(super) hf_daa_score: u64,
+    pub(super) khashv2_activation: u64,
     pub(super) difficulty_window_size: usize,
 
     // DB
@@ -136,7 +129,7 @@ pub struct HeaderProcessor {
     pub(super) relations_stores: Arc<RwLock<Vec<DbRelationsStore>>>,
     pub(super) reachability_store: Arc<RwLock<DbReachabilityStore>>,
     pub(super) reachability_relations_store: Arc<RwLock<DbRelationsStore>>,
-    pub(super) ghostdag_stores: Arc<Vec<Arc<DbGhostdagStore>>>,
+    pub(super) ghostdag_store: Arc<DbGhostdagStore>,
     pub(super) statuses_store: Arc<RwLock<DbStatusesStore>>,
     pub(super) pruning_point_store: Arc<RwLock<DbPruningStore>>,
     pub(super) block_window_cache_for_difficulty: Arc<BlockWindowCacheStore>,
@@ -147,7 +140,7 @@ pub struct HeaderProcessor {
     pub(super) depth_store: Arc<DbDepthStore>,
 
     // Managers and services
-    pub(super) ghostdag_managers: Arc<Vec<DbGhostdagManager>>,
+    pub(super) ghostdag_manager: DbGhostdagManager,
     pub(super) dag_traversal_manager: DbDagTraversalManager,
     pub(super) window_manager: DbWindowManager,
     pub(super) depth_manager: DbBlockDepthManager,
@@ -187,7 +180,7 @@ impl HeaderProcessor {
             relations_stores: storage.relations_stores.clone(),
             reachability_store: storage.reachability_store.clone(),
             reachability_relations_store: storage.reachability_relations_store.clone(),
-            ghostdag_stores: storage.ghostdag_stores.clone(),
+            ghostdag_store: storage.ghostdag_store.clone(),
             statuses_store: storage.statuses_store.clone(),
             pruning_point_store: storage.pruning_point_store.clone(),
             daa_excluded_store: storage.daa_excluded_store.clone(),
@@ -195,11 +188,9 @@ impl HeaderProcessor {
             depth_store: storage.depth_store.clone(),
             headers_selected_tip_store: storage.headers_selected_tip_store.clone(),
             block_window_cache_for_difficulty: storage.block_window_cache_for_difficulty.clone(),
-            block_window_cache_for_past_median_time: storage
-                .block_window_cache_for_past_median_time
-                .clone(),
+            block_window_cache_for_past_median_time: storage.block_window_cache_for_past_median_time.clone(),
 
-            ghostdag_managers: services.ghostdag_managers.clone(),
+            ghostdag_manager: services.ghostdag_manager.clone(),
             dag_traversal_manager: services.dag_traversal_manager.clone(),
             window_manager: services.window_manager.clone(),
             reachability_service: services.reachability_service.clone(),
@@ -217,7 +208,7 @@ impl HeaderProcessor {
             mergeset_size_limit: params.mergeset_size_limit,
             skip_proof_of_work: params.skip_proof_of_work,
             max_block_level: params.max_block_level,
-            hf_daa_score: params.hf_daa_score,
+            khashv2_activation: params.khashv2_activation,
             difficulty_window_size: params.legacy_difficulty_window_size,
         }
     }
@@ -228,16 +219,9 @@ impl HeaderProcessor {
                 BlockProcessingMessage::Exit => {
                     break;
                 }
-                BlockProcessingMessage::Process(
-                    task,
-                    block_result_transmitter,
-                    virtual_state_result_transmitter,
-                ) => {
-                    if let Some(task_id) = self.task_manager.register(
-                        task,
-                        block_result_transmitter,
-                        virtual_state_result_transmitter,
-                    ) {
+                BlockProcessingMessage::Process(task, block_result_transmitter, virtual_state_result_transmitter) => {
+                    if let Some(task_id) = self.task_manager.register(task, block_result_transmitter, virtual_state_result_transmitter)
+                    {
                         let processor = self.clone();
                         self.thread_pool.spawn(move || {
                             processor.queue_block(task_id);
@@ -261,9 +245,7 @@ impl HeaderProcessor {
             let dependent_tasks = self.task_manager.end(
                 task,
                 |task,
-                 block_result_transmitter: tokio::sync::oneshot::Sender<
-                    Result<BlockStatus, RuleError>,
-                >,
+                 block_result_transmitter: tokio::sync::oneshot::Sender<Result<BlockStatus, RuleError>>,
                  virtual_state_result_transmitter| {
                     if res.is_err() || task.block().is_header_only() {
                         // We don't care if receivers were dropped
@@ -271,11 +253,7 @@ impl HeaderProcessor {
                         let _ = virtual_state_result_transmitter.send(res.clone());
                     } else {
                         self.body_sender
-                            .send(BlockProcessingMessage::Process(
-                                task,
-                                block_result_transmitter,
-                                virtual_state_result_transmitter,
-                            ))
+                            .send(BlockProcessingMessage::Process(task, block_result_transmitter, virtual_state_result_transmitter))
                             .unwrap();
                     }
                 },
@@ -313,48 +291,34 @@ impl HeaderProcessor {
 
         // Report counters
         self.counters.header_counts.fetch_add(1, Ordering::Relaxed);
-        self.counters
-            .dep_counts
-            .fetch_add(header.direct_parents().len() as u64, Ordering::Relaxed);
+        self.counters.dep_counts.fetch_add(header.direct_parents().len() as u64, Ordering::Relaxed);
 
         Ok(StatusHeaderOnly)
     }
 
     /// Runs full ordinary header validation
     fn validate_header(&self, header: &Arc<Header>) -> BlockProcessResult<HeaderProcessingContext> {
-        let block_level = self.validate_header_in_isolation(header, self.hf_daa_score)?;
+        let block_level = self.validate_header_in_isolation(header, self.khashv2_activation)?;
         self.validate_parent_relations(header)?;
         let mut ctx = self.build_processing_context(header, block_level);
         self.ghostdag(&mut ctx);
         self.pre_pow_validation(&mut ctx, header)?;
         if let Err(e) = self.post_pow_validation(&mut ctx, header) {
-            self.statuses_store
-                .write()
-                .set(ctx.hash, StatusInvalid)
-                .unwrap();
+            self.statuses_store.write().set(ctx.hash, StatusInvalid).unwrap();
             return Err(e);
         }
         Ok(ctx)
     }
 
     // Runs partial header validation for trusted blocks (currently validates only header-in-isolation and computes GHOSTDAG).
-    fn validate_trusted_header(
-        &self,
-        header: &Arc<Header>,
-    ) -> BlockProcessResult<HeaderProcessingContext> {
-        // TODO: For now we skip most validations for trusted blocks, but in the future we should
-        // employ some validations to avoid spam etc.
-        let block_level = self.validate_header_in_isolation(header, self.hf_daa_score)?;
+    fn validate_trusted_header(&self, header: &Arc<Header>) -> BlockProcessResult<HeaderProcessingContext> {
+        let block_level = self.validate_header_in_isolation(header, self.khashv2_activation)?;
         let mut ctx = self.build_processing_context(header, block_level);
         self.ghostdag(&mut ctx);
         Ok(ctx)
     }
 
-    fn build_processing_context(
-        &self,
-        header: &Arc<Header>,
-        block_level: u8,
-    ) -> HeaderProcessingContext {
+    fn build_processing_context(&self, header: &Arc<Header>, block_level: u8) -> HeaderProcessingContext {
         HeaderProcessingContext::new(
             header.hash,
             header.clone(),
@@ -365,11 +329,7 @@ impl HeaderProcessor {
     }
 
     /// Collects the known parents for all block levels
-    fn collect_known_parents(
-        &self,
-        header: &Header,
-        block_level: BlockLevel,
-    ) -> Vec<Arc<Vec<Hash>>> {
+    fn collect_known_parents(&self, header: &Header, block_level: BlockLevel) -> Vec<Arc<Vec<Hash>>> {
         let relations_read = self.relations_stores.read();
         (0..=block_level)
             .map(|level| {
@@ -388,22 +348,14 @@ impl HeaderProcessor {
             .collect_vec()
     }
 
-    /// Runs the GHOSTDAG algorithm for all block levels and writes the data into the context (if hasn't run already)
+    /// Runs the GHOSTDAG algorithm and writes the data into the context (if hasn't run already)
     fn ghostdag(&self, ctx: &mut HeaderProcessingContext) {
-        let ghostdag_data = (0..=ctx.block_level as usize)
-            .map(|level| {
-                self.ghostdag_stores[level]
-                    .get_data(ctx.hash)
-                    .unwrap_option()
-                    .unwrap_or_else(|| {
-                        Arc::new(self.ghostdag_managers[level].ghostdag(&ctx.known_parents[level]))
-                    })
-            })
-            .collect_vec();
-
-        self.counters
-            .mergeset_counts
-            .fetch_add(ghostdag_data[0].mergeset_size() as u64, Ordering::Relaxed);
+        let ghostdag_data = self
+            .ghostdag_store
+            .get_data(ctx.hash)
+            .unwrap_option()
+            .unwrap_or_else(|| Arc::new(self.ghostdag_manager.ghostdag(&ctx.known_parents[0])));
+        self.counters.mergeset_counts.fetch_add(ghostdag_data.mergeset_size() as u64, Ordering::Relaxed);
         ctx.ghostdag_data = Some(ghostdag_data);
     }
 
@@ -417,39 +369,18 @@ impl HeaderProcessor {
         //
         // Append-only stores: these require no lock and hence done first in order to reduce locking time
         //
+        self.ghostdag_store.insert_batch(&mut batch, ctx.hash, ghostdag_data).unwrap();
 
-        for (level, datum) in ghostdag_data.iter().enumerate() {
-            self.ghostdag_stores[level]
-                .insert_batch(&mut batch, ctx.hash, datum)
-                .unwrap();
-        }
         if let Some(window) = ctx.block_window_for_difficulty {
-            self.block_window_cache_for_difficulty
-                .insert(ctx.hash, window);
+            self.block_window_cache_for_difficulty.insert(ctx.hash, window);
         }
         if let Some(window) = ctx.block_window_for_past_median_time {
-            self.block_window_cache_for_past_median_time
-                .insert(ctx.hash, window);
+            self.block_window_cache_for_past_median_time.insert(ctx.hash, window);
         }
 
-        self.daa_excluded_store
-            .insert_batch(
-                &mut batch,
-                ctx.hash,
-                Arc::new(ctx.mergeset_non_daa.unwrap()),
-            )
-            .unwrap();
-        self.headers_store
-            .insert_batch(&mut batch, ctx.hash, ctx.header, ctx.block_level)
-            .unwrap();
-        self.depth_store
-            .insert_batch(
-                &mut batch,
-                ctx.hash,
-                ctx.merge_depth_root.unwrap(),
-                ctx.finality_point.unwrap(),
-            )
-            .unwrap();
+        self.daa_excluded_store.insert_batch(&mut batch, ctx.hash, Arc::new(ctx.mergeset_non_daa.unwrap())).unwrap();
+        self.headers_store.insert_batch(&mut batch, ctx.hash, ctx.header, ctx.block_level).unwrap();
+        self.depth_store.insert_batch(&mut batch, ctx.hash, ctx.merge_depth_root.unwrap(), ctx.finality_point.unwrap()).unwrap();
 
         //
         // Reachability and header chain stores
@@ -460,16 +391,9 @@ impl HeaderProcessor {
         // time, and thus serializing this part will do no harm. However this should be benchmarked. The
         // alternative is to create a separate ReachabilityProcessor and to manage things more tightly.
         let mut staging = StagingReachabilityStore::new(self.reachability_store.upgradable_read());
-        let selected_parent = ghostdag_data[0].selected_parent;
-        let mut reachability_mergeset =
-            ghostdag_data[0].unordered_mergeset_without_selected_parent();
-        reachability::add_block(
-            &mut staging,
-            ctx.hash,
-            selected_parent,
-            &mut reachability_mergeset,
-        )
-        .unwrap();
+        let selected_parent = ghostdag_data.selected_parent;
+        let mut reachability_mergeset = ghostdag_data.unordered_mergeset_without_selected_parent();
+        reachability::add_block(&mut staging, ctx.hash, selected_parent, &mut reachability_mergeset).unwrap();
 
         // Non-append only stores need to use write locks.
         // Note we need to keep the lock write guards until the batch is written.
@@ -479,11 +403,8 @@ impl HeaderProcessor {
             && reachability::is_chain_ancestor_of(&staging, pp, ctx.hash).unwrap()
         {
             // Hint reachability about the new tip.
-            // TODO: identify a disqualified hst and make sure to use sink instead
             reachability::hint_virtual_selected_parent(&mut staging, ctx.hash).unwrap();
-            hst_write
-                .set_batch(&mut batch, SortableBlock::new(ctx.hash, header.blue_work))
-                .unwrap();
+            hst_write.set_batch(&mut batch, SortableBlock::new(ctx.hash, header.blue_work)).unwrap();
         }
 
         //
@@ -493,25 +414,15 @@ impl HeaderProcessor {
         let reachability_parents = ctx.known_parents[0].clone();
 
         let mut relations_write = self.relations_stores.write();
-        ctx.known_parents
-            .into_iter()
-            .enumerate()
-            .for_each(|(level, parents_by_level)| {
-                relations_write[level]
-                    .insert_batch(&mut batch, header.hash, parents_by_level)
-                    .unwrap();
-            });
+        ctx.known_parents.into_iter().enumerate().for_each(|(level, parents_by_level)| {
+            relations_write[level].insert_batch(&mut batch, header.hash, parents_by_level).unwrap();
+        });
 
         // Write reachability relations. These relations are only needed during header pruning
         let mut reachability_relations_write = self.reachability_relations_store.write();
-        reachability_relations_write
-            .insert_batch(&mut batch, ctx.hash, reachability_parents)
-            .unwrap();
+        reachability_relations_write.insert_batch(&mut batch, ctx.hash, reachability_parents).unwrap();
 
-        let statuses_write = self
-            .statuses_store
-            .set_batch(&mut batch, ctx.hash, StatusHeaderOnly)
-            .unwrap();
+        let statuses_write = self.statuses_store.set_batch(&mut batch, ctx.hash, StatusHeaderOnly).unwrap();
 
         // Write reachability data. Only at this brief moment the reachability store is locked for reads.
         // We take special care for this since reachability read queries are used throughout the system frequently.
@@ -535,28 +446,16 @@ impl HeaderProcessor {
         // Create a DB batch writer
         let mut batch = WriteBatch::default();
 
-        for (level, datum) in ghostdag_data.iter().enumerate() {
-            // This data might have been already written when applying the pruning proof.
-            self.ghostdag_stores[level]
-                .insert_batch(&mut batch, ctx.hash, datum)
-                .unwrap_or_exists();
-        }
+        // This data might have been already written when applying the pruning proof.
+        self.ghostdag_store.insert_batch(&mut batch, ctx.hash, ghostdag_data).unwrap_or_exists();
 
         let mut relations_write = self.relations_stores.write();
-        ctx.known_parents
-            .into_iter()
-            .enumerate()
-            .for_each(|(level, parents_by_level)| {
-                // This data might have been already written when applying the pruning proof.
-                relations_write[level]
-                    .insert_batch(&mut batch, ctx.hash, parents_by_level)
-                    .unwrap_or_exists();
-            });
+        ctx.known_parents.into_iter().enumerate().for_each(|(level, parents_by_level)| {
+            // This data might have been already written when applying the pruning proof.
+            relations_write[level].insert_batch(&mut batch, ctx.hash, parents_by_level).unwrap_or_exists();
+        });
 
-        let statuses_write = self
-            .statuses_store
-            .set_batch(&mut batch, ctx.hash, StatusHeaderOnly)
-            .unwrap();
+        let statuses_write = self.statuses_store.set_batch(&mut batch, ctx.hash, StatusHeaderOnly).unwrap();
 
         // Flush the batch to the DB
         self.db.write(batch).unwrap();
@@ -570,9 +469,7 @@ impl HeaderProcessor {
         // Init headers selected tip and selected chain stores
         let mut batch = WriteBatch::default();
         let mut hst_write = self.headers_selected_tip_store.write();
-        hst_write
-            .set_batch(&mut batch, SortableBlock::new(self.genesis.hash, 0.into()))
-            .unwrap();
+        hst_write.set_batch(&mut batch, SortableBlock::new(self.genesis.hash, 0.into())).unwrap();
         self.db.write(batch).unwrap();
         drop(hst_write);
 
@@ -588,16 +485,9 @@ impl HeaderProcessor {
             genesis_header.clone(),
             self.max_block_level,
             PruningPointInfo::from_genesis(self.genesis.hash),
-            (0..=self.max_block_level)
-                .map(|_| BlockHashes::new(vec![ORIGIN]))
-                .collect(),
+            (0..=self.max_block_level).map(|_| BlockHashes::new(vec![ORIGIN])).collect(),
         );
-        ctx.ghostdag_data = Some(
-            self.ghostdag_managers
-                .iter()
-                .map(|manager_by_level| Arc::new(manager_by_level.genesis_ghostdag_data()))
-                .collect(),
-        );
+        ctx.ghostdag_data = Some(Arc::new(self.ghostdag_manager.genesis_ghostdag_data()));
         ctx.mergeset_non_daa = Some(Default::default());
         ctx.merge_depth_root = Some(ORIGIN);
         ctx.finality_point = Some(ORIGIN);
@@ -612,15 +502,10 @@ impl HeaderProcessor {
 
         let mut batch = WriteBatch::default();
         let mut relations_write = self.relations_stores.write();
-        (0..=self.max_block_level).for_each(|level| {
-            relations_write[level as usize]
-                .insert_batch(&mut batch, ORIGIN, BlockHashes::new(vec![]))
-                .unwrap()
-        });
+        (0..=self.max_block_level)
+            .for_each(|level| relations_write[level as usize].insert_batch(&mut batch, ORIGIN, BlockHashes::new(vec![])).unwrap());
         let mut hst_write = self.headers_selected_tip_store.write();
-        hst_write
-            .set_batch(&mut batch, SortableBlock::new(ORIGIN, 0.into()))
-            .unwrap();
+        hst_write.set_batch(&mut batch, SortableBlock::new(ORIGIN, 0.into())).unwrap();
         self.db.write(batch).unwrap();
         drop(hst_write);
         drop(relations_write);

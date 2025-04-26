@@ -18,11 +18,13 @@ crate-type = ["cdylib"]
 cfg-if.workspace = true
 js-sys.workspace = true
 karlsen-addresses.workspace = true
+karlsen-bip32.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-consensus-wasm.workspace = true
 karlsen-core.workspace = true
 karlsen-math.workspace = true
 karlsen-pow.workspace = true
+karlsen-txscript.workspace = true
 karlsen-rpc-core.workspace = true
 karlsen-utils.workspace = true
 karlsen-wasm-core.workspace = true
@@ -40,10 +42,12 @@ workflow-wasm.workspace = true
 wasm32-sdk = [
     "karlsen-wallet-core/wasm32-sdk",
     "karlsen-pow/wasm32-sdk",
+    "karlsen-txscript/wasm32-sdk",
 ]
 wasm32-core = [
     "karlsen-wallet-core/wasm32-core",
     "karlsen-pow/wasm32-sdk",
+    "karlsen-txscript/wasm32-sdk",
 ]
 wasm32-rpc = [
     "karlsen-consensus-core/wasm32-sdk",

@@ -10,8 +10,6 @@ use std::cmp::max;
 
 use crate::matrix::Matrix;
 use karlsen_consensus_core::{constants, hashing, header::Header, BlockLevel};
-//use karlsen_consensus_core::errors::block::RuleError;
-//use karlsen_hashes::Pow;
 use karlsen_hashes::{PowB3Hash, PowFishHash};
 use karlsen_math::Uint256;
 
@@ -38,12 +36,7 @@ impl State {
         //let fishhasher = PowFishHash::new();
         let header_version = header.version;
 
-        Self {
-            matrix,
-            target,
-            hasher,
-            /*fishhasher,*/ header_version,
-        }
+        Self { matrix, target, hasher, /*fishhasher,*/ header_version }
     }
 
     fn calculate_pow_khashv1(&self, nonce: u64) -> Uint256 {
@@ -82,14 +75,13 @@ impl State {
     #[must_use]
     /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
-        if self.header_version == constants::BLOCK_VERSION_KHASHV1 {
-            self.calculate_pow_khashv1(nonce)
-        } else if self.header_version == constants::BLOCK_VERSION_KHASHV2 {
-            self.calculate_pow_khashv2plus(nonce)
-        } else {
-            // TODO handle block version error
-            //Err(RuleError::WrongBlockVersion(self.header_version));
-            self.calculate_pow_khashv1(nonce)
+        match self.header_version {
+            constants::BLOCK_VERSION_KHASHV1 => self.calculate_pow_khashv1(nonce),
+            constants::BLOCK_VERSION_KHASHV2 => self.calculate_pow_khashv2plus(nonce),
+            _ => {
+                // Fallback to v1
+                self.calculate_pow_khashv1(nonce)
+            }
         }
     }
 
@@ -103,12 +95,22 @@ impl State {
 }
 
 pub fn calc_block_level(header: &Header, max_block_level: BlockLevel) -> BlockLevel {
+    let (block_level, _) = calc_block_level_check_pow(header, max_block_level);
+    block_level
+}
+
+pub fn calc_block_level_check_pow(header: &Header, max_block_level: BlockLevel) -> (BlockLevel, bool) {
     if header.parents_by_level.is_empty() {
-        return max_block_level; // Genesis has the max block level
+        return (max_block_level, true); // Genesis has the max block level
     }
 
     let state = State::new(header);
-    let (_, pow) = state.check_pow(header.nonce);
+    let (passed, pow) = state.check_pow(header.nonce);
+    let block_level = calc_level_from_pow(pow, max_block_level);
+    (block_level, passed)
+}
+
+pub fn calc_level_from_pow(pow: Uint256, max_block_level: BlockLevel) -> BlockLevel {
     let signed_block_level = max_block_level as i64 - pow.bits() as i64;
     max(signed_block_level, 0) as BlockLevel
 }

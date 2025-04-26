@@ -2,44 +2,31 @@ use super::storage::ConsensusStorage;
 use crate::{
     config::Config,
     model::{
-        services::{
-            reachability::MTReachabilityService, relations::MTRelationsService,
-            statuses::MTStatusesService,
-        },
+        services::{reachability::MTReachabilityService, relations::MTRelationsService, statuses::MTStatusesService},
         stores::{
-            block_window_cache::BlockWindowCacheStore, daa::DbDaaStore, depth::DbDepthStore,
-            ghostdag::DbGhostdagStore, headers::DbHeadersStore,
-            headers_selected_tip::DbHeadersSelectedTipStore,
-            past_pruning_points::DbPastPruningPointsStore, pruning::DbPruningStore,
-            reachability::DbReachabilityStore, relations::DbRelationsStore,
+            block_window_cache::BlockWindowCacheStore, daa::DbDaaStore, depth::DbDepthStore, ghostdag::DbGhostdagStore,
+            headers::DbHeadersStore, headers_selected_tip::DbHeadersSelectedTipStore, past_pruning_points::DbPastPruningPointsStore,
+            pruning::DbPruningStore, reachability::DbReachabilityStore, relations::DbRelationsStore,
             selected_chain::DbSelectedChainStore, statuses::DbStatusesStore, DB,
         },
     },
     processes::{
-        block_depth::BlockDepthManager, coinbase::CoinbaseManager,
-        ghostdag::protocol::GhostdagManager, mass::MassCalculator, parents_builder::ParentsManager,
-        pruning::PruningPointManager, pruning_proof::PruningProofManager, sync::SyncManager,
-        transaction_validator::TransactionValidator, traversal_manager::DagTraversalManager,
-        window::DualWindowManager,
+        block_depth::BlockDepthManager, coinbase::CoinbaseManager, ghostdag::protocol::GhostdagManager,
+        parents_builder::ParentsManager, pruning::PruningPointManager, pruning_proof::PruningProofManager, sync::SyncManager,
+        transaction_validator::TransactionValidator, traversal_manager::DagTraversalManager, window::DualWindowManager,
     },
 };
-
 use itertools::Itertools;
+use karlsen_consensus_core::mass::MassCalculator;
 use karlsen_txscript::caches::TxScriptCacheCounters;
 use std::sync::{atomic::AtomicBool, Arc};
 
-pub type DbGhostdagManager = GhostdagManager<
-    DbGhostdagStore,
-    MTRelationsService<DbRelationsStore>,
-    MTReachabilityService<DbReachabilityStore>,
-    DbHeadersStore,
->;
+pub type DbGhostdagManager =
+    GhostdagManager<DbGhostdagStore, MTRelationsService<DbRelationsStore>, MTReachabilityService<DbReachabilityStore>, DbHeadersStore>;
 
-pub type DbDagTraversalManager =
-    DagTraversalManager<DbGhostdagStore, DbReachabilityStore, MTRelationsService<DbRelationsStore>>;
+pub type DbDagTraversalManager = DagTraversalManager<DbGhostdagStore, DbReachabilityStore, MTRelationsService<DbRelationsStore>>;
 
-pub type DbWindowManager =
-    DualWindowManager<DbGhostdagStore, BlockWindowCacheStore, DbHeadersStore, DbDaaStore>;
+pub type DbWindowManager = DualWindowManager<DbGhostdagStore, BlockWindowCacheStore, DbHeadersStore, DbDaaStore>;
 
 pub type DbSyncManager = SyncManager<
     MTRelationsService<DbRelationsStore>,
@@ -51,17 +38,10 @@ pub type DbSyncManager = SyncManager<
     DbStatusesStore,
 >;
 
-pub type DbPruningPointManager = PruningPointManager<
-    DbGhostdagStore,
-    DbReachabilityStore,
-    DbHeadersStore,
-    DbPastPruningPointsStore,
-    DbHeadersSelectedTipStore,
->;
-pub type DbBlockDepthManager =
-    BlockDepthManager<DbDepthStore, DbReachabilityStore, DbGhostdagStore>;
-pub type DbParentsManager =
-    ParentsManager<DbHeadersStore, DbReachabilityStore, MTRelationsService<DbRelationsStore>>;
+pub type DbPruningPointManager =
+    PruningPointManager<DbGhostdagStore, DbReachabilityStore, DbHeadersStore, DbPastPruningPointsStore, DbHeadersSelectedTipStore>;
+pub type DbBlockDepthManager = BlockDepthManager<DbDepthStore, DbReachabilityStore, DbGhostdagStore>;
+pub type DbParentsManager = ParentsManager<DbHeadersStore, DbReachabilityStore, MTRelationsService<DbRelationsStore>>;
 
 pub struct ConsensusServices {
     // Underlying storage
@@ -73,8 +53,7 @@ pub struct ConsensusServices {
     pub reachability_service: MTReachabilityService<DbReachabilityStore>,
     pub window_manager: DbWindowManager,
     pub dag_traversal_manager: DbDagTraversalManager,
-    pub ghostdag_managers: Arc<Vec<DbGhostdagManager>>,
-    pub ghostdag_primary_manager: DbGhostdagManager,
+    pub ghostdag_manager: DbGhostdagManager,
     pub coinbase_manager: CoinbaseManager,
     pub pruning_point_manager: DbPruningPointManager,
     pub pruning_proof_manager: Arc<PruningProofManager>,
@@ -96,27 +75,26 @@ impl ConsensusServices {
         let params = &config.params;
 
         let statuses_service = MTStatusesService::new(storage.statuses_store.clone());
-        let relations_services = (0..=params.max_block_level)
-            .map(|level| MTRelationsService::new(storage.relations_stores.clone(), level))
-            .collect_vec();
+        let relations_services =
+            (0..=params.max_block_level).map(|level| MTRelationsService::new(storage.relations_stores.clone(), level)).collect_vec();
         let relations_service = relations_services[0].clone();
         let reachability_service = MTReachabilityService::new(storage.reachability_store.clone());
         let dag_traversal_manager = DagTraversalManager::new(
             params.genesis.hash,
-            storage.ghostdag_primary_store.clone(),
+            storage.ghostdag_store.clone(),
             relations_service.clone(),
             reachability_service.clone(),
         );
         let window_manager = DualWindowManager::new(
             &params.genesis,
-            storage.ghostdag_primary_store.clone(),
+            storage.ghostdag_store.clone(),
             storage.headers_store.clone(),
             storage.daa_excluded_store.clone(),
             storage.block_window_cache_for_difficulty.clone(),
             storage.block_window_cache_for_past_median_time.clone(),
             params.max_difficulty_target,
             params.target_time_per_block,
-            params.sampling_activation_daa_score,
+            params.sampling_activation,
             params.legacy_difficulty_window_size,
             params.sampled_difficulty_window_size,
             params.min_difficulty_window_len,
@@ -131,27 +109,16 @@ impl ConsensusServices {
             params.genesis.hash,
             storage.depth_store.clone(),
             reachability_service.clone(),
-            storage.ghostdag_primary_store.clone(),
+            storage.ghostdag_store.clone(),
         );
-        let ghostdag_managers = Arc::new(
-            storage
-                .ghostdag_stores
-                .iter()
-                .cloned()
-                .enumerate()
-                .map(|(level, ghostdag_store)| {
-                    GhostdagManager::new(
-                        params.genesis.hash,
-                        params.ghostdag_k,
-                        ghostdag_store,
-                        relations_services[level].clone(),
-                        storage.headers_store.clone(),
-                        reachability_service.clone(),
-                    )
-                })
-                .collect_vec(),
+        let ghostdag_manager = GhostdagManager::new(
+            params.genesis.hash,
+            params.ghostdag_k,
+            storage.ghostdag_store.clone(),
+            relations_services[0].clone(),
+            storage.headers_store.clone(),
+            reachability_service.clone(),
         );
-        let ghostdag_primary_manager = ghostdag_managers[0].clone();
 
         let coinbase_manager = CoinbaseManager::new(
             params.coinbase_payload_script_public_key_max_len,
@@ -178,7 +145,10 @@ impl ConsensusServices {
             params.coinbase_maturity,
             tx_script_cache_counters,
             mass_calculator.clone(),
-            params.storage_mass_activation_daa_score,
+            params.storage_mass_activation,
+            params.kip10_activation,
+            params.payload_activation,
+            params.runtime_sig_op_counting,
         );
 
         let pruning_point_manager = PruningPointManager::new(
@@ -186,7 +156,7 @@ impl ConsensusServices {
             params.finality_depth,
             params.genesis.hash,
             reachability_service.clone(),
-            storage.ghostdag_primary_store.clone(),
+            storage.ghostdag_store.clone(),
             storage.headers_store.clone(),
             storage.past_pruning_points_store.clone(),
             storage.headers_selected_tip_store.clone(),
@@ -205,7 +175,7 @@ impl ConsensusServices {
             &storage,
             parents_manager.clone(),
             reachability_service.clone(),
-            ghostdag_managers.clone(),
+            ghostdag_manager.clone(),
             dag_traversal_manager.clone(),
             window_manager.clone(),
             params.max_block_level,
@@ -220,7 +190,7 @@ impl ConsensusServices {
             params.mergeset_size_limit as usize,
             reachability_service.clone(),
             dag_traversal_manager.clone(),
-            storage.ghostdag_primary_store.clone(),
+            storage.ghostdag_store.clone(),
             storage.selected_chain_store.clone(),
             storage.headers_selected_tip_store.clone(),
             storage.pruning_point_store.clone(),
@@ -234,8 +204,7 @@ impl ConsensusServices {
             reachability_service,
             window_manager,
             dag_traversal_manager,
-            ghostdag_managers,
-            ghostdag_primary_manager,
+            ghostdag_manager,
             coinbase_manager,
             pruning_point_manager,
             pruning_proof_manager,

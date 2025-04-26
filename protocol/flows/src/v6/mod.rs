@@ -54,23 +54,12 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
             router.clone(),
             router.subscribe(vec![KarlsendMessagePayloadType::RequestRelayBlocks]),
         )),
-        Box::new(ReceivePingsFlow::new(
-            ctx.clone(),
-            router.clone(),
-            router.subscribe(vec![KarlsendMessagePayloadType::Ping]),
-        )),
-        Box::new(SendPingsFlow::new(
-            ctx.clone(),
-            router.clone(),
-            router.subscribe(vec![KarlsendMessagePayloadType::Pong]),
-        )),
+        Box::new(ReceivePingsFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KarlsendMessagePayloadType::Ping]))),
+        Box::new(SendPingsFlow::new(ctx.clone(), router.clone(), router.subscribe(vec![KarlsendMessagePayloadType::Pong]))),
         Box::new(RequestHeadersFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![
-                KarlsendMessagePayloadType::RequestHeaders,
-                KarlsendMessagePayloadType::RequestNextHeaders,
-            ]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestHeaders, KarlsendMessagePayloadType::RequestNextHeaders]),
         )),
         Box::new(RequestPruningPointProofFlow::new(
             ctx.clone(),
@@ -80,9 +69,7 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
         Box::new(RequestIbdChainBlockLocatorFlow::new(
             ctx.clone(),
             router.clone(),
-            router.subscribe(vec![
-                KarlsendMessagePayloadType::RequestIbdChainBlockLocator,
-            ]),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestIbdChainBlockLocator]),
         )),
         Box::new(PruningPointAndItsAnticoneRequestsFlow::new(
             ctx.clone(),
@@ -118,10 +105,7 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
                 RelayTransactionsFlow::invs_channel_size(),
             ),
             router.subscribe_with_capacity(
-                vec![
-                    KarlsendMessagePayloadType::Transaction,
-                    KarlsendMessagePayloadType::TransactionNotFound,
-                ],
+                vec![KarlsendMessagePayloadType::Transaction, KarlsendMessagePayloadType::TransactionNotFound],
                 RelayTransactionsFlow::txs_channel_size(),
             ),
         )),
@@ -147,10 +131,7 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
         )),
     ];
 
-    let invs_route = router.subscribe_with_capacity(
-        vec![KarlsendMessagePayloadType::InvRelayBlock],
-        ctx.block_invs_channel_size(),
-    );
+    let invs_route = router.subscribe_with_capacity(vec![KarlsendMessagePayloadType::InvRelayBlock], ctx.block_invs_channel_size());
     let shared_invs_route = SharedIncomingRoute::new(invs_route);
 
     let num_relay_flows = (ctx.config.bps() as usize / 2).max(1);

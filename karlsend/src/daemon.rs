@@ -6,23 +6,25 @@ use karlsen_consensus_core::{
     errors::config::{ConfigError, ConfigResult},
 };
 use karlsen_consensus_notify::{root::ConsensusNotificationRoot, service::NotifyService};
-use karlsen_core::{core::Core, info, trace};
+use karlsen_core::{core::Core, debug, info, trace};
 use karlsen_core::{karlsend_env::version, task::tick::TickService};
-use karlsen_database::prelude::CachePolicy;
+use karlsen_database::{
+    prelude::{CachePolicy, DbWriter, DirectDbWriter},
+    registry::DatabaseStorePrefixes,
+};
 use karlsen_grpc_server::service::GrpcService;
 use karlsen_notify::{address::tracker::Tracker, subscription::context::SubscriptionContext};
 use karlsen_rpc_service::service::RpcCoreService;
 use karlsen_txscript::caches::TxScriptCacheCounters;
+use karlsen_utils::git;
 use karlsen_utils::networking::ContextualNetAddress;
+use karlsen_utils::sysinfo::SystemInfo;
 use karlsen_utils_tower::counters::TowerConnectionCounters;
 
 use karlsen_addressmanager::AddressManager;
+use karlsen_consensus::{consensus::factory::Factory as ConsensusFactory, pipeline::ProcessingCounters};
 use karlsen_consensus::{
-    consensus::factory::Factory as ConsensusFactory, pipeline::ProcessingCounters,
-};
-use karlsen_consensus::{
-    consensus::factory::MultiConsensusManagementStore, model::stores::headers::DbHeadersStore,
-    pipeline::monitor::ConsensusMonitor,
+    consensus::factory::MultiConsensusManagementStore, model::stores::headers::DbHeadersStore, pipeline::monitor::ConsensusMonitor,
 };
 use karlsen_consensusmanager::ConsensusManager;
 use karlsen_core::task::runtime::AsyncRuntime;
@@ -34,12 +36,10 @@ use karlsen_mining::{
 };
 use karlsen_p2p_flows::{flow_context::FlowContext, service::P2pService};
 
+use itertools::Itertools;
 use karlsen_perf_monitor::{builder::Builder as PerfMonitorBuilder, counters::CountersSnapshot};
 use karlsen_utxoindex::{api::UtxoIndexProxy, UtxoIndex};
-use karlsen_wrpc_server::service::{
-    Options as WrpcServerOptions, WebSocketCounters as WrpcServerCounters, WrpcEncoding,
-    WrpcService,
-};
+use karlsen_wrpc_server::service::{Options as WrpcServerOptions, WebSocketCounters as WrpcServerCounters, WrpcEncoding, WrpcService};
 
 /// Desired soft FD limit that needs to be configured
 /// for the karlsend process.
@@ -99,9 +99,7 @@ pub fn validate_args(args: &Args) -> ConfigResult<()> {
         return Err(ConfigError::RamScaleTooHigh);
     }
     if args.max_tracked_addresses > Tracker::MAX_ADDRESS_UPPER_BOUND {
-        return Err(ConfigError::MaxTrackedAddressesTooHigh(
-            Tracker::MAX_ADDRESS_UPPER_BOUND,
-        ));
+        return Err(ConfigError::MaxTrackedAddressesTooHigh(Tracker::MAX_ADDRESS_UPPER_BOUND));
     }
     Ok(())
 }
@@ -115,11 +113,7 @@ fn get_user_approval_or_exit(message: &str, approve: bool) {
     match std::io::stdin().read_line(&mut input) {
         Ok(_) => {
             let lower = input.to_lowercase();
-            let answer = lower
-                .as_str()
-                .strip_suffix("\r\n")
-                .or(lower.as_str().strip_suffix('\n'))
-                .unwrap_or(lower.as_str());
+            let answer = lower.as_str().strip_suffix("\r\n").or(lower.as_str().strip_suffix('\n')).unwrap_or(lower.as_str());
             if answer == "y" || answer == "yes" {
                 // return
             } else {
@@ -162,21 +156,9 @@ pub fn get_log_dir(args: &Args) -> Option<String> {
     let app_dir = get_app_dir_from_args(args);
 
     // Logs directory is usually under the application directory, unless otherwise specified
-    let log_dir = args
-        .logdir
-        .clone()
-        .unwrap_or_default()
-        .replace('~', get_home_dir().as_path().to_str().unwrap());
-    let log_dir = if log_dir.is_empty() {
-        app_dir.join(network.to_prefixed()).join(DEFAULT_LOG_DIR)
-    } else {
-        PathBuf::from(log_dir)
-    };
-    let log_dir = if args.no_log_files {
-        None
-    } else {
-        log_dir.to_str().map(String::from)
-    };
+    let log_dir = args.logdir.clone().unwrap_or_default().replace('~', get_home_dir().as_path().to_str().unwrap());
+    let log_dir = if log_dir.is_empty() { app_dir.join(network.to_prefixed()).join(DEFAULT_LOG_DIR) } else { PathBuf::from(log_dir) };
+    let log_dir = if args.no_log_files { None } else { log_dir.to_str().map(String::from) };
     log_dir
 }
 
@@ -185,15 +167,19 @@ impl Runtime {
         let log_dir = get_log_dir(args);
 
         // Initialize the logger
-        karlsen_core::log::init_logger(log_dir.as_deref(), &args.log_level);
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "semaphore-trace")] {
+                karlsen_core::log::init_logger(log_dir.as_deref(), &format!("{},{}=debug", args.log_level, karlsen_utils::sync::semaphore_module_path()));
+            } else {
+                karlsen_core::log::init_logger(log_dir.as_deref(), &args.log_level);
+            }
+        };
 
         // Configure the panic behavior
         // As we log the panic, we want to set it up after the logger
         karlsen_core::panic::configure_panic();
 
-        Self {
-            log_dir: log_dir.map(|log_dir| log_dir.to_owned()),
-        }
+        Self { log_dir: log_dir.map(|log_dir| log_dir.to_owned()) }
     }
 }
 
@@ -224,11 +210,7 @@ pub fn create_core(args: Args, fd_total_budget: i32) -> (Arc<Core>, Arc<RpcCoreS
 /// The instance of the [`RpcCoreService`] needs to be released
 /// (dropped) before the `Core` is shut down.
 ///
-pub fn create_core_with_runtime(
-    runtime: &Runtime,
-    args: &Args,
-    fd_total_budget: i32,
-) -> (Arc<Core>, Arc<RpcCoreService>) {
+pub fn create_core_with_runtime(runtime: &Runtime, args: &Args, fd_total_budget: i32) -> (Arc<Core>, Arc<RpcCoreService>) {
     let network = args.network();
     let mut fd_remaining = fd_total_budget;
     let utxo_files_limit = if args.utxoindex {
@@ -257,7 +239,7 @@ pub fn create_core_with_runtime(
     let db_dir = app_dir.join(network.to_prefixed()).join(DEFAULT_DATA_DIR);
 
     // Print package name and version
-    info!("{} v{}", env!("CARGO_PKG_NAME"), version());
+    info!("{} v{}", env!("CARGO_PKG_NAME"), git::with_short_hash(version()));
 
     assert!(!db_dir.to_str().unwrap().is_empty());
     info!("Application directory: {}", app_dir.display());
@@ -305,9 +287,7 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
         // Non-mainnet can be restarted, and when it does we need to reset the DB.
         // This will check if the current Genesis can be found the active consensus
         // DB (if one exists), and if not then ask to reset the DB.
-        let active_consensus_dir_name = MultiConsensusManagementStore::new(meta_db.clone())
-            .active_consensus_dir_name()
-            .unwrap();
+        let active_consensus_dir_name = MultiConsensusManagementStore::new(meta_db.clone()).active_consensus_dir_name().unwrap();
 
         match active_consensus_dir_name {
             Some(dir_name) => {
@@ -317,8 +297,7 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
                     .build()
                     .unwrap();
 
-                let headers_store =
-                    DbHeadersStore::new(consensus_db, CachePolicy::Empty, CachePolicy::Empty);
+                let headers_store = DbHeadersStore::new(consensus_db, CachePolicy::Empty, CachePolicy::Empty);
 
                 if headers_store.has(config.genesis.hash).unwrap() {
                     info!("Genesis is found in active consensus DB. No action needed.");
@@ -338,20 +317,109 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
     // Reset Condition: Need to reset if we're upgrading from karlsend DB version
     // TEMP: upgrade from Alpha version or any version before this one
     if !is_db_reset_needed
-        && (meta_db
-            .get_pinned(b"multi-consensus-metadata-key")
-            .is_ok_and(|r| r.is_some())
-            || MultiConsensusManagementStore::new(meta_db.clone())
-                .should_upgrade()
-                .unwrap())
+        && (meta_db.get_pinned(b"multi-consensus-metadata-key").is_ok_and(|r| r.is_some())
+            || MultiConsensusManagementStore::new(meta_db.clone()).should_upgrade().unwrap())
     {
-        let msg =
-            "Node database is from a different Karlsend *DB* version and needs to be fully deleted, do you confirm the delete? (y/n)";
-        get_user_approval_or_exit(msg, args.yes);
+        let mut mcms = MultiConsensusManagementStore::new(meta_db.clone());
+        let version = mcms.version().unwrap();
 
-        info!("Deleting databases from previous Karlsend version");
+        // TODO: Update this entire section to a more robust implementation that allows applying multiple upgrade strategies.
+        // If I'm at version 3 and latest version is 7, I need to be able to upgrade to that version following the intermediate
+        // steps without having to delete the DB
+        if version == 3 {
+            let active_consensus_dir_name = mcms.active_consensus_dir_name().unwrap();
 
-        is_db_reset_needed = true;
+            match active_consensus_dir_name {
+                Some(current_consensus_db) => {
+                    // Apply soft upgrade logic: delete GD data from higher levels
+                    // and then update DB version to 4
+                    let consensus_db = karlsen_database::prelude::ConnBuilder::default()
+                        .with_db_path(consensus_db_dir.clone().join(current_consensus_db))
+                        .with_files_limit(1)
+                        .build()
+                        .unwrap();
+                    info!("Scanning for deprecated records to cleanup");
+
+                    let mut gd_record_count: u32 = 0;
+                    let mut compact_record_count: u32 = 0;
+
+                    let start_level: u8 = 1;
+                    let start_level_bytes = start_level.to_le_bytes();
+                    let ghostdag_prefix_vec = DatabaseStorePrefixes::Ghostdag.into_iter().chain(start_level_bytes).collect_vec();
+                    let ghostdag_prefix = ghostdag_prefix_vec.as_slice();
+
+                    // This section is used to count the records to be deleted. It's not used for the actual delete.
+                    for result in consensus_db.iterator(rocksdb::IteratorMode::From(ghostdag_prefix, rocksdb::Direction::Forward)) {
+                        let (key, _) = result.unwrap();
+                        if !key.starts_with(&[DatabaseStorePrefixes::Ghostdag.into()]) {
+                            break;
+                        }
+
+                        gd_record_count += 1;
+                    }
+
+                    let compact_prefix_vec = DatabaseStorePrefixes::GhostdagCompact.into_iter().chain(start_level_bytes).collect_vec();
+                    let compact_prefix = compact_prefix_vec.as_slice();
+
+                    for result in consensus_db.iterator(rocksdb::IteratorMode::From(compact_prefix, rocksdb::Direction::Forward)) {
+                        let (key, _) = result.unwrap();
+                        if !key.starts_with(&[DatabaseStorePrefixes::GhostdagCompact.into()]) {
+                            break;
+                        }
+
+                        compact_record_count += 1;
+                    }
+
+                    trace!("Number of Ghostdag records to cleanup: {}", gd_record_count);
+                    trace!("Number of GhostdagCompact records to cleanup: {}", compact_record_count);
+                    info!("Number of deprecated records to cleanup: {}", gd_record_count + compact_record_count);
+
+                    let msg =
+                        "Node database currently at version 3. Upgrade process to version 4 needs to be applied. Continue? (y/n)";
+                    get_user_approval_or_exit(msg, args.yes);
+
+                    // Actual delete only happens after user consents to the upgrade:
+                    let mut writer = DirectDbWriter::new(&consensus_db);
+
+                    let end_level: u8 = config.max_block_level + 1;
+                    let end_level_bytes = end_level.to_le_bytes();
+
+                    let start_ghostdag_prefix_vec = DatabaseStorePrefixes::Ghostdag.into_iter().chain(start_level_bytes).collect_vec();
+                    let end_ghostdag_prefix_vec = DatabaseStorePrefixes::Ghostdag.into_iter().chain(end_level_bytes).collect_vec();
+
+                    let start_compact_prefix_vec =
+                        DatabaseStorePrefixes::GhostdagCompact.into_iter().chain(start_level_bytes).collect_vec();
+                    let end_compact_prefix_vec =
+                        DatabaseStorePrefixes::GhostdagCompact.into_iter().chain(end_level_bytes).collect_vec();
+
+                    // Apply delete of range from level 1 to max (+1) for Ghostdag and GhostdagCompact:
+                    writer.delete_range(start_ghostdag_prefix_vec.clone(), end_ghostdag_prefix_vec.clone()).unwrap();
+                    writer.delete_range(start_compact_prefix_vec.clone(), end_compact_prefix_vec.clone()).unwrap();
+
+                    // Compact the deleted rangeto apply the delete immediately
+                    consensus_db.compact_range(Some(start_ghostdag_prefix_vec.as_slice()), Some(end_ghostdag_prefix_vec.as_slice()));
+                    consensus_db.compact_range(Some(start_compact_prefix_vec.as_slice()), Some(end_compact_prefix_vec.as_slice()));
+
+                    // Also update the version to one higher:
+                    mcms.set_version(version + 1).unwrap();
+                }
+                None => {
+                    let msg =
+                    "Node database is from a different Karlsend *DB* version and needs to be fully deleted, do you confirm the delete? (y/n)";
+                    get_user_approval_or_exit(msg, args.yes);
+
+                    is_db_reset_needed = true;
+                }
+            }
+        } else {
+            let msg =
+                "Node database is from a different Karlsend *DB* version and needs to be fully deleted, do you confirm the delete? (y/n)";
+            get_user_approval_or_exit(msg, args.yes);
+
+            info!("Deleting databases from previous Karlsend version");
+
+            is_db_reset_needed = true;
+        }
     }
 
     // Will be true if any of the other condition above except args.reset_db
@@ -379,44 +447,18 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
             .unwrap();
     }
 
-    if !args.archival
-        && MultiConsensusManagementStore::new(meta_db.clone())
-            .is_archival_node()
-            .unwrap()
-    {
+    if !args.archival && MultiConsensusManagementStore::new(meta_db.clone()).is_archival_node().unwrap() {
         get_user_approval_or_exit("--archival is set to false although the node was previously archival. Proceeding may delete archived data. Do you confirm? (y/n)", args.yes);
     }
 
-    let connect_peers = args
-        .connect_peers
-        .iter()
-        .map(|x| x.normalize(config.default_p2p_port()))
-        .collect::<Vec<_>>();
-    let add_peers = args
-        .add_peers
-        .iter()
-        .map(|x| x.normalize(config.default_p2p_port()))
-        .collect();
-    let p2p_server_addr = args
-        .listen
-        .unwrap_or(ContextualNetAddress::unspecified())
-        .normalize(config.default_p2p_port());
+    let connect_peers = args.connect_peers.iter().map(|x| x.normalize(config.default_p2p_port())).collect::<Vec<_>>();
+    let add_peers = args.add_peers.iter().map(|x| x.normalize(config.default_p2p_port())).collect();
+    let p2p_server_addr = args.listen.unwrap_or(ContextualNetAddress::unspecified()).normalize(config.default_p2p_port());
     // connect_peers means no DNS seeding and no outbound peers
-    let outbound_target = if connect_peers.is_empty() {
-        args.outbound_target
-    } else {
-        0
-    };
-    let dns_seeders = if connect_peers.is_empty() && !args.disable_dns_seeding {
-        config.dns_seeders
-    } else {
-        &[]
-    };
+    let outbound_target = if connect_peers.is_empty() { args.outbound_target } else { 0 };
+    let dns_seeders = if connect_peers.is_empty() && !args.disable_dns_seeding { config.dns_seeders } else { &[] };
 
-    let grpc_server_addr = args
-        .rpclisten
-        .unwrap_or(ContextualNetAddress::unspecified())
-        .normalize(config.default_rpc_port());
+    let grpc_server_addr = args.rpclisten.unwrap_or(ContextualNetAddress::unspecified()).normalize(config.default_rpc_port());
 
     let core = Arc::new(Core::new());
 
@@ -424,16 +466,9 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
 
     let tick_service = Arc::new(TickService::new());
     let (notification_send, notification_recv) = unbounded();
-    let max_tracked_addresses = if args.utxoindex && args.max_tracked_addresses > 0 {
-        Some(args.max_tracked_addresses)
-    } else {
-        None
-    };
+    let max_tracked_addresses = if args.utxoindex && args.max_tracked_addresses > 0 { Some(args.max_tracked_addresses) } else { None };
     let subscription_context = SubscriptionContext::with_options(max_tracked_addresses);
-    let notification_root = Arc::new(ConsensusNotificationRoot::with_context(
-        notification_send,
-        subscription_context.clone(),
-    ));
+    let notification_root = Arc::new(ConsensusNotificationRoot::with_context(notification_send, subscription_context.clone()));
     let processing_counters = Arc::new(ProcessingCounters::default());
     let mining_counters = Arc::new(MiningCounters::default());
     let wrpc_borsh_counters = Arc::new(WrpcServerCounters::default());
@@ -455,43 +490,26 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
         fd_remaining,
     ));
     let consensus_manager = Arc::new(ConsensusManager::new(consensus_factory));
-    let consensus_monitor = Arc::new(ConsensusMonitor::new(
-        processing_counters.clone(),
-        tick_service.clone(),
-    ));
+    let consensus_monitor = Arc::new(ConsensusMonitor::new(processing_counters.clone(), tick_service.clone()));
 
     let perf_monitor_builder = PerfMonitorBuilder::new()
         .with_fetch_interval(Duration::from_secs(args.perf_metrics_interval_sec))
         .with_tick_service(tick_service.clone());
     let perf_monitor = if args.perf_metrics {
         let cb = move |counters: CountersSnapshot| {
-            trace!(
-                "[{}] {}",
-                karlsen_perf_monitor::SERVICE_NAME,
-                counters.to_process_metrics_display()
-            );
-            trace!(
-                "[{}] {}",
-                karlsen_perf_monitor::SERVICE_NAME,
-                counters.to_io_metrics_display()
-            );
+            debug!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_process_metrics_display());
+            debug!("[{}] {}", karlsen_perf_monitor::SERVICE_NAME, counters.to_io_metrics_display());
             #[cfg(feature = "heap")]
-            trace!(
-                "[{}] heap stats: {:?}",
-                karlsen_perf_monitor::SERVICE_NAME,
-                dhat::HeapStats::get()
-            );
+            debug!("[{}] heap stats: {:?}", karlsen_perf_monitor::SERVICE_NAME, dhat::HeapStats::get());
         };
         Arc::new(perf_monitor_builder.with_fetch_cb(cb).build())
     } else {
         Arc::new(perf_monitor_builder.build())
     };
 
-    let notify_service = Arc::new(NotifyService::new(
-        notification_root.clone(),
-        notification_recv,
-        subscription_context.clone(),
-    ));
+    let system_info = SystemInfo::default();
+
+    let notify_service = Arc::new(NotifyService::new(notification_root.clone(), notification_recv, subscription_context.clone()));
     let index_service: Option<Arc<IndexService>> = if args.utxoindex {
         // Use only a single thread for none-consensus databases
         let utxoindex_db = karlsen_database::prelude::ConnBuilder::default()
@@ -499,35 +517,25 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
             .with_files_limit(utxo_files_limit)
             .build()
             .unwrap();
-        let utxoindex =
-            UtxoIndexProxy::new(UtxoIndex::new(consensus_manager.clone(), utxoindex_db).unwrap());
-        let index_service = Arc::new(IndexService::new(
-            &notify_service.notifier(),
-            subscription_context.clone(),
-            Some(utxoindex),
-        ));
+        let utxoindex = UtxoIndexProxy::new(UtxoIndex::new(consensus_manager.clone(), utxoindex_db).unwrap());
+        let index_service = Arc::new(IndexService::new(&notify_service.notifier(), subscription_context.clone(), Some(utxoindex)));
         Some(index_service)
     } else {
         None
     };
 
-    let (address_manager, port_mapping_extender_svc) =
-        AddressManager::new(config.clone(), meta_db, tick_service.clone());
+    let (address_manager, port_mapping_extender_svc) = AddressManager::new(config.clone(), meta_db, tick_service.clone());
 
-    let mining_monitor = Arc::new(MiningMonitor::new(
+    let mining_manager = MiningManagerProxy::new(Arc::new(MiningManager::new_with_extended_config(
+        config.target_time_per_block,
+        false,
+        config.max_block_mass,
+        config.ram_scale,
+        config.block_template_cache_lifetime,
         mining_counters.clone(),
-        tx_script_cache_counters.clone(),
-        tick_service.clone(),
-    ));
-    let mining_manager =
-        MiningManagerProxy::new(Arc::new(MiningManager::new_with_extended_config(
-            config.target_time_per_block,
-            false,
-            config.max_block_mass,
-            config.ram_scale,
-            config.block_template_cache_lifetime,
-            mining_counters,
-        )));
+    )));
+    let mining_monitor =
+        Arc::new(MiningMonitor::new(mining_manager.clone(), mining_counters, tx_script_cache_counters.clone(), tick_service.clone()));
 
     let flow_context = Arc::new(FlowContext::new(
         consensus_manager.clone(),
@@ -565,6 +573,7 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
         perf_monitor.clone(),
         p2p_tower_counters.clone(),
         grpc_tower_counters.clone(),
+        system_info,
     ));
     let grpc_service_broadcasters: usize = 3; // TODO: add a command line argument or derive from other arg/config/host-related fields
     let grpc_service = if !args.disable_grpc {
@@ -601,16 +610,8 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
     let wrpc_service_tasks: usize = 2; // num_cpus::get() / 2;
                                        // Register wRPC servers based on command line arguments
     [
-        (
-            args.rpclisten_borsh.clone(),
-            WrpcEncoding::Borsh,
-            wrpc_borsh_counters,
-        ),
-        (
-            args.rpclisten_json.clone(),
-            WrpcEncoding::SerdeJson,
-            wrpc_json_counters,
-        ),
+        (args.rpclisten_borsh.clone(), WrpcEncoding::Borsh, wrpc_borsh_counters),
+        (args.rpclisten_json.clone(), WrpcEncoding::SerdeJson, wrpc_json_counters),
     ]
     .into_iter()
     .filter_map(|(listen_address, encoding, wrpc_server_counters)| {
@@ -621,9 +622,7 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
                 &encoding,
                 wrpc_server_counters,
                 WrpcServerOptions {
-                    listen_address: listen_address
-                        .to_address(&network.network_type, &encoding)
-                        .to_string(), // TODO: use a normalized ContextualNetAddress instead of a String
+                    listen_address: listen_address.to_address(&network.network_type, &encoding).to_string(), // TODO: use a normalized ContextualNetAddress instead of a String
                     verbose: args.wrpc_verbose,
                     ..WrpcServerOptions::default()
                 },

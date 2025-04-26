@@ -10,6 +10,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+karlsen-addresses.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-core.workspace = true
 karlsen-notify.workspace = true

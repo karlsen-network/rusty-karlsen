@@ -15,7 +15,7 @@ pub use borsh::{BorshDeserialize, BorshSerialize};
 pub use js_sys::Array;
 pub use karlsen_addresses::{Address, Version as AddressVersion};
 pub use karlsen_bip32::{ChildNumber, ExtendedPrivateKey, ExtendedPublicKey, SecretKey};
-pub use karlsen_consensus_core::network::NetworkTypeT;
+pub use karlsen_consensus_core::network::{NetworkId, NetworkTypeT};
 pub use karlsen_utils::hex::*;
 pub use karlsen_wasm_core::types::*;
 pub use serde::{Deserialize, Serialize};

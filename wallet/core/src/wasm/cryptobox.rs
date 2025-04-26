@@ -29,23 +29,22 @@ impl CryptoBoxPrivateKey {
     }
 
     pub fn to_public_key(&self) -> CryptoBoxPublicKey {
-        CryptoBoxPublicKey {
-            public_key: self.secret_key.public_key(),
-        }
+        CryptoBoxPublicKey { public_key: self.secret_key.public_key() }
     }
 }
 
 impl TryCastFromJs for CryptoBoxPrivateKey {
     type Error = Error;
-    fn try_cast_from(value: impl AsRef<JsValue>) -> Result<Cast<Self>> {
-        Self::resolve(&value, || {
+    fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>>
+    where
+        R: AsRef<JsValue> + 'a,
+    {
+        Self::resolve(value, || {
             let secret_key = value.as_ref().try_as_vec_u8()?;
             if secret_key.len() != KEY_SIZE {
                 return Err(Error::InvalidPrivateKeyLength);
             }
-            Ok(Self {
-                secret_key: SecretKey::from_slice(&secret_key)?,
-            })
+            Ok(Self { secret_key: SecretKey::from_slice(&secret_key)? })
         })
     }
 }
@@ -67,15 +66,16 @@ pub struct CryptoBoxPublicKey {
 
 impl TryCastFromJs for CryptoBoxPublicKey {
     type Error = Error;
-    fn try_cast_from(value: impl AsRef<JsValue>) -> Result<Cast<Self>> {
-        Self::resolve(&value, || {
+    fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>>
+    where
+        R: AsRef<JsValue> + 'a,
+    {
+        Self::resolve(value, || {
             let public_key = value.as_ref().try_as_vec_u8()?;
             if public_key.len() != KEY_SIZE {
                 Err(Error::InvalidPublicKeyLength)
             } else {
-                Ok(Self {
-                    public_key: PublicKey::from_slice(&public_key)?,
-                })
+                Ok(Self { public_key: PublicKey::from_slice(&public_key)? })
             }
         })
     }
@@ -106,7 +106,7 @@ impl std::ops::Deref for CryptoBoxPublicKey {
 ///
 /// CryptoBox allows for encrypting and decrypting messages using the `crypto_box` crate.
 ///
-/// https://docs.rs/crypto_box/0.9.1/crypto_box/
+/// <https://docs.rs/crypto_box/0.9.1/crypto_box/>
 ///
 ///  @category Wallet SDK
 ///
@@ -120,15 +120,10 @@ pub struct CryptoBox {
 impl CryptoBox {
     #[wasm_bindgen(constructor)]
     #[allow(non_snake_case)]
-    pub fn ctor(
-        secretKey: CryptoBoxPrivateKeyT,
-        peerPublicKey: CryptoBoxPublicKeyT,
-    ) -> Result<CryptoBox> {
+    pub fn ctor(secretKey: &CryptoBoxPrivateKeyT, peerPublicKey: &CryptoBoxPublicKeyT) -> Result<CryptoBox> {
         let secret_key = CryptoBoxPrivateKey::try_cast_from(secretKey)?;
         let peer_public_key = CryptoBoxPublicKey::try_cast_from(peerPublicKey)?;
-        Ok(Self {
-            inner: Arc::new(NativeCryptoBox::new(&secret_key, &peer_public_key)),
-        })
+        Ok(Self { inner: Arc::new(NativeCryptoBox::new(&secret_key, &peer_public_key)) })
     }
 
     #[wasm_bindgen(getter, js_name = "publicKey")]

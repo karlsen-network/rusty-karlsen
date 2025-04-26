@@ -5,12 +5,7 @@ use crate::imports::*;
 pub struct Details;
 
 impl Details {
-    async fn main(
-        self: Arc<Self>,
-        ctx: &Arc<dyn Context>,
-        _argv: Vec<String>,
-        _cmd: &str,
-    ) -> Result<()> {
+    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, _argv: Vec<String>, _cmd: &str) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
         let account = ctx.select_account().await?.as_derivation_capable()?;
 
@@ -31,6 +26,18 @@ impl Details {
         addresses.iter().for_each(|address| {
             tprintln!(ctx.term(), "{:>4}{}", "", style(address.to_string()).blue());
         });
+
+        if let Some(xpub_keys) = account.xpub_keys() {
+            if account.feature().is_some() {
+                if let Some(feature) = account.feature() {
+                    tprintln!(ctx.term(), "Feature: {}", style(feature).cyan());
+                }
+                tprintln!(ctx.term(), "Extended public keys:");
+                xpub_keys.iter().for_each(|xpub| {
+                    tprintln!(ctx.term(), "{:>4}{}", "", style(ctx.wallet().network_format_xpub(xpub)).dim());
+                });
+            }
+        }
 
         Ok(())
     }

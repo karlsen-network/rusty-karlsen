@@ -5,7 +5,7 @@ use karlsen_consensus_core::{
     tx::{ScriptPublicKey, ScriptVec, Transaction, TransactionOutput},
     BlockHashMap, BlockHashSet,
 };
-use std::{convert::TryInto, mem::size_of};
+use std::convert::TryInto;
 
 use crate::{constants, model::stores::ghostdag::GhostdagData};
 
@@ -14,10 +14,8 @@ const LENGTH_OF_SUBSIDY: usize = size_of::<u64>();
 const LENGTH_OF_SCRIPT_PUB_KEY_VERSION: usize = size_of::<u16>();
 const LENGTH_OF_SCRIPT_PUB_KEY_LENGTH: usize = size_of::<u8>();
 
-const MIN_PAYLOAD_LENGTH: usize = LENGTH_OF_BLUE_SCORE
-    + LENGTH_OF_SUBSIDY
-    + LENGTH_OF_SCRIPT_PUB_KEY_VERSION
-    + LENGTH_OF_SCRIPT_PUB_KEY_LENGTH;
+const MIN_PAYLOAD_LENGTH: usize =
+    LENGTH_OF_BLUE_SCORE + LENGTH_OF_SUBSIDY + LENGTH_OF_SCRIPT_PUB_KEY_VERSION + LENGTH_OF_SCRIPT_PUB_KEY_LENGTH;
 
 // We define a year as 365.25 days and a month as 365.25 / 12 = 30.4375
 // SECONDS_PER_MONTH = 30.4375 * 24 * 60 * 60
@@ -74,8 +72,7 @@ impl CoinbaseManager {
         // Precomputed subsidy by month table for the actual block per second rate
         // Here values are rounded up so that we keep the same number of rewarding months as in the original 1 BPS table.
         // In a 10 BPS network, the induced increase in total rewards is 51 KLS (see tests::calc_high_bps_total_rewards_delta())
-        let subsidy_by_month_table: SubsidyByMonthTable =
-            core::array::from_fn(|i| (SUBSIDY_BY_MONTH_TABLE[i] + bps - 1) / bps);
+        let subsidy_by_month_table: SubsidyByMonthTable = core::array::from_fn(|i| SUBSIDY_BY_MONTH_TABLE[i].div_ceil(bps));
         Self {
             coinbase_payload_script_public_key_max_len,
             max_coinbase_payload_len,
@@ -105,64 +102,36 @@ impl CoinbaseManager {
 
         // Add an output for each mergeset blue block (∩ DAA window), paying to the script reported by the block.
         // Note that combinatorically it is nearly impossible for a blue block to be non-DAA
-        for blue in ghostdag_data
-            .mergeset_blues
-            .iter()
-            .filter(|h| !mergeset_non_daa.contains(h))
-        {
+        for blue in ghostdag_data.mergeset_blues.iter().filter(|h| !mergeset_non_daa.contains(h)) {
             let reward_data = mergeset_rewards.get(blue).unwrap();
             if reward_data.subsidy + reward_data.total_fees > 0 {
-                outputs.push(TransactionOutput::new(
-                    reward_data.subsidy + reward_data.total_fees,
-                    reward_data.script_public_key.clone(),
-                ));
+                outputs
+                    .push(TransactionOutput::new(reward_data.subsidy + reward_data.total_fees, reward_data.script_public_key.clone()));
             }
         }
 
         // Collect all rewards from mergeset reds ∩ DAA window and create a
         // single output rewarding all to the current block (the "merging" block)
         let mut red_reward = 0u64;
-        for red in ghostdag_data
-            .mergeset_reds
-            .iter()
-            .filter(|h| !mergeset_non_daa.contains(h))
-        {
+        for red in ghostdag_data.mergeset_reds.iter().filter(|h| !mergeset_non_daa.contains(h)) {
             let reward_data = mergeset_rewards.get(red).unwrap();
             red_reward += reward_data.subsidy + reward_data.total_fees;
         }
         if red_reward > 0 {
-            outputs.push(TransactionOutput::new(
-                red_reward,
-                miner_data.script_public_key.clone(),
-            ));
+            outputs.push(TransactionOutput::new(red_reward, miner_data.script_public_key.clone()));
         }
 
         // Build the current block's payload
         let subsidy = self.calc_block_subsidy(daa_score);
-        let payload = self.serialize_coinbase_payload(&CoinbaseData {
-            blue_score: ghostdag_data.blue_score,
-            subsidy,
-            miner_data,
-        })?;
+        let payload = self.serialize_coinbase_payload(&CoinbaseData { blue_score: ghostdag_data.blue_score, subsidy, miner_data })?;
 
         Ok(CoinbaseTransactionTemplate {
-            tx: Transaction::new(
-                constants::TX_VERSION,
-                vec![],
-                outputs,
-                0,
-                subnets::SUBNETWORK_ID_COINBASE,
-                0,
-                payload,
-            ),
+            tx: Transaction::new(constants::TX_VERSION, vec![], outputs, 0, subnets::SUBNETWORK_ID_COINBASE, 0, payload),
             has_red_reward: red_reward > 0,
         })
     }
 
-    pub fn serialize_coinbase_payload<T: AsRef<[u8]>>(
-        &self,
-        data: &CoinbaseData<T>,
-    ) -> CoinbaseResult<Vec<u8>> {
+    pub fn serialize_coinbase_payload<T: AsRef<[u8]>>(&self, data: &CoinbaseData<T>) -> CoinbaseResult<Vec<u8>> {
         let script_pub_key_len = data.miner_data.script_public_key.script().len();
         if script_pub_key_len > self.coinbase_payload_script_public_key_max_len as usize {
             return Err(CoinbaseError::PayloadScriptPublicKeyLenAboveMax(
@@ -192,11 +161,7 @@ impl CoinbaseManager {
         Ok(payload)
     }
 
-    pub fn modify_coinbase_payload<T: AsRef<[u8]>>(
-        &self,
-        mut payload: Vec<u8>,
-        miner_data: &MinerData<T>,
-    ) -> CoinbaseResult<Vec<u8>> {
+    pub fn modify_coinbase_payload<T: AsRef<[u8]>>(&self, mut payload: Vec<u8>, miner_data: &MinerData<T>) -> CoinbaseResult<Vec<u8>> {
         let script_pub_key_len = miner_data.script_public_key.script().len();
         if script_pub_key_len > self.coinbase_payload_script_public_key_max_len as usize {
             return Err(CoinbaseError::PayloadScriptPublicKeyLenAboveMax(
@@ -223,40 +188,21 @@ impl CoinbaseManager {
         Ok(payload)
     }
 
-    pub fn deserialize_coinbase_payload<'a>(
-        &self,
-        payload: &'a [u8],
-    ) -> CoinbaseResult<CoinbaseData<&'a [u8]>> {
+    pub fn deserialize_coinbase_payload<'a>(&self, payload: &'a [u8]) -> CoinbaseResult<CoinbaseData<&'a [u8]>> {
         if payload.len() < MIN_PAYLOAD_LENGTH {
-            return Err(CoinbaseError::PayloadLenBelowMin(
-                payload.len(),
-                MIN_PAYLOAD_LENGTH,
-            ));
+            return Err(CoinbaseError::PayloadLenBelowMin(payload.len(), MIN_PAYLOAD_LENGTH));
         }
 
         if payload.len() > self.max_coinbase_payload_len {
-            return Err(CoinbaseError::PayloadLenAboveMax(
-                payload.len(),
-                self.max_coinbase_payload_len,
-            ));
+            return Err(CoinbaseError::PayloadLenAboveMax(payload.len(), self.max_coinbase_payload_len));
         }
 
         let mut parser = PayloadParser::new(payload);
 
         let blue_score = u64::from_le_bytes(parser.take(LENGTH_OF_BLUE_SCORE).try_into().unwrap());
         let subsidy = u64::from_le_bytes(parser.take(LENGTH_OF_SUBSIDY).try_into().unwrap());
-        let script_pub_key_version = u16::from_le_bytes(
-            parser
-                .take(LENGTH_OF_SCRIPT_PUB_KEY_VERSION)
-                .try_into()
-                .unwrap(),
-        );
-        let script_pub_key_len = u8::from_le_bytes(
-            parser
-                .take(LENGTH_OF_SCRIPT_PUB_KEY_LENGTH)
-                .try_into()
-                .unwrap(),
-        );
+        let script_pub_key_version = u16::from_le_bytes(parser.take(LENGTH_OF_SCRIPT_PUB_KEY_VERSION).try_into().unwrap());
+        let script_pub_key_len = u8::from_le_bytes(parser.take(LENGTH_OF_SCRIPT_PUB_KEY_LENGTH).try_into().unwrap());
 
         if script_pub_key_len > self.coinbase_payload_script_public_key_max_len {
             return Err(CoinbaseError::PayloadScriptPublicKeyLenAboveMax(
@@ -272,20 +218,11 @@ impl CoinbaseManager {
             ));
         }
 
-        let script_public_key = ScriptPublicKey::new(
-            script_pub_key_version,
-            ScriptVec::from_slice(parser.take(script_pub_key_len as usize)),
-        );
+        let script_public_key =
+            ScriptPublicKey::new(script_pub_key_version, ScriptVec::from_slice(parser.take(script_pub_key_len as usize)));
         let extra_data = parser.remaining;
 
-        Ok(CoinbaseData {
-            blue_score,
-            subsidy,
-            miner_data: MinerData {
-                script_public_key,
-                extra_data,
-            },
-        })
+        Ok(CoinbaseData { blue_score, subsidy, miner_data: MinerData { script_public_key, extra_data } })
     }
 
     pub fn calc_block_subsidy(&self, daa_score: u64) -> u64 {
@@ -309,11 +246,9 @@ impl CoinbaseManager {
         }
 
         // Note that this calculation implicitly assumes that block per second = 1 (by assuming daa score diff is in second units).
-        let months_since_deflationary_phase_started =
-            (daa_score - self.deflationary_phase_daa_score) / SECONDS_PER_MONTH;
+        let months_since_deflationary_phase_started = (daa_score - self.deflationary_phase_daa_score) / SECONDS_PER_MONTH;
         assert!(months_since_deflationary_phase_started <= usize::MAX as u64);
-        let months_since_deflationary_phase_started: usize =
-            months_since_deflationary_phase_started as usize;
+        let months_since_deflationary_phase_started: usize = months_since_deflationary_phase_started as usize;
         if months_since_deflationary_phase_started >= SUBSIDY_BY_MONTH_TABLE.len() {
             *SUBSIDY_BY_MONTH_TABLE.last().unwrap()
         } else {
@@ -379,79 +314,41 @@ mod tests {
         const SECONDS_PER_MONTH: u64 = 2629800;
 
         let legacy_cbm = create_legacy_manager();
-        let pre_deflationary_rewards = legacy_cbm.pre_deflationary_phase_base_subsidy
-            * legacy_cbm.deflationary_phase_daa_score;
-        let total_rewards: u64 = pre_deflationary_rewards
-            + SUBSIDY_BY_MONTH_TABLE
-                .iter()
-                .map(|x| x * SECONDS_PER_MONTH)
-                .sum::<u64>();
+        let pre_deflationary_rewards = legacy_cbm.pre_deflationary_phase_base_subsidy * legacy_cbm.deflationary_phase_daa_score;
+        let total_rewards: u64 = pre_deflationary_rewards + SUBSIDY_BY_MONTH_TABLE.iter().map(|x| x * SECONDS_PER_MONTH).sum::<u64>();
         let testnet_11_bps = TESTNET11_PARAMS.bps();
         let total_high_bps_rewards_rounded_up: u64 = pre_deflationary_rewards
-            + SUBSIDY_BY_MONTH_TABLE
-                .iter()
-                .map(|x| {
-                    ((x + testnet_11_bps - 1) / testnet_11_bps * testnet_11_bps) * SECONDS_PER_MONTH
-                })
-                .sum::<u64>();
+            + SUBSIDY_BY_MONTH_TABLE.iter().map(|x| (x.div_ceil(testnet_11_bps) * testnet_11_bps) * SECONDS_PER_MONTH).sum::<u64>();
 
         let cbm = create_manager(&TESTNET11_PARAMS);
-        let total_high_bps_rewards: u64 = pre_deflationary_rewards
-            + cbm
-                .subsidy_by_month_table
-                .iter()
-                .map(|x| x * cbm.blocks_per_month)
-                .sum::<u64>();
-        assert_eq!(
-            total_high_bps_rewards_rounded_up, total_high_bps_rewards,
-            "subsidy adjusted to bps must be rounded up"
-        );
+        let total_high_bps_rewards: u64 =
+            pre_deflationary_rewards + cbm.subsidy_by_month_table.iter().map(|x| x * cbm.blocks_per_month).sum::<u64>();
+        assert_eq!(total_high_bps_rewards_rounded_up, total_high_bps_rewards, "subsidy adjusted to bps must be rounded up");
 
         let delta = total_high_bps_rewards as i64 - total_rewards as i64;
 
-        println!(
-            "Total rewards: {} sompi => {} KLS",
-            total_rewards,
-            total_rewards / SOMPI_PER_KARLSEN
-        );
-        println!(
-            "Total high bps rewards: {} sompi => {} KLS",
-            total_high_bps_rewards,
-            total_high_bps_rewards / SOMPI_PER_KARLSEN
-        );
-        println!(
-            "Delta: {} sompi => {} KLS",
-            delta,
-            delta / SOMPI_PER_KARLSEN as i64
-        );
+        println!("Total rewards: {} sompi => {} KLS", total_rewards, total_rewards / SOMPI_PER_KARLSEN);
+        println!("Total high bps rewards: {} sompi => {} KLS", total_high_bps_rewards, total_high_bps_rewards / SOMPI_PER_KARLSEN);
+        println!("Delta: {} sompi => {} KLS", delta, delta / SOMPI_PER_KARLSEN as i64);
     }
 
     #[test]
     fn subsidy_by_month_table_test() {
         let cbm = create_legacy_manager();
-        cbm.subsidy_by_month_table
-            .iter()
-            .enumerate()
-            .for_each(|(i, x)| {
-                assert_eq!(
-                    SUBSIDY_BY_MONTH_TABLE[i], *x,
-                    "for 1 BPS, const table and precomputed values must match"
-                );
-            });
+        cbm.subsidy_by_month_table.iter().enumerate().for_each(|(i, x)| {
+            assert_eq!(SUBSIDY_BY_MONTH_TABLE[i], *x, "for 1 BPS, const table and precomputed values must match");
+        });
 
         for network_id in NetworkId::iter() {
             let cbm = create_manager(&network_id.into());
-            cbm.subsidy_by_month_table
-                .iter()
-                .enumerate()
-                .for_each(|(i, x)| {
-                    assert_eq!(
-                        (SUBSIDY_BY_MONTH_TABLE[i] + cbm.bps() - 1) / cbm.bps(),
-                        *x,
-                        "{}: locally computed and precomputed values must match",
-                        network_id
-                    );
-                });
+            cbm.subsidy_by_month_table.iter().enumerate().for_each(|(i, x)| {
+                assert_eq!(
+                    SUBSIDY_BY_MONTH_TABLE[i].div_ceil(cbm.bps()),
+                    *x,
+                    "{}: locally computed and precomputed values must match",
+                    network_id
+                );
+            });
         }
     }
 
@@ -466,10 +363,8 @@ mod tests {
             let params = &network_id.into();
             let cbm = create_manager(params);
 
-            let pre_deflationary_phase_base_subsidy =
-                PRE_DEFLATIONARY_PHASE_BASE_SUBSIDY / params.bps();
-            let deflationary_phase_initial_subsidy =
-                DEFLATIONARY_PHASE_INITIAL_SUBSIDY / params.bps();
+            let pre_deflationary_phase_base_subsidy = PRE_DEFLATIONARY_PHASE_BASE_SUBSIDY / params.bps();
+            let deflationary_phase_initial_subsidy = DEFLATIONARY_PHASE_INITIAL_SUBSIDY / params.bps();
             let blocks_per_halving = SECONDS_PER_HALVING * params.bps();
 
             struct Test {
@@ -479,11 +374,7 @@ mod tests {
             }
 
             let tests = vec![
-                Test {
-                    name: "first mined block",
-                    daa_score: 1,
-                    expected: pre_deflationary_phase_base_subsidy,
-                },
+                Test { name: "first mined block", daa_score: 1, expected: pre_deflationary_phase_base_subsidy },
                 Test {
                     name: "before deflationary phase",
                     daa_score: params.deflationary_phase_daa_score - 1,
@@ -497,36 +388,27 @@ mod tests {
                 Test {
                     name: "after 1 year",
                     daa_score: params.deflationary_phase_daa_score + blocks_per_halving,
-                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4).trunc() as u64
-                        + params.bps() / 10,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4).trunc() as u64 + params.bps() / 10,
                 },
                 Test {
                     name: "after 2 years",
                     daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 2,
-                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(2)).trunc()
-                        as u64
-                        + params.bps() / 10,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(2)).trunc() as u64 + params.bps() / 10,
                 },
                 Test {
                     name: "after 5 years",
                     daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 5,
-                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(5)).trunc()
-                        as u64
-                        + params.bps() / 10,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(5)).trunc() as u64 + params.bps() / 10,
                 },
                 Test {
                     name: "after 32 years",
                     daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 32,
-                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(32)).trunc()
-                        as u64
-                        + params.bps() / 10,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(32)).trunc() as u64 + params.bps() / 10,
                 },
                 Test {
                     name: "after 64 years",
                     daa_score: params.deflationary_phase_daa_score + blocks_per_halving * 64,
-                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(64)).trunc()
-                        as u64
-                        + params.bps() / 10,
+                    expected: (deflationary_phase_initial_subsidy as f64 / 1.4_f64.powi(64)).trunc() as u64 + params.bps() / 10,
                 },
                 Test {
                     name: "just before subsidy depleted",
@@ -541,21 +423,9 @@ mod tests {
             ];
 
             for t in tests {
-                assert_eq!(
-                    cbm.calc_block_subsidy(t.daa_score),
-                    t.expected,
-                    "{} test '{}' failed",
-                    network_id,
-                    t.name
-                );
+                assert_eq!(cbm.calc_block_subsidy(t.daa_score), t.expected, "{} test '{}' failed", network_id, t.name);
                 if params.bps() == 1 {
-                    assert_eq!(
-                        cbm.legacy_calc_block_subsidy(t.daa_score),
-                        t.expected,
-                        "{} test '{}' failed",
-                        network_id,
-                        t.name
-                    );
+                    assert_eq!(cbm.legacy_calc_block_subsidy(t.daa_score), t.expected, "{} test '{}' failed", network_id, t.name);
                 }
             }
         }
@@ -595,9 +465,8 @@ mod tests {
                 script_public_key: ScriptPublicKey::new(
                     0,
                     scriptvec![
-                        32, 43, 50, 68, 63, 247, 64, 1, 33, 87, 113, 109, 129, 33, 109, 9, 174,
-                        188, 57, 229, 73, 60, 147, 167, 24, 29, 146, 203, 117, 108, 2, 197, 96,
-                        172,
+                        32, 43, 50, 68, 63, 247, 64, 1, 33, 87, 113, 109, 129, 33, 109, 9, 174, 188, 57, 229, 73, 60, 147, 167, 24,
+                        29, 146, 203, 117, 108, 2, 197, 96, 172,
                     ],
                 ),
                 extra_data: &[48u8, 46, 49, 50, 46, 56, 47] as &[u8],
@@ -632,9 +501,7 @@ mod tests {
         };
 
         let mut payload = cbm.serialize_coinbase_payload(&data).unwrap();
-        payload = cbm
-            .modify_coinbase_payload(payload, &data2.miner_data)
-            .unwrap(); // Update the payload with the modified miner data
+        payload = cbm.modify_coinbase_payload(payload, &data2.miner_data).unwrap(); // Update the payload with the modified miner data
         let deserialized_data = cbm.deserialize_coinbase_payload(&payload).unwrap();
 
         assert_eq!(data2, deserialized_data);

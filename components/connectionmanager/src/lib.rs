@@ -7,7 +7,7 @@ use std::{
 };
 
 use duration_string::DurationString;
-use futures_util::future::join_all;
+use futures_util::future::{join_all, try_join_all};
 use itertools::Itertools;
 use karlsen_addressmanager::{AddressManager, NetAddress};
 use karlsen_core::{debug, info, warn};
@@ -45,11 +45,7 @@ struct ConnectionRequest {
 
 impl ConnectionRequest {
     fn new(is_permanent: bool) -> Self {
-        Self {
-            next_attempt: SystemTime::now(),
-            is_permanent,
-            attempts: 0,
-        }
+        Self { next_attempt: SystemTime::now(), is_permanent, attempts: 0 }
     }
 }
 
@@ -100,10 +96,7 @@ impl ConnectionManager {
     async fn handle_event(self: Arc<Self>) {
         debug!("Starting connection loop iteration");
         let peers = self.p2p_adaptor.active_peers();
-        let peer_by_address: HashMap<SocketAddr, Peer> = peers
-            .into_iter()
-            .map(|peer| (peer.net_address(), peer))
-            .collect();
+        let peer_by_address: HashMap<SocketAddr, Peer> = peers.into_iter().map(|peer| (peer.net_address(), peer)).collect();
 
         self.handle_connection_requests(&peer_by_address).await;
         self.handle_outbound_connections(&peer_by_address).await;
@@ -112,10 +105,7 @@ impl ConnectionManager {
 
     pub async fn add_connection_request(&self, address: SocketAddr, is_permanent: bool) {
         // If the request already exists, it resets the attempts count and overrides the `is_permanent` setting.
-        self.connection_requests
-            .lock()
-            .await
-            .insert(address, ConnectionRequest::new(is_permanent));
+        self.connection_requests.lock().await.insert(address, ConnectionRequest::new(is_permanent));
         self.force_next_iteration.send(()).unwrap(); // We force the next iteration of the connection loop.
     }
 
@@ -123,10 +113,7 @@ impl ConnectionManager {
         self.shutdown_signal.trigger.trigger()
     }
 
-    async fn handle_connection_requests(
-        self: &Arc<Self>,
-        peer_by_address: &HashMap<SocketAddr, Peer>,
-    ) {
+    async fn handle_connection_requests(self: &Arc<Self>, peer_by_address: &HashMap<SocketAddr, Peer>) {
         let mut requests = self.connection_requests.lock().await;
         let mut new_requests = HashMap::with_capacity(requests.len());
         for (address, request) in requests.iter() {
@@ -145,14 +132,9 @@ impl ConnectionManager {
                         debug!("Failed connecting to peer request: {}, {}", address, err);
                         if request.is_permanent {
                             const MAX_ACCOUNTABLE_ATTEMPTS: u32 = 4;
-                            let retry_duration = Duration::from_secs(
-                                30u64 * 2u64.pow(min(request.attempts, MAX_ACCOUNTABLE_ATTEMPTS)),
-                            );
-                            debug!(
-                                "Will retry peer request {} in {}",
-                                address,
-                                DurationString::from(retry_duration)
-                            );
+                            let retry_duration =
+                                Duration::from_secs(30u64 * 2u64.pow(min(request.attempts, MAX_ACCOUNTABLE_ATTEMPTS)));
+                            debug!("Will retry peer request {} in {}", address, DurationString::from(retry_duration));
                             new_requests.insert(
                                 address,
                                 ConnectionRequest {
@@ -177,24 +159,15 @@ impl ConnectionManager {
         *requests = new_requests;
     }
 
-    async fn handle_outbound_connections(
-        self: &Arc<Self>,
-        peer_by_address: &HashMap<SocketAddr, Peer>,
-    ) {
-        let active_outbound: HashSet<karlsen_addressmanager::NetAddress> = peer_by_address
-            .values()
-            .filter(|peer| peer.is_outbound())
-            .map(|peer| peer.net_address().into())
-            .collect();
+    async fn handle_outbound_connections(self: &Arc<Self>, peer_by_address: &HashMap<SocketAddr, Peer>) {
+        let active_outbound: HashSet<karlsen_addressmanager::NetAddress> =
+            peer_by_address.values().filter(|peer| peer.is_outbound()).map(|peer| peer.net_address().into()).collect();
         if active_outbound.len() >= self.outbound_target {
             return;
         }
 
         let mut missing_connections = self.outbound_target - active_outbound.len();
-        let mut addr_iter = self
-            .address_manager
-            .lock()
-            .iterate_prioritized_random_addresses(active_outbound);
+        let mut addr_iter = self.address_manager.lock().iterate_prioritized_random_addresses(active_outbound);
 
         let mut progressing = true;
         let mut connecting = true;
@@ -237,9 +210,7 @@ impl ConnectionManager {
             for (res, net_addr) in (join_all(jobs).await).into_iter().zip(addrs_to_connect) {
                 match res {
                     Ok(_) => {
-                        self.address_manager
-                            .lock()
-                            .mark_connection_success(net_addr);
+                        self.address_manager.lock().mark_connection_success(net_addr);
                         missing_connections -= 1;
                         progressing = true;
                     }
@@ -249,81 +220,92 @@ impl ConnectionManager {
                     }
                     Err(err) => {
                         debug!("Failed connecting to {:?}, err: {}", net_addr, err);
-                        self.address_manager
-                            .lock()
-                            .mark_connection_failure(net_addr);
+                        self.address_manager.lock().mark_connection_failure(net_addr);
                     }
                 }
             }
         }
 
         if missing_connections > 0 && !self.dns_seeders.is_empty() {
-            let cmgr = self.clone();
-            // DNS lookup is a blocking i/o operation, so we spawn it as a blocking task
-            let _ = tokio::task::spawn_blocking(move || {
-                cmgr.dns_seed(missing_connections); //TODO: Consider putting a number higher than `missing_connections`.
-            })
-            .await;
+            if missing_connections > self.outbound_target / 2 {
+                // If we are missing more than half of our target, query all in parallel.
+                // This will always be the case on new node start-up and is the most resilient strategy in such a case.
+                self.dns_seed_many(self.dns_seeders.len()).await;
+            } else {
+                // Try to obtain at least twice the number of missing connections
+                self.dns_seed_with_address_target(2 * missing_connections).await;
+            }
         }
     }
 
-    async fn handle_inbound_connections(
-        self: &Arc<Self>,
-        peer_by_address: &HashMap<SocketAddr, Peer>,
-    ) {
-        let active_inbound = peer_by_address
-            .values()
-            .filter(|peer| !peer.is_outbound())
-            .collect_vec();
+    async fn handle_inbound_connections(self: &Arc<Self>, peer_by_address: &HashMap<SocketAddr, Peer>) {
+        let active_inbound = peer_by_address.values().filter(|peer| !peer.is_outbound()).collect_vec();
         let active_inbound_len = active_inbound.len();
         if self.inbound_limit >= active_inbound_len {
             return;
         }
 
         let mut futures = Vec::with_capacity(active_inbound_len - self.inbound_limit);
-        for peer in active_inbound
-            .choose_multiple(&mut thread_rng(), active_inbound_len - self.inbound_limit)
-        {
-            debug!(
-                "Disconnecting from {} because we're above the inbound limit",
-                peer.net_address()
-            );
+        for peer in active_inbound.choose_multiple(&mut thread_rng(), active_inbound_len - self.inbound_limit) {
+            debug!("Disconnecting from {} because we're above the inbound limit", peer.net_address());
             futures.push(self.p2p_adaptor.terminate(peer.key()));
         }
         join_all(futures).await;
     }
 
-    fn dns_seed(self: &Arc<Self>, mut min_addresses_to_fetch: usize) {
-        let shuffled_dns_seeders = self
-            .dns_seeders
-            .choose_multiple(&mut thread_rng(), self.dns_seeders.len());
+    /// Queries DNS seeders in random order, one after the other, until obtaining `min_addresses_to_fetch` addresses
+    async fn dns_seed_with_address_target(self: &Arc<Self>, min_addresses_to_fetch: usize) {
+        let cmgr = self.clone();
+        tokio::task::spawn_blocking(move || cmgr.dns_seed_with_address_target_blocking(min_addresses_to_fetch)).await.unwrap();
+    }
+
+    fn dns_seed_with_address_target_blocking(self: &Arc<Self>, mut min_addresses_to_fetch: usize) {
+        let shuffled_dns_seeders = self.dns_seeders.choose_multiple(&mut thread_rng(), self.dns_seeders.len());
         for &seeder in shuffled_dns_seeders {
-            info!("Querying DNS seeder {}", seeder);
-            // Since the DNS lookup protocol doesn't come with a port, we must assume that the default port is used.
-            let addrs = match (seeder, self.default_port).to_socket_addrs() {
-                Ok(addrs) => addrs,
-                Err(e) => {
-                    warn!("Error connecting to DNS seeder {}: {}", seeder, e);
-                    continue;
-                }
-            };
-
-            let addrs_len = addrs.len();
-            info!(
-                "Retrieved {} addresses from DNS seeder {}",
-                addrs_len, seeder
-            );
-            let mut amgr_lock = self.address_manager.lock();
-            for addr in addrs {
-                amgr_lock.add_address(NetAddress::new(addr.ip().into(), addr.port()));
-            }
-
+            // Query seeders sequentially until reaching the desired number of addresses
+            let addrs_len = self.dns_seed_single(seeder);
             if addrs_len >= min_addresses_to_fetch {
                 break;
             } else {
                 min_addresses_to_fetch -= addrs_len;
             }
         }
+    }
+
+    /// Queries `num_seeders_to_query` random DNS seeders in parallel
+    async fn dns_seed_many(self: &Arc<Self>, num_seeders_to_query: usize) -> usize {
+        info!("Querying {} DNS seeders", num_seeders_to_query);
+        let shuffled_dns_seeders = self.dns_seeders.choose_multiple(&mut thread_rng(), num_seeders_to_query);
+        let jobs = shuffled_dns_seeders.map(|seeder| {
+            let cmgr = self.clone();
+            tokio::task::spawn_blocking(move || cmgr.dns_seed_single(seeder))
+        });
+        try_join_all(jobs).await.unwrap().into_iter().sum()
+    }
+
+    /// Query a single DNS seeder and add the obtained addresses to the address manager.
+    ///
+    /// DNS lookup is a blocking i/o operation so this function is assumed to be called
+    /// from a blocking execution context.
+    fn dns_seed_single(self: &Arc<Self>, seeder: &str) -> usize {
+        info!("Querying DNS seeder {}", seeder);
+        // Since the DNS lookup protocol doesn't come with a port, we must assume that the default port is used.
+        let addrs = match (seeder, self.default_port).to_socket_addrs() {
+            Ok(addrs) => addrs,
+            Err(e) => {
+                warn!("Error connecting to DNS seeder {}: {}", seeder, e);
+                return 0;
+            }
+        };
+
+        let addrs_len = addrs.len();
+        info!("Retrieved {} addresses from DNS seeder {}", addrs_len, seeder);
+        let mut amgr_lock = self.address_manager.lock();
+        for addr in addrs {
+            amgr_lock.add_address(NetAddress::new(addr.ip().into(), addr.port()));
+        }
+
+        addrs_len
     }
 
     /// Bans the given IP and disconnects from all the peers with that IP.
@@ -343,8 +325,7 @@ impl ConnectionManager {
 
     /// Returns whether the given address is banned.
     pub async fn is_banned(&self, address: &SocketAddr) -> bool {
-        !self.is_permanent(address).await
-            && self.address_manager.lock().is_banned(address.ip().into())
+        !self.is_permanent(address).await && self.address_manager.lock().is_banned(address.ip().into())
     }
 
     /// Returns whether the given address is a permanent request.
@@ -354,10 +335,6 @@ impl ConnectionManager {
 
     /// Returns whether the given IP has some permanent request.
     pub async fn ip_has_permanent_connection(&self, ip: IpAddr) -> bool {
-        self.connection_requests
-            .lock()
-            .await
-            .iter()
-            .any(|(address, request)| request.is_permanent && address.ip() == ip)
+        self.connection_requests.lock().await.iter().any(|(address, request)| request.is_permanent && address.ip() == ip)
     }
 }

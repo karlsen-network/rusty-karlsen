@@ -5,9 +5,7 @@
 //!
 
 use crate::imports::*;
-use crate::storage::{
-    Hint, PrvKeyDataInfo, StorageDescriptor, TransactionRecord, WalletDescriptor,
-};
+use crate::storage::{Hint, PrvKeyDataInfo, StorageDescriptor, TransactionRecord, WalletDescriptor};
 use crate::utxo::context::UtxoContextId;
 use transaction::TransactionRecordNotification;
 
@@ -241,14 +239,18 @@ impl Events {
             | Events::Reorg { record }
             | Events::Stasis { record }
             | Events::Maturity { record }
-            | Events::Discovery { record } => {
-                TransactionRecordNotification::new(self.kind(), record.clone()).into()
-            }
+            | Events::Discovery { record } => TransactionRecordNotification::new(self.kind(), record.clone()).into(),
             _ => serde_wasm_bindgen::to_value(self).unwrap(),
         }
     }
 }
 
+///
+/// Event kind representing [`Events`] variant.
+/// Used primarily by WASM bindings to identify event types
+/// by their string representation. Can be obtained from the
+/// event via [`Events::kind()`].
+///
 #[derive(Clone, Copy, Debug, Serialize, Eq, PartialEq, Hash)]
 #[serde(rename_all = "kebab-case")]
 pub enum EventKind {
@@ -288,7 +290,7 @@ pub enum EventKind {
 impl From<&Events> for EventKind {
     fn from(event: &Events) -> Self {
         match event {
-            Events::WalletPing { .. } => EventKind::WalletStart,
+            Events::WalletPing => EventKind::WalletStart,
 
             Events::Connect { .. } => EventKind::Connect,
             Events::Disconnect { .. } => EventKind::Disconnect,
@@ -366,9 +368,7 @@ impl FromStr for EventKind {
 impl TryFrom<JsValue> for EventKind {
     type Error = Error;
     fn try_from(js_value: JsValue) -> Result<Self> {
-        let s = js_value
-            .as_string()
-            .ok_or_else(|| Error::custom("Invalid event kind"))?;
+        let s = js_value.as_string().ok_or_else(|| Error::custom("Invalid event kind"))?;
         EventKind::from_str(&s)
     }
 }

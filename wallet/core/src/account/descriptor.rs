@@ -11,12 +11,18 @@ use karlsen_wallet_macros::declare_typescript_wasm_interface as declare;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+///
+/// Structure that represents a wallet account. This structure contains
+/// properties that are common to all wallet accounts as well as
+/// account-specific properties stored in a BTreeMap by each account.
+///
 /// @category Wallet API
 #[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct AccountDescriptor {
     pub kind: AccountKind,
     pub account_id: AccountId,
     pub account_name: Option<String>,
+    pub balance: Option<Balance>,
     pub prv_key_data_ids: AssocPrvKeyDataIds,
     pub receive_address: Option<Address>,
     pub change_address: Option<Address>,
@@ -29,6 +35,7 @@ impl AccountDescriptor {
         kind: AccountKind,
         account_id: AccountId,
         account_name: Option<String>,
+        balance: Option<Balance>,
         prv_key_data_ids: AssocPrvKeyDataIds,
         receive_address: Option<Address>,
         change_address: Option<Address>,
@@ -37,6 +44,7 @@ impl AccountDescriptor {
             kind,
             account_id,
             account_name,
+            balance,
             prv_key_data_ids,
             receive_address,
             change_address,
@@ -44,29 +52,13 @@ impl AccountDescriptor {
         }
     }
 
-    pub fn with_property(
-        mut self,
-        property: AccountDescriptorProperty,
-        value: AccountDescriptorValue,
-    ) -> Self {
+    pub fn with_property(mut self, property: AccountDescriptorProperty, value: AccountDescriptorValue) -> Self {
         self.properties.insert(property, value);
         self
     }
 }
 
-#[derive(
-    Clone,
-    Debug,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    Hash,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-)]
+#[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum AccountDescriptorProperty {
     AccountIndex,
@@ -135,11 +127,12 @@ impl std::fmt::Display for AccountDescriptorValue {
             AccountDescriptorValue::Bool(value) => write!(f, "{}", value),
             AccountDescriptorValue::AddressDerivationMeta(value) => write!(f, "{}", value),
             AccountDescriptorValue::XPubKeys(value) => {
-                let mut s = String::new();
+                let mut s = vec![];
                 for xpub in value.iter() {
-                    s.push_str(&format!("{}\n", xpub));
+                    //s.push(xpub.to_string(None));
+                    s.push(format!("{}", xpub));
                 }
-                write!(f, "{}", s)
+                write!(f, "{}", s.join("\n"))
             }
             AccountDescriptorValue::Json(value) => write!(f, "{}", value),
         }
@@ -249,6 +242,7 @@ declare! {
         receiveAddress? : Address,
         changeAddress? : Address,
         prvKeyDataIds : HexString[],
+        // balance? : Balance,
         [key: string]: any
     }
     "#,
@@ -265,8 +259,7 @@ impl TryFrom<AccountDescriptor> for IAccountDescriptor {
         object.set("receiveAddress", &descriptor.receive_address.into())?;
         object.set("changeAddress", &descriptor.change_address.into())?;
 
-        let prv_key_data_ids =
-            js_sys::Array::from_iter(descriptor.prv_key_data_ids.into_iter().map(JsValue::from));
+        let prv_key_data_ids = js_sys::Array::from_iter(descriptor.prv_key_data_ids.into_iter().map(JsValue::from));
         object.set("prvKeyDataIds", &prv_key_data_ids)?;
 
         // let properties = Object::new();

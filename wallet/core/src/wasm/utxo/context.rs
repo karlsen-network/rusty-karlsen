@@ -122,24 +122,14 @@ impl UtxoContext {
 
     /// Performs a scan of the given addresses and registers them in the context for event notifications.
     #[wasm_bindgen(js_name = "trackAddresses")]
-    pub async fn track_addresses(
-        &self,
-        addresses: AddressOrStringArrayT,
-        optional_current_daa_score: Option<BigInt>,
-    ) -> Result<()> {
+    pub async fn track_addresses(&self, addresses: AddressOrStringArrayT, optional_current_daa_score: Option<BigInt>) -> Result<()> {
         let current_daa_score = if let Some(big_int) = optional_current_daa_score {
-            Some(
-                big_int
-                    .try_into()
-                    .map_err(|v| Error::custom(format!("Unable to convert BigInt value {v:?}")))?,
-            )
+            Some(big_int.try_into().map_err(|v| Error::custom(format!("Unable to convert BigInt value {v:?}")))?)
         } else {
             None
         };
         let addresses: Vec<Address> = addresses.try_into()?;
-        self.inner()
-            .scan_and_register_addresses(addresses, current_daa_score)
-            .await?;
+        self.inner().scan_and_register_addresses(addresses, current_daa_score).await?;
         Ok(())
     }
 
@@ -157,14 +147,10 @@ impl UtxoContext {
         self.inner().clear().await
     }
 
+    #[wasm_bindgen(getter, js_name = "isActive")]
     pub fn active(&self) -> bool {
         let processor = self.inner().processor();
-        processor
-            .try_rpc_ctl()
-            .map(|ctl| ctl.is_connected())
-            .unwrap_or(false)
-            && processor.is_connected()
-            && processor.is_running()
+        processor.try_rpc_ctl().map(|ctl| ctl.is_connected()).unwrap_or(false) && processor.is_connected() && processor.is_running()
     }
 
     // Returns all mature UTXO entries that are currently managed by the UtxoContext and are available for spending.
@@ -266,7 +252,10 @@ impl From<UtxoContext> for native::UtxoContext {
 
 impl TryCastFromJs for UtxoContext {
     type Error = Error;
-    fn try_cast_from(value: impl AsRef<JsValue>) -> Result<Cast<Self>, Self::Error> {
+    fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>, Self::Error>
+    where
+        R: AsRef<JsValue> + 'a,
+    {
         Ok(Self::try_ref_from_js_value_as_cast(value)?)
     }
 }
@@ -280,22 +269,17 @@ impl TryFrom<IUtxoContextArgs> for UtxoContextCreateArgs {
     type Error = Error;
     fn try_from(value: IUtxoContextArgs) -> std::result::Result<Self, Self::Error> {
         if let Some(object) = Object::try_from(&value) {
-            let processor = object.get_cast::<UtxoProcessor>("processor")?;
+            let processor = object.cast_into::<UtxoProcessor>("processor")?;
 
-            let binding = if let Some(id) = object.try_get_cast::<Hash>("id")? {
-                UtxoContextBinding::Id(UtxoContextId::new(id.into_owned()))
+            let binding = if let Some(id) = object.try_cast_into::<Hash>("id")? {
+                UtxoContextBinding::Id(UtxoContextId::new(id))
             } else {
                 UtxoContextBinding::default()
             };
 
-            Ok(UtxoContextCreateArgs {
-                binding,
-                processor: processor.into_owned(),
-            })
+            Ok(UtxoContextCreateArgs { binding, processor })
         } else {
-            Err(Error::custom(
-                "UtxoProcessor: supplied value must be an object",
-            ))
+            Err(Error::custom("UtxoProcessor: supplied value must be an object"))
         }
     }
 }

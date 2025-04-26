@@ -21,10 +21,7 @@ impl AccountMetadata {
     const STORAGE_VERSION: u32 = 0;
 
     pub fn new(id: AccountId, indexes: AddressDerivationMeta) -> Self {
-        Self {
-            id,
-            indexes: Some(indexes),
-        }
+        Self { id, indexes: Some(indexes) }
     }
 
     pub fn address_derivation_indexes(&self) -> Option<AddressDerivationMeta> {
@@ -50,13 +47,12 @@ impl BorshSerialize for AccountMetadata {
 }
 
 impl BorshDeserialize for AccountMetadata {
-    fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
-        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?
-            .try_magic(Self::STORAGE_MAGIC)?
-            .try_version(Self::STORAGE_VERSION)?;
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> IoResult<Self> {
+        let StorageHeader { version: _, .. } =
+            StorageHeader::deserialize_reader(reader)?.try_magic(Self::STORAGE_MAGIC)?.try_version(Self::STORAGE_VERSION)?;
 
-        let id = BorshDeserialize::deserialize(buf)?;
-        let indexes = BorshDeserialize::deserialize(buf)?;
+        let id = BorshDeserialize::deserialize_reader(reader)?;
+        let indexes = BorshDeserialize::deserialize_reader(reader)?;
 
         Ok(Self { id, indexes })
     }

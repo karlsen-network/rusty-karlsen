@@ -11,10 +11,7 @@ use karlsen_index_core::indexed_utxos::BalanceByScriptPublicKey;
 use crate::{
     model::UtxoSetByScriptPublicKey,
     stores::{
-        indexed_utxos::{
-            DbUtxoSetByScriptPublicKeyStore, UtxoSetByScriptPublicKeyStore,
-            UtxoSetByScriptPublicKeyStoreReader,
-        },
+        indexed_utxos::{DbUtxoSetByScriptPublicKeyStore, UtxoSetByScriptPublicKeyStore, UtxoSetByScriptPublicKeyStoreReader},
         supply::{CirculatingSupplyStore, CirculatingSupplyStoreReader, DbCirculatingSupplyStore},
         tips::{DbUtxoIndexTipsStore, UtxoIndexTipsStore, UtxoIndexTipsStoreReader},
     },
@@ -33,27 +30,16 @@ impl Store {
         Self {
             utxoindex_tips_store: DbUtxoIndexTipsStore::new(db.clone()),
             circulating_supply_store: DbCirculatingSupplyStore::new(db.clone()),
-            utxos_by_script_public_key_store: DbUtxoSetByScriptPublicKeyStore::new(
-                db,
-                CachePolicy::Empty,
-            ),
+            utxos_by_script_public_key_store: DbUtxoSetByScriptPublicKeyStore::new(db, CachePolicy::Empty),
         }
     }
 
-    pub fn get_utxos_by_script_public_key(
-        &self,
-        script_public_keys: ScriptPublicKeys,
-    ) -> StoreResult<UtxoSetByScriptPublicKey> {
-        self.utxos_by_script_public_key_store
-            .get_utxos_from_script_public_keys(script_public_keys)
+    pub fn get_utxos_by_script_public_key(&self, script_public_keys: ScriptPublicKeys) -> StoreResult<UtxoSetByScriptPublicKey> {
+        self.utxos_by_script_public_key_store.get_utxos_from_script_public_keys(script_public_keys)
     }
 
-    pub fn get_balance_by_script_public_key(
-        &self,
-        script_public_keys: ScriptPublicKeys,
-    ) -> StoreResult<BalanceByScriptPublicKey> {
-        self.utxos_by_script_public_key_store
-            .get_balance_from_script_public_keys(script_public_keys)
+    pub fn get_balance_by_script_public_key(&self, script_public_keys: ScriptPublicKeys) -> StoreResult<BalanceByScriptPublicKey> {
+        self.utxos_by_script_public_key_store.get_balance_from_script_public_keys(script_public_keys)
     }
 
     // This can have a big memory footprint, so it should be used only for tests.
@@ -67,9 +53,9 @@ impl Store {
         to_remove: &UtxoSetByScriptPublicKey,
         try_reset_on_err: bool,
     ) -> StoreResult<()> {
-        let mut res = self
-            .utxos_by_script_public_key_store
-            .remove_utxo_entries(to_remove);
+        // A UTXO entry can appear both in removed and in added (if the DAA score of the entry changed). Thus
+        // we must first apply removals and then additions (so it will be re-added in the addition phase)
+        let mut res = self.utxos_by_script_public_key_store.remove_utxo_entries(to_remove);
 
         if res.is_err() {
             if try_reset_on_err {
@@ -78,9 +64,8 @@ impl Store {
             return res;
         }
 
-        res = self
-            .utxos_by_script_public_key_store
-            .add_utxo_entries(to_add);
+        // Now apply additions
+        res = self.utxos_by_script_public_key_store.add_utxo_entries(to_add);
 
         if try_reset_on_err && res.is_err() {
             self.delete_all()?;
@@ -93,25 +78,15 @@ impl Store {
         self.circulating_supply_store.get()
     }
 
-    pub fn update_circulating_supply(
-        &mut self,
-        circulating_supply_diff: u64,
-        try_reset_on_err: bool,
-    ) -> StoreResult<u64> {
-        let res = self
-            .circulating_supply_store
-            .update_circulating_supply(circulating_supply_diff);
+    pub fn update_circulating_supply(&mut self, circulating_supply_diff: i64, try_reset_on_err: bool) -> StoreResult<u64> {
+        let res = self.circulating_supply_store.update_circulating_supply(circulating_supply_diff);
         if try_reset_on_err && res.is_err() {
             self.delete_all()?;
         }
         res
     }
 
-    pub fn insert_circulating_supply(
-        &mut self,
-        circulating_supply: u64,
-        try_reset_on_err: bool,
-    ) -> StoreResult<()> {
+    pub fn insert_circulating_supply(&mut self, circulating_supply: u64, try_reset_on_err: bool) -> StoreResult<()> {
         let res = self.circulating_supply_store.insert(circulating_supply);
         if try_reset_on_err && res.is_err() {
             self.delete_all()?;

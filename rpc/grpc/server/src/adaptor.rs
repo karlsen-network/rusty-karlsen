@@ -1,9 +1,7 @@
 use crate::{connection_handler::ConnectionHandler, manager::Manager};
 use karlsen_core::debug;
 use karlsen_notify::{notifier::Notifier, subscription::context::SubscriptionContext};
-use karlsen_rpc_core::{
-    api::rpc::DynRpcService, notify::connection::ChannelConnection, Notification, RpcResult,
-};
+use karlsen_rpc_core::{api::rpc::DynRpcService, notify::connection::ChannelConnection, Notification, RpcResult};
 use karlsen_utils::networking::NetAddress;
 use karlsen_utils_tower::counters::TowerConnectionCounters;
 use std::{ops::Deref, sync::Arc};
@@ -30,12 +28,7 @@ impl Adaptor {
         manager: Manager,
         serve_address: NetAddress,
     ) -> Self {
-        Self {
-            _server_termination: server_termination,
-            connection_handler,
-            manager,
-            serve_address,
-        }
+        Self { _server_termination: server_termination, connection_handler, manager, serve_address }
     }
 
     pub fn server(
@@ -59,12 +52,7 @@ impl Adaptor {
             counters,
         );
         let server_termination = connection_handler.serve(serve_address);
-        let adaptor = Arc::new(Adaptor::new(
-            Some(server_termination),
-            connection_handler,
-            manager,
-            serve_address,
-        ));
+        let adaptor = Arc::new(Adaptor::new(Some(server_termination), connection_handler, manager, serve_address));
         adaptor.manager.clone().start_event_loop(manager_receiver);
         adaptor.start();
         adaptor

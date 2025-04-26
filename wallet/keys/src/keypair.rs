@@ -2,6 +2,8 @@
 //! [`keypair`](mod@self) module encapsulates [`Keypair`] and [`PrivateKey`].
 //! The [`Keypair`] provides access to the secret and public keys.
 //!
+//! # JavaScript Example
+//!
 //! ```javascript
 //!
 //! let keypair = Keypair.random();
@@ -33,16 +35,8 @@ pub struct Keypair {
 
 #[wasm_bindgen]
 impl Keypair {
-    fn new(
-        secret_key: secp256k1::SecretKey,
-        public_key: secp256k1::PublicKey,
-        xonly_public_key: XOnlyPublicKey,
-    ) -> Self {
-        Self {
-            secret_key,
-            public_key,
-            xonly_public_key,
-        }
+    fn new(secret_key: secp256k1::SecretKey, public_key: secp256k1::PublicKey, xonly_public_key: XOnlyPublicKey) -> Self {
+        Self { secret_key, public_key, xonly_public_key }
     }
 
     /// Get the [`PublicKey`] of this [`Keypair`].
@@ -64,7 +58,8 @@ impl Keypair {
     }
 
     /// Get the [`Address`] of this Keypair's [`PublicKey`].
-    /// Receives a [`NetworkType`] to determine the prefix of the address.
+    /// Receives a [`NetworkType`](karlsen_consensus_core::network::NetworkType)
+    /// to determine the prefix of the address.
     /// JavaScript: `let address = keypair.toAddress(NetworkType.MAINNET);`.
     #[wasm_bindgen(js_name = toAddress)]
     // pub fn to_address(&self, network_type: NetworkType) -> Result<Address> {
@@ -75,7 +70,8 @@ impl Keypair {
     }
 
     /// Get `ECDSA` [`Address`] of this Keypair's [`PublicKey`].
-    /// Receives a [`NetworkType`] to determine the prefix of the address.
+    /// Receives a [`NetworkType`](karlsen_consensus_core::network::NetworkType)
+    /// to determine the prefix of the address.
     /// JavaScript: `let address = keypair.toAddress(NetworkType.MAINNET);`.
     #[wasm_bindgen(js_name = toAddressECDSA)]
     pub fn to_address_ecdsa(&self, network: &NetworkTypeT) -> Result<Address> {
@@ -108,7 +104,10 @@ impl Keypair {
 
 impl TryCastFromJs for Keypair {
     type Error = Error;
-    fn try_cast_from(value: impl AsRef<JsValue>) -> Result<Cast<Self>, Self::Error> {
+    fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>, Self::Error>
+    where
+        R: AsRef<JsValue> + 'a,
+    {
         Ok(Self::try_ref_from_js_value_as_cast(value)?)
     }
 }

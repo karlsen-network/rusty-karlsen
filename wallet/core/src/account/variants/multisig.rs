@@ -40,18 +40,8 @@ pub struct Payload {
 }
 
 impl Payload {
-    pub fn new(
-        xpub_keys: ExtendedPublicKeys,
-        cosigner_index: Option<u8>,
-        minimum_signatures: u16,
-        ecdsa: bool,
-    ) -> Self {
-        Self {
-            xpub_keys,
-            cosigner_index,
-            minimum_signatures,
-            ecdsa,
-        }
+    pub fn new(xpub_keys: ExtendedPublicKeys, cosigner_index: Option<u8>, minimum_signatures: u16, ecdsa: bool) -> Self {
+        Self { xpub_keys, cosigner_index, minimum_signatures, ecdsa }
     }
 
     pub fn try_load(storage: &AccountStorage) -> Result<Self> {
@@ -80,22 +70,16 @@ impl BorshSerialize for Payload {
 }
 
 impl BorshDeserialize for Payload {
-    fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
-        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?
-            .try_magic(Self::STORAGE_MAGIC)?
-            .try_version(Self::STORAGE_VERSION)?;
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> IoResult<Self> {
+        let StorageHeader { version: _, .. } =
+            StorageHeader::deserialize_reader(reader)?.try_magic(Self::STORAGE_MAGIC)?.try_version(Self::STORAGE_VERSION)?;
 
-        let xpub_keys = BorshDeserialize::deserialize(buf)?;
-        let cosigner_index = BorshDeserialize::deserialize(buf)?;
-        let minimum_signatures = BorshDeserialize::deserialize(buf)?;
-        let ecdsa = BorshDeserialize::deserialize(buf)?;
+        let xpub_keys = BorshDeserialize::deserialize_reader(reader)?;
+        let cosigner_index = BorshDeserialize::deserialize_reader(reader)?;
+        let minimum_signatures = BorshDeserialize::deserialize_reader(reader)?;
+        let ecdsa = BorshDeserialize::deserialize_reader(reader)?;
 
-        Ok(Self {
-            xpub_keys,
-            cosigner_index,
-            minimum_signatures,
-            ecdsa,
-        })
+        Ok(Self { xpub_keys, cosigner_index, minimum_signatures, ecdsa })
     }
 }
 
@@ -120,10 +104,7 @@ impl MultiSig {
         ecdsa: bool,
     ) -> Result<Self> {
         let storable = Payload::new(xpub_keys.clone(), cosigner_index, minimum_signatures, ecdsa);
-        let settings = AccountSettings {
-            name,
-            ..Default::default()
-        };
+        let settings = AccountSettings { name, ..Default::default() };
         let (id, storage_key) = make_account_hashes(from_multisig(&prv_key_data_ids, &storable));
         let inner = Arc::new(Inner::new(wallet, id, storage_key, settings));
 
@@ -139,36 +120,16 @@ impl MultiSig {
         )
         .await?;
 
-        Ok(Self {
-            inner,
-            xpub_keys,
-            cosigner_index,
-            minimum_signatures,
-            ecdsa,
-            derivation,
-            prv_key_data_ids,
-        })
+        Ok(Self { inner, xpub_keys, cosigner_index, minimum_signatures, ecdsa, derivation, prv_key_data_ids })
     }
 
-    pub async fn try_load(
-        wallet: &Arc<Wallet>,
-        storage: &AccountStorage,
-        meta: Option<Arc<AccountMetadata>>,
-    ) -> Result<Self> {
+    pub async fn try_load(wallet: &Arc<Wallet>, storage: &AccountStorage, meta: Option<Arc<AccountMetadata>>) -> Result<Self> {
         let storable = Payload::try_load(storage)?;
         let inner = Arc::new(Inner::from_storage(wallet, storage));
 
-        let Payload {
-            xpub_keys,
-            cosigner_index,
-            minimum_signatures,
-            ecdsa,
-            ..
-        } = storable;
+        let Payload { xpub_keys, cosigner_index, minimum_signatures, ecdsa, .. } = storable;
 
-        let address_derivation_indexes = meta
-            .and_then(|meta| meta.address_derivation_indexes())
-            .unwrap_or_default();
+        let address_derivation_indexes = meta.and_then(|meta| meta.address_derivation_indexes()).unwrap_or_default();
 
         let derivation = AddressDerivationManager::new(
             wallet,
@@ -185,15 +146,7 @@ impl MultiSig {
         // TODO @maxim check variants transforms - None->Ok(None), Multiple->Ok(Some()), Single->Err()
         let prv_key_data_ids = storage.prv_key_data_ids.clone().try_into()?;
 
-        Ok(Self {
-            inner,
-            xpub_keys,
-            cosigner_index,
-            minimum_signatures,
-            ecdsa,
-            derivation,
-            prv_key_data_ids,
-        })
+        Ok(Self { inner, xpub_keys, cosigner_index, minimum_signatures, ecdsa, derivation, prv_key_data_ids })
     }
 
     pub fn prv_key_data_ids(&self) -> &Option<Arc<Vec<PrvKeyDataId>>> {
@@ -204,8 +157,8 @@ impl MultiSig {
         self.minimum_signatures
     }
 
-    pub fn xpub_keys(&self) -> &ExtendedPublicKeys {
-        &self.xpub_keys
+    fn watch_only(&self) -> bool {
+        self.prv_key_data_ids.is_none()
     }
 }
 
@@ -219,6 +172,17 @@ impl Account for MultiSig {
         MULTISIG_ACCOUNT_KIND.into()
     }
 
+    fn feature(&self) -> Option<String> {
+        match self.watch_only() {
+            true => Some("multisig-watch".to_string()),
+            false => None,
+        }
+    }
+
+    fn xpub_keys(&self) -> Option<&ExtendedPublicKeys> {
+        Some(&self.xpub_keys)
+    }
+
     fn prv_key_data_id(&self) -> Result<&PrvKeyDataId> {
         Err(Error::AccountKindFeature)
     }
@@ -228,8 +192,7 @@ impl Account for MultiSig {
     }
 
     fn sig_op_count(&self) -> u8 {
-        // TODO @maxim
-        1
+        u8::try_from(self.xpub_keys.len()).unwrap()
     }
 
     fn minimum_signatures(&self) -> u16 {
@@ -246,12 +209,7 @@ impl Account for MultiSig {
 
     fn to_storage(&self) -> Result<AccountStorage> {
         let settings = self.context().settings.clone();
-        let storable = Payload::new(
-            self.xpub_keys.clone(),
-            self.cosigner_index,
-            self.minimum_signatures,
-            self.ecdsa,
-        );
+        let storable = Payload::new(self.xpub_keys.clone(), self.cosigner_index, self.minimum_signatures, self.ecdsa);
         let account_storage = AccountStorage::try_new(
             MULTISIG_ACCOUNT_KIND.into(),
             self.id(),
@@ -265,8 +223,7 @@ impl Account for MultiSig {
     }
 
     fn metadata(&self) -> Result<Option<AccountMetadata>> {
-        let metadata =
-            AccountMetadata::new(self.inner.id, self.derivation.address_derivation_meta());
+        let metadata = AccountMetadata::new(self.inner.id, self.derivation.address_derivation_meta());
         Ok(Some(metadata))
     }
 
@@ -275,19 +232,14 @@ impl Account for MultiSig {
             MULTISIG_ACCOUNT_KIND.into(),
             *self.id(),
             self.name(),
+            self.balance(),
             self.prv_key_data_ids.clone().try_into()?,
             self.receive_address().ok(),
             self.change_address().ok(),
         )
-        .with_property(
-            AccountDescriptorProperty::XpubKeys,
-            self.xpub_keys.clone().into(),
-        )
+        .with_property(AccountDescriptorProperty::XpubKeys, self.xpub_keys.clone().into())
         .with_property(AccountDescriptorProperty::Ecdsa, self.ecdsa.into())
-        .with_property(
-            AccountDescriptorProperty::DerivationMeta,
-            self.derivation.address_derivation_meta().into(),
-        );
+        .with_property(AccountDescriptorProperty::DerivationMeta, self.derivation.address_derivation_meta().into());
 
         Ok(descriptor)
     }
@@ -319,10 +271,7 @@ mod tests {
         let storable_out = guard.validate()?;
 
         assert_eq!(storable_in.cosigner_index, storable_out.cosigner_index);
-        assert_eq!(
-            storable_in.minimum_signatures,
-            storable_out.minimum_signatures
-        );
+        assert_eq!(storable_in.minimum_signatures, storable_out.minimum_signatures);
         assert_eq!(storable_in.ecdsa, storable_out.ecdsa);
         assert_eq!(storable_in.xpub_keys.len(), storable_out.xpub_keys.len());
         for idx in 0..storable_in.xpub_keys.len() {

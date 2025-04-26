@@ -4,7 +4,7 @@
 
 use super::*;
 use crate::imports::*;
-use crate::storage::Binding;
+use crate::storage::{Binding, BindingT};
 use crate::tx::PendingTransactionInner;
 use workflow_core::time::{unixtime_as_millis_u64, unixtime_to_locale_string};
 use workflow_wasm::utils::try_get_js_value_prop;
@@ -289,7 +289,9 @@ export interface ITransactionRecord {
 extern "C" {
     #[wasm_bindgen(extends = Object, typescript_type = "ITransactionRecord")]
     #[derive(Clone, Debug, PartialEq, Eq)]
-    pub type ITransactionRecord;
+    pub type TransactionRecordT;
+    #[wasm_bindgen(extends = Object, typescript_type = "ITransactionData")]
+    pub type TransactionDataT;
 }
 
 #[wasm_bindgen(inspectable)]
@@ -318,11 +320,12 @@ pub struct TransactionRecord {
     #[serde(rename = "unixtimeMsec")]
     #[wasm_bindgen(js_name = unixtimeMsec)]
     pub unixtime_msec: Option<u64>,
+    #[wasm_bindgen(skip)]
     pub value: u64,
     #[wasm_bindgen(skip)]
     pub binding: Binding,
     #[serde(rename = "blockDaaScore")]
-    #[wasm_bindgen(js_name = blockDaaScore)]
+    #[wasm_bindgen(skip)]
     pub block_daa_score: u64,
     #[serde(rename = "network")]
     #[wasm_bindgen(js_name = network)]
@@ -378,9 +381,9 @@ impl TransactionRecord {
         let params = NetworkParams::from(self.network_id);
 
         let maturity = if self.is_coinbase() {
-            params.coinbase_transaction_maturity_period_daa
+            params.coinbase_transaction_maturity_period_daa()
         } else {
-            params.user_transaction_maturity_period_daa
+            params.user_transaction_maturity_period_daa()
         };
 
         if current_daa_score < self.block_daa_score() + maturity {
@@ -400,9 +403,7 @@ impl TransactionRecord {
 
     pub fn is_coinbase(&self) -> bool {
         match &self.transaction_data {
-            TransactionData::Incoming { utxo_entries, .. } => {
-                utxo_entries.iter().any(|entry| entry.is_coinbase)
-            }
+            TransactionData::Incoming { utxo_entries, .. } => utxo_entries.iter().any(|entry| entry.is_coinbase),
             _ => false,
         }
     }
@@ -420,10 +421,7 @@ impl TransactionRecord {
     }
 
     pub fn is_transfer(&self) -> bool {
-        matches!(
-            &self.transaction_data,
-            TransactionData::TransferIncoming { .. } | TransactionData::TransferOutgoing { .. }
-        )
+        matches!(&self.transaction_data, TransactionData::TransferIncoming { .. } | TransactionData::TransferOutgoing { .. })
     }
 
     pub fn transaction_data(&self) -> &TransactionData {
@@ -436,9 +434,9 @@ impl TransactionRecord {
     pub fn maturity_progress(&self, current_daa_score: u64) -> Option<f64> {
         let params = NetworkParams::from(self.network_id);
         let maturity = if self.is_coinbase() {
-            params.coinbase_transaction_maturity_period_daa
+            params.coinbase_transaction_maturity_period_daa()
         } else {
-            params.user_transaction_maturity_period_daa
+            params.user_transaction_maturity_period_daa()
         };
 
         if current_daa_score < self.block_daa_score + maturity {
@@ -450,42 +448,15 @@ impl TransactionRecord {
 
     pub fn aggregate_input_value(&self) -> u64 {
         match &self.transaction_data {
-            TransactionData::Reorg {
-                aggregate_input_value,
-                ..
-            }
-            | TransactionData::Stasis {
-                aggregate_input_value,
-                ..
-            }
-            | TransactionData::Incoming {
-                aggregate_input_value,
-                ..
-            }
-            | TransactionData::External {
-                aggregate_input_value,
-                ..
-            }
-            | TransactionData::Outgoing {
-                aggregate_input_value,
-                ..
-            }
-            | TransactionData::Batch {
-                aggregate_input_value,
-                ..
-            }
-            | TransactionData::TransferIncoming {
-                aggregate_input_value,
-                ..
-            }
-            | TransactionData::TransferOutgoing {
-                aggregate_input_value,
-                ..
-            }
-            | TransactionData::Change {
-                aggregate_input_value,
-                ..
-            } => *aggregate_input_value,
+            TransactionData::Reorg { aggregate_input_value, .. }
+            | TransactionData::Stasis { aggregate_input_value, .. }
+            | TransactionData::Incoming { aggregate_input_value, .. }
+            | TransactionData::External { aggregate_input_value, .. }
+            | TransactionData::Outgoing { aggregate_input_value, .. }
+            | TransactionData::Batch { aggregate_input_value, .. }
+            | TransactionData::TransferIncoming { aggregate_input_value, .. }
+            | TransactionData::TransferOutgoing { aggregate_input_value, .. }
+            | TransactionData::Change { aggregate_input_value, .. } => *aggregate_input_value,
         }
     }
 
@@ -495,27 +466,15 @@ impl TransactionRecord {
 }
 
 impl TransactionRecord {
-    pub fn new_incoming(
-        utxo_context: &UtxoContext,
-        id: TransactionId,
-        utxos: &[UtxoEntryReference],
-    ) -> Self {
+    pub fn new_incoming(utxo_context: &UtxoContext, id: TransactionId, utxos: &[UtxoEntryReference]) -> Self {
         Self::new_incoming_impl(utxo_context, TransactionKind::Incoming, id, utxos)
     }
 
-    pub fn new_reorg(
-        utxo_context: &UtxoContext,
-        id: TransactionId,
-        utxos: &[UtxoEntryReference],
-    ) -> Self {
+    pub fn new_reorg(utxo_context: &UtxoContext, id: TransactionId, utxos: &[UtxoEntryReference]) -> Self {
         Self::new_incoming_impl(utxo_context, TransactionKind::Reorg, id, utxos)
     }
 
-    pub fn new_stasis(
-        utxo_context: &UtxoContext,
-        id: TransactionId,
-        utxos: &[UtxoEntryReference],
-    ) -> Self {
+    pub fn new_stasis(utxo_context: &UtxoContext, id: TransactionId, utxos: &[UtxoEntryReference]) -> Self {
         Self::new_incoming_impl(utxo_context, TransactionKind::Stasis, id, utxos)
     }
 
@@ -533,18 +492,9 @@ impl TransactionRecord {
         let unixtime = unixtime_as_millis_u64();
 
         let transaction_data = match transaction_type {
-            TransactionKind::Incoming => TransactionData::Incoming {
-                utxo_entries,
-                aggregate_input_value,
-            },
-            TransactionKind::Reorg => TransactionData::Reorg {
-                utxo_entries,
-                aggregate_input_value,
-            },
-            TransactionKind::Stasis => TransactionData::Stasis {
-                utxo_entries,
-                aggregate_input_value,
-            },
+            TransactionKind::Incoming => TransactionData::Incoming { utxo_entries, aggregate_input_value },
+            TransactionKind::Reorg => TransactionData::Reorg { utxo_entries, aggregate_input_value },
+            TransactionKind::Stasis => TransactionData::Stasis { utxo_entries, aggregate_input_value },
             kind => {
                 panic!("TransactionRecord::new_incoming() - invalid transaction type: {kind:?}")
             }
@@ -557,10 +507,7 @@ impl TransactionRecord {
             binding,
             transaction_data,
             block_daa_score,
-            network_id: utxo_context
-                .processor()
-                .network_id()
-                .expect("network expected for transaction record generation"),
+            network_id: utxo_context.processor().network_id().expect("network expected for transaction record generation"),
             metadata: None,
             note: None,
         }
@@ -569,20 +516,13 @@ impl TransactionRecord {
     /// Transaction that was not issued by this instance of the wallet
     /// but belongs to this address set. This is an "external" transaction
     /// that occurs during the lifetime of this wallet.
-    pub fn new_external(
-        utxo_context: &UtxoContext,
-        id: TransactionId,
-        utxos: &[UtxoEntryReference],
-    ) -> Self {
+    pub fn new_external(utxo_context: &UtxoContext, id: TransactionId, utxos: &[UtxoEntryReference]) -> Self {
         let binding = Binding::from(utxo_context.binding());
         let block_daa_score = utxos[0].utxo.block_daa_score;
         let utxo_entries = utxos.iter().map(UtxoRecord::from).collect::<Vec<_>>();
         let aggregate_input_value = utxo_entries.iter().map(|utxo| utxo.amount).sum::<u64>();
 
-        let transaction_data = TransactionData::External {
-            utxo_entries,
-            aggregate_input_value,
-        };
+        let transaction_data = TransactionData::External { utxo_entries, aggregate_input_value };
         let unixtime = unixtime_as_millis_u64();
 
         TransactionRecord {
@@ -592,10 +532,7 @@ impl TransactionRecord {
             binding,
             transaction_data,
             block_daa_score,
-            network_id: utxo_context
-                .processor()
-                .network_id()
-                .expect("network expected for transaction record generation"),
+            network_id: utxo_context.processor().network_id().expect("network expected for transaction record generation"),
             metadata: None,
             note: None,
         }
@@ -607,16 +544,10 @@ impl TransactionRecord {
         accepted_daa_score: Option<u64>,
     ) -> Result<Self> {
         let binding = Binding::from(utxo_context.binding());
-        let block_daa_score = utxo_context
-            .processor()
-            .current_daa_score()
-            .ok_or(Error::MissingDaaScore("TransactionRecord::new_outgoing()"))?;
+        let block_daa_score =
+            utxo_context.processor().current_daa_score().ok_or(Error::MissingDaaScore("TransactionRecord::new_outgoing()"))?;
 
-        let utxo_entries = outgoing_tx
-            .utxo_entries()
-            .values()
-            .map(UtxoRecord::from)
-            .collect::<Vec<_>>();
+        let utxo_entries = outgoing_tx.utxo_entries().values().map(UtxoRecord::from).collect::<Vec<_>>();
 
         let unixtime = unixtime_as_millis_u64();
 
@@ -651,31 +582,18 @@ impl TransactionRecord {
             binding,
             transaction_data,
             block_daa_score,
-            network_id: utxo_context
-                .processor()
-                .network_id()
-                .expect("network expected for transaction record generation"),
+            network_id: utxo_context.processor().network_id().expect("network expected for transaction record generation"),
             metadata: None,
             note: None,
         })
     }
 
-    pub fn new_batch(
-        utxo_context: &UtxoContext,
-        outgoing_tx: &OutgoingTransaction,
-        accepted_daa_score: Option<u64>,
-    ) -> Result<Self> {
+    pub fn new_batch(utxo_context: &UtxoContext, outgoing_tx: &OutgoingTransaction, accepted_daa_score: Option<u64>) -> Result<Self> {
         let binding = Binding::from(utxo_context.binding());
-        let block_daa_score = utxo_context
-            .processor()
-            .current_daa_score()
-            .ok_or(Error::MissingDaaScore("TransactionRecord::new_batch()"))?;
+        let block_daa_score =
+            utxo_context.processor().current_daa_score().ok_or(Error::MissingDaaScore("TransactionRecord::new_batch()"))?;
 
-        let utxo_entries = outgoing_tx
-            .utxo_entries()
-            .values()
-            .map(UtxoRecord::from)
-            .collect::<Vec<_>>();
+        let utxo_entries = outgoing_tx.utxo_entries().values().map(UtxoRecord::from).collect::<Vec<_>>();
 
         let unixtime = unixtime_as_millis_u64();
 
@@ -710,10 +628,7 @@ impl TransactionRecord {
             binding,
             transaction_data,
             block_daa_score,
-            network_id: utxo_context
-                .processor()
-                .network_id()
-                .expect("network expected for transaction record generation"),
+            network_id: utxo_context.processor().network_id().expect("network expected for transaction record generation"),
             metadata: None,
             note: None,
         })
@@ -726,13 +641,10 @@ impl TransactionRecord {
         utxos: &[UtxoEntryReference],
     ) -> Result<Self> {
         let binding = Binding::from(utxo_context.binding());
-        let block_daa_score =
-            utxo_context
-                .processor()
-                .current_daa_score()
-                .ok_or(Error::MissingDaaScore(
-                    "TransactionRecord::new_transfer_incoming()",
-                ))?;
+        let block_daa_score = utxo_context
+            .processor()
+            .current_daa_score()
+            .ok_or(Error::MissingDaaScore("TransactionRecord::new_transfer_incoming()"))?;
         let utxo_entries = utxos.iter().map(UtxoRecord::from).collect::<Vec<_>>();
 
         let unixtime = unixtime_as_millis_u64();
@@ -768,10 +680,7 @@ impl TransactionRecord {
             binding,
             transaction_data,
             block_daa_score,
-            network_id: utxo_context
-                .processor()
-                .network_id()
-                .expect("network expected for transaction record generation"),
+            network_id: utxo_context.processor().network_id().expect("network expected for transaction record generation"),
             metadata: None,
             note: None,
         })
@@ -784,13 +693,10 @@ impl TransactionRecord {
         utxos: &[UtxoEntryReference],
     ) -> Result<Self> {
         let binding = Binding::from(utxo_context.binding());
-        let block_daa_score =
-            utxo_context
-                .processor()
-                .current_daa_score()
-                .ok_or(Error::MissingDaaScore(
-                    "TransactionRecord::new_transfer_outgoing()",
-                ))?;
+        let block_daa_score = utxo_context
+            .processor()
+            .current_daa_score()
+            .ok_or(Error::MissingDaaScore("TransactionRecord::new_transfer_outgoing()"))?;
         let utxo_entries = utxos.iter().map(UtxoRecord::from).collect::<Vec<_>>();
 
         let unixtime = unixtime_as_millis_u64();
@@ -826,10 +732,7 @@ impl TransactionRecord {
             binding,
             transaction_data,
             block_daa_score,
-            network_id: utxo_context
-                .processor()
-                .network_id()
-                .expect("network expected for transaction record generation"),
+            network_id: utxo_context.processor().network_id().expect("network expected for transaction record generation"),
             metadata: None,
             note: None,
         })
@@ -842,10 +745,8 @@ impl TransactionRecord {
         utxos: &[UtxoEntryReference],
     ) -> Result<Self> {
         let binding = Binding::from(utxo_context.binding());
-        let block_daa_score = utxo_context
-            .processor()
-            .current_daa_score()
-            .ok_or(Error::MissingDaaScore("TransactionRecord::new_change()"))?;
+        let block_daa_score =
+            utxo_context.processor().current_daa_score().ok_or(Error::MissingDaaScore("TransactionRecord::new_change()"))?;
         let utxo_entries = utxos.iter().map(UtxoRecord::from).collect::<Vec<_>>();
 
         let unixtime = unixtime_as_millis_u64();
@@ -879,10 +780,7 @@ impl TransactionRecord {
             binding,
             transaction_data,
             block_daa_score,
-            network_id: utxo_context
-                .processor()
-                .network_id()
-                .expect("network expected for transaction record generation"),
+            network_id: utxo_context.processor().network_id().expect("network expected for transaction record generation"),
             metadata: None,
             note: None,
         })
@@ -891,18 +789,24 @@ impl TransactionRecord {
 
 #[wasm_bindgen]
 impl TransactionRecord {
+    #[wasm_bindgen(getter, js_name = "value")]
+    pub fn value_as_js_bigint(&self) -> BigInt {
+        self.value.into()
+    }
+
+    #[wasm_bindgen(getter, js_name = "blockDaaScore")]
+    pub fn block_daa_score_as_js_bigint(&self) -> BigInt {
+        self.block_daa_score.into()
+    }
+
     #[wasm_bindgen(getter, js_name = "binding")]
-    pub fn binding_as_js_value(&self) -> JsValue {
-        serde_wasm_bindgen::to_value(&self.binding).unwrap()
+    pub fn binding_as_js_value(&self) -> BindingT {
+        serde_wasm_bindgen::to_value(&self.binding).unwrap().unchecked_into()
     }
 
     #[wasm_bindgen(getter, js_name = "data")]
-    pub fn data_as_js_value(&self) -> JsValue {
-        try_get_js_value_prop(
-            &serde_wasm_bindgen::to_value(&self.transaction_data).unwrap(),
-            "data",
-        )
-        .unwrap()
+    pub fn data_as_js_value(&self) -> TransactionDataT {
+        try_get_js_value_prop(&serde_wasm_bindgen::to_value(&self.transaction_data).unwrap(), "data").unwrap().unchecked_into()
     }
 
     #[wasm_bindgen(getter, js_name = "type")]
@@ -948,32 +852,21 @@ impl BorshSerialize for TransactionRecord {
 }
 
 impl BorshDeserialize for TransactionRecord {
-    fn deserialize(buf: &mut &[u8]) -> IoResult<Self> {
-        let StorageHeader { version: _, .. } = StorageHeader::deserialize(buf)?
-            .try_magic(Self::STORAGE_MAGIC)?
-            .try_version(Self::STORAGE_VERSION)?;
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> IoResult<Self> {
+        let StorageHeader { version: _, .. } =
+            StorageHeader::deserialize_reader(reader)?.try_magic(Self::STORAGE_MAGIC)?.try_version(Self::STORAGE_VERSION)?;
 
-        let id = BorshDeserialize::deserialize(buf)?;
-        let unixtime = BorshDeserialize::deserialize(buf)?;
-        let value = BorshDeserialize::deserialize(buf)?;
-        let binding = BorshDeserialize::deserialize(buf)?;
-        let block_daa_score = BorshDeserialize::deserialize(buf)?;
-        let network_id = BorshDeserialize::deserialize(buf)?;
-        let transaction_data = BorshDeserialize::deserialize(buf)?;
-        let note = BorshDeserialize::deserialize(buf)?;
-        let metadata = BorshDeserialize::deserialize(buf)?;
+        let id = BorshDeserialize::deserialize_reader(reader)?;
+        let unixtime = BorshDeserialize::deserialize_reader(reader)?;
+        let value = BorshDeserialize::deserialize_reader(reader)?;
+        let binding = BorshDeserialize::deserialize_reader(reader)?;
+        let block_daa_score = BorshDeserialize::deserialize_reader(reader)?;
+        let network_id = BorshDeserialize::deserialize_reader(reader)?;
+        let transaction_data = BorshDeserialize::deserialize_reader(reader)?;
+        let note = BorshDeserialize::deserialize_reader(reader)?;
+        let metadata = BorshDeserialize::deserialize_reader(reader)?;
 
-        Ok(Self {
-            id,
-            unixtime_msec: unixtime,
-            value,
-            binding,
-            block_daa_score,
-            network_id,
-            transaction_data,
-            note,
-            metadata,
-        })
+        Ok(Self { id, unixtime_msec: unixtime, value, binding, block_daa_score, network_id, transaction_data, note, metadata })
     }
 }
 
@@ -983,7 +876,7 @@ impl BorshDeserialize for TransactionRecord {
 //     }
 // }
 
-impl From<TransactionRecord> for ITransactionRecord {
+impl From<TransactionRecord> for TransactionRecordT {
     fn from(record: TransactionRecord) -> Self {
         JsValue::from(record).unchecked_into()
     }

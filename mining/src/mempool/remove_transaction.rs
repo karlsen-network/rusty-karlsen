@@ -4,7 +4,7 @@ use crate::mempool::{
     Mempool,
 };
 use karlsen_consensus_core::tx::TransactionId;
-use karlsen_core::{debug, warn};
+use karlsen_core::debug;
 use karlsen_utils::iter::IterExtensions;
 
 impl Mempool {
@@ -16,10 +16,7 @@ impl Mempool {
         extra_info: &str,
     ) -> RuleResult<()> {
         if self.orphan_pool.has(transaction_id) {
-            return self
-                .orphan_pool
-                .remove_orphan(transaction_id, true, reason, extra_info)
-                .map(|_| ());
+            return self.orphan_pool.remove_orphan(transaction_id, true, reason, extra_info).map(|_| ());
         }
 
         if !self.transaction_pool.has(transaction_id) {
@@ -29,10 +26,7 @@ impl Mempool {
         let mut removed_transactions = vec![*transaction_id];
         if remove_redeemers {
             // Add all descendent txs as pending removals
-            removed_transactions.extend(
-                self.transaction_pool
-                    .get_redeemer_ids_in_pool(transaction_id),
-            );
+            removed_transactions.extend(self.transaction_pool.get_redeemer_ids_in_pool(transaction_id));
         }
 
         let mut removed_orphans: Vec<TransactionId> = vec![];
@@ -40,9 +34,7 @@ impl Mempool {
             // Remove the tx from the transaction pool and the UTXO set (handled within the pool)
             let tx = self.transaction_pool.remove_transaction(tx_id)?;
             // Update/remove descendent orphan txs (depending on `remove_redeemers`)
-            let txs = self
-                .orphan_pool
-                .update_orphans_after_transaction_removed(&tx, remove_redeemers)?;
+            let txs = self.orphan_pool.update_orphans_after_transaction_removed(&tx, remove_redeemers)?;
             removed_orphans.extend(txs.into_iter().map(|x| x.id()));
         }
         removed_transactions.extend(removed_orphans);
@@ -51,11 +43,8 @@ impl Mempool {
             TxRemovalReason::Muted => {}
             TxRemovalReason::DoubleSpend => match removed_transactions.len() {
                 0 => {}
-                1 => warn!(
-                    "Removed transaction ({}) {}{}",
-                    reason, removed_transactions[0], extra_info
-                ),
-                n => warn!(
+                1 => debug!("Removed transaction ({}) {}{}", reason, removed_transactions[0], extra_info),
+                n => debug!(
                     "Removed {} transactions ({}): {}{}",
                     n,
                     reason,
@@ -65,10 +54,7 @@ impl Mempool {
             },
             _ => match removed_transactions.len() {
                 0 => {}
-                1 => debug!(
-                    "Removed transaction ({}) {}{}",
-                    reason, removed_transactions[0], extra_info
-                ),
+                1 => debug!("Removed transaction ({}) {}{}", reason, removed_transactions[0], extra_info),
                 n => debug!(
                     "Removed {} transactions ({}): {}{}",
                     n,

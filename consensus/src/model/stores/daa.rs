@@ -28,31 +28,18 @@ pub struct DbDaaStore {
 
 impl DbDaaStore {
     pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
-        Self {
-            db: Arc::clone(&db),
-            access: CachedDbAccess::new(
-                db,
-                cache_policy,
-                DatabaseStorePrefixes::NonDaaMergeset.into(),
-            ),
-        }
+        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::NonDaaMergeset.into()) }
     }
 
     pub fn clone_with_new_cache(&self, cache_policy: CachePolicy) -> Self {
         Self::new(Arc::clone(&self.db), cache_policy)
     }
 
-    pub fn insert_batch(
-        &self,
-        batch: &mut WriteBatch,
-        hash: Hash,
-        mergeset_non_daa: Arc<BlockHashSet>,
-    ) -> Result<(), StoreError> {
+    pub fn insert_batch(&self, batch: &mut WriteBatch, hash: Hash, mergeset_non_daa: Arc<BlockHashSet>) -> Result<(), StoreError> {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access
-            .write(BatchDbWriter::new(batch), hash, mergeset_non_daa)?;
+        self.access.write(BatchDbWriter::new(batch), hash, mergeset_non_daa)?;
         Ok(())
     }
 
@@ -72,8 +59,7 @@ impl DaaStore for DbDaaStore {
         if self.access.has(hash)? {
             return Err(StoreError::HashAlreadyExists(hash));
         }
-        self.access
-            .write(DirectDbWriter::new(&self.db), hash, mergeset_non_daa)?;
+        self.access.write(DirectDbWriter::new(&self.db), hash, mergeset_non_daa)?;
         Ok(())
     }
 

@@ -1,7 +1,5 @@
 use derive_more::Display;
-use karlsen_consensus_core::{
-    acceptance_data::AcceptanceData, block::Block, utxo::utxo_diff::UtxoDiff,
-};
+use karlsen_consensus_core::{acceptance_data::AcceptanceData, block::Block, utxo::utxo_diff::UtxoDiff};
 use karlsen_hashes::Hash;
 use karlsen_notify::{
     events::EventType,
@@ -48,11 +46,7 @@ pub enum Notification {
 }
 
 impl NotificationTrait for Notification {
-    fn apply_overall_subscription(
-        &self,
-        subscription: &OverallSubscription,
-        _context: &SubscriptionContext,
-    ) -> Option<Self> {
+    fn apply_overall_subscription(&self, subscription: &OverallSubscription, _context: &SubscriptionContext) -> Option<Self> {
         match subscription.active() {
             true => Some(self.clone()),
             false => None,
@@ -69,18 +63,12 @@ impl NotificationTrait for Notification {
                 // If the subscription excludes accepted transaction ids and the notification includes some
                 // then we must re-create the object and drop the ids, otherwise we can clone it as is.
                 if let Notification::VirtualChainChanged(ref payload) = self {
-                    if !subscription.include_accepted_transaction_ids()
-                        && !payload.added_chain_blocks_acceptance_data.is_empty()
-                    {
-                        return Some(Notification::VirtualChainChanged(
-                            VirtualChainChangedNotification {
-                                removed_chain_block_hashes: payload
-                                    .removed_chain_block_hashes
-                                    .clone(),
-                                added_chain_block_hashes: payload.added_chain_block_hashes.clone(),
-                                added_chain_blocks_acceptance_data: Arc::new(vec![]),
-                            },
-                        ));
+                    if !subscription.include_accepted_transaction_ids() && !payload.added_chain_blocks_acceptance_data.is_empty() {
+                        return Some(Notification::VirtualChainChanged(VirtualChainChangedNotification {
+                            removed_chain_block_hashes: payload.removed_chain_block_hashes.clone(),
+                            added_chain_block_hashes: payload.added_chain_block_hashes.clone(),
+                            added_chain_blocks_acceptance_data: Arc::new(vec![]),
+                        }));
                     }
                 }
                 Some(self.clone())
@@ -127,11 +115,7 @@ impl VirtualChainChangedNotification {
         removed_chain_block_hashes: Arc<Vec<Hash>>,
         added_chain_blocks_acceptance_data: Arc<Vec<Arc<AcceptanceData>>>,
     ) -> Self {
-        Self {
-            added_chain_block_hashes,
-            removed_chain_block_hashes,
-            added_chain_blocks_acceptance_data,
-        }
+        Self { added_chain_block_hashes, removed_chain_block_hashes, added_chain_blocks_acceptance_data }
     }
 }
 
@@ -142,9 +126,7 @@ pub struct FinalityConflictNotification {
 
 impl FinalityConflictNotification {
     pub fn new(violating_block_hash: Hash) -> Self {
-        Self {
-            violating_block_hash,
-        }
+        Self { violating_block_hash }
     }
 }
 
@@ -155,9 +137,7 @@ pub struct FinalityConflictResolvedNotification {
 
 impl FinalityConflictResolvedNotification {
     pub fn new(finality_block_hash: Hash) -> Self {
-        Self {
-            finality_block_hash,
-        }
+        Self { finality_block_hash }
     }
 }
 
@@ -170,10 +150,7 @@ pub struct UtxosChangedNotification {
 
 impl UtxosChangedNotification {
     pub fn new(accumulated_utxo_diff: Arc<UtxoDiff>, virtual_parents: Arc<Vec<Hash>>) -> Self {
-        Self {
-            accumulated_utxo_diff,
-            virtual_parents,
-        }
+        Self { accumulated_utxo_diff, virtual_parents }
     }
 }
 

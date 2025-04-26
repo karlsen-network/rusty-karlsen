@@ -18,6 +18,7 @@ faster-hex.workspace = true
 futures-util.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
+karlsen-addresses.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-consensus-notify.workspace = true
 karlsen-consensusmanager.workspace = true
@@ -30,6 +31,7 @@ karlsen-muhash.workspace = true
 karlsen-notify.workspace = true
 karlsen-pow.workspace = true
 karlsen-txscript.workspace = true
+karlsen-txscript-errors.workspace = true
 karlsen-utils.workspace = true
 log.workspace = true
 once_cell.workspace = true
@@ -53,9 +55,14 @@ serde_json.workspace = true
 flate2.workspace = true
 rand_distr.workspace = true
 karlsen-txscript-errors.workspace = true
+karlsen-addresses.workspace = true
 
 [[bench]]
-name = "hash_benchmarks"
+name = "parallel_muhash"
+harness = false
+
+[[bench]]
+name = "check_scripts"
 harness = false
 
 [features]
