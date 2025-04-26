@@ -657,7 +657,7 @@ pub const SIMNET_PARAMS: Params = Params {
 
     storage_mass_parameter: STORAGE_MASS_PARAMETER,
 
-    skip_proof_of_work: false, // For simnet only, PoW can be simulated by default
+    skip_proof_of_work: true, // For simnet only, PoW can be simulated by default
     max_block_level: 250,
     pruning_proof_m: PRUNING_PROOF_M,
     khashv2_activation: 0,
