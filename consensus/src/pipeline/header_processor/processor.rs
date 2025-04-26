@@ -307,7 +307,7 @@ impl HeaderProcessor {
 
     /// Runs full ordinary header validation
     fn validate_header(&self, header: &Arc<Header>) -> BlockProcessResult<HeaderProcessingContext> {
-        let block_level = self.validate_header_in_isolation(header, self.khashv2_activation.daa_score())?;
+        let block_level = self.validate_header_in_isolation(header, self.khashv2_activation)?;
         self.validate_parent_relations(header)?;
         let mut ctx = self.build_processing_context(header, block_level);
         self.ghostdag(&mut ctx);
@@ -323,7 +323,7 @@ impl HeaderProcessor {
 
     // Runs partial header validation for trusted blocks (currently validates only header-in-isolation and computes GHOSTDAG).
     fn validate_trusted_header(&self, header: &Arc<Header>) -> BlockProcessResult<HeaderProcessingContext> {
-        let block_level = self.validate_header_in_isolation(header, self.khashv2_activation.daa_score())?;
+        let block_level = self.validate_header_in_isolation(header, self.khashv2_activation)?;
         let mut ctx = self.build_processing_context(header, block_level);
         self.ghostdag(&mut ctx);
         Ok(ctx)
