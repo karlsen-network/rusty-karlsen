@@ -123,7 +123,7 @@ pub struct VirtualStateProcessor {
     pub(super) genesis: GenesisBlock,
     pub(super) max_block_parents: ForkedParam<u8>,
     pub(super) mergeset_size_limit: ForkedParam<u64>,
-    pub(super) khashv2_activation: u64,
+    pub(super) khashv2_activation: ForkActivation,
     pub(super) difficulty_window_size: usize,
 
     // Stores
@@ -1068,11 +1068,13 @@ impl VirtualStateProcessor {
             )
             .unwrap();
         txs.insert(0, coinbase.tx);
-        let version = if virtual_state.daa_score >= self.khashv2_activation { BLOCK_VERSION_KHASHV2 } else { BLOCK_VERSION_KHASHV1 };
+        let version =
+            if self.khashv2_activation.is_active(virtual_state.daa_score) { BLOCK_VERSION_KHASHV2 } else { BLOCK_VERSION_KHASHV1 };
         // todo: check bits to lower difficulty
         let mut bits = virtual_state.bits;
-        if virtual_state.daa_score <= (self.khashv2_activation + self.difficulty_window_size as u64)
-            && virtual_state.daa_score >= self.khashv2_activation
+        let khashv2_daa_score = self.khashv2_activation.daa_score();
+        if virtual_state.daa_score <= (khashv2_daa_score + self.difficulty_window_size as u64)
+            && self.khashv2_activation.is_active(virtual_state.daa_score)
         {
             bits = self.genesis.bits;
         }
