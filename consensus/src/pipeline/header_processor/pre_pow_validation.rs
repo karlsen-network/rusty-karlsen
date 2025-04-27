@@ -49,8 +49,9 @@ impl HeaderProcessor {
         let mut expected_bits = self.window_manager.calculate_difficulty_bits(ghostdag_data, &daa_window);
         ctx.mergeset_non_daa = Some(daa_window.mergeset_non_daa);
 
-        if header.daa_score <= (self.khashv2_activation + self.difficulty_window_size as u64)
-            && header.daa_score >= self.khashv2_activation
+        let khashv2_activation_score = self.khashv2_activation.daa_score();
+        if header.daa_score <= (khashv2_activation_score + self.difficulty_window_size as u64)
+            && header.daa_score >= khashv2_activation_score
         {
             expected_bits = self.genesis.bits;
         }

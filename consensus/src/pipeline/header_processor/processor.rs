@@ -128,7 +128,7 @@ pub struct HeaderProcessor {
     pub(super) skip_proof_of_work: bool,
     pub(super) max_block_level: BlockLevel,
     pub(super) crescendo_activation: ForkActivation,
-    pub(super) khashv2_activation: u64,
+    pub(super) khashv2_activation: ForkActivation,
     pub(super) difficulty_window_size: usize,
 
     // DB
