@@ -17,7 +17,7 @@ use karlsen_consensus::{
 };
 use karlsen_consensus_core::{
     api::ConsensusApi, block::Block, blockstatus::BlockStatus, config::bps::calculate_ghostdag_k, errors::block::BlockProcessResult,
-    BlockHashSet, BlockLevel, HashMapCustomHasher,
+    mining_rules::MiningRules, BlockHashSet, BlockLevel, HashMapCustomHasher,
 };
 use karlsen_consensus_notify::root::ConsensusNotificationRoot;
 use karlsen_core::{
@@ -235,6 +235,7 @@ fn main_impl(mut args: Args) {
             Default::default(),
             Default::default(),
             unix_now(),
+            Arc::new(MiningRules::default()),
         ));
         (consensus, lifetime)
     } else {
@@ -277,6 +278,7 @@ fn main_impl(mut args: Args) {
         Default::default(),
         Default::default(),
         unix_now(),
+        Arc::new(MiningRules::default()),
     ));
     let handles2 = consensus2.run_processors();
     if args.headers_first {

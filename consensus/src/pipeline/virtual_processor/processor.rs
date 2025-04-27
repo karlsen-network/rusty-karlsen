@@ -62,6 +62,7 @@ use karlsen_consensus_core::{
     },
     header::Header,
     merkle::calc_hash_merkle_root,
+    mining_rules::MiningRules,
     pruning::PruningPointsList,
     tx::{MutableTransaction, Transaction},
     utxo::{
@@ -179,6 +180,9 @@ pub struct VirtualStateProcessor {
 
     // Crescendo hardfork activation score (used here for activating KIPs 9,10)
     pub(crate) crescendo_activation: ForkActivation,
+
+    // Mining Rule
+    mining_rules: Arc<MiningRules>,
 }
 
 impl VirtualStateProcessor {
@@ -195,6 +199,7 @@ impl VirtualStateProcessor {
         pruning_lock: SessionLock,
         notification_root: Arc<ConsensusNotificationRoot>,
         counters: Arc<ProcessingCounters>,
+        mining_rules: Arc<MiningRules>,
     ) -> Self {
         Self {
             receiver,
@@ -246,6 +251,7 @@ impl VirtualStateProcessor {
             counters,
             crescendo_logger: CrescendoLogger::new(),
             crescendo_activation: params.crescendo_activation,
+            mining_rules,
         }
     }
 

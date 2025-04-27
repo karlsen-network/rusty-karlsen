@@ -110,6 +110,7 @@ karlsen-muhash = { version = "2.3.1", path = "crypto/muhash" }
 karlsen-notify = { version = "2.3.1", path = "notify" }
 karlsen-p2p-flows = { version = "2.3.1", path = "protocol/flows" }
 karlsen-p2p-lib = { version = "2.3.1", path = "protocol/p2p" }
+karlsen-p2p-mining = { version = "2.3.1", path = "protocol/mining" }
 karlsen-perf-monitor = { version = "2.3.1", path = "metrics/perf_monitor" }
 karlsen-pow = { version = "2.3.1", path = "consensus/pow" }
 karlsen-rpc-core = { version = "2.3.1", path = "rpc/core" }
