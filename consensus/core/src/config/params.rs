@@ -531,7 +531,9 @@ pub const MAINNET_PARAMS: Params = Params {
     khashv2_activation: ForkActivation::new(26_962_009), // HF DAAscore to switch to khashv2 (Fri Sep 13 01:37:00 PM UTC 2024)
 
     crescendo: CRESCENDO,
-    crescendo_activation: ForkActivation::never(),
+    // Temp: use a value which will trigger upper_bound/after calculations but is not actually scheduled.
+    // We want the pre-release to test the influence of this change on mainnet nodes as well
+    crescendo_activation: ForkActivation::new(u64::MAX - 1),
 };
 
 pub const TESTNET_PARAMS: Params = Params {
@@ -582,8 +584,8 @@ pub const TESTNET_PARAMS: Params = Params {
     pruning_proof_m: 1000,
     khashv2_activation: ForkActivation::always(),
     crescendo: CRESCENDO,
-    // 18:30 UTC, March 6, 2025
-    crescendo_activation: ForkActivation::new(88_657_000),
+    // Todo : define the 10bps activation for testnet-1
+    crescendo_activation: ForkActivation::new(u64::MAX - 1),
 };
 
 pub const SIMNET_PARAMS: Params = Params {
