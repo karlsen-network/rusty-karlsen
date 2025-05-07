@@ -584,8 +584,7 @@ pub const TESTNET_PARAMS: Params = Params {
     pruning_proof_m: 1000,
     khashv2_activation: ForkActivation::always(),
     crescendo: CRESCENDO,
-    // Todo : define the 10bps activation for testnet-1
-    crescendo_activation: ForkActivation::new(u64::MAX - 1),
+    crescendo_activation: ForkActivation::new(18_910_425),
 };
 
 pub const SIMNET_PARAMS: Params = Params {
