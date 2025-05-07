@@ -63,7 +63,7 @@ members = [
 
 [workspace.package]
 rust-version = "1.82.0"
-version = "2.3.2"
+version = "3.0.0"
 authors = ["Karlsen developers"]
 license = "ISC"
 repository = "https://github.com/karlsen-network/rusty-karlsen"
@@ -80,62 +80,62 @@ include = [
 ]
 
 [workspace.dependencies]
-# karlsen-testing-integration = { version = "2.3.2", path = "testing/integration" }
-karlsen-addresses = { version = "2.3.2", path = "crypto/addresses" }
-karlsen-addressmanager = { version = "2.3.2", path = "components/addressmanager" }
-karlsen-bip32 = { version = "2.3.2", path = "wallet/bip32" }
-karlsen-cli = { version = "2.3.2", path = "cli" }
-karlsen-connectionmanager = { version = "2.3.2", path = "components/connectionmanager" }
-karlsen-consensus = { version = "2.3.2", path = "consensus" }
-karlsen-consensus-core = { version = "2.3.2", path = "consensus/core" }
-karlsen-consensus-client = { version = "2.3.2", path = "consensus/client" }
-karlsen-consensus-notify = { version = "2.3.2", path = "consensus/notify" }
-karlsen-consensus-wasm = { version = "2.3.2", path = "consensus/wasm" }
-karlsen-consensusmanager = { version = "2.3.2", path = "components/consensusmanager" }
-karlsen-core = { version = "2.3.2", path = "core" }
-karlsen-daemon = { version = "2.3.2", path = "daemon" }
-karlsen-database = { version = "2.3.2", path = "database" }
-karlsen-grpc-client = { version = "2.3.2", path = "rpc/grpc/client" }
-karlsen-grpc-core = { version = "2.3.2", path = "rpc/grpc/core" }
-karlsen-grpc-server = { version = "2.3.2", path = "rpc/grpc/server" }
-karlsen-hashes = { version = "2.3.2", path = "crypto/hashes" }
-karlsen-index-core = { version = "2.3.2", path = "indexes/core" }
-karlsen-index-processor = { version = "2.3.2", path = "indexes/processor" }
-karlsen-math = { version = "2.3.2", path = "math" }
-karlsen-merkle = { version = "2.3.2", path = "crypto/merkle" }
-karlsen-metrics-core = { version = "2.3.2", path = "metrics/core" }
-karlsen-mining = { version = "2.3.2", path = "mining" }
-karlsen-mining-errors = { version = "2.3.2", path = "mining/errors" }
-karlsen-muhash = { version = "2.3.2", path = "crypto/muhash" }
-karlsen-notify = { version = "2.3.2", path = "notify" }
-karlsen-p2p-flows = { version = "2.3.2", path = "protocol/flows" }
-karlsen-p2p-lib = { version = "2.3.2", path = "protocol/p2p" }
-karlsen-p2p-mining = { version = "2.3.2", path = "protocol/mining" }
-karlsen-perf-monitor = { version = "2.3.2", path = "metrics/perf_monitor" }
-karlsen-pow = { version = "2.3.2", path = "consensus/pow" }
-karlsen-rpc-core = { version = "2.3.2", path = "rpc/core" }
-karlsen-rpc-macros = { version = "2.3.2", path = "rpc/macros" }
-karlsen-rpc-service = { version = "2.3.2", path = "rpc/service" }
-karlsen-txscript = { version = "2.3.2", path = "crypto/txscript" }
-karlsen-txscript-errors = { version = "2.3.2", path = "crypto/txscript/errors" }
-karlsen-utils = { version = "2.3.2", path = "utils" }
-karlsen-utils-tower = { version = "2.3.2", path = "utils/tower" }
-karlsen-utxoindex = { version = "2.3.2", path = "indexes/utxoindex" }
-karlsen-wallet = { version = "2.3.2", path = "wallet/native" }
-karlsen-wallet-cli-wasm = { version = "2.3.2", path = "wallet/wasm" }
-karlsen-wallet-keys = { version = "2.3.2", path = "wallet/keys" }
-karlsen-wallet-pskt = { version = "2.3.2", path = "wallet/pskt" }
-karlsen-wallet-core = { version = "2.3.2", path = "wallet/core" }
-karlsen-wallet-macros = { version = "2.3.2", path = "wallet/macros" }
-karlsen-wasm = { version = "2.3.2", path = "wasm" }
-karlsen-wasm-core = { version = "2.3.2", path = "wasm/core" }
-karlsen-wrpc-client = { version = "2.3.2", path = "rpc/wrpc/client" }
-karlsen-wrpc-proxy = { version = "2.3.2", path = "rpc/wrpc/proxy" }
-karlsen-wrpc-server = { version = "2.3.2", path = "rpc/wrpc/server" }
-karlsen-wrpc-wasm = { version = "2.3.2", path = "rpc/wrpc/wasm" }
-karlsen-wrpc-example-subscriber = { version = "2.3.2", path = "rpc/wrpc/examples/subscriber" }
-karlsend = { version = "2.3.2", path = "karlsend" }
-karlsen-alloc = { version = "2.3.2", path = "utils/alloc" }
+# karlsen-testing-integration = { version = "3.0.0", path = "testing/integration" }
+karlsen-addresses = { version = "3.0.0", path = "crypto/addresses" }
+karlsen-addressmanager = { version = "3.0.0", path = "components/addressmanager" }
+karlsen-bip32 = { version = "3.0.0", path = "wallet/bip32" }
+karlsen-cli = { version = "3.0.0", path = "cli" }
+karlsen-connectionmanager = { version = "3.0.0", path = "components/connectionmanager" }
+karlsen-consensus = { version = "3.0.0", path = "consensus" }
+karlsen-consensus-core = { version = "3.0.0", path = "consensus/core" }
+karlsen-consensus-client = { version = "3.0.0", path = "consensus/client" }
+karlsen-consensus-notify = { version = "3.0.0", path = "consensus/notify" }
+karlsen-consensus-wasm = { version = "3.0.0", path = "consensus/wasm" }
+karlsen-consensusmanager = { version = "3.0.0", path = "components/consensusmanager" }
+karlsen-core = { version = "3.0.0", path = "core" }
+karlsen-daemon = { version = "3.0.0", path = "daemon" }
+karlsen-database = { version = "3.0.0", path = "database" }
+karlsen-grpc-client = { version = "3.0.0", path = "rpc/grpc/client" }
+karlsen-grpc-core = { version = "3.0.0", path = "rpc/grpc/core" }
+karlsen-grpc-server = { version = "3.0.0", path = "rpc/grpc/server" }
+karlsen-hashes = { version = "3.0.0", path = "crypto/hashes" }
+karlsen-index-core = { version = "3.0.0", path = "indexes/core" }
+karlsen-index-processor = { version = "3.0.0", path = "indexes/processor" }
+karlsen-math = { version = "3.0.0", path = "math" }
+karlsen-merkle = { version = "3.0.0", path = "crypto/merkle" }
+karlsen-metrics-core = { version = "3.0.0", path = "metrics/core" }
+karlsen-mining = { version = "3.0.0", path = "mining" }
+karlsen-mining-errors = { version = "3.0.0", path = "mining/errors" }
+karlsen-muhash = { version = "3.0.0", path = "crypto/muhash" }
+karlsen-notify = { version = "3.0.0", path = "notify" }
+karlsen-p2p-flows = { version = "3.0.0", path = "protocol/flows" }
+karlsen-p2p-lib = { version = "3.0.0", path = "protocol/p2p" }
+karlsen-p2p-mining = { version = "3.0.0", path = "protocol/mining" }
+karlsen-perf-monitor = { version = "3.0.0", path = "metrics/perf_monitor" }
+karlsen-pow = { version = "3.0.0", path = "consensus/pow" }
+karlsen-rpc-core = { version = "3.0.0", path = "rpc/core" }
+karlsen-rpc-macros = { version = "3.0.0", path = "rpc/macros" }
+karlsen-rpc-service = { version = "3.0.0", path = "rpc/service" }
+karlsen-txscript = { version = "3.0.0", path = "crypto/txscript" }
+karlsen-txscript-errors = { version = "3.0.0", path = "crypto/txscript/errors" }
+karlsen-utils = { version = "3.0.0", path = "utils" }
+karlsen-utils-tower = { version = "3.0.0", path = "utils/tower" }
+karlsen-utxoindex = { version = "3.0.0", path = "indexes/utxoindex" }
+karlsen-wallet = { version = "3.0.0", path = "wallet/native" }
+karlsen-wallet-cli-wasm = { version = "3.0.0", path = "wallet/wasm" }
+karlsen-wallet-keys = { version = "3.0.0", path = "wallet/keys" }
+karlsen-wallet-pskt = { version = "3.0.0", path = "wallet/pskt" }
+karlsen-wallet-core = { version = "3.0.0", path = "wallet/core" }
+karlsen-wallet-macros = { version = "3.0.0", path = "wallet/macros" }
+karlsen-wasm = { version = "3.0.0", path = "wasm" }
+karlsen-wasm-core = { version = "3.0.0", path = "wasm/core" }
+karlsen-wrpc-client = { version = "3.0.0", path = "rpc/wrpc/client" }
+karlsen-wrpc-proxy = { version = "3.0.0", path = "rpc/wrpc/proxy" }
+karlsen-wrpc-server = { version = "3.0.0", path = "rpc/wrpc/server" }
+karlsen-wrpc-wasm = { version = "3.0.0", path = "rpc/wrpc/wasm" }
+karlsen-wrpc-example-subscriber = { version = "3.0.0", path = "rpc/wrpc/examples/subscriber" }
+karlsend = { version = "3.0.0", path = "karlsend" }
+karlsen-alloc = { version = "3.0.0", path = "utils/alloc" }
 
 # external
 aes = "0.8.3"
