@@ -501,7 +501,7 @@ fn test_generator_sweep_two_utxos_with_priority_fees_rejection() -> Result<()> {
 
 #[test]
 fn test_generator_compound_200k_10kls_transactions() -> Result<()> {
-    generator(test_network_id(), &[1.0; 200_000], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(190_000.0))].as_slice())
+    generator(test_network_id(), &[10.0; 200_000], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(190_000.0))].as_slice())
         .unwrap()
         .harness()
         .validate()
