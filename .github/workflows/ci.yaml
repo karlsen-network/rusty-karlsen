@@ -172,6 +172,8 @@ jobs:
   check-wasm32:
     name: Check WASM32
     runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: '--cfg getrandom_backend="wasm_js"'
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -300,6 +302,8 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build wasm release
+        env:
+          RUSTFLAGS: '--cfg getrandom_backend="wasm_js"'
         run: |
           pushd .
           cd wasm

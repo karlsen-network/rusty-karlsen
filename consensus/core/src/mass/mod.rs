@@ -124,7 +124,7 @@ impl UtxoPlurality for TransactionOutput {
 pub struct UtxoCell {
     /// The plurality (number of "storage units") for this UTXO
     pub plurality: u64,
-    /// The amount of KAS (in sompis) locked in this UTXO
+    /// The amount of KLS (in sompis) locked in this UTXO
     pub amount: u64,
 }
 
@@ -565,7 +565,7 @@ mod tests {
                 storage_mass_parameter: 10_u64.pow(12),
             },
             PluralityTestCase {
-                name: "1:3; output index=1, plurality=2; kas units",
+                name: "1:3; output index=1, plurality=2; kls units",
                 inputs_tx1: &[1000 * SOMPI_PER_KARLSEN],
                 outputs_tx1: &[200 * SOMPI_PER_KARLSEN, 200 * SOMPI_PER_KARLSEN, 200 * SOMPI_PER_KARLSEN],
                 inputs_tx2: &[1000 * SOMPI_PER_KARLSEN],
@@ -576,7 +576,7 @@ mod tests {
                 storage_mass_parameter: 10_u64.pow(12),
             },
             PluralityTestCase {
-                name: "1:2; output index=0, plurality=2; kas units",
+                name: "1:2; output index=0, plurality=2; kls units",
                 inputs_tx1: &[1000 * SOMPI_PER_KARLSEN],
                 outputs_tx1: &[200 * SOMPI_PER_KARLSEN, 200 * SOMPI_PER_KARLSEN],
                 inputs_tx2: &[1000 * SOMPI_PER_KARLSEN],
@@ -587,7 +587,7 @@ mod tests {
                 storage_mass_parameter: 10_u64.pow(12),
             },
             PluralityTestCase {
-                name: "2:2; output index=0, plurality=2; kas units",
+                name: "2:2; output index=0, plurality=2; kls units",
                 inputs_tx1: &[350 * SOMPI_PER_KARLSEN, 500 * SOMPI_PER_KARLSEN],
                 outputs_tx1: &[200 * SOMPI_PER_KARLSEN, 200 * SOMPI_PER_KARLSEN],
                 inputs_tx2: &[350 * SOMPI_PER_KARLSEN, 500 * SOMPI_PER_KARLSEN],
@@ -598,7 +598,7 @@ mod tests {
                 storage_mass_parameter: 10_u64.pow(12),
             },
             PluralityTestCase {
-                name: "4:6; output index=0, plurality=3; kas units",
+                name: "4:6; output index=0, plurality=3; kls units",
                 inputs_tx1: &[350 * SOMPI_PER_KARLSEN, 500 * SOMPI_PER_KARLSEN, 350 * SOMPI_PER_KARLSEN, 500 * SOMPI_PER_KARLSEN],
                 outputs_tx1: &[
                     200 * SOMPI_PER_KARLSEN,

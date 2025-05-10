@@ -71,7 +71,7 @@ impl CoinbaseManager {
     ) -> Self {
         // Precomputed subsidy by month table for the actual block per second rate
         // Here values are rounded up so that we keep the same number of rewarding months as in the original 1 BPS table.
-        // In a 10 BPS network, the induced increase in total rewards is 51 KLS (see tests::calc_high_bps_total_rewards_delta())
+        // In a 10 BPS network, the induced increase in total rewards is 95 KLS (see tests::calc_high_bps_total_rewards_delta())
         let subsidy_by_month_table_before: SubsidyByMonthTable =
             core::array::from_fn(|i| SUBSIDY_BY_MONTH_TABLE[i].div_ceil(bps.before()));
         let subsidy_by_month_table_after: SubsidyByMonthTable =
@@ -396,7 +396,7 @@ mod tests {
     }
 
     /// Takes over 60 seconds, run with the following command line:
-    /// `cargo test --release --package kaspa-consensus --lib -- processes::coinbase::tests::verify_crescendo_emission_schedule --exact --nocapture --ignored`
+    /// `cargo test --release --package karlsen-consensus --lib -- processes::coinbase::tests::verify_crescendo_emission_schedule --exact --nocapture --ignored`
     #[test]
     #[ignore = "long"]
     fn verify_crescendo_emission_schedule() {
@@ -427,8 +427,8 @@ mod tests {
                 println!("CRESCENDO:\t{}\tepochs, total emission: {}, activation: {}", new_epochs, new_total, activation);
 
                 let diff = (new_total as i64 - baseline_total as i64) / SOMPI_PER_KARLSEN as i64;
-                assert!(diff.abs() <= 51, "activation: {}", activation);
-                println!("DIFF (KAS): {}", diff);
+                assert!(diff.abs() <= 95, "activation: {}", activation);
+                println!("DIFF (KLS): {}", diff);
             }
         }
     }
