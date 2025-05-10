@@ -584,7 +584,7 @@ pub const TESTNET_PARAMS: Params = Params {
     pruning_proof_m: 1000,
     khashv2_activation: ForkActivation::always(),
     crescendo: CRESCENDO,
-    crescendo_activation: ForkActivation::new(18_910_425),
+    crescendo_activation: ForkActivation::new(19_169_625),
 };
 
 pub const SIMNET_PARAMS: Params = Params {
