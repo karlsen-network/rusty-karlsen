@@ -140,7 +140,7 @@ impl GeneratorExtension for Generator {
 
 fn test_network_id() -> NetworkId {
     // TODO make this configurable
-    NetworkId::with_suffix(NetworkType::Testnet, 11)
+    NetworkId::with_suffix(NetworkType::Testnet, 1)
 }
 
 #[derive(Default)]
@@ -500,7 +500,7 @@ fn test_generator_sweep_two_utxos_with_priority_fees_rejection() -> Result<()> {
 }
 
 #[test]
-fn test_generator_compound_200k_10kas_transactions() -> Result<()> {
+fn test_generator_compound_200k_10kls_transactions() -> Result<()> {
     generator(test_network_id(), &[10.0; 200_000], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(190_000.0))].as_slice())
         .unwrap()
         .harness()

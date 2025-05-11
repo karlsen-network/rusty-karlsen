@@ -18,6 +18,11 @@ pub const SOMPI_PER_KARLSEN: u64 = 100_000_000;
 /// The parameter for scaling inverse KLS value to mass units (KIP-0009)
 pub const STORAGE_MASS_PARAMETER: u64 = SOMPI_PER_KARLSEN * 10_000;
 
+/// The parameter defining how much mass per byte to charge for when calculating
+/// transient storage mass. Since normally the block mass limit is 500_000, this limits
+/// block body byte size to 125_000 (KIP-0013).
+pub const TRANSIENT_BYTE_TO_MASS_FACTOR: u64 = 4;
+
 /// MaxSompi is the maximum transaction amount allowed in sompi.
 pub const MAX_SOMPI: u64 = 4_961_000_000 * SOMPI_PER_KARLSEN;
 

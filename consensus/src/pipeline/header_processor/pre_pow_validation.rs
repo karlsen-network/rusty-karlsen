@@ -6,8 +6,23 @@ use karlsen_consensus_core::header::Header;
 
 impl HeaderProcessor {
     pub(super) fn pre_pow_validation(&self, ctx: &mut HeaderProcessingContext, header: &Header) -> BlockProcessResult<()> {
+        self.check_parents_limit(ctx, header)?;
         self.check_pruning_violation(ctx)?;
         self.check_difficulty_and_daa_score(ctx, header)?;
+        Ok(())
+    }
+
+    // TODO (post HF): move back to pre_ghostdag_validation (substitute for check_parents_limit_upper_bound)
+    fn check_parents_limit(&self, ctx: &mut HeaderProcessingContext, header: &Header) -> BlockProcessResult<()> {
+        if header.direct_parents().is_empty() {
+            return Err(RuleError::NoParents);
+        }
+
+        let max_block_parents = self.max_block_parents.get(ctx.selected_parent_daa_score()) as usize;
+        if header.direct_parents().len() > max_block_parents {
+            return Err(RuleError::TooManyParents(header.direct_parents().len(), max_block_parents));
+        }
+
         Ok(())
     }
 
@@ -34,8 +49,9 @@ impl HeaderProcessor {
         let mut expected_bits = self.window_manager.calculate_difficulty_bits(ghostdag_data, &daa_window);
         ctx.mergeset_non_daa = Some(daa_window.mergeset_non_daa);
 
-        if header.daa_score <= (self.khashv2_activation + self.difficulty_window_size as u64)
-            && header.daa_score >= self.khashv2_activation
+        let khashv2_activation_score = self.khashv2_activation.daa_score();
+        if header.daa_score <= (khashv2_activation_score + self.difficulty_window_size as u64)
+            && header.daa_score >= khashv2_activation_score
         {
             expected_bits = self.genesis.bits;
         }

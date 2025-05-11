@@ -1,0 +1,23 @@
+[package]
+name = "karlsen-p2p-mining"
+description = "karlsen p2p mining"
+rust-version.workspace = true
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+include.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+karlsen-core.workspace = true
+karlsen-consensus-core.workspace = true
+karlsen-consensusmanager.workspace = true
+karlsen-mining-errors.workspace = true
+karlsen-hashes.workspace = true
+karlsen-math.workspace = true
+karlsen-p2p-lib.workspace = true
+karlsen-utils.workspace = true
+karlsen-utils-tower.workspace = true
+log.workspace = true
+tokio.workspace = true

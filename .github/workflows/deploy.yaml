@@ -140,8 +140,8 @@ jobs:
             bin/*.zip
 
   build-wasm:
-    runs-on: ubuntu-latest
     name: Building WASM32 SDK
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -205,6 +205,8 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build WASM32 SDK
+        env:
+          RUSTFLAGS: '--cfg getrandom_backend="wasm_js"'
         run: |
           mkdir sdk || true
           cd wasm

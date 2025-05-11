@@ -1,5 +1,7 @@
 use async_channel::Sender;
 use karlsen_consensus_core::coinbase::MinerData;
+use karlsen_consensus_core::constants;
+use karlsen_consensus_core::mining_rules::MiningRules;
 use karlsen_consensus_core::tx::ScriptPublicKey;
 use karlsen_consensus_core::{
     api::ConsensusApi, block::MutableBlock, blockstatus::BlockStatus, header::Header, merkle::calc_hash_merkle_root,
@@ -58,6 +60,7 @@ impl TestConsensus {
             counters,
             tx_script_cache_counters,
             0,
+            Arc::new(MiningRules::default()),
         ));
         let block_builder = TestBlockBuilder::new(consensus.virtual_processor.clone());
 
@@ -78,6 +81,7 @@ impl TestConsensus {
             counters,
             tx_script_cache_counters,
             0,
+            Arc::new(MiningRules::default()),
         ));
         let block_builder = TestBlockBuilder::new(consensus.virtual_processor.clone());
 
@@ -99,6 +103,7 @@ impl TestConsensus {
             counters,
             tx_script_cache_counters,
             0,
+            Arc::new(MiningRules::default()),
         ));
         let block_builder = TestBlockBuilder::new(consensus.virtual_processor.clone());
 
@@ -121,13 +126,19 @@ impl TestConsensus {
             .consensus
             .services
             .pruning_point_manager
-            .expected_header_pruning_point(ghostdag_data.to_compact(), self.consensus.pruning_point_store.read().get().unwrap());
+            .expected_header_pruning_point_v1(ghostdag_data.to_compact(), self.consensus.pruning_point_store.read().get().unwrap());
         let daa_window = self.consensus.services.window_manager.block_daa_window(&ghostdag_data).unwrap();
         header.bits = self.consensus.services.window_manager.calculate_difficulty_bits(&ghostdag_data, &daa_window);
         header.daa_score = daa_window.daa_score;
         header.timestamp = self.consensus.services.window_manager.calc_past_median_time(&ghostdag_data).unwrap().0 + 1;
         header.blue_score = ghostdag_data.blue_score;
         header.blue_work = ghostdag_data.blue_work;
+
+        if self.params.khashv2_activation.is_active(header.daa_score) {
+            header.version = constants::BLOCK_VERSION_KHASHV2;
+        } else {
+            header.version = constants::BLOCK_VERSION_KHASHV1;
+        }
 
         header
     }
