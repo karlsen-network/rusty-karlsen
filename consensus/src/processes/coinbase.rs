@@ -117,6 +117,7 @@ impl CoinbaseManager {
         // Collect all rewards from mergeset reds ∩ DAA window and create a
         // single output rewarding all to the current block (the "merging" block)
         let mut red_reward = 0u64;
+
         // bps activation = crescendo activation
         if self.bps.activation().is_active(daa_score) {
             for red in ghostdag_data.mergeset_reds.iter() {
@@ -486,7 +487,6 @@ mod tests {
                 expected: u64,
             }
 
-            //TODO : check kaspa tests before validate the merge
             let tests = vec![
                 Test { name: "first mined block", daa_score: 1, expected: pre_deflationary_phase_base_subsidy },
                 Test {
@@ -540,52 +540,6 @@ mod tests {
                     expected: 0,
                 },
             ];
-
-            /*
-            let tests = vec![
-                Test { name: "first mined block", daa_score: 1, expected: pre_deflationary_phase_base_subsidy },
-                Test {
-                    name: "before deflationary phase",
-                    daa_score: params.deflationary_phase_daa_score - 1,
-                    expected: pre_deflationary_phase_base_subsidy,
-                },
-                Test {
-                    name: "start of deflationary phase",
-                    daa_score: params.deflationary_phase_daa_score,
-                    expected: deflationary_phase_initial_subsidy,
-                },
-                Test {
-                    name: "after one halving",
-                    daa_score: params.deflationary_phase_daa_score + blocks_per_halving,
-                    expected: deflationary_phase_initial_subsidy / 2,
-                },
-                Test {
-                    name: "after 2 halvings",
-                    daa_score: params.deflationary_phase_daa_score + 2 * blocks_per_halving,
-                    expected: deflationary_phase_initial_subsidy / 4,
-                },
-                Test {
-                    name: "after 5 halvings",
-                    daa_score: params.deflationary_phase_daa_score + 5 * blocks_per_halving,
-                    expected: deflationary_phase_initial_subsidy / 32,
-                },
-                Test {
-                    name: "after 32 halvings",
-                    daa_score: params.deflationary_phase_daa_score + 32 * blocks_per_halving,
-                    expected: (DEFLATIONARY_PHASE_INITIAL_SUBSIDY / 2_u64.pow(32)).div_ceil(bps),
-                },
-                Test {
-                    name: "just before subsidy depleted",
-                    daa_score: params.deflationary_phase_daa_score + 35 * blocks_per_halving,
-                    expected: 1,
-                },
-                Test {
-                    name: "after subsidy depleted",
-                    daa_score: params.deflationary_phase_daa_score + 36 * blocks_per_halving,
-                    expected: 0,
-                },
-            ];
-            */
 
             for t in tests {
                 assert_eq!(cbm.calc_block_subsidy(t.daa_score), t.expected, "{} test '{}' failed", network_id, t.name);
@@ -684,6 +638,6 @@ mod tests {
 
     /// Return a CoinbaseManager with legacy golang 1 BPS properties
     fn create_legacy_manager() -> CoinbaseManager {
-        CoinbaseManager::new(150, 204, 15778800 - 259200, 50000000000, ForkedParam::new_const(1))
+        CoinbaseManager::new(150, 204, 15778800 - 259200, 5000000000, ForkedParam::new_const(1))
     }
 }
