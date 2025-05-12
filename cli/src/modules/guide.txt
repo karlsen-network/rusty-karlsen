@@ -1,5 +1,5 @@
 Before you start, you must configure the default network setting.  There are currently
-3 networks available.  `mainnet`, `testnet-10` and `testnet-11`.  If you wish to experiment,
+2 networks available.  `mainnet`, `testnet-1`.  If you wish to experiment,
 you should select `testnet-11` by entering `network testnet-11`
 
 The `server` command configures the target server.  You can connect to any Rusty Karlsen
