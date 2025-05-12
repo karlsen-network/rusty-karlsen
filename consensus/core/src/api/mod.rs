@@ -4,9 +4,8 @@ use std::sync::Arc;
 
 use crate::{
     acceptance_data::AcceptanceData,
-    block::{
-        Block, BlockTemplate, TemplateBuildMode, TemplateTransactionSelector, VirtualStateApproxId,
-    },
+    api::args::{TransactionValidationArgs, TransactionValidationBatchArgs},
+    block::{Block, BlockTemplate, TemplateBuildMode, TemplateTransactionSelector, VirtualStateApproxId},
     blockstatus::BlockStatus,
     coinbase::MinerData,
     daa_score_timestamp::DaaScoreTimestamp,
@@ -18,15 +17,18 @@ use crate::{
         tx::TxResult,
     },
     header::Header,
-    pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList},
+    mass::{ContextualMasses, NonContextualMasses},
+    pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList, PruningProofMetadata},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, Transaction, TransactionOutpoint, UtxoEntry},
+    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionOutpoint, UtxoEntry},
+    utxo::utxo_inquirer::UtxoInquirerError,
     BlockHashSet, BlueWorkType, ChainPath,
 };
 use karlsen_hashes::Hash;
 
 pub use self::stats::{BlockCount, ConsensusStats};
 
+pub mod args;
 pub mod counters;
 pub mod stats;
 
@@ -39,7 +41,7 @@ pub struct BlockValidationFutures {
 
     /// A future triggered when DAG state which included this block has been processed by the virtual processor
     /// (exceptions are header-only blocks and trusted blocks which have the future completed before virtual
-    /// processing along with the [`block_task`])
+    /// processing along with the `block_task`)
     pub virtual_state_task: BlockValidationFuture,
 }
 
@@ -64,16 +66,17 @@ pub trait ConsensusApi: Send + Sync {
     }
 
     /// Populates the mempool transaction with maximally found UTXO entry data and proceeds to full transaction
-    /// validation if all are found. If validation is successful, also [`transaction.calculated_fee`] is expected to be populated.
-    fn validate_mempool_transaction(&self, transaction: &mut MutableTransaction) -> TxResult<()> {
+    /// validation if all are found. If validation is successful, also `transaction.calculated_fee` is expected to be populated.
+    fn validate_mempool_transaction(&self, transaction: &mut MutableTransaction, args: &TransactionValidationArgs) -> TxResult<()> {
         unimplemented!()
     }
 
     /// Populates the mempool transactions with maximally found UTXO entry data and proceeds to full transactions
-    /// validation if all are found. If validation is successful, also [`transaction.calculated_fee`] is expected to be populated.
+    /// validation if all are found. If validation is successful, also `transaction.calculated_fee` is expected to be populated.
     fn validate_mempool_transactions_in_parallel(
         &self,
         transactions: &mut [MutableTransaction],
+        args: &TransactionValidationBatchArgs,
     ) -> Vec<TxResult<()>> {
         unimplemented!()
     }
@@ -84,18 +87,15 @@ pub trait ConsensusApi: Send + Sync {
     }
 
     /// Populates the mempool transactions with maximally found UTXO entry data.
-    fn populate_mempool_transactions_in_parallel(
-        &self,
-        transactions: &mut [MutableTransaction],
-    ) -> Vec<TxResult<()>> {
+    fn populate_mempool_transactions_in_parallel(&self, transactions: &mut [MutableTransaction]) -> Vec<TxResult<()>> {
         unimplemented!()
     }
 
-    fn calculate_transaction_compute_mass(&self, transaction: &Transaction) -> u64 {
+    fn calculate_transaction_non_contextual_masses(&self, transaction: &Transaction) -> NonContextualMasses {
         unimplemented!()
     }
 
-    fn calculate_transaction_storage_mass(&self, transaction: &MutableTransaction) -> Option<u64> {
+    fn calculate_transaction_contextual_masses(&self, transaction: &MutableTransaction) -> Option<ContextualMasses> {
         unimplemented!()
     }
 
@@ -135,12 +135,20 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
+    fn get_sink_daa_score_timestamp(&self) -> DaaScoreTimestamp {
+        unimplemented!()
+    }
+
+    fn get_current_block_color(&self, hash: Hash) -> Option<bool> {
+        unimplemented!()
+    }
+
     fn get_virtual_state_approx_id(&self) -> VirtualStateApproxId {
         unimplemented!()
     }
 
-    /// source refers to the earliest block from which the current node has full header & block data  
-    fn get_source(&self) -> Hash {
+    /// retention period root refers to the earliest block from which the current node has full header & block data  
+    fn get_retention_period_root(&self) -> Hash {
         unimplemented!()
     }
 
@@ -148,18 +156,22 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    /// Returns whether this consensus is considered synced or close to being synced.
+    /// Gets the virtual chain paths from `low` to the `sink` hash, or until `chain_path_added_limit` is reached
     ///
-    /// This info is used to determine if it's ok to use a block template from this node for mining purposes.
-    fn is_nearly_synced(&self) -> bool {
-        unimplemented!()
-    }
-
-    fn get_virtual_chain_from_block(&self, hash: Hash) -> ConsensusResult<ChainPath> {
+    /// Note:   
+    ///     1) `chain_path_added_limit` will populate removed fully, and then the added chain path, up to `chain_path_added_limit` amount of hashes.
+    ///     1.1) use `None to impose no limit with optimized backward chain iteration, for better performance in cases where batching is not required.
+    fn get_virtual_chain_from_block(&self, low: Hash, chain_path_added_limit: Option<usize>) -> ConsensusResult<ChainPath> {
         unimplemented!()
     }
 
     fn get_chain_block_samples(&self) -> Vec<DaaScoreTimestamp> {
+        unimplemented!()
+    }
+
+    /// Returns the fully populated transaction with the given txid which was accepted at the provided accepting_block_daa_score.
+    /// The argument `accepting_block_daa_score` is expected to be the DAA score of the accepting chain block of `txid`.
+    fn get_populated_transaction(&self, txid: Hash, accepting_block_daa_score: u64) -> Result<SignableTransaction, UtxoInquirerError> {
         unimplemented!()
     }
 
@@ -188,43 +200,31 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn modify_coinbase_payload(
-        &self,
-        payload: Vec<u8>,
-        miner_data: &MinerData,
-    ) -> CoinbaseResult<Vec<u8>> {
+    fn modify_coinbase_payload(&self, payload: Vec<u8>, miner_data: &MinerData) -> CoinbaseResult<Vec<u8>> {
         unimplemented!()
     }
 
-    fn validate_pruning_proof(&self, proof: &PruningPointProof) -> PruningImportResult<()> {
+    fn calc_transaction_hash_merkle_root(&self, txs: &[Transaction], pov_daa_score: u64) -> Hash {
         unimplemented!()
     }
 
-    fn apply_pruning_proof(
-        &self,
-        proof: PruningPointProof,
-        trusted_set: &[TrustedBlock],
-    ) -> PruningImportResult<()> {
+    fn validate_pruning_proof(&self, proof: &PruningPointProof, proof_metadata: &PruningProofMetadata) -> PruningImportResult<()> {
         unimplemented!()
     }
 
-    fn import_pruning_points(&self, pruning_points: PruningPointsList) {
+    fn apply_pruning_proof(&self, proof: PruningPointProof, trusted_set: &[TrustedBlock]) -> PruningImportResult<()> {
         unimplemented!()
     }
 
-    fn append_imported_pruning_point_utxos(
-        &self,
-        utxoset_chunk: &[(TransactionOutpoint, UtxoEntry)],
-        current_multiset: &mut MuHash,
-    ) {
+    fn import_pruning_points(&self, pruning_points: PruningPointsList) -> PruningImportResult<()> {
         unimplemented!()
     }
 
-    fn import_pruning_point_utxo_set(
-        &self,
-        new_pruning_point: Hash,
-        imported_utxo_multiset: MuHash,
-    ) -> PruningImportResult<()> {
+    fn append_imported_pruning_point_utxos(&self, utxoset_chunk: &[(TransactionOutpoint, UtxoEntry)], current_multiset: &mut MuHash) {
+        unimplemented!()
+    }
+
+    fn import_pruning_point_utxo_set(&self, new_pruning_point: Hash, imported_utxo_multiset: MuHash) -> PruningImportResult<()> {
         unimplemented!()
     }
 
@@ -232,12 +232,7 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn get_hashes_between(
-        &self,
-        low: Hash,
-        high: Hash,
-        max_blocks: usize,
-    ) -> ConsensusResult<(Vec<Hash>, Hash)> {
+    fn get_hashes_between(&self, low: Hash, high: Hash, max_blocks: usize) -> ConsensusResult<(Vec<Hash>, Hash)> {
         unimplemented!()
     }
 
@@ -252,12 +247,7 @@ pub trait ConsensusApi: Send + Sync {
     /// Returns the antipast of block `hash` from the POV of `context`, i.e. `antipast(hash) ∩ past(context)`.
     /// Since this might be an expensive operation for deep blocks, we allow the caller to specify a limit
     /// `max_traversal_allowed` on the maximum amount of blocks to traverse for obtaining the answer
-    fn get_antipast_from_pov(
-        &self,
-        hash: Hash,
-        context: Hash,
-        max_traversal_allowed: Option<u64>,
-    ) -> ConsensusResult<Vec<Hash>> {
+    fn get_antipast_from_pov(&self, hash: Hash, context: Hash, max_traversal_allowed: Option<u64>) -> ConsensusResult<Vec<Hash>> {
         unimplemented!()
     }
 
@@ -270,19 +260,11 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn create_virtual_selected_chain_block_locator(
-        &self,
-        low: Option<Hash>,
-        high: Option<Hash>,
-    ) -> ConsensusResult<Vec<Hash>> {
+    fn create_virtual_selected_chain_block_locator(&self, low: Option<Hash>, high: Option<Hash>) -> ConsensusResult<Vec<Hash>> {
         unimplemented!()
     }
 
-    fn create_block_locator_from_pruning_point(
-        &self,
-        high: Hash,
-        limit: usize,
-    ) -> ConsensusResult<Vec<Hash>> {
+    fn create_block_locator_from_pruning_point(&self, high: Hash, limit: usize) -> ConsensusResult<Vec<Hash>> {
         unimplemented!()
     }
 
@@ -290,9 +272,7 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn get_pruning_point_anticone_and_trusted_data(
-        &self,
-    ) -> ConsensusResult<Arc<PruningPointTrustedData>> {
+    fn get_pruning_point_anticone_and_trusted_data(&self) -> ConsensusResult<Arc<PruningPointTrustedData>> {
         unimplemented!()
     }
 
@@ -330,6 +310,7 @@ pub trait ConsensusApi: Send + Sync {
     fn get_blocks_acceptance_data(
         &self,
         hashes: &[Hash],
+        merged_blocks_limit: Option<usize>,
     ) -> ConsensusResult<Vec<Arc<AcceptanceData>>> {
         unimplemented!()
     }
@@ -363,22 +344,15 @@ pub trait ConsensusApi: Send + Sync {
 
     // TODO: Think of a better name.
     // TODO: Delete this function once there's no need for go-karlsend backward compatibility.
-    fn get_trusted_block_associated_ghostdag_data_block_hashes(
-        &self,
-        hash: Hash,
-    ) -> ConsensusResult<Vec<Hash>> {
+    fn get_trusted_block_associated_ghostdag_data_block_hashes(&self, hash: Hash) -> ConsensusResult<Vec<Hash>> {
         unimplemented!()
     }
 
-    fn estimate_network_hashes_per_second(
-        &self,
-        start_hash: Option<Hash>,
-        window_size: usize,
-    ) -> ConsensusResult<u64> {
+    fn estimate_network_hashes_per_second(&self, start_hash: Option<Hash>, window_size: usize) -> ConsensusResult<u64> {
         unimplemented!()
     }
 
-    fn validate_pruning_points(&self) -> ConsensusResult<()> {
+    fn validate_pruning_points(&self, syncer_virtual_selected_parent: Hash) -> ConsensusResult<()> {
         unimplemented!()
     }
 

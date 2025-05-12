@@ -21,8 +21,7 @@ impl Parse for RpcTable {
         if parsed.len() != 2 {
             return Err(Error::new_spanned(
                 parsed,
-                "usage: build_wrpc_client_interface!(interface, RpcApiOps,[getInfo, ..])"
-                    .to_string(),
+                "usage: build_wrpc_client_interface!(interface, RpcApiOps,[getInfo, ..])".to_string(),
             ));
         }
 
@@ -32,10 +31,7 @@ impl Parse for RpcTable {
         // Intake enum variants as an array
         let handlers = get_handlers(iter.next().unwrap().clone())?;
 
-        Ok(RpcTable {
-            rpc_api_ops,
-            handlers,
-        })
+        Ok(RpcTable { rpc_api_ops, handlers })
     }
 }
 
@@ -45,12 +41,7 @@ impl ToTokens for RpcTable {
         let rpc_api_ops = &self.rpc_api_ops;
 
         for handler in self.handlers.elems.iter() {
-            let Handler {
-                fn_call,
-                request_type,
-                response_type,
-                ..
-            } = Handler::new(handler);
+            let Handler { fn_call, request_type, response_type, .. } = Handler::new(handler);
 
             // async fn #fn_call(&self, request : #request_type) -> RpcResult<#response_type> {
             //     let response: ClientResult<#response_type> = self.inner.rpc.call(#rpc_api_ops::#handler, request).await;
@@ -61,26 +52,29 @@ impl ToTokens for RpcTable {
             // the async implementation of the RPC caller is inlined
             targets.push(quote! {
 
-                fn #fn_call<'life0, 'async_trait>(
+                fn #fn_call<'life0, 'life1, 'async_trait>(
                     &'life0 self,
+                    _connection : ::core::option::Option<&'life1 Arc<dyn karlsen_rpc_core::api::connection::RpcConnection>>,
                     request: #request_type,
                 ) -> ::core::pin::Pin<Box<dyn ::core::future::Future<Output = RpcResult<#response_type>> + ::core::marker::Send + 'async_trait>>
                 where
                     'life0: 'async_trait,
+                    'life1: 'async_trait,
                     Self: 'async_trait,
                 {
+                    use workflow_serializer::prelude::*;
                     Box::pin(async move {
                         if let ::core::option::Option::Some(__ret) = ::core::option::Option::None::<RpcResult<#response_type>> {
                             return __ret;
                         }
                         let __self = self;
                         //let request = request;
-                        let __ret: RpcResult<#response_type> = {
-                            let resp: ClientResult<#response_type> = __self.inner.rpc_client.call(#rpc_api_ops::#handler, request).await;
+                        let __ret: RpcResult<Serializable<#response_type>> = {
+                            let resp: ClientResult<Serializable<#response_type>> = __self.inner.rpc_client.call(#rpc_api_ops::#handler, Serializable(request)).await;
                             Ok(resp.map_err(|e| karlsen_rpc_core::error::RpcError::RpcSubsystem(e.to_string()))?)
                         };
                         #[allow(unreachable_code)]
-                        __ret
+                        __ret.map(Serializable::into_inner)
                     })
                 }
 

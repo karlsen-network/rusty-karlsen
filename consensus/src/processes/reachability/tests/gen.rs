@@ -13,10 +13,7 @@ struct Dag {
 
 impl Dag {
     fn new(genesis: u64) -> Self {
-        Self {
-            genesis,
-            blocks: Default::default(),
-        }
+        Self { genesis, blocks: Default::default() }
     }
 }
 
@@ -101,11 +98,7 @@ impl Miner {
 }
 
 impl Process<Message> for Miner {
-    fn resume(
-        &mut self,
-        resumption: Resumption<Message>,
-        env: &mut Environment<Message>,
-    ) -> Suspension {
+    fn resume(&mut self, resumption: Resumption<Message>, env: &mut Environment<Message>) -> Suspension {
         match resumption {
             Resumption::Initial => self.sample_mining_interval(),
             Resumption::Scheduled => self.mine(env),

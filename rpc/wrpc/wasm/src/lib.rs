@@ -1,3 +1,7 @@
+//!
+//! WASM bindings for the [Rusty Karlsen p2p Node wRPC Client](karlsen-wrpc-client)
+//!
+
 #![allow(unused_imports)]
 
 use cfg_if::cfg_if;

@@ -68,6 +68,9 @@ pub struct Config {
 
     /// A scale factor to apply to memory allocation bounds
     pub ram_scale: f64,
+
+    /// The number of days to keep data for
+    pub retention_period_days: Option<f64>,
 }
 
 impl Config {
@@ -95,13 +98,12 @@ impl Config {
             initial_utxo_set: Default::default(),
             disable_upnp: false,
             ram_scale: 1.0,
+            retention_period_days: None,
         }
     }
 
     pub fn to_builder(&self) -> ConfigBuilder {
-        ConfigBuilder {
-            config: self.clone(),
-        }
+        ConfigBuilder { config: self.clone() }
     }
 }
 
@@ -125,9 +127,7 @@ pub struct ConfigBuilder {
 
 impl ConfigBuilder {
     pub fn new(params: Params) -> Self {
-        Self {
-            config: Config::new(params),
-        }
+        Self { config: Config::new(params) }
     }
 
     pub fn set_perf_params(mut self, perf: PerfParams) -> Self {
@@ -136,9 +136,7 @@ impl ConfigBuilder {
     }
 
     pub fn adjust_perf_params_to_consensus_params(mut self) -> Self {
-        self.config
-            .perf
-            .adjust_to_consensus_params(&self.config.params);
+        self.config.perf.adjust_to_consensus_params(&self.config.params);
         self
     }
 

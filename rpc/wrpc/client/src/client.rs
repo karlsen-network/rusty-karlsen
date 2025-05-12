@@ -1,3 +1,5 @@
+//! Karlsen wRPC client implementation.
+
 use crate::imports::*;
 use crate::parse::parse_host;
 use crate::{error::Error, node::NodeDescriptor};
@@ -16,10 +18,9 @@ use workflow_core::{channel::Multiplexer, runtime as application_runtime};
 use workflow_dom::utils::window;
 use workflow_rpc::client::Ctl as WrpcCtl;
 pub use workflow_rpc::client::{
-    ConnectOptions, ConnectResult, ConnectStrategy, Resolver as RpcResolver, ResolverResult,
-    WebSocketConfig, WebSocketError,
+    ConnectOptions, ConnectResult, ConnectStrategy, Resolver as RpcResolver, ResolverResult, WebSocketConfig, WebSocketError,
 };
-
+use workflow_serializer::prelude::*;
 type RpcClientNotifier = Arc<Notifier<Notification, ChannelConnection>>;
 
 struct Inner {
@@ -35,7 +36,14 @@ struct Inner {
     connect_guard: AsyncMutex<()>,
     disconnect_guard: AsyncMutex<()>,
     // ---
+    // The permanent url passed in the constructor
+    // (dominant, overrides Resolver if supplied).
+    ctor_url: Mutex<Option<String>>,
+    // The url passed in the connect() method
+    // (overrides default URL and the Resolver).
     default_url: Mutex<Option<String>>,
+    // The current url wRPC is connected to
+    // (possibly acquired via the Resolver).
     current_url: Mutex<Option<String>>,
     resolver: Mutex<Option<Resolver>>,
     network_id: Mutex<Option<NetworkId>>,
@@ -43,12 +51,7 @@ struct Inner {
 }
 
 impl Inner {
-    pub fn new(
-        encoding: Encoding,
-        url: Option<&str>,
-        resolver: Option<Resolver>,
-        network_id: Option<NetworkId>,
-    ) -> Result<Inner> {
+    pub fn new(encoding: Encoding, url: Option<&str>, resolver: Option<Resolver>, network_id: Option<NetworkId>) -> Result<Inner> {
         // log_trace!("Karlsen wRPC::{encoding} connecting to: {url}");
         let rpc_ctl = RpcCtl::with_descriptor(url);
         let wrpc_ctl_multiplexer = Multiplexer::<WrpcCtl>::new();
@@ -79,16 +82,16 @@ impl Inner {
             let notification_sender_ = notification_relay_channel.sender.clone();
             interface.notification(
                 notification_op,
-                workflow_rpc::client::Notification::new(move |notification: karlsen_rpc_core::Notification| {
+                workflow_rpc::client::Notification::new(move |notification: Serializable<karlsen_rpc_core::Notification>| {
                     let notification_sender = notification_sender_.clone();
                     Box::pin(async move {
                         // log_info!("notification receivers: {}", notification_sender.receiver_count());
                         // log_trace!("notification {:?}", notification);
                         if notification_sender.receiver_count() > 1 {
                             // log_info!("notification: posting to channel: {notification:?}");
-                            notification_sender.send(notification).await?;
+                            notification_sender.send(notification.into_inner()).await?;
                         } else {
-                            log_warn!("WARNING: Karlsen RPC notification is not consumed by user: {:?}", notification);
+                            log_warn!("WARNING: Karlsen RPC notification is not consumed by user: {:?}", notification.into_inner());
                         }
                         Ok(())
                     })
@@ -96,12 +99,7 @@ impl Inner {
             );
         });
 
-        let rpc = Arc::new(RpcClient::new_with_encoding(
-            encoding,
-            interface.into(),
-            options,
-            None,
-        )?);
+        let rpc = Arc::new(RpcClient::new_with_encoding(encoding, interface.into(), options, None)?);
         let client = Self {
             rpc_client: rpc,
             notification_relay_channel,
@@ -115,7 +113,8 @@ impl Inner {
             connect_guard: async_std::sync::Mutex::new(()),
             disconnect_guard: async_std::sync::Mutex::new(()),
             // ---
-            default_url: Mutex::new(url.map(|s| s.to_string())),
+            ctor_url: Mutex::new(url.map(|s| s.to_string())),
+            default_url: Mutex::new(None),
             current_url: Mutex::new(None),
             resolver: Mutex::new(resolver),
             network_id: Mutex::new(network_id),
@@ -132,22 +131,20 @@ impl Inner {
 
     /// Start sending notifications of some type to the client.
     async fn start_notify_to_client(&self, scope: Scope) -> RpcResult<()> {
-        let _response: SubscribeResponse = self
-            .rpc_client
-            .call(RpcApiOps::Subscribe, scope)
-            .await
-            .map_err(|err| err.to_string())?;
+        let _response: Serializable<SubscribeResponse> =
+            self.rpc_client.call(RpcApiOps::Subscribe, Serializable(scope)).await.map_err(|err| err.to_string())?;
         Ok(())
     }
 
     /// Stop sending notifications of some type to the client.
     async fn stop_notify_to_client(&self, scope: Scope) -> RpcResult<()> {
-        let _response: UnsubscribeResponse = self
-            .rpc_client
-            .call(RpcApiOps::Unsubscribe, scope)
-            .await
-            .map_err(|err| err.to_string())?;
+        let _response: Serializable<UnsubscribeResponse> =
+            self.rpc_client.call(RpcApiOps::Unsubscribe, Serializable(scope)).await.map_err(|err| err.to_string())?;
         Ok(())
+    }
+
+    fn ctor_url(&self) -> Option<String> {
+        self.ctor_url.lock().unwrap().clone()
     }
 
     fn default_url(&self) -> Option<String> {
@@ -174,26 +171,13 @@ impl Inner {
         *self.network_id.lock().unwrap()
     }
 
-    fn build_notifier(
-        self: &Arc<Self>,
-        subscription_context: Option<SubscriptionContext>,
-    ) -> Result<RpcClientNotifier> {
-        let receiver = self
-            .notification_intake_channel
-            .lock()
-            .unwrap()
-            .receiver
-            .clone();
+    fn build_notifier(self: &Arc<Self>, subscription_context: Option<SubscriptionContext>) -> Result<RpcClientNotifier> {
+        let receiver = self.notification_intake_channel.lock().unwrap().receiver.clone();
 
         let enabled_events = EVENT_TYPE_ARRAY[..].into();
         let converter = Arc::new(RpcCoreConverter::new());
         let collector = Arc::new(RpcCoreCollector::new(WRPC_CLIENT, receiver, converter));
-        let subscriber = Arc::new(Subscriber::new(
-            WRPC_CLIENT,
-            enabled_events,
-            self.clone(),
-            0,
-        ));
+        let subscriber = Arc::new(Subscriber::new(WRPC_CLIENT, enabled_events, self.clone(), 0));
         let policies = MutationPolicies::new(UtxosChangedMutationPolicy::AddressSet);
         let notifier = Arc::new(Notifier::new(
             WRPC_CLIENT,
@@ -230,17 +214,13 @@ impl Debug for Inner {
 impl SubscriptionManager for Inner {
     async fn start_notify(&self, _: ListenerId, scope: Scope) -> NotifyResult<()> {
         // log_trace!("[WrpcClient] start_notify: {:?}", scope);
-        self.start_notify_to_client(scope)
-            .await
-            .map_err(|err| NotifyError::General(err.to_string()))?;
+        self.start_notify_to_client(scope).await.map_err(|err| NotifyError::General(err.to_string()))?;
         Ok(())
     }
 
     async fn stop_notify(&self, _: ListenerId, scope: Scope) -> NotifyResult<()> {
         // log_trace!("[WrpcClient] stop_notify: {:?}", scope);
-        self.stop_notify_to_client(scope)
-            .await
-            .map_err(|err| NotifyError::General(err.to_string()))?;
+        self.stop_notify_to_client(scope).await.map_err(|err| NotifyError::General(err.to_string()))?;
         Ok(())
     }
 }
@@ -248,21 +228,16 @@ impl SubscriptionManager for Inner {
 #[async_trait]
 impl RpcResolver for Inner {
     async fn resolve_url(&self) -> ResolverResult {
-        let url = if let Some(url) = self.default_url() {
+        let url = if let Some(url) = self.default_url().or(self.ctor_url()) {
             url
         } else if let Some(resolver) = self.resolver().as_ref() {
-            let network_id = self
-                .network_id()
-                .expect("Resolver requires network id in RPC client configuration");
-            let node = resolver
-                .get_node(self.encoding, network_id)
-                .await
-                .map_err(WebSocketError::custom)?;
+            let network_id = self.network_id().expect("Resolver requires network id in RPC client configuration");
+            let node = resolver.get_node(self.encoding, network_id).await.map_err(WebSocketError::custom)?;
             let url = node.url.clone();
             self.node_descriptor.lock().unwrap().replace(Arc::new(node));
             url
         } else {
-            panic!("RpcClient resolver configuration error (expecting Some(Resolver))")
+            panic!("RpcClient resolver configuration error (expecting `url` or `resolver` as `Some(Resolver))`")
         };
 
         self.rpc_ctl.set_descriptor(Some(url.clone()));
@@ -273,14 +248,17 @@ impl RpcResolver for Inner {
 
 const WRPC_CLIENT: &str = "wrpc-client";
 
-/// [`KarlsenRpcClient`] allows connection to the Karlsen wRPC Server via
-/// binary Borsh or JSON protocols.
+/// # [`KarlsenRpcClient`] connects to Karlsen wRPC endpoint via binary Borsh or JSON protocols.
 ///
 /// RpcClient has two ways to interface with the underlying RPC subsystem:
 /// [`Interface`] that has a [`notification()`](Interface::notification)
 /// method to register closures that will be invoked on server-side
-/// notifications and the [`RpcClient::call`] method that allows async
-/// method invocation server-side.
+/// notifications and the [`RpcClient::call`] method that allows server-side
+/// async method invocation.
+///
+/// The node address can be supplied via a URL or a [`Resolver`] that
+/// can be used to resolve a public node address dynamically. [`Resolver`] can also
+/// be configured to operate against custom node clusters.
 ///
 #[derive(Clone)]
 pub struct KarlsenRpcClient {
@@ -289,15 +267,16 @@ pub struct KarlsenRpcClient {
 
 impl Debug for KarlsenRpcClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("KarlsenRpcClient")
-            .field("url", &self.url())
-            .field("connected", &self.is_connected())
-            .finish()
+        f.debug_struct("KarlsenRpcClient").field("url", &self.url()).field("connected", &self.is_connected()).finish()
     }
 }
 
 impl KarlsenRpcClient {
-    /// Create a new `KarlsenRpcClient` with the given Encoding and URL
+    /// Create a new `KarlsenRpcClient` with the given Encoding, and an optional url or a Resolver.
+    /// Please note that if you pass the url to the constructor, it will force the KarlsenRpcClient
+    /// to always use this url.  If you want to have the ability to switch between urls,
+    /// you must pass [`Option::None`] as the `url` argument and then supply your own url to the `connect()`
+    /// function each time you connect.
     pub fn new(
         encoding: Encoding,
         url: Option<&str>,
@@ -364,12 +343,7 @@ impl KarlsenRpcClient {
     }
 
     fn notifier(&self) -> RpcClientNotifier {
-        self.inner
-            .notifier
-            .lock()
-            .unwrap()
-            .clone()
-            .expect("Rpc client is not correctly initialized")
+        self.inner.notifier.lock().unwrap().clone().expect("Rpc client is not correctly initialized")
     }
 
     pub fn url(&self) -> Option<String> {
@@ -419,16 +393,14 @@ impl KarlsenRpcClient {
         &self.inner.rpc_ctl
     }
 
+    pub fn ctl_multiplexer(&self) -> Multiplexer<WrpcCtl> {
+        self.inner.wrpc_ctl_multiplexer.clone()
+    }
+
     /// Start background RPC services.
     pub async fn start(&self) -> Result<()> {
-        if !self
-            .inner
-            .background_services_running
-            .load(Ordering::SeqCst)
-        {
-            self.inner
-                .background_services_running
-                .store(true, Ordering::SeqCst);
+        if !self.inner.background_services_running.load(Ordering::SeqCst) {
+            self.inner.background_services_running.store(true, Ordering::SeqCst);
             self.start_notifier().await?;
             self.start_rpc_ctl_service().await?;
         }
@@ -438,16 +410,10 @@ impl KarlsenRpcClient {
 
     /// Stop background RPC services.
     pub async fn stop(&self) -> Result<()> {
-        if self
-            .inner
-            .background_services_running
-            .load(Ordering::SeqCst)
-        {
+        if self.inner.background_services_running.load(Ordering::SeqCst) {
             self.stop_rpc_ctl_service().await?;
             self.stop_notifier().await?;
-            self.inner
-                .background_services_running
-                .store(false, Ordering::SeqCst);
+            self.inner.background_services_running.store(false, Ordering::SeqCst);
         }
 
         Ok(())
@@ -461,14 +427,15 @@ impl KarlsenRpcClient {
     /// This method starts background RPC services if they are not running and
     /// attempts to connect to the RPC endpoint.
     pub async fn connect(&self, options: Option<ConnectOptions>) -> ConnectResult<Error> {
+        // this has no effect if not currently connected
+        self.disconnect().await?;
         let _guard = self.inner.connect_guard.lock().await;
 
-        let mut options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
         let strategy = options.strategy;
 
-        if let Some(url) = options.url.take() {
-            self.set_url(Some(&url))?;
-        }
+        self.inner.set_default_url(options.url.as_deref());
+        self.inner.rpc_ctl.set_descriptor(options.url.clone());
 
         // 1Gb message and frame size limits (on native and NodeJs platforms)
         let ws_config = WebSocketConfig {
@@ -515,34 +482,20 @@ impl KarlsenRpcClient {
     pub fn connect_as_task(&self) -> Result<()> {
         let self_ = self.clone();
         workflow_core::task::spawn(async move {
-            self_
-                .inner
-                .rpc_client
-                .connect(ConnectOptions::default())
-                .await
-                .ok();
+            self_.inner.rpc_client.connect(ConnectOptions::default()).await.ok();
         });
         Ok(())
     }
 
     pub fn notification_channel_receiver(&self) -> Receiver<Notification> {
-        self.inner
-            .notification_intake_channel
-            .lock()
-            .unwrap()
-            .receiver
-            .clone()
+        self.inner.notification_intake_channel.lock().unwrap().receiver.clone()
     }
 
     pub fn ctl(&self) -> &RpcCtl {
         &self.inner.rpc_ctl
     }
 
-    pub fn parse_url_with_network_type(
-        &self,
-        url: String,
-        network_type: NetworkType,
-    ) -> Result<String> {
+    pub fn parse_url_with_network_type(&self, url: String, network_type: NetworkType) -> Result<String> {
         Self::parse_url(url, self.inner.encoding, network_type)
     }
 
@@ -556,9 +509,8 @@ impl KarlsenRpcClient {
                     return Ok("ws");
                 }
                 let location = window().location();
-                let protocol = location.protocol().map_err(|_| {
-                    Error::UrlError("Unable to obtain window location protocol".to_string())
-                })?;
+                let protocol =
+                    location.protocol().map_err(|_| Error::UrlError("Unable to obtain window location protocol".to_string()))?;
                 if protocol == "http:" || protocol == "chrome-extension:" {
                     Ok("ws")
                 } else if protocol == "https:" {
@@ -586,10 +538,7 @@ impl KarlsenRpcClient {
         if (parse_output.scheme.is_some() || !path_str.is_empty()) && parse_output.port.is_none() {
             Ok(format!("{}://{}{}", scheme, parse_output.host, path_str))
         } else {
-            Ok(format!(
-                "{}://{}:{}{}",
-                scheme, parse_output.host, port, path_str
-            ))
+            Ok(format!("{}://{}:{}{}", scheme, parse_output.host, port, path_str))
         }
     }
 
@@ -662,6 +611,7 @@ impl RpcApi for KarlsenRpcClient {
     build_wrpc_client_interface!(
         RpcApiOps,
         [
+            Ping,
             AddPeer,
             Ban,
             EstimateNetworkHashesPerSecond,
@@ -672,29 +622,35 @@ impl RpcApi for KarlsenRpcClient {
             GetBlockDagInfo,
             GetBlocks,
             GetBlockTemplate,
+            GetCurrentBlockColor,
             GetCoinSupply,
             GetConnectedPeerInfo,
-            GetDaaScoreTimestampEstimate,
-            GetServerInfo,
+            GetConnections,
             GetCurrentNetwork,
+            GetDaaScoreTimestampEstimate,
+            GetFeeEstimate,
+            GetFeeEstimateExperimental,
             GetHeaders,
             GetInfo,
             GetMempoolEntries,
             GetMempoolEntriesByAddresses,
             GetMempoolEntry,
-            GetPeerAddresses,
             GetMetrics,
+            GetPeerAddresses,
+            GetServerInfo,
             GetSink,
-            GetSyncStatus,
-            GetSubnetwork,
-            GetUtxosByAddresses,
             GetSinkBlueScore,
+            GetSubnetwork,
+            GetSyncStatus,
+            GetSystemInfo,
+            GetUtxoReturnAddress,
+            GetUtxosByAddresses,
             GetVirtualChainFromBlock,
-            Ping,
             ResolveFinalityConflict,
             Shutdown,
             SubmitBlock,
             SubmitTransaction,
+            SubmitTransactionReplacement,
             Unban,
         ]
     );
@@ -704,8 +660,7 @@ impl RpcApi for KarlsenRpcClient {
 
     /// Register a new listener and returns an id and a channel receiver.
     fn register_new_listener(&self, connection: ChannelConnection) -> ListenerId {
-        self.notifier()
-            .register_new_listener(connection, ListenerLifespan::Dynamic)
+        self.notifier().register_new_listener(connection, ListenerLifespan::Dynamic)
         // match self.notification_mode {
         //     NotificationMode::MultiListeners => {
         //         self.notifier.as_ref().unwrap().register_new_listener(connection, ListenerLifespan::Dynamic)

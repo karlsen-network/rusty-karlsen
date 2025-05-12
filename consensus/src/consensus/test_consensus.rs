@@ -1,9 +1,11 @@
 use async_channel::Sender;
 use karlsen_consensus_core::coinbase::MinerData;
+use karlsen_consensus_core::constants;
+use karlsen_consensus_core::mining_rules::MiningRules;
 use karlsen_consensus_core::tx::ScriptPublicKey;
 use karlsen_consensus_core::{
-    api::ConsensusApi, block::MutableBlock, blockstatus::BlockStatus, header::Header,
-    merkle::calc_hash_merkle_root, subnets::SUBNETWORK_ID_COINBASE, tx::Transaction,
+    api::ConsensusApi, block::MutableBlock, blockstatus::BlockStatus, header::Header, merkle::calc_hash_merkle_root,
+    subnets::SUBNETWORK_ID_COINBASE, tx::Transaction,
 };
 use karlsen_consensus_notify::{notification::Notification, root::ConsensusNotificationRoot};
 use karlsen_consensusmanager::{ConsensusFactory, ConsensusInstance, DynConsensusCtl};
@@ -13,11 +15,8 @@ use karlsen_hashes::Hash;
 use karlsen_notify::subscription::context::SubscriptionContext;
 use parking_lot::RwLock;
 
-use karlsen_database::create_temp_db;
-use karlsen_database::prelude::ConnBuilder;
-use std::future::Future;
-use std::{sync::Arc, thread::JoinHandle};
-
+use super::services::{DbDagTraversalManager, DbGhostdagManager, DbWindowManager};
+use super::Consensus;
 use crate::pipeline::virtual_processor::test_block_builder::TestBlockBuilder;
 use crate::processes::window::WindowManager;
 use crate::{
@@ -27,20 +26,18 @@ use crate::{
     model::{
         services::reachability::MTReachabilityService,
         stores::{
-            ghostdag::DbGhostdagStore, headers::HeaderStoreReader, pruning::PruningStoreReader,
-            reachability::DbReachabilityStore, virtual_state::VirtualStores, DB,
+            ghostdag::DbGhostdagStore, headers::HeaderStoreReader, pruning::PruningStoreReader, reachability::DbReachabilityStore,
+            virtual_state::VirtualStores, DB,
         },
     },
     params::Params,
-    pipeline::{
-        body_processor::BlockBodyProcessor, virtual_processor::VirtualStateProcessor,
-        ProcessingCounters,
-    },
+    pipeline::{body_processor::BlockBodyProcessor, virtual_processor::VirtualStateProcessor, ProcessingCounters},
     test_helpers::header_from_precomputed_hash,
 };
-
-use super::services::{DbDagTraversalManager, DbGhostdagManager, DbWindowManager};
-use super::Consensus;
+use karlsen_database::create_temp_db;
+use karlsen_database::prelude::ConnBuilder;
+use std::future::Future;
+use std::{sync::Arc, thread::JoinHandle};
 
 pub struct TestConsensus {
     params: Params,
@@ -51,11 +48,7 @@ pub struct TestConsensus {
 
 impl TestConsensus {
     /// Creates a test consensus instance based on `config` with the provided `db` and `notification_sender`
-    pub fn with_db(
-        db: Arc<DB>,
-        config: &Config,
-        notification_sender: Sender<Notification>,
-    ) -> Self {
+    pub fn with_db(db: Arc<DB>, config: &Config, notification_sender: Sender<Notification>) -> Self {
         let notification_root = Arc::new(ConsensusNotificationRoot::new(notification_sender));
         let counters = Default::default();
         let tx_script_cache_counters = Default::default();
@@ -67,28 +60,17 @@ impl TestConsensus {
             counters,
             tx_script_cache_counters,
             0,
+            Arc::new(MiningRules::default()),
         ));
         let block_builder = TestBlockBuilder::new(consensus.virtual_processor.clone());
 
-        Self {
-            params: config.params.clone(),
-            consensus,
-            block_builder,
-            db_lifetime: Default::default(),
-        }
+        Self { params: config.params.clone(), consensus, block_builder, db_lifetime: Default::default() }
     }
 
     /// Creates a test consensus instance based on `config` with a temp DB and the provided `notification_sender`
-    pub fn with_notifier(
-        config: &Config,
-        notification_sender: Sender<Notification>,
-        context: SubscriptionContext,
-    ) -> Self {
+    pub fn with_notifier(config: &Config, notification_sender: Sender<Notification>, context: SubscriptionContext) -> Self {
         let (db_lifetime, db) = create_temp_db!(ConnBuilder::default().with_files_limit(10));
-        let notification_root = Arc::new(ConsensusNotificationRoot::with_context(
-            notification_sender,
-            context,
-        ));
+        let notification_root = Arc::new(ConsensusNotificationRoot::with_context(notification_sender, context));
         let counters = Default::default();
         let tx_script_cache_counters = Default::default();
         let consensus = Arc::new(Consensus::new(
@@ -99,15 +81,11 @@ impl TestConsensus {
             counters,
             tx_script_cache_counters,
             0,
+            Arc::new(MiningRules::default()),
         ));
         let block_builder = TestBlockBuilder::new(consensus.virtual_processor.clone());
 
-        Self {
-            consensus,
-            block_builder,
-            params: config.params.clone(),
-            db_lifetime,
-        }
+        Self { consensus, block_builder, params: config.params.clone(), db_lifetime }
     }
 
     /// Creates a test consensus instance based on `config` with a temp DB and no notifier
@@ -125,15 +103,11 @@ impl TestConsensus {
             counters,
             tx_script_cache_counters,
             0,
+            Arc::new(MiningRules::default()),
         ));
         let block_builder = TestBlockBuilder::new(consensus.virtual_processor.clone());
 
-        Self {
-            consensus,
-            block_builder,
-            params: config.params.clone(),
-            db_lifetime,
-        }
+        Self { consensus, block_builder, params: config.params.clone(), db_lifetime }
     }
 
     /// Clone the inner consensus Arc. For general usage of the underlying consensus simply deref
@@ -147,54 +121,38 @@ impl TestConsensus {
 
     pub fn build_header_with_parents(&self, hash: Hash, parents: Vec<Hash>) -> Header {
         let mut header = header_from_precomputed_hash(hash, parents);
-        let ghostdag_data = self
-            .consensus
-            .services
-            .ghostdag_primary_manager
-            .ghostdag(header.direct_parents());
+        let ghostdag_data = self.consensus.services.ghostdag_manager.ghostdag(header.direct_parents());
         header.pruning_point = self
             .consensus
             .services
             .pruning_point_manager
-            .expected_header_pruning_point(
-                ghostdag_data.to_compact(),
-                self.consensus.pruning_point_store.read().get().unwrap(),
-            );
-        let daa_window = self
-            .consensus
-            .services
-            .window_manager
-            .block_daa_window(&ghostdag_data)
-            .unwrap();
-        header.bits = self
-            .consensus
-            .services
-            .window_manager
-            .calculate_difficulty_bits(&ghostdag_data, &daa_window);
+            .expected_header_pruning_point_v1(ghostdag_data.to_compact(), self.consensus.pruning_point_store.read().get().unwrap());
+        let daa_window = self.consensus.services.window_manager.block_daa_window(&ghostdag_data).unwrap();
+        header.bits = self.consensus.services.window_manager.calculate_difficulty_bits(&ghostdag_data, &daa_window);
         header.daa_score = daa_window.daa_score;
-        header.timestamp = self
-            .consensus
-            .services
-            .window_manager
-            .calc_past_median_time(&ghostdag_data)
-            .unwrap()
-            .0
-            + 1;
+        header.timestamp = self.consensus.services.window_manager.calc_past_median_time(&ghostdag_data).unwrap().0 + 1;
         header.blue_score = ghostdag_data.blue_score;
         header.blue_work = ghostdag_data.blue_work;
+
+        if self.params.khashv2_activation.is_active(header.daa_score) {
+            header.version = constants::BLOCK_VERSION_KHASHV2;
+        } else {
+            header.version = constants::BLOCK_VERSION_KHASHV1;
+        }
 
         header
     }
 
-    pub fn add_block_with_parents(
-        &self,
-        hash: Hash,
-        parents: Vec<Hash>,
-    ) -> impl Future<Output = BlockProcessResult<BlockStatus>> {
-        self.validate_and_insert_block(self.build_block_with_parents(hash, parents).to_immutable())
-            .virtual_state_task
+    pub fn add_block_with_parents(&self, hash: Hash, parents: Vec<Hash>) -> impl Future<Output = BlockProcessResult<BlockStatus>> {
+        self.validate_and_insert_block(self.build_block_with_parents(hash, parents).to_immutable()).virtual_state_task
     }
 
+    /// Adds a valid block with the given transactions and parents to the consensus.
+    ///
+    /// # Panics
+    ///
+    /// Panics if block builder validation rules are violated.
+    /// See `karlsen_consensus_core::errors::block::RuleError` for the complete list of possible validation rules.
     pub fn add_utxo_valid_block_with_parents(
         &self,
         hash: Hash,
@@ -202,13 +160,16 @@ impl TestConsensus {
         txs: Vec<Transaction>,
     ) -> impl Future<Output = BlockProcessResult<BlockStatus>> {
         let miner_data = MinerData::new(ScriptPublicKey::from_vec(0, vec![]), vec![]);
-        self.validate_and_insert_block(
-            self.build_utxo_valid_block_with_parents(hash, parents, miner_data, txs)
-                .to_immutable(),
-        )
-        .virtual_state_task
+        self.validate_and_insert_block(self.build_utxo_valid_block_with_parents(hash, parents, miner_data, txs).to_immutable())
+            .virtual_state_task
     }
 
+    /// Builds a valid block with the given transactions, parents, and miner data.
+    ///
+    /// # Panics
+    ///
+    /// Panics if block builder validation rules are violated.
+    /// See `karlsen_consensus_core::errors::block::RuleError` for the complete list of possible validation rules.
     pub fn build_utxo_valid_block_with_parents(
         &self,
         hash: Hash,
@@ -216,10 +177,7 @@ impl TestConsensus {
         miner_data: MinerData,
         txs: Vec<Transaction>,
     ) -> MutableBlock {
-        let mut template = self
-            .block_builder
-            .build_block_template_with_parents(parents, miner_data, txs)
-            .unwrap();
+        let mut template = self.block_builder.build_block_template_with_parents(parents, miner_data, txs).unwrap();
         template.block.header.hash = hash;
         template.block
     }
@@ -249,17 +207,9 @@ impl TestConsensus {
             .chain((0_u8).to_le_bytes().iter().copied()) // Script public key length
             .collect();
 
-        let cb = Transaction::new(
-            TX_VERSION,
-            vec![],
-            vec![],
-            0,
-            SUBNETWORK_ID_COINBASE,
-            0,
-            cb_payload,
-        );
+        let cb = Transaction::new(TX_VERSION, vec![], vec![], 0, SUBNETWORK_ID_COINBASE, 0, cb_payload);
         txs.insert(0, cb);
-        header.hash_merkle_root = calc_hash_merkle_root(txs.iter());
+        header.hash_merkle_root = calc_hash_merkle_root(txs.iter(), false);
         MutableBlock::new(header, txs)
     }
 
@@ -284,7 +234,7 @@ impl TestConsensus {
     }
 
     pub fn ghostdag_store(&self) -> &Arc<DbGhostdagStore> {
-        &self.consensus.ghostdag_primary_store
+        &self.consensus.ghostdag_store
     }
 
     pub fn reachability_store(&self) -> &Arc<RwLock<DbReachabilityStore>> {
@@ -316,7 +266,7 @@ impl TestConsensus {
     }
 
     pub fn ghostdag_manager(&self) -> &DbGhostdagManager {
-        &self.consensus.services.ghostdag_primary_manager
+        &self.consensus.services.ghostdag_manager
     }
 }
 

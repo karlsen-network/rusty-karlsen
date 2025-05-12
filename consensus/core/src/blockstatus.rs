@@ -27,10 +27,7 @@ impl BlockStatus {
     pub fn has_block_header(self) -> bool {
         matches!(
             self,
-            Self::StatusHeaderOnly
-                | Self::StatusUTXOValid
-                | Self::StatusUTXOPendingVerification
-                | Self::StatusDisqualifiedFromChain
+            Self::StatusHeaderOnly | Self::StatusUTXOValid | Self::StatusUTXOPendingVerification | Self::StatusDisqualifiedFromChain
         )
     }
 
@@ -39,19 +36,11 @@ impl BlockStatus {
     }
 
     pub fn has_block_body(self) -> bool {
-        matches!(
-            self,
-            Self::StatusUTXOValid
-                | Self::StatusUTXOPendingVerification
-                | Self::StatusDisqualifiedFromChain
-        )
+        matches!(self, Self::StatusUTXOValid | Self::StatusUTXOPendingVerification | Self::StatusDisqualifiedFromChain)
     }
 
     pub fn is_utxo_valid_or_pending(self) -> bool {
-        matches!(
-            self,
-            Self::StatusUTXOValid | Self::StatusUTXOPendingVerification
-        )
+        matches!(self, Self::StatusUTXOValid | Self::StatusUTXOPendingVerification)
     }
 
     pub fn is_valid(self) -> bool {

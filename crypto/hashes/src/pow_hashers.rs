@@ -29,8 +29,8 @@ const LIGHT_CACHE_ROUNDS: i32 = 3;
 const LIGHT_CACHE_NUM_ITEMS: u32 = 1179641;
 const FULL_DATASET_NUM_ITEMS: u32 = 37748717;
 const SEED: Hash256 = Hash256([
-    0xeb, 0x01, 0x63, 0xae, 0xf2, 0xab, 0x1c, 0x5a, 0x66, 0x31, 0x0c, 0x1c, 0x14, 0xd6, 0x0f, 0x42,
-    0x55, 0xa9, 0xb3, 0x9b, 0x0e, 0xdf, 0x26, 0x53, 0x98, 0x44, 0xf1, 0x17, 0xad, 0x67, 0x21, 0x19,
+    0xeb, 0x01, 0x63, 0xae, 0xf2, 0xab, 0x1c, 0x5a, 0x66, 0x31, 0x0c, 0x1c, 0x14, 0xd6, 0x0f, 0x42, 0x55, 0xa9, 0xb3, 0x9b, 0x0e,
+    0xdf, 0x26, 0x53, 0x98, 0x44, 0xf1, 0x17, 0xad, 0x67, 0x21, 0x19,
 ]);
 
 const SIZE_U32: usize = std::mem::size_of::<u32>();
@@ -43,29 +43,19 @@ pub trait HashData {
     fn as_bytes_mut(&mut self) -> &mut [u8];
 
     fn get_as_u32(&self, index: usize) -> u32 {
-        u32::from_le_bytes(
-            self.as_bytes()[index * SIZE_U32..index * SIZE_U32 + SIZE_U32]
-                .try_into()
-                .unwrap(),
-        )
+        u32::from_le_bytes(self.as_bytes()[index * SIZE_U32..index * SIZE_U32 + SIZE_U32].try_into().unwrap())
     }
 
     fn set_as_u32(&mut self, index: usize, value: u32) {
-        self.as_bytes_mut()[index * SIZE_U32..index * SIZE_U32 + SIZE_U32]
-            .copy_from_slice(&value.to_le_bytes())
+        self.as_bytes_mut()[index * SIZE_U32..index * SIZE_U32 + SIZE_U32].copy_from_slice(&value.to_le_bytes())
     }
 
     fn get_as_u64(&self, index: usize) -> u64 {
-        u64::from_le_bytes(
-            self.as_bytes()[index * SIZE_U64..index * SIZE_U64 + SIZE_U64]
-                .try_into()
-                .unwrap(),
-        )
+        u64::from_le_bytes(self.as_bytes()[index * SIZE_U64..index * SIZE_U64 + SIZE_U64].try_into().unwrap())
     }
 
     fn set_as_u64(&mut self, index: usize, value: u64) {
-        self.as_bytes_mut()[index * SIZE_U64..index * SIZE_U64 + SIZE_U64]
-            .copy_from_slice(&value.to_le_bytes())
+        self.as_bytes_mut()[index * SIZE_U64..index * SIZE_U64 + SIZE_U64].copy_from_slice(&value.to_le_bytes())
     }
 }
 
@@ -216,11 +206,7 @@ impl Context {
         PowFishHash::keccak(&mut item.0, &SEED.0);
         cache[0] = item;
 
-        for cache_item in cache
-            .iter_mut()
-            .take(LIGHT_CACHE_NUM_ITEMS as usize)
-            .skip(1)
-        {
+        for cache_item in cache.iter_mut().take(LIGHT_CACHE_NUM_ITEMS as usize).skip(1) {
             PowFishHash::keccak_in_place(&mut item.0);
             *cache_item = item;
         }
@@ -232,8 +218,7 @@ impl Context {
                 let v: u32 = t % LIGHT_CACHE_NUM_ITEMS;
 
                 // Second index
-                let w: u32 =
-                    (LIGHT_CACHE_NUM_ITEMS.wrapping_add(i.wrapping_sub(1))) % LIGHT_CACHE_NUM_ITEMS;
+                let w: u32 = (LIGHT_CACHE_NUM_ITEMS.wrapping_add(i.wrapping_sub(1))) % LIGHT_CACHE_NUM_ITEMS;
 
                 let x = &cache[v as usize] ^ &cache[w as usize];
                 PowFishHash::keccak(&mut cache[i as usize].0, &x.0);
@@ -283,10 +268,7 @@ impl PowFishHash {
 
             // Modify fetch1 and fetch2
             for j in 0..32 {
-                fetch1.set_as_u32(
-                    j,
-                    PowFishHash::fnv1(mix.get_as_u32(j), fetch1.get_as_u32(j)),
-                );
+                fetch1.set_as_u32(j, PowFishHash::fnv1(mix.get_as_u32(j), fetch1.get_as_u32(j)));
                 fetch2.set_as_u32(j, mix.get_as_u32(j) ^ fetch2.get_as_u32(j));
             }
 
@@ -295,10 +277,7 @@ impl PowFishHash {
                 mix.set_as_u64(
                     j,
                     //fetch0.get_as_u64(j) * fetch1.get_as_u64(j) + fetch2.get_as_u64(j),
-                    fetch0
-                        .get_as_u64(j)
-                        .wrapping_mul(fetch1.get_as_u64(j))
-                        .wrapping_add(fetch2.get_as_u64(j)),
+                    fetch0.get_as_u64(j).wrapping_mul(fetch1.get_as_u64(j)).wrapping_add(fetch2.get_as_u64(j)),
                 );
             }
         }
@@ -336,10 +315,8 @@ impl PowFishHash {
             let mut mix_group: [u32; 8] = [0; 8];
 
             for (c, mix_group_elem) in mix_group.iter_mut().enumerate() {
-                *mix_group_elem = mix.get_as_u32(4 * c)
-                    ^ mix.get_as_u32(4 * c + 1)
-                    ^ mix.get_as_u32(4 * c + 2)
-                    ^ mix.get_as_u32(4 * c + 3);
+                *mix_group_elem =
+                    mix.get_as_u32(4 * c) ^ mix.get_as_u32(4 * c + 1) ^ mix.get_as_u32(4 * c + 2) ^ mix.get_as_u32(4 * c + 3);
             }
 
             let p0 = (mix_group[0] ^ mix_group[3] ^ mix_group[6]) % FULL_DATASET_NUM_ITEMS;
@@ -356,10 +333,7 @@ impl PowFishHash {
 
             // Modify fetch1 and fetch2
             for j in 0..32 {
-                fetch1.set_as_u32(
-                    j,
-                    PowFishHash::fnv1(mix.get_as_u32(j), fetch1.get_as_u32(j)),
-                );
+                fetch1.set_as_u32(j, PowFishHash::fnv1(mix.get_as_u32(j), fetch1.get_as_u32(j)));
                 fetch2.set_as_u32(j, mix.get_as_u32(j) ^ fetch2.get_as_u32(j));
             }
 
@@ -368,10 +342,7 @@ impl PowFishHash {
                 mix.set_as_u64(
                     j,
                     //fetch0.get_as_u64(j) * fetch1.get_as_u64(j) + fetch2.get_as_u64(j),
-                    fetch0
-                        .get_as_u64(j)
-                        .wrapping_mul(fetch1.get_as_u64(j))
-                        .wrapping_add(fetch2.get_as_u64(j)),
+                    fetch0.get_as_u64(j).wrapping_mul(fetch1.get_as_u64(j)).wrapping_add(fetch2.get_as_u64(j)),
                 );
             }
         }
@@ -561,11 +532,7 @@ mod keccak256 {
         keccak::f1600(state);
     }
 
-    #[cfg(all(
-        target_arch = "x86_64",
-        not(feature = "no-asm"),
-        not(target_os = "windows")
-    ))]
+    #[cfg(all(target_arch = "x86_64", not(feature = "no-asm"), not(target_os = "windows")))]
     #[inline(always)]
     pub(super) fn f1600(state: &mut [u64; 25]) {
         extern "C" {

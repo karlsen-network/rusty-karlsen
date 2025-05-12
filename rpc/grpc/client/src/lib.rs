@@ -11,10 +11,7 @@ use karlsen_core::{debug, error, trace};
 use karlsen_grpc_core::{
     channel::NotificationChannel,
     ops::KarlsendPayloadOps,
-    protowire::{
-        karlsend_request, rpc_client::RpcClient, GetInfoRequestMessage, KarlsendRequest,
-        KarlsendResponse,
-    },
+    protowire::{karlsend_request, rpc_client::RpcClient, GetInfoRequestMessage, KarlsendRequest, KarlsendResponse},
     RPC_MAX_MESSAGE_SIZE,
 };
 use karlsen_notify::{
@@ -26,8 +23,8 @@ use karlsen_notify::{
     scope::Scope,
     subscriber::{Subscriber, SubscriptionManager},
     subscription::{
-        array::ArrayBuilder, context::SubscriptionContext, Command, DynSubscription, MutateSingle,
-        Mutation, MutationPolicies, UtxosChangedMutationPolicy,
+        array::ArrayBuilder, context::SubscriptionContext, Command, DynSubscription, MutateSingle, Mutation, MutationPolicies,
+        UtxosChangedMutationPolicy,
     },
 };
 use karlsen_rpc_core::{
@@ -41,9 +38,7 @@ use karlsen_rpc_core::{
 use karlsen_utils::{channel::Channel, triggers::DuplexTrigger};
 use karlsen_utils_tower::{
     counters::TowerConnectionCounters,
-    middleware::{
-        measure_request_body_size_layer, CountBytesBody, MapResponseBodyLayer, ServiceBuilder,
-    },
+    middleware::{BodyExt, CountBytesBody, MapRequestBodyLayer, MapResponseBodyLayer, ServiceBuilder},
 };
 use regex::Regex;
 use std::{
@@ -55,7 +50,6 @@ use std::{
 };
 use tokio::sync::Mutex;
 use tonic::codec::CompressionEncoding;
-use tonic::codegen::Body;
 use tonic::Streaming;
 
 mod connection_event;
@@ -91,17 +85,7 @@ impl GrpcClient {
     pub const DIRECT_MODE_LISTENER_ID: ListenerId = 0;
 
     pub async fn connect(url: String) -> Result<GrpcClient> {
-        Self::connect_with_args(
-            NotificationMode::Direct,
-            url,
-            None,
-            false,
-            None,
-            false,
-            None,
-            Default::default(),
-        )
-        .await
+        Self::connect_with_args(NotificationMode::Direct, url, None, false, None, false, None, Default::default()).await
     }
 
     /// Connects to a gRPC server.
@@ -109,15 +93,15 @@ impl GrpcClient {
     /// `notification_mode` determines how notifications are handled:
     ///
     /// - `MultiListeners` => Multiple listeners are supported via the [`RpcApi`] implementation.
-    ///                       Registering listeners is needed before subscribing to notifications.
+    ///   Registering listeners is needed before subscribing to notifications.
     /// - `Direct` => A single listener receives the notification via a channel (see  `self.notification_channel_receiver()`).
-    ///               Registering a listener is pointless and ignored.
-    ///               Subscribing to notifications ignores the listener ID.
+    ///   Registering a listener is pointless and ignored.
+    ///   Subscribing to notifications ignores the listener ID.
     ///
     /// `url`: the server to connect to
     ///
     /// `subscription_context`: it is advised to provide a clone of the same instance if multiple clients dealing with
-    /// [`UtxosChangedNotifications`] are connected concurrently in order to optimize the memory footprint.
+    /// `UtxosChangedNotifications` are connected concurrently in order to optimize the memory footprint.
     ///
     /// `reconnect`: features an automatic reconnection to the server, reactivating all subscriptions on success.
     ///
@@ -156,17 +140,8 @@ impl GrpcClient {
         let (notifier, collector, subscriptions) = match notification_mode {
             NotificationMode::MultiListeners => {
                 let enabled_events = EVENT_TYPE_ARRAY[..].into();
-                let collector = Arc::new(GrpcClientCollector::new(
-                    GRPC_CLIENT,
-                    inner.notification_channel_receiver(),
-                    converter,
-                ));
-                let subscriber = Arc::new(Subscriber::new(
-                    GRPC_CLIENT,
-                    enabled_events,
-                    inner.clone(),
-                    0,
-                ));
+                let collector = Arc::new(GrpcClientCollector::new(GRPC_CLIENT, inner.notification_channel_receiver(), converter));
+                let subscriber = Arc::new(Subscriber::new(GRPC_CLIENT, enabled_events, inner.clone(), 0));
                 let notifier: GrpcClientNotifier = Notifier::new(
                     GRPC_CLIENT,
                     enabled_events,
@@ -179,38 +154,18 @@ impl GrpcClient {
                 (Some(Arc::new(notifier)), None, None)
             }
             NotificationMode::Direct => {
-                let collector = GrpcClientCollector::new(
-                    GRPC_CLIENT,
-                    inner.notification_channel_receiver(),
-                    converter,
-                );
+                let collector = GrpcClientCollector::new(GRPC_CLIENT, inner.notification_channel_receiver(), converter);
                 let subscriptions = ArrayBuilder::single(Self::DIRECT_MODE_LISTENER_ID, None);
-                (
-                    None,
-                    Some(Arc::new(collector)),
-                    Some(Arc::new(Mutex::new(subscriptions))),
-                )
+                (None, Some(Arc::new(collector)), Some(Arc::new(Mutex::new(subscriptions))))
             }
         };
 
         if reconnect {
             // Start the connection monitor
-            inner.clone().spawn_connection_monitor(
-                notifier.clone(),
-                subscriptions.clone(),
-                subscription_context.clone(),
-            );
+            inner.clone().spawn_connection_monitor(notifier.clone(), subscriptions.clone(), subscription_context.clone());
         }
 
-        Ok(Self {
-            inner,
-            notifier,
-            collector,
-            subscriptions,
-            subscription_context,
-            policies,
-            notification_mode,
-        })
+        Ok(Self { inner, notifier, collector, subscriptions, subscription_context, policies, notification_mode })
     }
 
     #[inline(always)]
@@ -285,6 +240,8 @@ impl RpcApi for GrpcClient {
     route!(get_sync_status_call, GetSyncStatus);
     route!(get_server_info_call, GetServerInfo);
     route!(get_metrics_call, GetMetrics);
+    route!(get_connections_call, GetConnections);
+    route!(get_system_info_call, GetSystemInfo);
     route!(submit_block_call, SubmitBlock);
     route!(get_block_template_call, GetBlockTemplate);
     route!(get_block_call, GetBlock);
@@ -297,6 +254,7 @@ impl RpcApi for GrpcClient {
     route!(get_connected_peer_info_call, GetConnectedPeerInfo);
     route!(add_peer_call, AddPeer);
     route!(submit_transaction_call, SubmitTransaction);
+    route!(submit_transaction_replacement_call, SubmitTransactionReplacement);
     route!(get_subnetwork_call, GetSubnetwork);
     route!(get_virtual_chain_from_block_call, GetVirtualChainFromBlock);
     route!(get_blocks_call, GetBlocks);
@@ -311,19 +269,14 @@ impl RpcApi for GrpcClient {
     route!(get_sink_blue_score_call, GetSinkBlueScore);
     route!(ban_call, Ban);
     route!(unban_call, Unban);
-    route!(
-        estimate_network_hashes_per_second_call,
-        EstimateNetworkHashesPerSecond
-    );
-    route!(
-        get_mempool_entries_by_addresses_call,
-        GetMempoolEntriesByAddresses
-    );
+    route!(estimate_network_hashes_per_second_call, EstimateNetworkHashesPerSecond);
+    route!(get_mempool_entries_by_addresses_call, GetMempoolEntriesByAddresses);
     route!(get_coin_supply_call, GetCoinSupply);
-    route!(
-        get_daa_score_timestamp_estimate_call,
-        GetDaaScoreTimestampEstimate
-    );
+    route!(get_daa_score_timestamp_estimate_call, GetDaaScoreTimestampEstimate);
+    route!(get_fee_estimate_call, GetFeeEstimate);
+    route!(get_fee_estimate_experimental_call, GetFeeEstimateExperimental);
+    route!(get_current_block_color_call, GetCurrentBlockColor);
+    route!(get_utxo_return_address_call, GetUtxoReturnAddress);
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Notification API
@@ -331,11 +284,9 @@ impl RpcApi for GrpcClient {
     /// Register a new listener and returns an id identifying it.
     fn register_new_listener(&self, connection: ChannelConnection) -> ListenerId {
         match self.notification_mode {
-            NotificationMode::MultiListeners => self
-                .notifier
-                .as_ref()
-                .unwrap()
-                .register_new_listener(connection, ListenerLifespan::Dynamic),
+            NotificationMode::MultiListeners => {
+                self.notifier.as_ref().unwrap().register_new_listener(connection, ListenerLifespan::Dynamic)
+            }
             // In direct mode, listener registration/unregistration is ignored
             NotificationMode::Direct => Self::DIRECT_MODE_LISTENER_ID,
         }
@@ -540,14 +491,9 @@ impl Inner {
         let (request_sender, request_receiver) = async_channel::unbounded();
 
         // Try to connect to the server
-        let (stream, server_features) = Inner::try_connect(
-            url.clone(),
-            request_sender.clone(),
-            request_receiver.clone(),
-            timeout_duration,
-            counters.clone(),
-        )
-        .await?;
+        let (stream, server_features) =
+            Inner::try_connect(url.clone(), request_sender.clone(), request_receiver.clone(), timeout_duration, counters.clone())
+                .await?;
 
         // create the inner object
         let inner = Arc::new(Inner::new(
@@ -581,33 +527,24 @@ impl Inner {
     ) -> Result<(Streaming<KarlsendResponse>, ServerFeatures)> {
         // gRPC endpoint
         #[cfg(not(feature = "heap"))]
-        let channel = tonic::transport::Channel::builder(
-            url.parse::<tonic::transport::Uri>()
-                .map_err(|e| Error::String(e.to_string()))?,
-        )
-        .timeout(tokio::time::Duration::from_millis(request_timeout))
-        .connect_timeout(tokio::time::Duration::from_millis(CONNECT_TIMEOUT_DURATION))
-        .connect()
-        .await?;
+        let channel =
+            tonic::transport::Channel::builder(url.parse::<tonic::transport::Uri>().map_err(|e| Error::String(e.to_string()))?)
+                .timeout(tokio::time::Duration::from_millis(request_timeout))
+                .connect_timeout(tokio::time::Duration::from_millis(CONNECT_TIMEOUT_DURATION))
+                .connect()
+                .await?;
 
         #[cfg(feature = "heap")]
-        let channel = tonic::transport::Channel::builder(
-            url.parse::<tonic::transport::Uri>()
-                .map_err(|e| Error::String(e.to_string()))?,
-        )
-        .connect()
-        .await?;
+        let channel =
+            tonic::transport::Channel::builder(url.parse::<tonic::transport::Uri>().map_err(|e| Error::String(e.to_string()))?)
+                .connect()
+                .await?;
 
         let bytes_rx = &counters.bytes_rx;
         let bytes_tx = &counters.bytes_tx;
         let channel = ServiceBuilder::new()
-            .layer(MapResponseBodyLayer::new(move |body| {
-                CountBytesBody::new(body, bytes_rx.clone())
-            }))
-            .layer(measure_request_body_size_layer(bytes_tx.clone(), |body| {
-                body.map_err(|e| tonic::Status::from_error(Box::new(e)))
-                    .boxed_unsync()
-            }))
+            .layer(MapResponseBodyLayer::new(move |body| CountBytesBody::new(body, bytes_rx.clone())))
+            .layer(MapRequestBodyLayer::new(move |body| CountBytesBody::new(body, bytes_tx.clone()).boxed_unsync()))
             .service(channel);
 
         // Build the gRPC client with an interceptor setting the request timeout
@@ -636,8 +573,7 @@ impl Inner {
         };
 
         // Actual KarlsendRequest to KarlsendResponse stream
-        let mut stream: Streaming<KarlsendResponse> =
-            client.message_stream(request_stream).await?.into_inner();
+        let mut stream: Streaming<KarlsendResponse> = client.message_stream(request_stream).await?.into_inner();
 
         // Collect server capabilities as stated in GetInfoResponse
         let mut server_features = ServerFeatures::default();
@@ -653,9 +589,7 @@ impl Inner {
             }
             None => {
                 debug!("GRPC client: try_connect - stream closed by the server");
-                return Err(Error::String(
-                    "GRPC stream was closed by the server".to_string(),
-                ));
+                return Err(Error::String("GRPC stream was closed by the server".to_string()));
             }
         }
 
@@ -698,9 +632,7 @@ impl Inner {
             let subscriptions = subscriptions.lock().await;
             for event in EVENT_TYPE_ARRAY {
                 if subscriptions[event].active() {
-                    self.clone()
-                        .start_notify_to_client(subscriptions[event].scope(subscription_context))
-                        .await?;
+                    self.clone().start_notify_to_client(subscriptions[event].scope(subscription_context)).await?;
                 }
             }
         }
@@ -749,11 +681,7 @@ impl Inner {
         self.resolver.clone()
     }
 
-    async fn call(
-        &self,
-        op: KarlsendPayloadOps,
-        request: impl Into<KarlsendRequest>,
-    ) -> Result<KarlsendResponse> {
+    async fn call(&self, op: KarlsendPayloadOps, request: impl Into<KarlsendRequest>) -> Result<KarlsendResponse> {
         // Calls are only allowed if the client is connected to the server
         if self.is_connected() {
             let id = u64::from_le_bytes(rand::random::<[u8; 8]>());
@@ -763,10 +691,7 @@ impl Inner {
             trace!("GRPC client: resolver call: {:?}", request);
             if request.payload.is_some() {
                 let receiver = self.resolver().register_request(op, &request);
-                self.request_sender
-                    .send(request)
-                    .await
-                    .map_err(|_| Error::ChannelRecvError)?;
+                self.request_sender.send(request).await.map_err(|_| Error::ChannelRecvError)?;
                 receiver.await?
             } else {
                 Err(Error::MissingRequestPayload)
@@ -782,11 +707,7 @@ impl Inner {
         // Note: self is a cloned Arc here so that it can be used in the spawned task.
 
         // The task can only be spawned once
-        if self
-            .timeout_is_running
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_err()
-        {
+        if self.timeout_is_running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
             trace!("GRPC client: timeout task - spawn request ignored since already spawned");
             return;
         }
@@ -822,11 +743,7 @@ impl Inner {
         // Note: self is a cloned Arc here so that it can be used in the spawned task.
 
         // The task can only be spawned once
-        if self
-            .receiver_is_running
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_err()
-        {
+        if self.receiver_is_running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
             trace!("GRPC client: response receiver task - spawn ignored since already spawned");
             return;
         }
@@ -902,11 +819,7 @@ impl Inner {
         // Note: self is a cloned Arc here so that it can be used in the spawned task.
 
         // The task can only be spawned once
-        if self
-            .connector_is_running
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_err()
-        {
+        if self.connector_is_running.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_err() {
             trace!("GRPC client: connection monitor task - spawn ignored since already spawned");
             return;
         }
@@ -948,10 +861,7 @@ impl Inner {
             match Notification::try_from(&response) {
                 Ok(notification) => {
                     let event: EventType = (&notification).into();
-                    trace!(
-                        "GRPC client: handle_response received notification: {:?}",
-                        event
-                    );
+                    trace!("GRPC client: handle_response received notification: {:?}", event);
 
                     // Here we ignore any returned error
                     match self.notification_channel.try_send(notification) {
@@ -980,11 +890,7 @@ impl Inner {
     }
 
     async fn stop_response_receiver_task(&self) -> Result<()> {
-        if self
-            .receiver_is_running
-            .compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst)
-            .is_ok()
-        {
+        if self.receiver_is_running.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
             self.receiver_shutdown.request.trigger.trigger();
             self.receiver_shutdown.response.listener.clone().await;
         }
@@ -992,11 +898,7 @@ impl Inner {
     }
 
     async fn stop_timeout_monitor(&self) -> Result<()> {
-        if self
-            .timeout_is_running
-            .compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst)
-            .is_ok()
-        {
+        if self.timeout_is_running.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
             self.timeout_shutdown.request.trigger.trigger();
             self.timeout_shutdown.response.listener.clone().await;
         }
@@ -1004,11 +906,7 @@ impl Inner {
     }
 
     async fn stop_connector_monitor(&self) -> Result<()> {
-        if self
-            .connector_is_running
-            .compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst)
-            .is_ok()
-        {
+        if self.connector_is_running.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
             self.connector_shutdown.request.trigger.trigger();
             self.connector_shutdown.response.listener.clone().await;
         }
@@ -1036,23 +934,16 @@ impl Inner {
 impl SubscriptionManager for Inner {
     async fn start_notify(&self, _: ListenerId, scope: Scope) -> NotifyResult<()> {
         trace!("GRPC client: start_notify: {:?}", scope);
-        self.start_notify_to_client(scope)
-            .await
-            .map_err(|err| NotifyError::General(err.to_string()))?;
+        self.start_notify_to_client(scope).await.map_err(|err| NotifyError::General(err.to_string()))?;
         Ok(())
     }
 
     async fn stop_notify(&self, _: ListenerId, scope: Scope) -> NotifyResult<()> {
         if self.handle_stop_notify() {
             trace!("GRPC client: stop_notify: {:?}", scope);
-            self.stop_notify_to_client(scope)
-                .await
-                .map_err(|err| NotifyError::General(err.to_string()))?;
+            self.stop_notify_to_client(scope).await.map_err(|err| NotifyError::General(err.to_string()))?;
         } else {
-            trace!(
-                "GRPC client: stop_notify ignored because not supported by the server: {:?}",
-                scope
-            );
+            trace!("GRPC client: stop_notify ignored because not supported by the server: {:?}", scope);
         }
         Ok(())
     }

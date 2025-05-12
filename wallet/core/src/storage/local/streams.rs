@@ -20,9 +20,7 @@ impl StoreStreamInner {
 
 impl std::fmt::Debug for StoreStreamInner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("StoreIteratorInner")
-            .field("cursor", &self.cursor)
-            .finish()
+        f.debug_struct("StoreIteratorInner").field("cursor", &self.cursor).finish()
     }
 }
 
@@ -32,9 +30,7 @@ pub struct PrvKeyDataInfoStream {
 
 impl PrvKeyDataInfoStream {
     pub(crate) fn new(cache: Arc<RwLock<Cache>>) -> Self {
-        Self {
-            inner: StoreStreamInner::new(cache),
-        }
+        Self { inner: StoreStreamInner::new(cache) }
     }
 }
 
@@ -62,10 +58,7 @@ pub struct AccountStream {
 
 impl AccountStream {
     pub(crate) fn new(cache: Arc<RwLock<Cache>>, filter: Option<PrvKeyDataId>) -> Self {
-        Self {
-            inner: StoreStreamInner::new(cache),
-            filter,
-        }
+        Self { inner: StoreStreamInner::new(cache), filter }
     }
 }
 
@@ -109,9 +102,7 @@ pub struct AddressBookEntryStream {
 
 impl AddressBookEntryStream {
     pub(crate) fn new(cache: Arc<RwLock<Cache>>) -> Self {
-        Self {
-            inner: StoreStreamInner::new(cache),
-        }
+        Self { inner: StoreStreamInner::new(cache) }
     }
 }
 

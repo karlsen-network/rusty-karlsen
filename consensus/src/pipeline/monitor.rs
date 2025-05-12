@@ -5,7 +5,7 @@ use karlsen_core::{
         service::{AsyncService, AsyncServiceFuture},
         tick::{TickReason, TickService},
     },
-    trace,
+    trace, warn,
 };
 use std::{
     sync::Arc,
@@ -23,14 +23,8 @@ pub struct ConsensusMonitor {
 }
 
 impl ConsensusMonitor {
-    pub fn new(
-        counters: Arc<ProcessingCounters>,
-        tick_service: Arc<TickService>,
-    ) -> ConsensusMonitor {
-        ConsensusMonitor {
-            counters,
-            tick_service,
-        }
+    pub fn new(counters: Arc<ProcessingCounters>, tick_service: Arc<TickService>) -> ConsensusMonitor {
+        ConsensusMonitor { counters, tick_service }
     }
 
     pub async fn worker(self: &Arc<ConsensusMonitor>) {
@@ -38,11 +32,7 @@ impl ConsensusMonitor {
         let mut last_log_time = Instant::now();
         let snapshot_interval = 10;
         loop {
-            if let TickReason::Shutdown = self
-                .tick_service
-                .tick(Duration::from_secs(snapshot_interval))
-                .await
-            {
+            if let TickReason::Shutdown = self.tick_service.tick(Duration::from_secs(snapshot_interval)).await {
                 // Let the system print final logs before exiting
                 tokio::time::sleep(Duration::from_millis(500)).await;
                 break;
@@ -71,6 +61,13 @@ impl ConsensusMonitor {
                 if delta.body_counts != 0 { delta.txs_counts as f64 / delta.body_counts as f64 } else{ 0f64 },
                 if delta.body_counts != 0 { delta.mass_counts as f64 / delta.body_counts as f64 } else{ 0f64 },
             );
+
+            if delta.chain_disqualified_counts > 0 {
+                warn!(
+                    "Consensus detected UTXO-invalid blocks which are disqualified from the virtual selected chain (possibly due to inheritance): {} disqualified vs. {} valid chain blocks",
+                    delta.chain_disqualified_counts, delta.chain_block_counts
+                );
+            }
 
             last_snapshot = snapshot;
             last_log_time = now;

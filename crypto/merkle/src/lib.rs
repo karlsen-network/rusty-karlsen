@@ -15,17 +15,14 @@ pub fn calc_merkle_root(hashes: impl ExactSizeIterator<Item = Hash>) -> Hash {
         if merkles[i].is_none() {
             merkles[offset] = None;
         } else {
-            merkles[offset] = Some(merkle_hash(
-                merkles[i].unwrap(),
-                merkles[i + 1].unwrap_or(ZERO_HASH),
-            ));
+            merkles[offset] = Some(merkle_hash(merkles[i].unwrap(), merkles[i + 1].unwrap_or(ZERO_HASH)));
         }
         offset += 1
     }
     merkles.last().unwrap().unwrap()
 }
 
-fn merkle_hash(left: Hash, right: Hash) -> Hash {
+pub fn merkle_hash(left: Hash, right: Hash) -> Hash {
     let mut hasher = MerkleBranchHash::new();
     hasher.update(left).update(right);
     hasher.finalize()

@@ -18,20 +18,11 @@ pub struct Resident {
 }
 
 impl Resident {
-    pub async fn try_load(
-        wallet: &Arc<Wallet>,
-        public_key: PublicKey,
-        secret_key: Option<SecretKey>,
-    ) -> Result<Self> {
-        let (id, storage_key) =
-            make_account_hashes(from_public_key(&RESIDENT_ACCOUNT_KIND.into(), &public_key));
+    pub async fn try_load(wallet: &Arc<Wallet>, public_key: PublicKey, secret_key: Option<SecretKey>) -> Result<Self> {
+        let (id, storage_key) = make_account_hashes(from_public_key(&RESIDENT_ACCOUNT_KIND.into(), &public_key));
         let inner = Arc::new(Inner::new(wallet, id, storage_key, Default::default()));
 
-        Ok(Self {
-            inner,
-            public_key,
-            secret_key,
-        })
+        Ok(Self { inner, public_key, secret_key })
     }
 }
 
@@ -65,20 +56,12 @@ impl Account for Resident {
 
     fn receive_address(&self) -> Result<Address> {
         let (xonly_public_key, _) = self.public_key.x_only_public_key();
-        Ok(Address::new(
-            self.inner().wallet.network_id()?.into(),
-            Version::PubKey,
-            &xonly_public_key.serialize(),
-        ))
+        Ok(Address::new(self.inner().wallet.network_id()?.into(), Version::PubKey, &xonly_public_key.serialize()))
     }
 
     fn change_address(&self) -> Result<Address> {
         let (xonly_public_key, _) = self.public_key.x_only_public_key();
-        Ok(Address::new(
-            self.inner().wallet.network_id()?.into(),
-            Version::PubKey,
-            &xonly_public_key.serialize(),
-        ))
+        Ok(Address::new(self.inner().wallet.network_id()?.into(), Version::PubKey, &xonly_public_key.serialize()))
     }
 
     fn to_storage(&self) -> Result<AccountStorage> {
@@ -94,6 +77,7 @@ impl Account for Resident {
             RESIDENT_ACCOUNT_KIND.into(),
             *self.id(),
             self.name(),
+            self.balance(),
             AssocPrvKeyDataIds::None,
             self.receive_address().ok(),
             self.change_address().ok(),

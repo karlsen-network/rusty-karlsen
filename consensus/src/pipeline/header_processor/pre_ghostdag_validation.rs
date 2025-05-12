@@ -5,11 +5,12 @@ use crate::model::services::reachability::ReachabilityService;
 use crate::model::stores::statuses::StatusesStoreReader;
 use karlsen_consensus_core::blockhash::BlockHashExtensions;
 use karlsen_consensus_core::blockstatus::BlockStatus::StatusInvalid;
+use karlsen_consensus_core::config::params::ForkActivation;
 use karlsen_consensus_core::header::Header;
 use karlsen_consensus_core::BlockLevel;
 use karlsen_core::time::unix_now;
 use karlsen_database::prelude::StoreResultExtensions;
-use std::cmp::max;
+use karlsen_pow::calc_level_from_pow;
 
 impl HeaderProcessor {
     /// Validates the header in isolation including pow check against header declared bits.
@@ -17,7 +18,7 @@ impl HeaderProcessor {
     pub(super) fn validate_header_in_isolation(
         &self,
         header: &Header,
-        hf_daa_score: u64,
+        khashv2_activation: ForkActivation,
     ) -> BlockProcessResult<BlockLevel> {
         /*
         println!("header daa_score : {:?}", header.daa_score);
@@ -25,9 +26,9 @@ impl HeaderProcessor {
         println!("header hash : {:?}", header.hash);
         println!("header hash_merkle_root : {:?}", header.hash_merkle_root);
         */
-        self.check_header_version(header, hf_daa_score)?;
+        self.check_header_version(header, khashv2_activation)?;
         self.check_block_timestamp_in_isolation(header)?;
-        self.check_parents_limit(header)?;
+        self.check_parents_limit_upper_bound(header)?;
         Self::check_parents_not_origin(header)?;
         self.check_pow_and_calc_block_level(header)
     }
@@ -39,19 +40,11 @@ impl HeaderProcessor {
     }
 
     // TODO : setup dual block version managment
-    fn check_header_version(&self, header: &Header, hf_daa_score: u64) -> BlockProcessResult<()> {
-        if header.daa_score >= hf_daa_score && header.version != constants::BLOCK_VERSION_KHASHV2 {
-            return Err(RuleError::WrongBlockVersion(
-                header.version,
-                constants::BLOCK_VERSION_KHASHV2,
-            ));
-        } else if header.daa_score < hf_daa_score
-            && header.version != constants::BLOCK_VERSION_KHASHV1
-        {
-            return Err(RuleError::WrongBlockVersion(
-                header.version,
-                constants::BLOCK_VERSION_KHASHV1,
-            ));
+    fn check_header_version(&self, header: &Header, khashv2_activation: ForkActivation) -> BlockProcessResult<()> {
+        if khashv2_activation.is_active(header.daa_score) && header.version != constants::BLOCK_VERSION_KHASHV2 {
+            return Err(RuleError::WrongBlockVersion(header.version, constants::BLOCK_VERSION_KHASHV2));
+        } else if !khashv2_activation.is_active(header.daa_score) && header.version != constants::BLOCK_VERSION_KHASHV1 {
+            return Err(RuleError::WrongBlockVersion(header.version, constants::BLOCK_VERSION_KHASHV1));
         }
         Ok(())
     }
@@ -60,35 +53,28 @@ impl HeaderProcessor {
         // Timestamp deviation tolerance is in seconds so we multiply by 1000 to get milliseconds (without BPS dependency)
         let max_block_time = unix_now() + self.timestamp_deviation_tolerance * 1000;
         if header.timestamp > max_block_time {
-            return Err(RuleError::TimeTooFarIntoTheFuture(
-                header.timestamp,
-                max_block_time,
-            ));
+            return Err(RuleError::TimeTooFarIntoTheFuture(header.timestamp, max_block_time));
         }
         Ok(())
     }
 
-    fn check_parents_limit(&self, header: &Header) -> BlockProcessResult<()> {
+    fn check_parents_limit_upper_bound(&self, header: &Header) -> BlockProcessResult<()> {
         if header.direct_parents().is_empty() {
             return Err(RuleError::NoParents);
         }
 
-        if header.direct_parents().len() > self.max_block_parents as usize {
-            return Err(RuleError::TooManyParents(
-                header.direct_parents().len(),
-                self.max_block_parents as usize,
-            ));
+        // [Crescendo]: moved the tight parents limit check to pre_pow_validation since it requires selected parent DAA score info
+        // which is available only post ghostdag. We keep this upper bound check here since this method is applied to trusted blocks
+        // as well.
+        if header.direct_parents().len() > self.max_block_parents.upper_bound() as usize {
+            return Err(RuleError::TooManyParents(header.direct_parents().len(), self.max_block_parents.upper_bound() as usize));
         }
 
         Ok(())
     }
 
     fn check_parents_not_origin(header: &Header) -> BlockProcessResult<()> {
-        if header
-            .direct_parents()
-            .iter()
-            .any(|&parent| parent.is_origin())
-        {
+        if header.direct_parents().iter().any(|&parent| parent.is_origin()) {
             return Err(RuleError::OriginParent);
         }
 
@@ -120,10 +106,7 @@ impl HeaderProcessor {
                     continue;
                 }
 
-                if self
-                    .reachability_service
-                    .is_dag_ancestor_of(*parent_a, *parent_b)
-                {
+                if self.reachability_service.is_dag_ancestor_of(*parent_a, *parent_b) {
                     return Err(RuleError::InvalidParentsRelation(*parent_a, *parent_b));
                 }
             }
@@ -136,8 +119,7 @@ impl HeaderProcessor {
         let state = karlsen_pow::State::new(header);
         let (passed, pow) = state.check_pow(header.nonce);
         if passed || self.skip_proof_of_work {
-            let signed_block_level = self.max_block_level as i64 - pow.bits() as i64;
-            Ok(max(signed_block_level, 0) as BlockLevel)
+            Ok(calc_level_from_pow(pow, self.max_block_level))
         } else {
             Err(RuleError::InvalidPoW)
         }

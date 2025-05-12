@@ -33,6 +33,7 @@ downcast.workspace = true
 faster-hex.workspace = true
 futures.workspace = true
 js-sys.workspace = true
+hex.workspace = true
 karlsen-addresses.workspace = true
 karlsen-bip32.workspace = true
 karlsen-consensus-core.workspace = true
@@ -43,6 +44,7 @@ karlsen-rpc-core.workspace = true
 karlsen-utils.workspace = true
 karlsen-wallet-core.workspace = true
 karlsen-wallet-keys.workspace = true
+karlsen-wallet-pskt.workspace = true
 karlsen-wrpc-client.workspace = true
 nw-sys.workspace = true
 pad.workspace = true
@@ -80,5 +82,5 @@ features = [
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio.workspace = true
 
-[lints.clippy]
-empty_docs = "allow"
+[lints]
+workspace = true

@@ -16,7 +16,7 @@ use workflow_log::style;
 
 use super::*;
 
-const DISPLAY_LOGS: bool = true;
+const DISPLAY_LOGS: bool = false;
 const DISPLAY_EXPECTED: bool = true;
 
 #[derive(Clone, Copy, Debug)]
@@ -100,18 +100,10 @@ trait GeneratorSummaryExtension {
 
 impl GeneratorSummaryExtension for GeneratorSummary {
     fn check(self, accumulator: &Accumulator) -> Self {
-        assert_eq!(
-            self.number_of_generated_transactions,
-            accumulator.list.len(),
-            "number of generated transactions"
-        );
+        assert_eq!(self.number_of_generated_transactions, accumulator.list.len(), "number of generated transactions");
         assert_eq!(
             self.aggregated_utxos,
-            accumulator
-                .list
-                .iter()
-                .map(|pt| pt.utxo_entries().len())
-                .sum::<usize>(),
+            accumulator.list.iter().map(|pt| pt.utxo_entries().len()).sum::<usize>(),
             "number of utxo entries"
         );
         let aggregated_fees = accumulator.list.iter().map(|pt| pt.fees()).sum::<u64>();
@@ -148,7 +140,7 @@ impl GeneratorExtension for Generator {
 
 fn test_network_id() -> NetworkId {
     // TODO make this configurable
-    NetworkId::with_suffix(NetworkType::Testnet, 11)
+    NetworkId::with_suffix(NetworkType::Testnet, 1)
 }
 
 #[derive(Default)]
@@ -176,25 +168,15 @@ fn validate(pt: &PendingTransaction) {
         "[validate] aggregate input and output values can not be the same due to fees"
     );
 
-    let calc = MassCalculator::new(&pt.network_type().into(), network_params);
-    let additional_mass = if pt.is_final() {
-        0
-    } else {
-        network_params.additional_compound_transaction_mass
-    };
-    let compute_mass = calc.calc_mass_for_signed_transaction(&tx, 1);
+    let calc = MassCalculator::new(&pt.network_type().into());
+    let additional_mass = if pt.is_final() { 0 } else { network_params.additional_compound_transaction_mass() };
+    let compute_mass = calc.calc_compute_mass_for_unsigned_consensus_transaction(&tx, pt.minimum_signatures());
 
     let utxo_entries = pt.utxo_entries().values().cloned().collect::<Vec<_>>();
-    let storage_mass = calc
-        .calc_storage_mass_for_transaction(false, &utxo_entries, &tx.outputs)
-        .unwrap_or_default();
-
+    let storage_mass = calc.calc_storage_mass_for_transaction_parts(&utxo_entries, &tx.outputs).unwrap_or(u64::MAX);
     let calculated_mass = calc.combine_mass(compute_mass, storage_mass) + additional_mass;
 
-    assert_eq!(
-        pt.inner.mass, calculated_mass,
-        "pending transaction mass does not match calculated mass"
-    );
+    assert_eq!(pt.inner.mass, calculated_mass, "pending transaction mass does not match calculated mass");
 }
 
 fn expect<SOMPI>(pt: &PendingTransaction, expected: &Expected<SOMPI>)
@@ -206,53 +188,24 @@ where
 
     let aggregate_input_value = pt.utxo_entries().values().map(|o| o.amount()).sum::<u64>();
     let aggregate_output_value = tx.outputs.iter().map(|o| o.value).sum::<u64>();
-    assert_ne!(
-        aggregate_input_value, aggregate_output_value,
-        "aggregate input and output values can not be the same due to fees"
-    );
-    assert_eq!(
-        pt.is_final(),
-        expected.is_final,
-        "expected final transaction"
-    );
+    assert_ne!(aggregate_input_value, aggregate_output_value, "aggregate input and output values can not be the same due to fees");
+    assert_eq!(pt.is_final(), expected.is_final, "expected final transaction");
 
     let expected_aggregate_input_value: Sompi = expected.aggregate_input_value.into();
-    assert_eq!(
-        tx.inputs.len(),
-        expected.input_count,
-        "expected input count"
-    );
-    assert_eq!(
-        aggregate_input_value, expected_aggregate_input_value.0,
-        "expected aggregate input value"
-    );
-    assert_eq!(
-        tx.outputs.len(),
-        expected.output_count,
-        "expected output count"
-    );
+    assert_eq!(tx.inputs.len(), expected.input_count, "expected input count");
+    assert_eq!(aggregate_input_value, expected_aggregate_input_value.0, "expected aggregate input value");
+    assert_eq!(tx.outputs.len(), expected.output_count, "expected output count");
 
     let pt_fees = pt.fees();
-    let calc = MassCalculator::new(&pt.network_type().into(), network_params);
-    let additional_mass = if pt.is_final() {
-        0
-    } else {
-        network_params.additional_compound_transaction_mass
-    };
+    let calc = MassCalculator::new(&pt.network_type().into());
+    let additional_mass = if pt.is_final() { 0 } else { network_params.additional_compound_transaction_mass() };
 
-    let compute_mass = calc.calc_mass_for_signed_transaction(&tx, 1);
+    let compute_mass = calc.calc_compute_mass_for_unsigned_consensus_transaction(&tx, pt.minimum_signatures());
 
     let utxo_entries = pt.utxo_entries().values().cloned().collect::<Vec<_>>();
-    let storage_mass = calc
-        .calc_storage_mass_for_transaction(false, &utxo_entries, &tx.outputs)
-        .unwrap_or_default();
+    let storage_mass = calc.calc_storage_mass_for_transaction_parts(&utxo_entries, &tx.outputs).unwrap_or(u64::MAX);
     if DISPLAY_LOGS && storage_mass != 0 {
-        println!(
-            "calculated storage mass: {} calculated_compute_mass: {} total: {}",
-            storage_mass,
-            compute_mass,
-            storage_mass + compute_mass
-        );
+        println!("calculated storage mass: {} calculated_compute_mass: {}", storage_mass, compute_mass,);
     }
 
     let calculated_mass = calc.combine_mass(compute_mass, storage_mass) + additional_mass;
@@ -263,10 +216,7 @@ where
         println!("PT storage mass: {:?}", storage_mass);
     }
 
-    assert_eq!(
-        pt.inner.mass, calculated_mass,
-        "pending transaction mass does not match calculated mass"
-    );
+    assert_eq!(pt.inner.mass, calculated_mass, "pending transaction mass does not match calculated mass");
 
     match expected.priority_fees {
         FeesExpected::Sender(priority_fees) => {
@@ -316,12 +266,7 @@ where
             );
         }
         FeesExpected::None => {
-            assert!(
-                calculated_fees <= pt_fees,
-                "total fees expected: {} is greater than PT fees: {}",
-                calculated_fees,
-                pt_fees
-            );
+            assert!(calculated_fees <= pt_fees, "total fees expected: {} is greater than PT fees: {}", calculated_fees, pt_fees);
 
             // test that fee difference is below dust value as this condition can
             // occur if a dust output has been consumed to fees, resulting in
@@ -332,10 +277,7 @@ where
             }
 
             let total_output_with_fees = aggregate_output_value + pt_fees;
-            assert_eq!(
-                aggregate_input_value, total_output_with_fees,
-                "aggregate input value vs total output value with fees"
-            );
+            assert_eq!(aggregate_input_value, total_output_with_fees, "aggregate input value vs total output value with fees");
         }
     };
 }
@@ -347,10 +289,7 @@ pub(crate) struct Harness {
 
 impl Harness {
     pub fn new(generator: Generator) -> Rc<Self> {
-        Rc::new(Harness {
-            generator,
-            accumulator: RefCell::new(Accumulator::default()),
-        })
+        Rc::new(Harness { generator, accumulator: RefCell::new(Accumulator::default()) })
     }
 
     pub fn fetch<SOMPI>(self: &Rc<Self>, expected: &Expected<SOMPI>) -> Rc<Self>
@@ -358,25 +297,13 @@ impl Harness {
         SOMPI: Into<Sompi> + Debug + Copy,
     {
         if DISPLAY_LOGS {
-            println!(
-                "{}",
-                style(format!(
-                    "fetch - checking transaction: {}",
-                    self.accumulator.borrow().list.len()
-                ))
-                .magenta()
-            );
+            println!("{}", style(format!("fetch - checking transaction: {}", self.accumulator.borrow().list.len())).magenta());
 
             if DISPLAY_EXPECTED {
                 println!("{:#?}", expected);
             }
         }
-        self.generator
-            .generate_transaction()
-            .unwrap()
-            .unwrap()
-            .accumulate(&mut self.accumulator.borrow_mut())
-            .expect(expected);
+        self.generator.generate_transaction().unwrap().unwrap().accumulate(&mut self.accumulator.borrow_mut()).expect(expected);
         self.clone()
     }
 
@@ -388,21 +315,26 @@ impl Harness {
             if DISPLAY_LOGS {
                 println!(
                     "{}",
-                    style(format!(
-                        "drain checking transaction: {} ({})",
-                        _n,
-                        self.accumulator.borrow().list.len()
-                    ))
-                    .magenta()
+                    style(format!("drain checking transaction: {} ({})", _n, self.accumulator.borrow().list.len())).magenta()
                 );
             }
-            self.generator
-                .generate_transaction()
-                .unwrap()
-                .unwrap()
-                .accumulate(&mut self.accumulator.borrow_mut())
-                .expect(expected);
+            self.generator.generate_transaction().unwrap().unwrap().accumulate(&mut self.accumulator.borrow_mut()).expect(expected);
         }
+        self.clone()
+    }
+
+    pub fn accumulate(self: &Rc<Self>, count: usize) -> Rc<Self> {
+        for _n in 0..count {
+            if DISPLAY_LOGS {
+                println!(
+                    "{}",
+                    style(format!("accumulate gathering transaction: {} ({})", _n, self.accumulator.borrow().list.len())).magenta()
+                );
+            }
+            let ptx = self.generator.generate_transaction().unwrap().unwrap();
+            ptx.accumulate(&mut self.accumulator.borrow_mut());
+        }
+        // println!("accumulated `{}` transactions", self.accumulator.borrow().list.len());
         self.clone()
     }
 
@@ -415,7 +347,16 @@ impl Harness {
 
     pub fn finalize(self: Rc<Self>) {
         let pt = self.generator.generate_transaction().unwrap();
-        assert!(pt.is_none(), "expected no more transactions");
+        if pt.is_some() {
+            let mut pending = self.generator.generate_transaction().unwrap();
+            let mut count = 1;
+            while pending.is_some() {
+                count += 1;
+                pending = self.generator.generate_transaction().unwrap();
+            }
+
+            panic!("received extra `{}` unexpected transactions", count);
+        }
         let summary = self.generator.summary();
         if DISPLAY_LOGS {
             println!("{:#?}", summary);
@@ -429,23 +370,13 @@ impl Harness {
                 panic!("expected insufficient funds, instead received a transaction");
             }
             Err(err) => {
-                assert!(
-                    matches!(&err, Error::InsufficientFunds { .. }),
-                    "expecting insufficient funds error, received: {:?}",
-                    err
-                );
+                assert!(matches!(&err, Error::InsufficientFunds { .. }), "expecting insufficient funds error, received: {:?}", err);
             }
         }
     }
 }
 
-pub(crate) fn generator<T, F>(
-    network_id: NetworkId,
-    head: &[f64],
-    tail: &[f64],
-    fees: Fees,
-    outputs: &[(F, T)],
-) -> Result<Generator>
+pub(crate) fn generator<T, F>(network_id: NetworkId, head: &[f64], tail: &[f64], fees: Fees, outputs: &[(F, T)]) -> Result<Generator>
 where
     T: Into<Sompi> + Clone,
     F: FnOnce(NetworkType) -> Address + Clone,
@@ -457,14 +388,7 @@ where
             (address.clone()(network_id.into()), sompi.0)
         })
         .collect::<Vec<_>>();
-    make_generator(
-        network_id,
-        head,
-        tail,
-        fees,
-        change_address,
-        PaymentOutputs::from(outputs.as_slice()).into(),
-    )
+    make_generator(network_id, head, tail, fees, change_address, PaymentOutputs::from(outputs.as_slice()).into())
 }
 
 pub(crate) fn make_generator<F>(
@@ -481,16 +405,12 @@ where
     let mut values = head.to_vec();
     values.extend(tail);
 
-    let utxo_entries: Vec<UtxoEntryReference> = values
-        .into_iter()
-        .map(karlsen_to_sompi)
-        .map(UtxoEntryReference::simulated)
-        .collect();
+    let utxo_entries: Vec<UtxoEntryReference> = values.into_iter().map(karlsen_to_sompi).map(UtxoEntryReference::simulated).collect();
     let multiplexer = None;
     let sig_op_count = 1;
     let minimum_signatures = 1;
-    let utxo_iterator: Box<dyn Iterator<Item = UtxoEntryReference> + Send + Sync + 'static> =
-        Box::new(utxo_entries.into_iter());
+    let utxo_iterator: Box<dyn Iterator<Item = UtxoEntryReference> + Send + Sync + 'static> = Box::new(utxo_entries.into_iter());
+    let priority_utxo_entries = None;
     let source_utxo_context = None;
     let destination_utxo_context = None;
     let final_priority_fee = fees;
@@ -505,6 +425,7 @@ where
         change_address,
         utxo_iterator,
         source_utxo_context,
+        priority_utxo_entries,
         destination_utxo_context,
         final_transaction_priority_fee: final_priority_fee,
         final_transaction_destination,
@@ -516,43 +437,27 @@ where
 
 pub(crate) fn change_address(network_type: NetworkType) -> Address {
     match network_type {
-        NetworkType::Mainnet => Address::try_from(
-            "karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j",
-        )
-        .unwrap(),
-        NetworkType::Testnet => Address::try_from(
-            "karlsentest:qqz22l98sf8jun72rwh5rqe2tm8lhwtdxdmynrz4ypwak427qed5jyaya6qh8",
-        )
-        .unwrap(),
+        NetworkType::Mainnet => Address::try_from("karlsen:qpauqsvk7yf9unexwmxsnmg547mhyga37csh0kj53q6xxgl24ydxjsgzthw5j").unwrap(),
+        NetworkType::Testnet => {
+            Address::try_from("karlsentest:qqz22l98sf8jun72rwh5rqe2tm8lhwtdxdmynrz4ypwak427qed5jyaya6qh8").unwrap()
+        }
         _ => unreachable!("network type not supported"),
     }
 }
 
 pub(crate) fn output_address(network_type: NetworkType) -> Address {
     match network_type {
-        NetworkType::Mainnet => Address::try_from(
-            "karlsen:qrd9efkvg3pg34sgp6ztwyv3r569qlc43wa5w8nfs302532dzj47ketxznyts",
-        )
-        .unwrap(),
-        NetworkType::Testnet => Address::try_from(
-            "karlsentest:qqrewmx4gpuekvk8grenkvj2hp7xt0c35rxgq383f6gy223c4ud5svvwy2yuc",
-        )
-        .unwrap(),
+        NetworkType::Mainnet => Address::try_from("karlsen:qrd9efkvg3pg34sgp6ztwyv3r569qlc43wa5w8nfs302532dzj47ketxznyts").unwrap(),
+        NetworkType::Testnet => {
+            Address::try_from("karlsentest:qqrewmx4gpuekvk8grenkvj2hp7xt0c35rxgq383f6gy223c4ud5svvwy2yuc").unwrap()
+        }
         _ => unreachable!("network type not supported"),
     }
 }
 
 #[test]
 fn test_generator_empty_utxo_noop() -> Result<()> {
-    let generator = make_generator(
-        test_network_id(),
-        &[],
-        &[],
-        Fees::None,
-        change_address,
-        PaymentDestination::Change,
-    )
-    .unwrap();
+    let generator = make_generator(test_network_id(), &[], &[], Fees::None, change_address, PaymentDestination::Change).unwrap();
     let tx = generator.generate_transaction().unwrap();
     assert!(tx.is_none());
     Ok(())
@@ -560,15 +465,8 @@ fn test_generator_empty_utxo_noop() -> Result<()> {
 
 #[test]
 fn test_generator_sweep_single_utxo_noop() -> Result<()> {
-    let generator = make_generator(
-        test_network_id(),
-        &[10.0],
-        &[],
-        Fees::None,
-        change_address,
-        PaymentDestination::Change,
-    )
-    .expect("single UTXO input: generator");
+    let generator = make_generator(test_network_id(), &[10.0], &[], Fees::None, change_address, PaymentDestination::Change)
+        .expect("single UTXO input: generator");
     let tx = generator.generate_transaction().unwrap();
     assert!(tx.is_none());
     Ok(())
@@ -576,37 +474,24 @@ fn test_generator_sweep_single_utxo_noop() -> Result<()> {
 
 #[test]
 fn test_generator_sweep_two_utxos() -> Result<()> {
-    make_generator(
-        test_network_id(),
-        &[10.0, 10.0],
-        &[],
-        Fees::None,
-        change_address,
-        PaymentDestination::Change,
-    )
-    .expect("merge 2 UTXOs without fees: generator")
-    .harness()
-    .fetch(&Expected {
-        is_final: true,
-        input_count: 2,
-        aggregate_input_value: Karlsen(20.0),
-        output_count: 1,
-        priority_fees: FeesExpected::None,
-    })
-    .finalize();
+    make_generator(test_network_id(), &[10.0, 10.0], &[], Fees::None, change_address, PaymentDestination::Change)
+        .expect("merge 2 UTXOs without fees: generator")
+        .harness()
+        .fetch(&Expected {
+            is_final: true,
+            input_count: 2,
+            aggregate_input_value: Karlsen(20.0),
+            output_count: 1,
+            priority_fees: FeesExpected::None,
+        })
+        .finalize();
     Ok(())
 }
 
 #[test]
 fn test_generator_sweep_two_utxos_with_priority_fees_rejection() -> Result<()> {
-    let generator = make_generator(
-        test_network_id(),
-        &[10.0, 10.0],
-        &[],
-        Fees::sender(Karlsen(5.0)),
-        change_address,
-        PaymentDestination::Change,
-    );
+    let generator =
+        make_generator(test_network_id(), &[10.0, 10.0], &[], Fees::sender(Karlsen(5.0)), change_address, PaymentDestination::Change);
     match generator {
         Err(Error::GeneratorFeesInSweepTransaction) => {}
         _ => panic!("merge 2 UTXOs with fees must fail generator creation"),
@@ -615,18 +500,12 @@ fn test_generator_sweep_two_utxos_with_priority_fees_rejection() -> Result<()> {
 }
 
 #[test]
-fn test_generator_compound_200k_10kas_transactions() -> Result<()> {
-    generator(
-        test_network_id(),
-        &[10.0; 200_000],
-        &[],
-        Fees::sender(Karlsen(5.0)),
-        [(output_address, Karlsen(190_000.0))].as_slice(),
-    )
-    .unwrap()
-    .harness()
-    .validate()
-    .finalize();
+fn test_generator_compound_200k_10kls_transactions() -> Result<()> {
+    generator(test_network_id(), &[10.0; 200_000], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(190_000.0))].as_slice())
+        .unwrap()
+        .harness()
+        .validate()
+        .finalize();
 
     Ok(())
 }
@@ -637,17 +516,11 @@ fn test_generator_compound_100k_random_transactions() -> Result<()> {
     let inputs: Vec<f64> = (0..100_000).map(|_| rng.gen_range(0.001..10.0)).collect();
     let total = inputs.iter().sum::<f64>();
     let outputs = [(output_address, Karlsen(total - 10.0))];
-    generator(
-        test_network_id(),
-        &inputs,
-        &[],
-        Fees::sender(Karlsen(5.0)),
-        outputs.as_slice(),
-    )
-    .unwrap()
-    .harness()
-    .validate()
-    .finalize();
+    generator(test_network_id(), &inputs, &[], Fees::sender(Karlsen(5.0)), outputs.as_slice())
+        .unwrap()
+        .harness()
+        .validate()
+        .finalize();
 
     Ok(())
 }
@@ -657,22 +530,13 @@ fn test_generator_random_outputs() -> Result<()> {
     let mut rng = StdRng::seed_from_u64(0);
     let outputs: Vec<f64> = (0..30).map(|_| rng.gen_range(1.0..10.0)).collect();
     let total = outputs.iter().sum::<f64>();
-    let outputs: Vec<_> = outputs
-        .into_iter()
-        .map(|v| (output_address, Karlsen(v)))
-        .collect();
+    let outputs: Vec<_> = outputs.into_iter().map(|v| (output_address, Karlsen(v))).collect();
 
-    generator(
-        test_network_id(),
-        &[total + 100.0],
-        &[],
-        Fees::sender(Karlsen(5.0)),
-        outputs.as_slice(),
-    )
-    .unwrap()
-    .harness()
-    .validate()
-    .finalize();
+    generator(test_network_id(), &[total + 100.0], &[], Fees::sender(Karlsen(5.0)), outputs.as_slice())
+        .unwrap()
+        .harness()
+        .validate()
+        .finalize();
 
     Ok(())
 }
@@ -684,11 +548,7 @@ fn test_generator_dust_1_1() -> Result<()> {
         &[10.0; 20],
         &[],
         Fees::sender(Karlsen(5.0)),
-        [
-            (output_address, Karlsen(1.0)),
-            (output_address, Karlsen(1.0)),
-        ]
-        .as_slice(),
+        [(output_address, Karlsen(1.0)), (output_address, Karlsen(1.0))].as_slice(),
     )
     .unwrap()
     .harness()
@@ -711,11 +571,7 @@ fn test_generator_inputs_2_outputs_2_fees_exclude() -> Result<()> {
         &[10.0; 2],
         &[],
         Fees::sender(Karlsen(5.0)),
-        [
-            (output_address, Karlsen(10.0)),
-            (output_address, Karlsen(1.0)),
-        ]
-        .as_slice(),
+        [(output_address, Karlsen(10.0)), (output_address, Karlsen(1.0))].as_slice(),
     )
     .unwrap()
     .harness()
@@ -734,38 +590,32 @@ fn test_generator_inputs_2_outputs_2_fees_exclude() -> Result<()> {
 #[test]
 fn test_generator_inputs_100_outputs_1_fees_exclude_success() -> Result<()> {
     // generator(test_network_id(), &[10.0; 100], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(990.0))].as_slice())
-    generator(
-        test_network_id(),
-        &[10.0; 100],
-        &[],
-        Fees::sender(Karlsen(0.0)),
-        [(output_address, Karlsen(990.0))].as_slice(),
-    )
-    .unwrap()
-    .harness()
-    .fetch(&Expected {
-        is_final: false,
-        input_count: 88,
-        aggregate_input_value: Karlsen(880.0),
-        output_count: 1,
-        priority_fees: FeesExpected::None,
-    })
-    .fetch(&Expected {
-        is_final: false,
-        input_count: 12,
-        aggregate_input_value: Karlsen(120.0),
-        output_count: 1,
-        priority_fees: FeesExpected::None,
-    })
-    .fetch(&Expected {
-        is_final: true,
-        input_count: 2,
-        aggregate_input_value: Sompi(999_99886576),
-        output_count: 2,
-        // priority_fees: FeesExpected::sender(Karlsen(5.0)),
-        priority_fees: FeesExpected::sender(Karlsen(0.0)),
-    })
-    .finalize();
+    generator(test_network_id(), &[10.0; 100], &[], Fees::sender(Karlsen(0.0)), [(output_address, Karlsen(990.0))].as_slice())
+        .unwrap()
+        .harness()
+        .fetch(&Expected {
+            is_final: false,
+            input_count: 88,
+            aggregate_input_value: Karlsen(880.0),
+            output_count: 1,
+            priority_fees: FeesExpected::None,
+        })
+        .fetch(&Expected {
+            is_final: false,
+            input_count: 12,
+            aggregate_input_value: Karlsen(120.0),
+            output_count: 1,
+            priority_fees: FeesExpected::None,
+        })
+        .fetch(&Expected {
+            is_final: true,
+            input_count: 2,
+            aggregate_input_value: Sompi(999_99886576),
+            output_count: 2,
+            // priority_fees: FeesExpected::sender(Karlsen(5.0)),
+            priority_fees: FeesExpected::sender(Karlsen(0.0)),
+        })
+        .finalize();
 
     Ok(())
 }
@@ -810,63 +660,76 @@ fn test_generator_inputs_100_outputs_1_fees_include_success() -> Result<()> {
 
 #[test]
 fn test_generator_inputs_100_outputs_1_fees_exclude_insufficient_funds() -> Result<()> {
-    generator(
-        test_network_id(),
-        &[10.0; 100],
-        &[],
-        Fees::sender(Karlsen(5.0)),
-        [(output_address, Karlsen(1000.0))].as_slice(),
-    )
-    .unwrap()
-    .harness()
-    .fetch(&Expected {
-        is_final: false,
-        input_count: 88,
-        aggregate_input_value: Karlsen(880.0),
-        output_count: 1,
-        priority_fees: FeesExpected::None,
-    })
-    .insufficient_funds();
-
-    Ok(())
-}
-
-#[test]
-fn test_generator_inputs_903_outputs_2_fees_exclude() -> Result<()> {
-    generator(
-        test_network_id(),
-        &[10.0; 1_000],
-        &[],
-        Fees::sender(Karlsen(5.0)),
-        [(output_address, Karlsen(9_000.0))].as_slice(),
-    )
-    .unwrap()
-    .harness()
-    .drain(
-        10,
-        &Expected {
+    generator(test_network_id(), &[10.0; 100], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(1000.0))].as_slice())
+        .unwrap()
+        .harness()
+        .fetch(&Expected {
             is_final: false,
             input_count: 88,
             aggregate_input_value: Karlsen(880.0),
             output_count: 1,
             priority_fees: FeesExpected::None,
-        },
-    )
-    .fetch(&Expected {
-        is_final: false,
-        input_count: 21,
-        aggregate_input_value: Karlsen(210.0),
-        output_count: 1,
-        priority_fees: FeesExpected::None,
-    })
-    .fetch(&Expected {
-        is_final: true,
-        input_count: 11,
-        aggregate_input_value: Sompi(9009_98981896),
-        output_count: 2,
-        priority_fees: FeesExpected::receiver(Karlsen(5.0)),
-    })
-    .finalize();
+        })
+        .insufficient_funds();
 
+    Ok(())
+}
+
+#[test]
+fn test_generator_inputs_1k_outputs_2_fees_exclude() -> Result<()> {
+    generator(test_network_id(), &[10.0; 1_000], &[], Fees::sender(Karlsen(5.0)), [(output_address, Karlsen(9_000.0))].as_slice())
+        .unwrap()
+        .harness()
+        .drain(
+            10,
+            &Expected {
+                is_final: false,
+                input_count: 88,
+                aggregate_input_value: Karlsen(880.0),
+                output_count: 1,
+                priority_fees: FeesExpected::None,
+            },
+        )
+        .fetch(&Expected {
+            is_final: false,
+            input_count: 21,
+            aggregate_input_value: Karlsen(210.0),
+            output_count: 1,
+            priority_fees: FeesExpected::None,
+        })
+        .fetch(&Expected {
+            is_final: true,
+            input_count: 11,
+            aggregate_input_value: Sompi(9009_98981896),
+            output_count: 2,
+            priority_fees: FeesExpected::receiver(Karlsen(5.0)),
+        })
+        .finalize();
+
+    Ok(())
+}
+
+#[test]
+fn test_generator_inputs_32k_outputs_2_fees_exclude() -> Result<()> {
+    let f = 130.0;
+    generator(
+        test_network_id(),
+        &[f; 32_747],
+        &[],
+        Fees::sender(Karlsen(10_000.0)),
+        [(output_address, Karlsen(f * 32_747.0 - 10_001.0))].as_slice(),
+    )
+    .unwrap()
+    .harness()
+    .accumulate(379)
+    .finalize();
+    Ok(())
+}
+
+#[test]
+fn test_generator_inputs_250k_outputs_2_sweep() -> Result<()> {
+    let f = 130.0;
+    let generator = make_generator(test_network_id(), &[f; 250_000], &[], Fees::None, change_address, PaymentDestination::Change);
+    generator.unwrap().harness().accumulate(2875).finalize();
     Ok(())
 }

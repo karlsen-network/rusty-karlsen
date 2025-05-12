@@ -1,4 +1,5 @@
 use crate::constants::MAX_SOMPI;
+use crate::subnets::SubnetworkId;
 use crate::tx::TransactionOutpoint;
 use karlsen_txscript_errors::TxScriptError;
 use thiserror::Error;
@@ -53,28 +54,19 @@ pub enum TxRuleError {
     #[error("transaction total inputs spending amount overflowed u64")]
     InputAmountOverflow,
 
-    #[error(
-        "transaction total inputs spending amount is higher than the max allowed of {}",
-        MAX_SOMPI
-    )]
+    #[error("transaction total inputs spending amount is higher than the max allowed of {}", MAX_SOMPI)]
     InputAmountTooHigh,
 
     #[error("transaction output {0} has zero value")]
     TxOutZero(usize),
 
-    #[error(
-        "transaction output {0} value is higher than the max allowed of {}",
-        MAX_SOMPI
-    )]
+    #[error("transaction output {0} value is higher than the max allowed of {}", MAX_SOMPI)]
     TxOutTooHigh(usize),
 
     #[error("transaction total outputs value overflowed u64")]
     OutputsValueOverflow,
 
-    #[error(
-        "transaction total outputs value is higher than the max allowed of {}",
-        MAX_SOMPI
-    )]
+    #[error("transaction total outputs value is higher than the max allowed of {}", MAX_SOMPI)]
     TotalTxOutTooHigh,
 
     #[error("transaction tries to spend {0} while its total inputs amount is {1}")]
@@ -83,13 +75,14 @@ pub enum TxRuleError {
     #[error("one of the transaction sequence locks conditions was not met")]
     SequenceLockConditionsAreNotMet,
 
-    #[error(
-        "outpoints corresponding to some transaction inputs are missing from current utxo context"
-    )]
+    #[error("outpoints corresponding to some transaction inputs are missing from current utxo context")]
     MissingTxOutpoints,
 
     #[error("failed to verify the signature script: {0}")]
     SignatureInvalid(TxScriptError),
+
+    #[error("failed to verify empty signature script. Inner error: {0}")]
+    SignatureEmpty(TxScriptError),
 
     #[error("input {0} sig op count is {1}, but the calculated value is {2}")]
     WrongSigOpCount(usize, u64, u64),
@@ -99,6 +92,14 @@ pub enum TxRuleError {
 
     #[error("calculated contextual mass (including storage mass) {0} is not equal to the committed mass field {1}")]
     WrongMass(u64, u64),
+
+    #[error("transaction subnetwork id {0} is neither native nor coinbase")]
+    SubnetworksDisabled(SubnetworkId),
+
+    /// [`TxRuleError::FeerateTooLow`] is not a consensus error but a mempool error triggered by the
+    /// fee/mass RBF validation rule
+    #[error("fee rate per contextual mass gram is not greater than the fee rate of the replaced transaction")]
+    FeerateTooLow,
 }
 
 pub type TxResult<T> = std::result::Result<T, TxRuleError>;

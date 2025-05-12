@@ -6,31 +6,27 @@ use async_channel::Sender;
 use async_trait::async_trait;
 use karlsen_core::warn;
 use karlsen_grpc_client::ClientPool;
-use karlsen_rpc_core::{api::rpc::RpcApi, RpcBlock};
+use karlsen_rpc_core::{api::rpc::RpcApi, RpcRawBlock};
 use karlsen_utils::triggers::SingleTrigger;
 use std::{sync::Arc, time::Duration};
 use tokio::{task::JoinHandle, time::sleep};
 
 pub struct BlockSubmitterTask {
-    pool: ClientPool<RpcBlock>,
+    pool: ClientPool<RpcRawBlock>,
     stopper: Stopper,
 }
 
 impl BlockSubmitterTask {
-    pub fn new(pool: ClientPool<RpcBlock>, stopper: Stopper) -> Self {
+    pub fn new(pool: ClientPool<RpcRawBlock>, stopper: Stopper) -> Self {
         Self { pool, stopper }
     }
 
-    pub async fn build(
-        client_manager: Arc<ClientManager>,
-        pool_size: usize,
-        stopper: Stopper,
-    ) -> Arc<Self> {
+    pub async fn build(client_manager: Arc<ClientManager>, pool_size: usize, stopper: Stopper) -> Arc<Self> {
         let pool = client_manager.new_client_pool(pool_size, 100).await;
         Arc::new(Self::new(pool, stopper))
     }
 
-    pub fn sender(&self) -> Sender<RpcBlock> {
+    pub fn sender(&self) -> Sender<RpcRawBlock> {
         self.pool.sender()
     }
 }
@@ -39,14 +35,11 @@ impl BlockSubmitterTask {
 impl Task for BlockSubmitterTask {
     fn start(&self, stop_signal: SingleTrigger) -> Vec<JoinHandle<()>> {
         warn!("Block submitter task starting...");
-        let mut tasks = self.pool.start(|c, block: RpcBlock| async move {
+        let mut tasks = self.pool.start(|c, block: RpcRawBlock| async move {
             loop {
                 match c.submit_block(block.clone(), false).await {
                     Ok(response) => {
-                        assert_eq!(
-                            response.report,
-                            karlsen_rpc_core::SubmitBlockReport::Success
-                        );
+                        assert_eq!(response.report, karlsen_rpc_core::SubmitBlockReport::Success);
                         break;
                     }
                     Err(_) => {

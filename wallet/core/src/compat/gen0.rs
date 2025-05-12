@@ -69,18 +69,12 @@ impl Drop for PrivateKeyDataV0 {
 impl TryFrom<PrivateKeyDataImplV0> for PrivateKeyDataV0 {
     type Error = Error;
     fn try_from(value: PrivateKeyDataImplV0) -> Result<Self, Self::Error> {
-        let key = create_master_key_from_mnemonics(&value.seedPhrase)?
-            .to_string(Prefix::XPRV)
-            .to_string();
+        let key = create_master_key_from_mnemonics(&value.seedPhrase)?.to_string(Prefix::XPRV).to_string();
         if !key.eq(&value.privKey) {
-            return Err(Error::Custom(
-                "privKey dose not matches with drived xprv from given seeds".into(),
-            ));
+            return Err(Error::Custom("privKey dose not matches with drived xprv from given seeds".into()));
         }
 
-        Ok(PrivateKeyDataV0 {
-            mnemonic: value.seedPhrase.clone(),
-        })
+        Ok(PrivateKeyDataV0 { mnemonic: value.seedPhrase.clone() })
     }
 }
 
@@ -98,17 +92,12 @@ fn get_v0_parts(data: &str) -> Result<CipherData> {
     while !ptr.is_empty() {
         let len: usize = ptr[0..5].parse().unwrap();
         let mut data = vec![0; len / 2];
-        hex_decode(ptr[5..(5 + len)].as_bytes(), &mut data).unwrap();
+        hex_decode(&ptr.as_bytes()[5..(5 + len)], &mut data).unwrap();
         list.push(data);
         ptr = &ptr[(5 + len)..];
     }
 
-    let cipher_data = CipherData {
-        content: list[0].clone(),
-        iv: list[1].clone(),
-        salt: list[2].clone(),
-        pass_salt: list[3].clone(),
-    };
+    let cipher_data = CipherData { content: list[0].clone(), iv: list[1].clone(), salt: list[2].clone(), pass_salt: list[3].clone() };
 
     Ok(cipher_data)
 }
@@ -120,12 +109,7 @@ pub fn get_v0_keydata(data: &str, phrase: &Secret) -> Result<PrivateKeyDataV0> {
     keydata.try_into()
 }
 fn get_v0_string(data: &str, phrase: &Secret) -> Result<String> {
-    let CipherData {
-        content,
-        iv,
-        salt,
-        pass_salt,
-    } = get_v0_parts(data)?;
+    let CipherData { content, iv, salt, pass_salt } = get_v0_parts(data)?;
 
     let mut key = [0u8; 64];
     pbkdf2::<Hmac<Sha1>>(phrase.as_ref(), &pass_salt, 1000, &mut key).expect("pbkdf2 failure");
@@ -146,8 +130,7 @@ fn get_v0_string(data: &str, phrase: &Secret) -> Result<String> {
 fn aes_decrypt_v0(key: &[u8], iv: &[u8], content: &mut [u8]) -> Result<String> {
     Aes256CfbDec::new(key.into(), iv.into()).decrypt(content);
     let last = content.len() - *content.last().unwrap() as usize;
-    String::from_utf8(content[0..last].to_vec())
-        .map_err(|_| Error::custom("Unable to decrypt wallet - invalid password"))
+    String::from_utf8(content[0..last].to_vec()).map_err(|_| Error::custom("Unable to decrypt wallet - invalid password"))
 }
 
 // ---
@@ -195,9 +178,7 @@ pub async fn load_v0_keydata(phrase: &Secret) -> Result<PrivateKeyDataV0> {
     let wallet = if runtime::is_web() {
         read_json_with_options::<Wallet>(&filename, options).await?
     } else {
-        read_json_with_options::<Envelope>(&filename, options)
-            .await?
-            .wallet
+        read_json_with_options::<Envelope>(&filename, options).await?.wallet
     };
 
     get_v0_keydata(&wallet.mnemonic, phrase)
@@ -214,10 +195,7 @@ fn test_v0_keydata() {
         keydata.xprv().unwrap(),
         "xprv9s21ZrQH143K4QGJm8SHAMTuw8ca8Hk4DdG31eNcMARmkcg4tojEmeYx6dtqXAJbodJJ6FvJLKtBygB7hYiDXNhn21CQ1j5aJmfahJfwN8f"
     );
-    assert_eq!(
-        keydata.mnemonic,
-        "interest denial place quick stay suit token shadow side ski knife entire"
-    );
+    assert_eq!(keydata.mnemonic, "interest denial place quick stay suit token shadow side ski knife entire");
 }
 
 #[test]

@@ -8,6 +8,8 @@ use karlsen_muhash::MuHash;
 pub trait MuHashExtensions {
     fn add_transaction(&mut self, tx: &impl VerifiableTransaction, block_daa_score: u64);
     fn add_utxo(&mut self, outpoint: &TransactionOutpoint, entry: &UtxoEntry);
+    fn from_transaction(tx: &impl VerifiableTransaction, block_daa_score: u64) -> Self;
+    fn from_utxo(outpoint: &TransactionOutpoint, entry: &UtxoEntry) -> Self;
 }
 
 impl MuHashExtensions for MuHash {
@@ -20,12 +22,7 @@ impl MuHashExtensions for MuHash {
         }
         for (i, output) in tx.outputs().iter().enumerate() {
             let outpoint = TransactionOutpoint::new(tx_id, i as u32);
-            let entry = UtxoEntry::new(
-                output.value,
-                output.script_public_key.clone(),
-                block_daa_score,
-                tx.is_coinbase(),
-            );
+            let entry = UtxoEntry::new(output.value, output.script_public_key.clone(), block_daa_score, tx.is_coinbase());
             self.add_utxo(&outpoint, &entry);
         }
     }
@@ -34,6 +31,18 @@ impl MuHashExtensions for MuHash {
         let mut writer = self.add_element_builder();
         write_utxo(&mut writer, entry, outpoint);
         writer.finalize();
+    }
+
+    fn from_transaction(tx: &impl VerifiableTransaction, block_daa_score: u64) -> Self {
+        let mut mh = Self::new();
+        mh.add_transaction(tx, block_daa_score);
+        mh
+    }
+
+    fn from_utxo(outpoint: &TransactionOutpoint, entry: &UtxoEntry) -> Self {
+        let mut mh = Self::new();
+        mh.add_utxo(outpoint, entry);
+        mh
     }
 }
 

@@ -90,6 +90,7 @@ pub struct Args {
     #[serde(rename = "nogrpc")]
     pub disable_grpc: bool,
     pub ram_scale: f64,
+    pub retention_period_days: Option<f64>,
 }
 
 impl Default for Args {
@@ -134,12 +135,13 @@ impl Default for Args {
             #[cfg(feature = "devnet-prealloc")]
             prealloc_address: None,
             #[cfg(feature = "devnet-prealloc")]
-            prealloc_amount: 1_000_000,
+            prealloc_amount: 10_000_000_000,
 
             disable_upnp: false,
             disable_dns_seeding: false,
             disable_grpc: false,
             ram_scale: 1.0,
+            retention_period_days: None,
         }
     }
 }
@@ -154,15 +156,12 @@ impl Args {
         config.is_archival = self.archival;
         // TODO: change to `config.enable_sanity_checks = self.sanity` when we reach stable versions
         config.enable_sanity_checks = true;
-        config
-            .user_agent_comments
-            .clone_from(&self.user_agent_comments);
+        config.user_agent_comments.clone_from(&self.user_agent_comments);
         config.block_template_cache_lifetime = self.block_template_cache_lifetime;
         config.p2p_listen_address = self.listen.unwrap_or(ContextualNetAddress::unspecified());
-        config.externalip = self
-            .externalip
-            .map(|v| v.normalize(config.default_p2p_port()));
+        config.externalip = self.externalip.map(|v| v.normalize(config.default_p2p_port()));
         config.ram_scale = self.ram_scale;
+        config.retention_period_days = self.retention_period_days;
 
         #[cfg(feature = "devnet-prealloc")]
         if let Some(num_prealloc_utxos) = self.num_prealloc_utxos {
@@ -171,25 +170,14 @@ impl Args {
     }
 
     #[cfg(feature = "devnet-prealloc")]
-    pub fn generate_prealloc_utxos(
-        &self,
-        num_prealloc_utxos: u64,
-    ) -> karlsen_consensus_core::utxo::utxo_collection::UtxoCollection {
+    pub fn generate_prealloc_utxos(&self, num_prealloc_utxos: u64) -> karlsen_consensus_core::utxo::utxo_collection::UtxoCollection {
         let addr = Address::try_from(&self.prealloc_address.as_ref().unwrap()[..]).unwrap();
         let spk = pay_to_address_script(&addr);
         (1..=num_prealloc_utxos)
             .map(|i| {
                 (
-                    TransactionOutpoint {
-                        transaction_id: i.into(),
-                        index: 0,
-                    },
-                    UtxoEntry {
-                        amount: self.prealloc_amount,
-                        script_public_key: spk.clone(),
-                        block_daa_score: 0,
-                        is_coinbase: false,
-                    },
+                    TransactionOutpoint { transaction_id: i.into(), index: 0 },
+                    UtxoEntry { amount: self.prealloc_amount, script_public_key: spk.clone(), block_daa_score: 0, is_coinbase: false },
                 )
             })
             .collect()
@@ -198,9 +186,7 @@ impl Args {
     pub fn network(&self) -> NetworkId {
         match (self.testnet, self.devnet, self.simnet) {
             (false, false, false) => NetworkId::new(NetworkType::Mainnet),
-            (true, false, false) => {
-                NetworkId::with_suffix(NetworkType::Testnet, self.testnet_suffix)
-            }
+            (true, false, false) => NetworkId::with_suffix(NetworkType::Testnet, self.testnet_suffix),
             (false, true, false) => NetworkId::new(NetworkType::Devnet),
             (false, false, true) => NetworkId::new(NetworkType::Simnet),
             _ => panic!("only a single net should be activated"),
@@ -383,31 +369,23 @@ Setting to 0 prevents the preallocation and sets the maximum to {}, leading to 0
                 .long("ram-scale")
                 .require_equals(true)
                 .value_parser(clap::value_parser!(f64))
-                .help("Apply a scale factor to memory allocation bounds. Nodes with limited RAM (~4-8GB) should set this to ~0.3-0.5 respectively. Nodes with 
+                .help("Apply a scale factor to memory allocation bounds. Nodes with limited RAM (~4-8GB) should set this to ~0.3-0.5 respectively. Nodes with
 a large RAM (~64GB) can set this value to ~3.0-4.0 and gain superior performance especially for syncing peers faster"),
+        )
+        .arg(
+            Arg::new("retention-period-days")
+                .long("retention-period-days")
+                .require_equals(true)
+                .value_parser(clap::value_parser!(f64))
+                .help("The number of total days of data to keep.")
         )
         ;
 
     #[cfg(feature = "devnet-prealloc")]
     let cmd = cmd
-        .arg(
-            Arg::new("num-prealloc-utxos")
-                .long("num-prealloc-utxos")
-                .require_equals(true)
-                .value_parser(clap::value_parser!(u64)),
-        )
-        .arg(
-            Arg::new("prealloc-address")
-                .long("prealloc-address")
-                .require_equals(true)
-                .value_parser(clap::value_parser!(String)),
-        )
-        .arg(
-            Arg::new("prealloc-amount")
-                .long("prealloc-amount")
-                .require_equals(true)
-                .value_parser(clap::value_parser!(u64)),
-        );
+        .arg(Arg::new("num-prealloc-utxos").long("num-prealloc-utxos").require_equals(true).value_parser(clap::value_parser!(u64)))
+        .arg(Arg::new("prealloc-address").long("prealloc-address").require_equals(true).value_parser(clap::value_parser!(String)))
+        .arg(Arg::new("prealloc-amount").long("prealloc-amount").require_equals(true).value_parser(clap::value_parser!(u64)));
 
     cmd
 }
@@ -436,10 +414,7 @@ impl Args {
             defaults = from_str(&config_str).map_err(|toml_error| {
                 clap::Error::raw(
                     clap::error::ErrorKind::ValueValidation,
-                    format!(
-                        "failed parsing config file, reason: {}",
-                        toml_error.message()
-                    ),
+                    format!("failed parsing config file, reason: {}", toml_error.message()),
                 )
             })?;
         }
@@ -448,63 +423,23 @@ impl Args {
             appdir: m.get_one::<String>("appdir").cloned().or(defaults.appdir),
             logdir: m.get_one::<String>("logdir").cloned().or(defaults.logdir),
             no_log_files: arg_match_unwrap_or::<bool>(&m, "nologfiles", defaults.no_log_files),
-            rpclisten: m
-                .get_one::<ContextualNetAddress>("rpclisten")
-                .cloned()
-                .or(defaults.rpclisten),
-            rpclisten_borsh: m
-                .get_one::<WrpcNetAddress>("rpclisten-borsh")
-                .cloned()
-                .or(defaults.rpclisten_borsh),
-            rpclisten_json: m
-                .get_one::<WrpcNetAddress>("rpclisten-json")
-                .cloned()
-                .or(defaults.rpclisten_json),
+            rpclisten: m.get_one::<ContextualNetAddress>("rpclisten").cloned().or(defaults.rpclisten),
+            rpclisten_borsh: m.get_one::<WrpcNetAddress>("rpclisten-borsh").cloned().or(defaults.rpclisten_borsh),
+            rpclisten_json: m.get_one::<WrpcNetAddress>("rpclisten-json").cloned().or(defaults.rpclisten_json),
             unsafe_rpc: arg_match_unwrap_or::<bool>(&m, "unsaferpc", defaults.unsafe_rpc),
             wrpc_verbose: false,
             log_level: arg_match_unwrap_or::<String>(&m, "log_level", defaults.log_level),
-            async_threads: arg_match_unwrap_or::<usize>(
-                &m,
-                "async_threads",
-                defaults.async_threads,
-            ),
-            connect_peers: arg_match_many_unwrap_or::<ContextualNetAddress>(
-                &m,
-                "connect-peers",
-                defaults.connect_peers,
-            ),
-            add_peers: arg_match_many_unwrap_or::<ContextualNetAddress>(
-                &m,
-                "add-peers",
-                defaults.add_peers,
-            ),
-            listen: m
-                .get_one::<ContextualNetAddress>("listen")
-                .cloned()
-                .or(defaults.listen),
+            async_threads: arg_match_unwrap_or::<usize>(&m, "async_threads", defaults.async_threads),
+            connect_peers: arg_match_many_unwrap_or::<ContextualNetAddress>(&m, "connect-peers", defaults.connect_peers),
+            add_peers: arg_match_many_unwrap_or::<ContextualNetAddress>(&m, "add-peers", defaults.add_peers),
+            listen: m.get_one::<ContextualNetAddress>("listen").cloned().or(defaults.listen),
             outbound_target: arg_match_unwrap_or::<usize>(&m, "outpeers", defaults.outbound_target),
             inbound_limit: arg_match_unwrap_or::<usize>(&m, "maxinpeers", defaults.inbound_limit),
-            rpc_max_clients: arg_match_unwrap_or::<usize>(
-                &m,
-                "rpcmaxclients",
-                defaults.rpc_max_clients,
-            ),
-            max_tracked_addresses: arg_match_unwrap_or::<usize>(
-                &m,
-                "max-tracked-addresses",
-                defaults.max_tracked_addresses,
-            ),
+            rpc_max_clients: arg_match_unwrap_or::<usize>(&m, "rpcmaxclients", defaults.rpc_max_clients),
+            max_tracked_addresses: arg_match_unwrap_or::<usize>(&m, "max-tracked-addresses", defaults.max_tracked_addresses),
             reset_db: arg_match_unwrap_or::<bool>(&m, "reset-db", defaults.reset_db),
-            enable_unsynced_mining: arg_match_unwrap_or::<bool>(
-                &m,
-                "enable-unsynced-mining",
-                defaults.enable_unsynced_mining,
-            ),
-            enable_mainnet_mining: arg_match_unwrap_or::<bool>(
-                &m,
-                "enable-mainnet-mining",
-                defaults.enable_mainnet_mining,
-            ),
+            enable_unsynced_mining: arg_match_unwrap_or::<bool>(&m, "enable-unsynced-mining", defaults.enable_unsynced_mining),
+            enable_mainnet_mining: arg_match_unwrap_or::<bool>(&m, "enable-mainnet-mining", defaults.enable_mainnet_mining),
             utxoindex: arg_match_unwrap_or::<bool>(&m, "utxoindex", defaults.utxoindex),
             testnet: arg_match_unwrap_or::<bool>(&m, "testnet", defaults.testnet),
             testnet_suffix: arg_match_unwrap_or::<u32>(&m, "netsuffix", defaults.testnet_suffix),
@@ -513,39 +448,24 @@ impl Args {
             archival: arg_match_unwrap_or::<bool>(&m, "archival", defaults.archival),
             sanity: arg_match_unwrap_or::<bool>(&m, "sanity", defaults.sanity),
             yes: arg_match_unwrap_or::<bool>(&m, "yes", defaults.yes),
-            user_agent_comments: arg_match_many_unwrap_or::<String>(
-                &m,
-                "user_agent_comments",
-                defaults.user_agent_comments,
-            ),
+            user_agent_comments: arg_match_many_unwrap_or::<String>(&m, "user_agent_comments", defaults.user_agent_comments),
             externalip: m.get_one::<ContextualNetAddress>("externalip").cloned(),
             perf_metrics: arg_match_unwrap_or::<bool>(&m, "perf-metrics", defaults.perf_metrics),
-            perf_metrics_interval_sec: arg_match_unwrap_or::<u64>(
-                &m,
-                "perf-metrics-interval-sec",
-                defaults.perf_metrics_interval_sec,
-            ),
+            perf_metrics_interval_sec: arg_match_unwrap_or::<u64>(&m, "perf-metrics-interval-sec", defaults.perf_metrics_interval_sec),
             // Note: currently used programmatically by benchmarks and not exposed to CLI users
             block_template_cache_lifetime: defaults.block_template_cache_lifetime,
             disable_upnp: arg_match_unwrap_or::<bool>(&m, "disable-upnp", defaults.disable_upnp),
-            disable_dns_seeding: arg_match_unwrap_or::<bool>(
-                &m,
-                "nodnsseed",
-                defaults.disable_dns_seeding,
-            ),
+            disable_dns_seeding: arg_match_unwrap_or::<bool>(&m, "nodnsseed", defaults.disable_dns_seeding),
             disable_grpc: arg_match_unwrap_or::<bool>(&m, "nogrpc", defaults.disable_grpc),
             ram_scale: arg_match_unwrap_or::<f64>(&m, "ram-scale", defaults.ram_scale),
+            retention_period_days: m.get_one::<f64>("retention-period-days").cloned().or(defaults.retention_period_days),
 
             #[cfg(feature = "devnet-prealloc")]
             num_prealloc_utxos: m.get_one::<u64>("num-prealloc-utxos").cloned(),
             #[cfg(feature = "devnet-prealloc")]
             prealloc_address: m.get_one::<String>("prealloc-address").cloned(),
             #[cfg(feature = "devnet-prealloc")]
-            prealloc_amount: arg_match_unwrap_or::<u64>(
-                &m,
-                "prealloc-amount",
-                defaults.prealloc_amount,
-            ),
+            prealloc_amount: arg_match_unwrap_or::<u64>(&m, "prealloc-amount", defaults.prealloc_amount),
         };
 
         if arg_match_unwrap_or::<bool>(&m, "enable-mainnet-mining", false) {
@@ -558,22 +478,11 @@ impl Args {
 
 use clap::parser::ValueSource::DefaultValue;
 use std::marker::{Send, Sync};
-fn arg_match_unwrap_or<T: Clone + Send + Sync + 'static>(
-    m: &clap::ArgMatches,
-    arg_id: &str,
-    default: T,
-) -> T {
-    m.get_one::<T>(arg_id)
-        .cloned()
-        .filter(|_| m.value_source(arg_id) != Some(DefaultValue))
-        .unwrap_or(default)
+fn arg_match_unwrap_or<T: Clone + Send + Sync + 'static>(m: &clap::ArgMatches, arg_id: &str, default: T) -> T {
+    m.get_one::<T>(arg_id).cloned().filter(|_| m.value_source(arg_id) != Some(DefaultValue)).unwrap_or(default)
 }
 
-fn arg_match_many_unwrap_or<T: Clone + Send + Sync + 'static>(
-    m: &clap::ArgMatches,
-    arg_id: &str,
-    default: Vec<T>,
-) -> Vec<T> {
+fn arg_match_many_unwrap_or<T: Clone + Send + Sync + 'static>(m: &clap::ArgMatches, arg_id: &str, default: Vec<T>) -> Vec<T> {
     match m.get_many::<T>(arg_id) {
         Some(val_ref) => val_ref.cloned().collect(),
         None => default,

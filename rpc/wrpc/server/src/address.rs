@@ -13,11 +13,7 @@ pub enum WrpcNetAddress {
 }
 
 impl WrpcNetAddress {
-    pub fn to_address(
-        &self,
-        network_type: &NetworkType,
-        encoding: &WrpcEncoding,
-    ) -> ContextualNetAddress {
+    pub fn to_address(&self, network_type: &NetworkType, encoding: &WrpcEncoding) -> ContextualNetAddress {
         match self {
             WrpcNetAddress::Default => {
                 let port = match encoding {
@@ -47,7 +43,6 @@ impl WrpcNetAddress {
         }
     }
 }
-
 impl FromStr for WrpcNetAddress {
     type Err = AddrParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -98,15 +93,9 @@ mod tests {
                     WrpcEncoding::SerdeJson => Some(network.default_json_rpc_port()),
                 };
                 // Custom address with port
-                assert_eq!(
-                    addr.to_address(&network, schema),
-                    ContextualNetAddress::new(ip_addr, Some(port))
-                );
+                assert_eq!(addr.to_address(&network, schema), ContextualNetAddress::new(ip_addr, Some(port)));
                 // Custom address without port
-                assert_eq!(
-                    addr_without_port.to_address(&network, schema),
-                    ContextualNetAddress::new(ip_addr, expected_port)
-                )
+                assert_eq!(addr_without_port.to_address(&network, schema), ContextualNetAddress::new(ip_addr, expected_port))
             }
         }
     }

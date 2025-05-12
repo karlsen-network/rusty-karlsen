@@ -3,22 +3,26 @@ extern crate core;
 
 pub mod caches;
 mod data_stack;
+pub mod error;
 pub mod opcodes;
+pub mod result;
 pub mod script_builder;
 pub mod script_class;
 pub mod standard;
+#[cfg(feature = "wasm32-sdk")]
+pub mod wasm;
+
+pub mod runtime_sig_op_counter;
 
 use crate::caches::Cache;
 use crate::data_stack::{DataStack, Stack};
 use crate::opcodes::{deserialize_next_opcode, OpCodeImplementation};
 use itertools::Itertools;
 use karlsen_consensus_core::hashing::sighash::{
-    calc_ecdsa_signature_hash, calc_schnorr_signature_hash, SigHashReusedValues,
+    calc_ecdsa_signature_hash, calc_schnorr_signature_hash, SigHashReusedValues, SigHashReusedValuesUnsync,
 };
 use karlsen_consensus_core::hashing::sighash_type::SigHashType;
-use karlsen_consensus_core::tx::{
-    ScriptPublicKey, TransactionInput, UtxoEntry, VerifiableTransaction,
-};
+use karlsen_consensus_core::tx::{ScriptPublicKey, TransactionInput, UtxoEntry, VerifiableTransaction};
 use karlsen_txscript_errors::TxScriptError;
 use log::trace;
 use opcodes::codes::OpReturn;
@@ -28,6 +32,7 @@ use script_class::ScriptClass;
 pub mod prelude {
     pub use super::standard::*;
 }
+use crate::runtime_sig_op_counter::{RuntimeSigOpCounter, SigOpConsumer};
 pub use standard::*;
 
 pub const MAX_SCRIPT_PUBLIC_KEY_VERSION: u16 = 0;
@@ -44,6 +49,8 @@ pub const MAX_PUB_KEYS_PER_MUTLTISIG: i32 = 20;
 // The last opcode that does not count toward operations.
 // Note that this includes OP_RESERVED which counts as a push operation.
 pub const NO_COST_OPCODE: u8 = 0x60;
+
+type DynOpcodeImplementation<Tx, Reused> = Box<dyn OpCodeImplementation<Tx, Reused>>;
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 enum Signature {
@@ -66,69 +73,120 @@ pub struct SigCacheKey {
 }
 
 enum ScriptSource<'a, T: VerifiableTransaction> {
-    TxInput {
-        tx: &'a T,
-        input: &'a TransactionInput,
-        id: usize,
-        utxo_entry: &'a UtxoEntry,
-        is_p2sh: bool,
-    },
+    TxInput { tx: &'a T, input: &'a TransactionInput, idx: usize, utxo_entry: &'a UtxoEntry, is_p2sh: bool },
     StandAloneScripts(Vec<&'a [u8]>),
 }
 
-pub struct TxScriptEngine<'a, T: VerifiableTransaction> {
+pub struct TxScriptEngine<'a, T: VerifiableTransaction, Reused: SigHashReusedValues> {
     dstack: Stack,
     astack: Stack,
 
     script_source: ScriptSource<'a, T>,
 
     // Outer caches for quicker calculation
-    // TODO:: make it compatible with threading
-    reused_values: &'a mut SigHashReusedValues,
+    reused_values: &'a Reused,
     sig_cache: &'a Cache<SigCacheKey, bool>,
 
     cond_stack: Vec<OpCond>, // Following if stacks, and whether it is running
 
     num_ops: i32,
+    kip10_enabled: bool,
+    runtime_sig_op_counter: Option<RuntimeSigOpCounter>,
 }
 
-fn parse_script<T: VerifiableTransaction>(
+fn parse_script<T: VerifiableTransaction, Reused: SigHashReusedValues>(
     script: &[u8],
-) -> impl Iterator<Item = Result<Box<dyn OpCodeImplementation<T>>, TxScriptError>> + '_ {
+) -> impl Iterator<Item = Result<DynOpcodeImplementation<T, Reused>, TxScriptError>> + '_ {
     script.iter().batching(|it| deserialize_next_opcode(it))
 }
 
-pub fn get_sig_op_count<T: VerifiableTransaction>(
+/// Determines the exact number of signature operations executed in a transaction input
+/// by simulating the script execution. Takes into account conditional branches and only
+/// counts signature operations that are actually executed.
+///
+/// Example of how counts differ:
+/// ```text
+/// IF
+///     CHECKSIG        // 1 sig op if true branch taken
+/// ELSE
+///     CHECKSIG        // 3 sig ops if false branch taken
+///     CHECKSIG
+///     CHECKSIG
+/// ENDIF
+/// ```
+/// `get_sig_op_upper_bound` would return 4, while this function returns 1 or 3
+/// depending on which branch is actually executed.
+///
+/// This function should be used:
+/// - After the runtime signature operation counting hardfork activation
+/// - When exact sig op counts are needed for fee calculation
+/// - For accurate validation of sig op limits
+/// - When working with scripts that have conditional logic
+///
+/// # Arguments
+/// * `tx` - The transaction containing the input to analyze
+/// * `input_idx` - Index of the input to analyze
+/// * `kip10_enabled` - Whether KIP-10 features are enabled
+///
+/// # Returns
+/// * `Ok(u8)` - The exact number of signature operations executed
+/// * `Err(TxScriptError)` - If script execution fails or input index is invalid
+pub fn get_sig_op_count<T: VerifiableTransaction>(tx: &T, input_idx: usize, kip10_enabled: bool) -> Result<u8, TxScriptError> {
+    let sig_cache = Cache::new(0);
+    let reused_values = SigHashReusedValuesUnsync::new();
+    let mut vm = TxScriptEngine::from_transaction_input(
+        tx,
+        &tx.inputs()[input_idx],
+        input_idx,
+        tx.utxo(input_idx).ok_or_else(|| TxScriptError::InvalidInputIndex(input_idx as i32, tx.inputs().len()))?,
+        &reused_values,
+        &sig_cache,
+        kip10_enabled,
+        true,
+    );
+    vm.execute()?;
+    Ok(vm.used_sig_ops().unwrap())
+}
+
+/// Calculates an upper bound of signature operations in a script without executing it.
+/// This is faster than `get_sig_op_count` but may overestimate the count in scripts
+/// with conditional logic.
+///
+/// This function should be used:
+/// - Before the runtime signature operation counting hardfork activation
+/// - When you need a conservative upper bound for validation
+/// - When fast static analysis is preferred over exact counting
+/// - For preliminary transaction size and fee estimation
+///
+/// # Arguments
+/// * `signature_script` - The signature script to analyze
+/// * `prev_script_public_key` - The previous output's script public key
+///
+/// # Returns
+/// * `u64` - Upper bound of possible signature operations in the script
+#[must_use]
+pub fn get_sig_op_count_upper_bound<T: VerifiableTransaction, Reused: SigHashReusedValues>(
     signature_script: &[u8],
     prev_script_public_key: &ScriptPublicKey,
 ) -> u64 {
     let is_p2sh = ScriptClass::is_pay_to_script_hash(prev_script_public_key.script());
-    let script_pub_key_ops = parse_script::<T>(prev_script_public_key.script()).collect_vec();
+    let script_pub_key_ops = parse_script::<T, Reused>(prev_script_public_key.script()).collect_vec();
     if !is_p2sh {
         return get_sig_op_count_by_opcodes(&script_pub_key_ops);
     }
 
-    let signature_script_ops = parse_script::<T>(signature_script).collect_vec();
-    if signature_script_ops.is_empty()
-        || signature_script_ops
-            .iter()
-            .any(|op| op.is_err() || !op.as_ref().unwrap().is_push_opcode())
-    {
+    let signature_script_ops = parse_script::<T, Reused>(signature_script).collect_vec();
+    if signature_script_ops.is_empty() || signature_script_ops.iter().any(|op| op.is_err() || !op.as_ref().unwrap().is_push_opcode()) {
         return 0;
     }
 
-    let p2sh_script = signature_script_ops
-        .last()
-        .expect("checked if empty above")
-        .as_ref()
-        .expect("checked if err above")
-        .get_data();
-    let p2sh_ops = parse_script::<T>(p2sh_script).collect_vec();
+    let p2sh_script = signature_script_ops.last().expect("checked if empty above").as_ref().expect("checked if err above").get_data();
+    let p2sh_ops = parse_script::<T, Reused>(p2sh_script).collect_vec();
     get_sig_op_count_by_opcodes(&p2sh_ops)
 }
 
-fn get_sig_op_count_by_opcodes<T: VerifiableTransaction>(
-    opcodes: &[Result<Box<dyn OpCodeImplementation<T>>, TxScriptError>],
+fn get_sig_op_count_by_opcodes<T: VerifiableTransaction, Reused: SigHashReusedValues>(
+    opcodes: &[Result<DynOpcodeImplementation<T, Reused>, TxScriptError>],
 ) -> u64 {
     // TODO: Check for overflows
     let mut num_sigs: u64 = 0;
@@ -136,22 +194,15 @@ fn get_sig_op_count_by_opcodes<T: VerifiableTransaction>(
         match op {
             Ok(op) => {
                 match op.value() {
-                    codes::OpCheckSig | codes::OpCheckSigVerify | codes::OpCheckSigECDSA => {
-                        num_sigs += 1
-                    }
-                    codes::OpCheckMultiSig
-                    | codes::OpCheckMultiSigVerify
-                    | codes::OpCheckMultiSigECDSA => {
+                    codes::OpCheckSig | codes::OpCheckSigVerify | codes::OpCheckSigECDSA => num_sigs += 1,
+                    codes::OpCheckMultiSig | codes::OpCheckMultiSigVerify | codes::OpCheckMultiSigECDSA => {
                         if i == 0 {
                             num_sigs += MAX_PUB_KEYS_PER_MUTLTISIG as u64;
                             continue;
                         }
 
-                        let prev_opcode =
-                            opcodes[i - 1].as_ref().expect("they were checked before");
-                        if prev_opcode.value() >= codes::OpTrue
-                            && prev_opcode.value() <= codes::Op16
-                        {
+                        let prev_opcode = opcodes[i - 1].as_ref().expect("they were checked before");
+                        if prev_opcode.value() >= codes::OpTrue && prev_opcode.value() <= codes::Op16 {
                             num_sigs += to_small_int(prev_opcode) as u64;
                         } else {
                             num_sigs += MAX_PUB_KEYS_PER_MUTLTISIG as u64;
@@ -169,17 +220,12 @@ fn get_sig_op_count_by_opcodes<T: VerifiableTransaction>(
 /// Returns whether the passed public key script is unspendable, or guaranteed to fail at execution.
 ///
 /// This allows inputs to be pruned instantly when entering the UTXO set.
-pub fn is_unspendable<T: VerifiableTransaction>(script: &[u8]) -> bool {
-    parse_script::<T>(script)
-        .enumerate()
-        .any(|(index, op)| op.is_err() || (index == 0 && op.unwrap().value() == OpReturn))
+pub fn is_unspendable<T: VerifiableTransaction, Reused: SigHashReusedValues>(script: &[u8]) -> bool {
+    parse_script::<T, Reused>(script).enumerate().any(|(index, op)| op.is_err() || (index == 0 && op.unwrap().value() == OpReturn))
 }
 
-impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
-    pub fn new(
-        reused_values: &'a mut SigHashReusedValues,
-        sig_cache: &'a Cache<SigCacheKey, bool>,
-    ) -> Self {
+impl<'a, T: VerifiableTransaction, Reused: SigHashReusedValues> TxScriptEngine<'a, T, Reused> {
+    pub fn new(reused_values: &'a Reused, sig_cache: &'a Cache<SigCacheKey, bool>, kip10_enabled: bool) -> Self {
         Self {
             dstack: vec![],
             astack: vec![],
@@ -188,45 +234,67 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
             sig_cache,
             cond_stack: vec![],
             num_ops: 0,
+            kip10_enabled,
+            runtime_sig_op_counter: None,
         }
     }
 
+    /// Returns the number of signature operations used in script execution if runtime sig op counting is enabled.
+    ///
+    /// Returns None if runtime signature operation counting is disabled.
+    pub fn used_sig_ops(&self) -> Option<u8> {
+        self.runtime_sig_op_counter.as_ref().map(|counter| counter.used_sig_ops())
+    }
+
+    /// Creates a new Script Engine for validating transaction input.
+    ///
+    /// # Arguments
+    /// * `tx` - The transaction being validated
+    /// * `input` - The input being validated
+    /// * `input_idx` - Index of the input in the transaction
+    /// * `utxo_entry` - UTXO entry being spent
+    /// * `reused_values` - Reused values for signature hashing
+    /// * `sig_cache` - Cache for signature verification
+    /// * `kip10_enabled` - Whether KIP-10 transaction introspection opcodes are enabled
+    ///
+    /// # Panics
+    /// * When input_idx >= number of inputs in transaction (malformed input)
+    ///
+    /// # Returns
+    /// Script engine instance configured for the given input
     pub fn from_transaction_input(
         tx: &'a T,
         input: &'a TransactionInput,
         input_idx: usize,
         utxo_entry: &'a UtxoEntry,
-        reused_values: &'a mut SigHashReusedValues,
+        reused_values: &'a Reused,
         sig_cache: &'a Cache<SigCacheKey, bool>,
-    ) -> Result<Self, TxScriptError> {
+        kip10_enabled: bool,
+        runtime_sig_op_counting: bool,
+    ) -> Self {
         let script_public_key = utxo_entry.script_public_key.script();
         // The script_public_key in P2SH is just validating the hash on the OpMultiSig script
         // the user provides
         let is_p2sh = ScriptClass::is_pay_to_script_hash(script_public_key);
-        match input_idx < tx.tx().inputs.len() {
-            true => Ok(Self {
-                dstack: Default::default(),
-                astack: Default::default(),
-                script_source: ScriptSource::TxInput {
-                    tx,
-                    input,
-                    id: input_idx,
-                    utxo_entry,
-                    is_p2sh,
-                },
-                reused_values,
-                sig_cache,
-                cond_stack: Default::default(),
-                num_ops: 0,
-            }),
-            false => Err(TxScriptError::InvalidIndex(input_idx, tx.tx().inputs.len())),
+        assert!(input_idx < tx.tx().inputs.len());
+        Self {
+            dstack: Default::default(),
+            astack: Default::default(),
+            script_source: ScriptSource::TxInput { tx, input, idx: input_idx, utxo_entry, is_p2sh },
+            reused_values,
+            sig_cache,
+            cond_stack: Default::default(),
+            num_ops: 0,
+            kip10_enabled,
+            runtime_sig_op_counter: runtime_sig_op_counting.then_some(RuntimeSigOpCounter::new(input.sig_op_count)),
         }
     }
 
     pub fn from_script(
         script: &'a [u8],
-        reused_values: &'a mut SigHashReusedValues,
+        reused_values: &'a Reused,
         sig_cache: &'a Cache<SigCacheKey, bool>,
+        kip10_enabled: bool,
     ) -> Self {
         Self {
             dstack: Default::default(),
@@ -236,19 +304,18 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
             sig_cache,
             cond_stack: Default::default(),
             num_ops: 0,
+            kip10_enabled,
+            // Runtime sig op counting is not needed for standalone scripts, only inputs have sig op count value
+            runtime_sig_op_counter: None,
         }
     }
 
     #[inline]
     pub fn is_executing(&self) -> bool {
-        return self.cond_stack.is_empty()
-            || *self.cond_stack.last().expect("Checked not empty") == OpCond::True;
+        self.cond_stack.is_empty() || *self.cond_stack.last().expect("Checked not empty") == OpCond::True
     }
 
-    fn execute_opcode(
-        &mut self,
-        opcode: Box<dyn OpCodeImplementation<T>>,
-    ) -> Result<(), TxScriptError> {
+    fn execute_opcode(&mut self, opcode: DynOpcodeImplementation<T, Reused>) -> Result<(), TxScriptError> {
         // Different from karlsend: Illegal and disabled opcode are checked on execute instead
         // Note that this includes OP_RESERVED which counts as a push operation.
         if !opcode.is_push_opcode() {
@@ -257,10 +324,7 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
                 return Err(TxScriptError::TooManyOperations(MAX_OPS_PER_SCRIPT));
             }
         } else if opcode.len() > MAX_SCRIPT_ELEMENT_SIZE {
-            return Err(TxScriptError::ElementTooBig(
-                opcode.len(),
-                MAX_SCRIPT_ELEMENT_SIZE,
-            ));
+            return Err(TxScriptError::ElementTooBig(opcode.len(), MAX_SCRIPT_ELEMENT_SIZE));
         }
 
         if self.is_executing() || opcode.is_conditional() {
@@ -273,11 +337,7 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
         }
     }
 
-    fn execute_script(
-        &mut self,
-        script: &[u8],
-        verify_only_push: bool,
-    ) -> Result<(), TxScriptError> {
+    fn execute_script(&mut self, script: &[u8], verify_only_push: bool) -> Result<(), TxScriptError> {
         let script_result = parse_script(script).try_for_each(|opcode| {
             let opcode = opcode?;
             if opcode.is_disabled() {
@@ -296,10 +356,7 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
 
             let combined_size = self.astack.len() + self.dstack.len();
             if combined_size > MAX_STACK_SIZE {
-                return Err(TxScriptError::StackSizeExceeded(
-                    combined_size,
-                    MAX_STACK_SIZE,
-                ));
+                return Err(TxScriptError::StackSizeExceeded(combined_size, MAX_STACK_SIZE));
             }
             Ok(())
         });
@@ -318,23 +375,12 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
 
     pub fn execute(&mut self) -> Result<(), TxScriptError> {
         let (scripts, is_p2sh) = match &self.script_source {
-            ScriptSource::TxInput {
-                input,
-                utxo_entry,
-                is_p2sh,
-                ..
-            } => {
+            ScriptSource::TxInput { input, utxo_entry, is_p2sh, .. } => {
                 if utxo_entry.script_public_key.version() > MAX_SCRIPT_PUBLIC_KEY_VERSION {
                     trace!("The version of the scriptPublicKey is higher than the known version - the Execute function returns true.");
                     return Ok(());
                 }
-                (
-                    vec![
-                        input.signature_script.as_slice(),
-                        utxo_entry.script_public_key.script(),
-                    ],
-                    *is_p2sh,
-                )
+                (vec![input.signature_script.as_slice(), utxo_entry.script_public_key.script()], *is_p2sh)
             }
             ScriptSource::StandAloneScripts(scripts) => (scripts.clone(), false),
         };
@@ -358,28 +404,15 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
         let mut saved_stack: Option<Vec<Vec<u8>>> = None;
         // try_for_each quits only if an error occurred. So, we always run over all scripts if
         // each is successful
-        scripts
-            .iter()
-            .enumerate()
-            .filter(|(_, s)| !s.is_empty())
-            .try_for_each(|(idx, s)| {
-                let verify_only_push = idx == 0
-                    && matches!(
-                        self.script_source,
-                        ScriptSource::TxInput {
-                            tx: _,
-                            input: _,
-                            id: _,
-                            utxo_entry: _,
-                            is_p2sh: _
-                        }
-                    );
-                // Save script in p2sh
-                if is_p2sh && idx == 1 {
-                    saved_stack = Some(self.dstack.clone());
-                }
-                self.execute_script(s, verify_only_push)
-            })?;
+        scripts.iter().enumerate().filter(|(_, s)| !s.is_empty()).try_for_each(|(idx, s)| {
+            let verify_only_push =
+                idx == 0 && matches!(self.script_source, ScriptSource::TxInput { tx: _, input: _, idx: _, utxo_entry: _, is_p2sh: _ });
+            // Save script in p2sh
+            if is_p2sh && idx == 1 {
+                saved_stack = Some(self.dstack.clone());
+            }
+            self.execute_script(s, verify_only_push)
+        })?;
 
         if is_p2sh {
             self.check_error_condition(false)?;
@@ -432,13 +465,9 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
     fn op_check_multisig_schnorr_or_ecdsa(&mut self, ecdsa: bool) -> Result<(), TxScriptError> {
         let [num_keys]: [i32; 1] = self.dstack.pop_items()?;
         if num_keys < 0 {
-            return Err(TxScriptError::InvalidPubKeyCount(format!(
-                "number of pubkeys {num_keys} is negative"
-            )));
+            return Err(TxScriptError::InvalidPubKeyCount(format!("number of pubkeys {num_keys} is negative")));
         } else if num_keys > MAX_PUB_KEYS_PER_MUTLTISIG {
-            return Err(TxScriptError::InvalidPubKeyCount(format!(
-                "too many pubkeys {num_keys} > {MAX_PUB_KEYS_PER_MUTLTISIG}"
-            )));
+            return Err(TxScriptError::InvalidPubKeyCount(format!("too many pubkeys {num_keys} > {MAX_PUB_KEYS_PER_MUTLTISIG}")));
         }
         let num_keys_usize = num_keys as usize;
 
@@ -449,34 +478,20 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
 
         let pub_keys = match self.dstack.len() >= num_keys_usize {
             true => self.dstack.split_off(self.dstack.len() - num_keys_usize),
-            false => {
-                return Err(TxScriptError::InvalidStackOperation(
-                    num_keys_usize,
-                    self.dstack.len(),
-                ))
-            }
+            false => return Err(TxScriptError::InvalidStackOperation(num_keys_usize, self.dstack.len())),
         };
 
         let [num_sigs]: [i32; 1] = self.dstack.pop_items()?;
         if num_sigs < 0 {
-            return Err(TxScriptError::InvalidSignatureCount(format!(
-                "number of signatures {num_sigs} is negative"
-            )));
+            return Err(TxScriptError::InvalidSignatureCount(format!("number of signatures {num_sigs} is negative")));
         } else if num_sigs > num_keys {
-            return Err(TxScriptError::InvalidSignatureCount(format!(
-                "more signatures than pubkeys {num_sigs} > {num_keys}"
-            )));
+            return Err(TxScriptError::InvalidSignatureCount(format!("more signatures than pubkeys {num_sigs} > {num_keys}")));
         }
         let num_sigs = num_sigs as usize;
 
         let signatures = match self.dstack.len() >= num_sigs {
             true => self.dstack.split_off(self.dstack.len() - num_sigs),
-            false => {
-                return Err(TxScriptError::InvalidStackOperation(
-                    num_sigs,
-                    self.dstack.len(),
-                ))
-            }
+            false => return Err(TxScriptError::InvalidStackOperation(num_sigs, self.dstack.len())),
         };
 
         let mut failed = false;
@@ -489,8 +504,7 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
 
             let typ = *signature.last().expect("checked that is not empty");
             let signature = &signature[..signature.len() - 1];
-            let hash_type =
-                SigHashType::from_u8(typ).map_err(|_| TxScriptError::InvalidSigHashType(typ))?;
+            let hash_type = SigHashType::from_u8(typ).map_err(|_| TxScriptError::InvalidSigHashType(typ))?;
 
             // Advance through the pub_keys iterator.
             // Note every check consumes the public key
@@ -529,35 +543,25 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
             return Err(TxScriptError::NullFail);
         }
 
-        self.dstack.push_item(!failed);
+        self.dstack.push_item(!failed)?;
         Ok(())
     }
 
     #[inline]
-    fn check_schnorr_signature(
-        &mut self,
-        hash_type: SigHashType,
-        key: &[u8],
-        sig: &[u8],
-    ) -> Result<bool, TxScriptError> {
+    fn check_schnorr_signature(&mut self, hash_type: SigHashType, key: &[u8], sig: &[u8]) -> Result<bool, TxScriptError> {
+        self.runtime_sig_op_counter.consume_sig_op()?;
         match self.script_source {
-            ScriptSource::TxInput { tx, id, .. } => {
+            ScriptSource::TxInput { tx, idx, .. } => {
                 if sig.len() != 64 {
                     return Err(TxScriptError::SigLength(sig.len()));
                 }
                 Self::check_pub_key_encoding(key)?;
-                let pk = secp256k1::XOnlyPublicKey::from_slice(key)
-                    .map_err(TxScriptError::InvalidSignature)?;
-                let sig = secp256k1::schnorr::Signature::from_slice(sig)
-                    .map_err(TxScriptError::InvalidSignature)?;
-                let sig_hash = calc_schnorr_signature_hash(tx, id, hash_type, self.reused_values);
-                let msg =
-                    secp256k1::Message::from_digest_slice(sig_hash.as_bytes().as_slice()).unwrap();
-                let sig_cache_key = SigCacheKey {
-                    signature: Signature::Secp256k1(sig),
-                    pub_key: PublicKey::Schnorr(pk),
-                    message: msg,
-                };
+                let pk = secp256k1::XOnlyPublicKey::from_slice(key).map_err(TxScriptError::InvalidSignature)?;
+                let sig = secp256k1::schnorr::Signature::from_slice(sig).map_err(TxScriptError::InvalidSignature)?;
+                let sig_hash = calc_schnorr_signature_hash(tx, idx, hash_type, self.reused_values);
+                let msg = secp256k1::Message::from_digest_slice(sig_hash.as_bytes().as_slice()).unwrap();
+                let sig_cache_key =
+                    SigCacheKey { signature: Signature::Secp256k1(sig), pub_key: PublicKey::Schnorr(pk), message: msg };
 
                 match self.sig_cache.get(&sig_cache_key) {
                     Some(valid) => Ok(valid),
@@ -580,30 +584,19 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
         }
     }
 
-    fn check_ecdsa_signature(
-        &mut self,
-        hash_type: SigHashType,
-        key: &[u8],
-        sig: &[u8],
-    ) -> Result<bool, TxScriptError> {
+    fn check_ecdsa_signature(&mut self, hash_type: SigHashType, key: &[u8], sig: &[u8]) -> Result<bool, TxScriptError> {
+        self.runtime_sig_op_counter.consume_sig_op()?;
         match self.script_source {
-            ScriptSource::TxInput { tx, id, .. } => {
+            ScriptSource::TxInput { tx, idx, .. } => {
                 if sig.len() != 64 {
                     return Err(TxScriptError::SigLength(sig.len()));
                 }
                 Self::check_pub_key_encoding_ecdsa(key)?;
-                let pk = secp256k1::PublicKey::from_slice(key)
-                    .map_err(TxScriptError::InvalidSignature)?;
-                let sig = secp256k1::ecdsa::Signature::from_compact(sig)
-                    .map_err(TxScriptError::InvalidSignature)?;
-                let sig_hash = calc_ecdsa_signature_hash(tx, id, hash_type, self.reused_values);
-                let msg =
-                    secp256k1::Message::from_digest_slice(sig_hash.as_bytes().as_slice()).unwrap();
-                let sig_cache_key = SigCacheKey {
-                    signature: Signature::Ecdsa(sig),
-                    pub_key: PublicKey::Ecdsa(pk),
-                    message: msg,
-                };
+                let pk = secp256k1::PublicKey::from_slice(key).map_err(TxScriptError::InvalidSignature)?;
+                let sig = secp256k1::ecdsa::Signature::from_compact(sig).map_err(TxScriptError::InvalidSignature)?;
+                let sig_hash = calc_ecdsa_signature_hash(tx, idx, hash_type, self.reused_values);
+                let msg = secp256k1::Message::from_digest_slice(sig_hash.as_bytes().as_slice()).unwrap();
+                let sig_cache_key = SigCacheKey { signature: Signature::Ecdsa(sig), pub_key: PublicKey::Ecdsa(pk), message: msg };
 
                 match self.sig_cache.get(&sig_cache_key) {
                     Some(valid) => Ok(valid),
@@ -627,18 +620,31 @@ impl<'a, T: VerifiableTransaction> TxScriptEngine<'a, T> {
     }
 }
 
+trait SpkEncoding {
+    fn to_bytes(&self) -> Vec<u8>;
+}
+
+impl SpkEncoding for ScriptPublicKey {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.version.to_be_bytes().into_iter().chain(self.script().iter().copied()).collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::iter::once;
 
     use crate::opcodes::codes::{
-        OpBlake2b, OpCheckSig, OpData1, OpData2, OpData32, OpDup, OpEqual, OpPushData1, OpTrue,
+        OpBlake2b, OpCheckMultiSig, OpCheckSig, OpCheckSigECDSA, OpCheckSigVerify, OpData1, OpData2, OpData32, OpDup, OpEndIf,
+        OpEqual, OpFalse, OpIf, OpPushData1, OpTrue, OpVerify,
     };
 
     use super::*;
+    use crate::script_builder::{ScriptBuilder, ScriptBuilderResult};
+    use karlsen_consensus_core::hashing::sighash::SigHashReusedValuesUnsync;
+    use karlsen_consensus_core::hashing::sighash_type::SIG_HASH_ALL;
     use karlsen_consensus_core::tx::{
-        PopulatedTransaction, ScriptPublicKey, Transaction, TransactionId, TransactionOutpoint,
-        TransactionOutput,
+        MutableTransaction, PopulatedTransaction, ScriptPublicKey, Transaction, TransactionId, TransactionOutpoint, TransactionOutput,
     };
     use smallvec::SmallVec;
 
@@ -663,20 +669,23 @@ mod tests {
         fn populated_input(&self, _index: usize) -> (&TransactionInput, &UtxoEntry) {
             unimplemented!()
         }
+
+        fn utxo(&self, _index: usize) -> Option<&UtxoEntry> {
+            unimplemented!()
+        }
     }
 
     fn run_test_script_cases(test_cases: Vec<ScriptTestCase>) {
         let sig_cache = Cache::new(10_000);
-        let mut reused_values = SigHashReusedValues::new();
+        let reused_values = SigHashReusedValuesUnsync::new();
 
         for test in test_cases {
             // Ensure encapsulation of variables (no leaking between tests)
             let input = TransactionInput {
                 previous_outpoint: TransactionOutpoint {
                     transaction_id: TransactionId::from_bytes([
-                        0xc9, 0x97, 0xa5, 0xe5, 0x6e, 0x10, 0x41, 0x02, 0xfa, 0x20, 0x9c, 0x6a,
-                        0x85, 0x2d, 0xd9, 0x06, 0x60, 0xa2, 0x0b, 0x2d, 0x9c, 0x35, 0x24, 0x23,
-                        0xed, 0xce, 0x25, 0x85, 0x7f, 0xcd, 0x37, 0x04,
+                        0xc9, 0x97, 0xa5, 0xe5, 0x6e, 0x10, 0x41, 0x02, 0xfa, 0x20, 0x9c, 0x6a, 0x85, 0x2d, 0xd9, 0x06, 0x60, 0xa2,
+                        0x0b, 0x2d, 0x9c, 0x35, 0x24, 0x23, 0xed, 0xce, 0x25, 0x85, 0x7f, 0xcd, 0x37, 0x04,
                     ]),
                     index: 0,
                 },
@@ -684,39 +693,27 @@ mod tests {
                 sequence: 4294967295,
                 sig_op_count: 0,
             };
-            let output = TransactionOutput {
-                value: 1000000000,
-                script_public_key: ScriptPublicKey::new(0, test.script.into()),
-            };
+            let output = TransactionOutput { value: 1000000000, script_public_key: ScriptPublicKey::new(0, test.script.into()) };
 
-            let tx = Transaction::new(
-                1,
-                vec![input.clone()],
-                vec![output.clone()],
-                0,
-                Default::default(),
-                0,
-                vec![],
-            );
-            let utxo_entry = UtxoEntry::new(
-                output.value,
-                output.script_public_key.clone(),
-                0,
-                tx.is_coinbase(),
-            );
+            let tx = Transaction::new(1, vec![input.clone()], vec![output.clone()], 0, Default::default(), 0, vec![]);
+            let utxo_entry = UtxoEntry::new(output.value, output.script_public_key.clone(), 0, tx.is_coinbase());
 
             let populated_tx = PopulatedTransaction::new(&tx, vec![utxo_entry.clone()]);
-
-            let mut vm = TxScriptEngine::from_transaction_input(
-                &populated_tx,
-                &input,
-                0,
-                &utxo_entry,
-                &mut reused_values,
-                &sig_cache,
-            )
-            .expect("Script creation failed");
-            assert_eq!(vm.execute(), test.expected_result);
+            [false, true].into_iter().for_each(|kip10_enabled| {
+                [false, true].into_iter().for_each(|runtime_sig_op_counting| {
+                    let mut vm = TxScriptEngine::from_transaction_input(
+                        &populated_tx,
+                        &input,
+                        0,
+                        &utxo_entry,
+                        &reused_values,
+                        &sig_cache,
+                        kip10_enabled,
+                        runtime_sig_op_counting,
+                    );
+                    assert_eq!(vm.execute(), test.expected_result);
+                });
+            });
         }
     }
 
@@ -781,9 +778,7 @@ mod tests {
         let test_cases = vec![
             ScriptTestCase {
                 script: b"\x67", // OpElse
-                expected_result: Err(TxScriptError::InvalidState(
-                    "condition stack empty".to_string(),
-                )),
+                expected_result: Err(TxScriptError::InvalidState("condition stack empty".to_string())),
             },
             ScriptTestCase {
                 script: b"\x51\x63\x67", // OpTrue, OpIf, OpElse
@@ -889,61 +884,52 @@ mod tests {
             KeyTestCase {
                 name: "uncompressed - invalid",
                 key: &[
-                    0x04u8, 0x11, 0xdb, 0x93, 0xe1, 0xdc, 0xdb, 0x8a, 0x01, 0x6b, 0x49, 0x84, 0x0f,
-                    0x8c, 0x53, 0xbc, 0x1e, 0xb6, 0x8a, 0x38, 0x2e, 0x97, 0xb1, 0x48, 0x2e, 0xca,
-                    0xd7, 0xb1, 0x48, 0xa6, 0x90, 0x9a, 0x5c, 0xb2, 0xe0, 0xea, 0xdd, 0xfb, 0x84,
-                    0xcc, 0xf9, 0x74, 0x44, 0x64, 0xf8, 0x2e, 0x16, 0x0b, 0xfa, 0x9b, 0x8b, 0x64,
-                    0xf9, 0xd4, 0xc0, 0x3f, 0x99, 0x9b, 0x86, 0x43, 0xf6, 0x56, 0xb4, 0x12, 0xa3,
+                    0x04u8, 0x11, 0xdb, 0x93, 0xe1, 0xdc, 0xdb, 0x8a, 0x01, 0x6b, 0x49, 0x84, 0x0f, 0x8c, 0x53, 0xbc, 0x1e, 0xb6,
+                    0x8a, 0x38, 0x2e, 0x97, 0xb1, 0x48, 0x2e, 0xca, 0xd7, 0xb1, 0x48, 0xa6, 0x90, 0x9a, 0x5c, 0xb2, 0xe0, 0xea, 0xdd,
+                    0xfb, 0x84, 0xcc, 0xf9, 0x74, 0x44, 0x64, 0xf8, 0x2e, 0x16, 0x0b, 0xfa, 0x9b, 0x8b, 0x64, 0xf9, 0xd4, 0xc0, 0x3f,
+                    0x99, 0x9b, 0x86, 0x43, 0xf6, 0x56, 0xb4, 0x12, 0xa3,
                 ],
                 is_valid: false,
             },
             KeyTestCase {
                 name: "compressed - invalid",
                 key: &[
-                    0x02, 0xce, 0x0b, 0x14, 0xfb, 0x84, 0x2b, 0x1b, 0xa5, 0x49, 0xfd, 0xd6, 0x75,
-                    0xc9, 0x80, 0x75, 0xf1, 0x2e, 0x9c, 0x51, 0x0f, 0x8e, 0xf5, 0x2b, 0xd0, 0x21,
-                    0xa9, 0xa1, 0xf4, 0x80, 0x9d, 0x3b, 0x4d,
+                    0x02, 0xce, 0x0b, 0x14, 0xfb, 0x84, 0x2b, 0x1b, 0xa5, 0x49, 0xfd, 0xd6, 0x75, 0xc9, 0x80, 0x75, 0xf1, 0x2e, 0x9c,
+                    0x51, 0x0f, 0x8e, 0xf5, 0x2b, 0xd0, 0x21, 0xa9, 0xa1, 0xf4, 0x80, 0x9d, 0x3b, 0x4d,
                 ],
                 is_valid: false,
             },
             KeyTestCase {
                 name: "compressed - invalid",
                 key: &[
-                    0x03, 0x26, 0x89, 0xc7, 0xc2, 0xda, 0xb1, 0x33, 0x09, 0xfb, 0x14, 0x3e, 0x0e,
-                    0x8f, 0xe3, 0x96, 0x34, 0x25, 0x21, 0x88, 0x7e, 0x97, 0x66, 0x90, 0xb6, 0xb4,
-                    0x7f, 0x5b, 0x2a, 0x4b, 0x7d, 0x44, 0x8e,
+                    0x03, 0x26, 0x89, 0xc7, 0xc2, 0xda, 0xb1, 0x33, 0x09, 0xfb, 0x14, 0x3e, 0x0e, 0x8f, 0xe3, 0x96, 0x34, 0x25, 0x21,
+                    0x88, 0x7e, 0x97, 0x66, 0x90, 0xb6, 0xb4, 0x7f, 0x5b, 0x2a, 0x4b, 0x7d, 0x44, 0x8e,
                 ],
                 is_valid: false,
             },
             KeyTestCase {
                 name: "hybrid - invalid",
                 key: &[
-                    0x06, 0x79, 0xbe, 0x66, 0x7e, 0xf9, 0xdc, 0xbb, 0xac, 0x55, 0xa0, 0x62, 0x95,
-                    0xce, 0x87, 0x0b, 0x07, 0x02, 0x9b, 0xfc, 0xdb, 0x2d, 0xce, 0x28, 0xd9, 0x59,
-                    0xf2, 0x81, 0x5b, 0x16, 0xf8, 0x17, 0x98, 0x48, 0x3a, 0xda, 0x77, 0x26, 0xa3,
-                    0xc4, 0x65, 0x5d, 0xa4, 0xfb, 0xfc, 0x0e, 0x11, 0x08, 0xa8, 0xfd, 0x17, 0xb4,
-                    0x48, 0xa6, 0x85, 0x54, 0x19, 0x9c, 0x47, 0xd0, 0x8f, 0xfb, 0x10, 0xd4, 0xb8,
+                    0x06, 0x79, 0xbe, 0x66, 0x7e, 0xf9, 0xdc, 0xbb, 0xac, 0x55, 0xa0, 0x62, 0x95, 0xce, 0x87, 0x0b, 0x07, 0x02, 0x9b,
+                    0xfc, 0xdb, 0x2d, 0xce, 0x28, 0xd9, 0x59, 0xf2, 0x81, 0x5b, 0x16, 0xf8, 0x17, 0x98, 0x48, 0x3a, 0xda, 0x77, 0x26,
+                    0xa3, 0xc4, 0x65, 0x5d, 0xa4, 0xfb, 0xfc, 0x0e, 0x11, 0x08, 0xa8, 0xfd, 0x17, 0xb4, 0x48, 0xa6, 0x85, 0x54, 0x19,
+                    0x9c, 0x47, 0xd0, 0x8f, 0xfb, 0x10, 0xd4, 0xb8,
                 ],
                 is_valid: false,
             },
             KeyTestCase {
                 name: "32 bytes pubkey - Ok",
                 key: &[
-                    0x26, 0x89, 0xc7, 0xc2, 0xda, 0xb1, 0x33, 0x09, 0xfb, 0x14, 0x3e, 0x0e, 0x8f,
-                    0xe3, 0x96, 0x34, 0x25, 0x21, 0x88, 0x7e, 0x97, 0x66, 0x90, 0xb6, 0xb4, 0x7f,
-                    0x5b, 0x2a, 0x4b, 0x7d, 0x44, 0x8e,
+                    0x26, 0x89, 0xc7, 0xc2, 0xda, 0xb1, 0x33, 0x09, 0xfb, 0x14, 0x3e, 0x0e, 0x8f, 0xe3, 0x96, 0x34, 0x25, 0x21, 0x88,
+                    0x7e, 0x97, 0x66, 0x90, 0xb6, 0xb4, 0x7f, 0x5b, 0x2a, 0x4b, 0x7d, 0x44, 0x8e,
                 ],
                 is_valid: true,
             },
-            KeyTestCase {
-                name: "empty",
-                key: &[],
-                is_valid: false,
-            },
+            KeyTestCase { name: "empty", key: &[], is_valid: false },
         ];
 
         for test in test_cases {
-            let check = TxScriptEngine::<PopulatedTransaction>::check_pub_key_encoding(test.key);
+            let check = TxScriptEngine::<PopulatedTransaction, SigHashReusedValuesUnsync>::check_pub_key_encoding(test.key);
             if test.is_valid {
                 assert_eq!(
                     check,
@@ -974,13 +960,9 @@ mod tests {
         }
 
         let script_hash = hex::decode("433ec2ac1ffa1b7b7d027f564529c57197f9ae88").unwrap();
-        let prev_script_pubkey_p2sh_script = [OpBlake2b, OpData32]
-            .iter()
-            .copied()
-            .chain(script_hash.iter().copied())
-            .chain(once(OpEqual));
-        let prev_script_pubkey_p2sh =
-            ScriptPublicKey::new(0, SmallVec::from_iter(prev_script_pubkey_p2sh_script));
+        let prev_script_pubkey_p2sh_script =
+            [OpBlake2b, OpData32].iter().copied().chain(script_hash.iter().copied()).chain(once(OpEqual));
+        let prev_script_pubkey_p2sh = ScriptPublicKey::new(0, SmallVec::from_iter(prev_script_pubkey_p2sh_script));
 
         let tests = [
             TestVector {
@@ -1044,7 +1026,7 @@ mod tests {
 
         for test in tests {
             assert_eq!(
-                get_sig_op_count::<VerifiableTransactionMock>(
+                get_sig_op_count_upper_bound::<VerifiableTransactionMock, SigHashReusedValuesUnsync>(
                     test.signature_script,
                     &test.prev_script_public_key
                 ),
@@ -1063,16 +1045,12 @@ mod tests {
             expected: bool,
         }
         let tests = vec![
-            Test {
-                name: "unspendable",
-                script_public_key: &[0x6a, 0x04, 0x74, 0x65, 0x73, 0x74],
-                expected: true,
-            },
+            Test { name: "unspendable", script_public_key: &[0x6a, 0x04, 0x74, 0x65, 0x73, 0x74], expected: true },
             Test {
                 name: "spendable",
                 script_public_key: &[
-                    0x76, 0xa9, 0x14, 0x29, 0x95, 0xa0, 0xfe, 0x68, 0x43, 0xfa, 0x9b, 0x95, 0x45,
-                    0x97, 0xf0, 0xdc, 0xa7, 0xa4, 0x4d, 0xf6, 0xfa, 0x0b, 0x5c, 0x88, 0xac,
+                    0x76, 0xa9, 0x14, 0x29, 0x95, 0xa0, 0xfe, 0x68, 0x43, 0xfa, 0x9b, 0x95, 0x45, 0x97, 0xf0, 0xdc, 0xa7, 0xa4, 0x4d,
+                    0xf6, 0xfa, 0x0b, 0x5c, 0x88, 0xac,
                 ],
                 expected: false,
             },
@@ -1080,12 +1058,245 @@ mod tests {
 
         for test in tests {
             assert_eq!(
-                is_unspendable::<VerifiableTransactionMock>(test.script_public_key),
+                is_unspendable::<VerifiableTransactionMock, SigHashReusedValuesUnsync>(test.script_public_key),
                 test.expected,
                 "failed for '{}'",
                 test.name
             );
         }
+    }
+
+    #[derive(Clone)]
+    struct SignatureData {
+        signature: Vec<u8>,
+        public_key: Vec<u8>,
+    }
+
+    /// Builder for constructing signature scripts with different signature types and combinations.
+    enum SignatureScriptBuilder {
+        /// Multisignature script that requires multiple signatures to be valid.
+        Multisig(Vec<SignatureData>),
+
+        /// Single signature script with one signature and its corresponding public key.
+        Single(SignatureData),
+
+        /// Mixed signature script that mix different signature types (e.g., ECDSA and Schnorr)
+        Mixed(Vec<SignatureData>),
+
+        /// Empty signature script builder
+        None,
+    }
+
+    type SigBuilder = Box<dyn Fn(&MutableTransaction<Transaction>, &SigHashReusedValuesUnsync) -> SignatureScriptBuilder>;
+    type ScriptBuilderFn = Box<dyn Fn(&mut ScriptBuilder) -> ScriptBuilderResult<&mut ScriptBuilder>>;
+
+    struct TestCase {
+        name: &'static str,
+        script_builder: ScriptBuilderFn,
+        sig_builder: SigBuilder,
+        expected_sig_ops: u8,
+        sig_op_limit: u8,
+        should_pass: bool,
+    }
+
+    impl SignatureScriptBuilder {
+        fn build(self, script: &[u8]) -> ScriptBuilderResult<Vec<u8>> {
+            let mut builder = ScriptBuilder::new();
+
+            match self {
+                SignatureScriptBuilder::Single(sig_data) => {
+                    builder.add_data(&sig_data.signature)?;
+                    builder.add_data(&sig_data.public_key)?;
+                }
+                SignatureScriptBuilder::Multisig(sig_data_vec) => {
+                    for sig_data in sig_data_vec {
+                        builder.add_data(&sig_data.signature)?;
+                    }
+                }
+                SignatureScriptBuilder::Mixed(sig_data_vec) => {
+                    for sig_data in sig_data_vec {
+                        builder.add_data(&sig_data.signature)?;
+                        builder.add_data(&sig_data.public_key)?;
+                    }
+                }
+                SignatureScriptBuilder::None => {}
+            }
+
+            builder.add_data(script)?;
+            Ok(builder.drain())
+        }
+    }
+
+    #[test]
+    fn test_runtime_sig_op_count() -> ScriptBuilderResult<()> {
+        // Setup keys and test environment
+        let secp = secp256k1::Secp256k1::new();
+        let (secret_key, _) = secp.generate_keypair(&mut rand::thread_rng());
+        let keypair = secp256k1::Keypair::from_seckey_slice(secp256k1::SECP256K1, &secret_key.secret_bytes()).unwrap();
+
+        let sig_cache = Cache::new(10_000);
+        let reused_values = SigHashReusedValuesUnsync::new();
+
+        // Helper functions for creating signatures
+        let create_schnorr_signature = move |tx: &MutableTransaction<Transaction>, reused: &SigHashReusedValuesUnsync| {
+            let hash = calc_schnorr_signature_hash(&tx.as_verifiable(), 0, SIG_HASH_ALL, reused);
+            let msg = secp256k1::Message::from_digest_slice(hash.as_bytes().as_slice()).unwrap();
+            let sig = keypair.sign_schnorr(msg);
+            let mut signature = sig.as_ref().to_vec();
+            signature.push(SIG_HASH_ALL.to_u8());
+            SignatureData { signature, public_key: keypair.x_only_public_key().0.serialize().to_vec() }
+        };
+
+        let create_ecdsa_signature = move |tx: &MutableTransaction<Transaction>, reused: &SigHashReusedValuesUnsync| {
+            let hash = calc_ecdsa_signature_hash(&tx.as_verifiable(), 0, SIG_HASH_ALL, reused);
+            let msg = secp256k1::Message::from_digest_slice(hash.as_bytes().as_slice()).unwrap();
+            let sig = keypair.secret_key().sign_ecdsa(msg);
+            let mut signature = sig.serialize_compact().to_vec();
+            signature.push(SIG_HASH_ALL.to_u8());
+            SignatureData { signature, public_key: keypair.public_key().serialize().to_vec() }
+        };
+
+        let test_cases = vec![
+            // Basic Schnorr CheckSig
+            TestCase {
+                name: "Basic Schnorr CheckSig - Single signature",
+                script_builder: Box::new(|sb| sb.add_op(OpCheckSig)),
+                sig_builder: Box::new(move |tx, reused| SignatureScriptBuilder::Single(create_schnorr_signature(tx, reused))),
+                expected_sig_ops: 1,
+                sig_op_limit: 1,
+                should_pass: true,
+            },
+            // Basic ECDSA CheckSig
+            TestCase {
+                name: "Basic ECDSA CheckSig - Single signature",
+                script_builder: Box::new(|sb| sb.add_op(OpCheckSigECDSA)),
+                sig_builder: Box::new(move |tx, reused| SignatureScriptBuilder::Single(create_ecdsa_signature(tx, reused))),
+                expected_sig_ops: 1,
+                sig_op_limit: 1,
+                should_pass: true,
+            },
+            // Mixed Schnorr and ECDSA
+            TestCase {
+                name: "Mixed Schnorr and ECDSA - Within limit",
+                script_builder: Box::new(|sb| sb.add_op(OpCheckSigVerify)?.add_op(OpCheckSigECDSA)),
+                sig_builder: Box::new(move |tx, reused| {
+                    SignatureScriptBuilder::Mixed(vec![create_ecdsa_signature(tx, reused), create_schnorr_signature(tx, reused)])
+                }),
+                expected_sig_ops: 2,
+                sig_op_limit: 2,
+                should_pass: true,
+            },
+            // 2-of-3 MultiSig test case
+            TestCase {
+                name: "2-of-3 MultiSig - Basic validation",
+                script_builder: Box::new(move |sb| {
+                    sb.add_i64(2)?
+                        .add_data(&keypair.x_only_public_key().0.serialize())?
+                        .add_data(&keypair.x_only_public_key().0.serialize())?
+                        .add_data(&keypair.x_only_public_key().0.serialize())?
+                        .add_i64(3)?
+                        .add_op(OpCheckMultiSig)
+                }),
+                sig_builder: Box::new(move |tx, reused| {
+                    let sig = create_schnorr_signature(tx, reused);
+                    SignatureScriptBuilder::Multisig(vec![sig.clone(), sig])
+                }),
+                expected_sig_ops: 2,
+                sig_op_limit: 2,
+                should_pass: true,
+            },
+            TestCase {
+                name: "Mixed Schnorr and ECDSA - Exceeds limit",
+                script_builder: Box::new(|sb| sb.add_op(OpCheckSigVerify)?.add_op(OpCheckSigECDSA)),
+                sig_builder: Box::new(move |tx, reused| {
+                    SignatureScriptBuilder::Mixed(vec![create_ecdsa_signature(tx, reused), create_schnorr_signature(tx, reused)])
+                }),
+                expected_sig_ops: 2,
+                sig_op_limit: 1,
+                should_pass: false,
+            },
+            // Conditional execution with sig ops
+            TestCase {
+                name: "Conditional sig ops - True branch execution",
+                script_builder: Box::new(|sb| sb.add_op(OpTrue)?.add_op(OpIf)?.add_op(OpCheckSigECDSA)?.add_op(OpEndIf)),
+                sig_builder: Box::new(move |tx, reused| SignatureScriptBuilder::Single(create_ecdsa_signature(tx, reused))),
+                expected_sig_ops: 1,
+                sig_op_limit: 1,
+                should_pass: true,
+            },
+            // Conditional execution with sig ops
+            TestCase {
+                name: "Conditional sig ops - False branch skips validation",
+                script_builder: Box::new(|sb| {
+                    sb.add_op(OpFalse)?.add_op(OpIf)?.add_op(OpCheckSigECDSA)?.add_op(OpVerify)?.add_op(OpEndIf)?.add_op(OpTrue)
+                }),
+                sig_builder: Box::new(move |_tx, _reused| SignatureScriptBuilder::None),
+                expected_sig_ops: 0,
+                sig_op_limit: 0,
+                should_pass: true,
+            },
+        ];
+
+        for test in test_cases {
+            // Create script
+            let mut script_builder = ScriptBuilder::new();
+            (test.script_builder)(&mut script_builder)?;
+            let script = script_builder.drain();
+
+            let script_pub_key = pay_to_script_hash_script(&script);
+            let utxo_entry = UtxoEntry::new(1000, script_pub_key.clone(), 0, false);
+
+            // Create transaction
+            let tx = Transaction::new(
+                1,
+                vec![TransactionInput {
+                    previous_outpoint: TransactionOutpoint { transaction_id: TransactionId::default(), index: 0 },
+                    signature_script: vec![],
+                    sequence: 0,
+                    sig_op_count: test.sig_op_limit,
+                }],
+                vec![],
+                0,
+                Default::default(),
+                0,
+                vec![],
+            );
+
+            let mut tx = MutableTransaction::new(tx);
+            tx.entries = vec![Some(utxo_entry.clone())];
+
+            // Build signature script
+            let signature_script = (test.sig_builder)(&tx, &reused_values).build(&script)?;
+            tx.tx.inputs[0].signature_script = signature_script;
+
+            // Execute script
+            let tx = tx.as_verifiable();
+            let mut vm =
+                TxScriptEngine::from_transaction_input(&tx, &tx.inputs()[0], 0, &utxo_entry, &reused_values, &sig_cache, false, true);
+
+            let result = vm.execute().map(|_| vm.used_sig_ops().unwrap());
+
+            match (result, test.should_pass) {
+                (Ok(count), true) => {
+                    assert_eq!(
+                        count, test.expected_sig_ops,
+                        "{} failed: Expected {} sig ops, got {}",
+                        test.name, test.expected_sig_ops, count
+                    );
+                }
+                (Ok(_), false) => {
+                    panic!("{} should have failed but succeeded", test.name);
+                }
+                (Err(err), true) => {
+                    panic!("{} failed but should have succeeded with err: {}", test.name, err);
+                }
+                (Err(_), false) => {
+                    // Test correctly failed
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -1100,9 +1311,9 @@ mod bitcoind_tests {
     use super::*;
     use crate::script_builder::ScriptBuilderError;
     use karlsen_consensus_core::constants::MAX_TX_IN_SEQUENCE_NUM;
+    use karlsen_consensus_core::hashing::sighash::SigHashReusedValuesUnsync;
     use karlsen_consensus_core::tx::{
-        PopulatedTransaction, ScriptPublicKey, Transaction, TransactionId, TransactionOutpoint,
-        TransactionOutput,
+        PopulatedTransaction, ScriptPublicKey, Transaction, TransactionId, TransactionOutpoint, TransactionOutput,
     };
 
     #[derive(PartialEq, Eq, Debug, Clone)]
@@ -1126,17 +1337,14 @@ mod bitcoind_tests {
         Comment((String,)),
     }
 
-    fn create_spending_transaction(
-        sig_script: Vec<u8>,
-        script_public_key: ScriptPublicKey,
-    ) -> Transaction {
+    fn create_spending_transaction(sig_script: Vec<u8>, script_public_key: ScriptPublicKey) -> Transaction {
         let coinbase = Transaction::new(
             1,
             vec![TransactionInput::new(
                 TransactionOutpoint::new(TransactionId::default(), 0xffffffffu32),
                 vec![0, 0],
                 MAX_TX_IN_SEQUENCE_NUM,
-                Default::default(),
+                MAX_PUB_KEYS_PER_MUTLTISIG as u8,
             )],
             vec![TransactionOutput::new(0, script_public_key)],
             Default::default(),
@@ -1151,7 +1359,7 @@ mod bitcoind_tests {
                 TransactionOutpoint::new(coinbase.id(), 0u32),
                 sig_script,
                 MAX_TX_IN_SEQUENCE_NUM,
-                Default::default(),
+                MAX_PUB_KEYS_PER_MUTLTISIG as u8,
             )],
             vec![TransactionOutput::new(0, Default::default())],
             Default::default(),
@@ -1162,12 +1370,10 @@ mod bitcoind_tests {
     }
 
     impl JsonTestRow {
-        fn test_row(&self) -> Result<(), TestError> {
+        fn test_row(&self, kip10_enabled: bool, runtime_sig_op_counting: bool) -> Result<(), TestError> {
             // Parse test to objects
             let (sig_script, script_pub_key, expected_result) = match self.clone() {
-                JsonTestRow::Test(sig_script, sig_pub_key, _, expected_result) => {
-                    (sig_script, sig_pub_key, expected_result)
-                }
+                JsonTestRow::Test(sig_script, sig_pub_key, _, expected_result) => (sig_script, sig_pub_key, expected_result),
                 JsonTestRow::TestWithComment(sig_script, sig_pub_key, _, expected_result, _) => {
                     (sig_script, sig_pub_key, expected_result)
                 }
@@ -1176,25 +1382,23 @@ mod bitcoind_tests {
                 }
             };
 
-            let result = Self::run_test(sig_script, script_pub_key);
+            let result = Self::run_test(sig_script, script_pub_key, kip10_enabled, runtime_sig_op_counting);
 
             match Self::result_name(result.clone()).contains(&expected_result.as_str()) {
                 true => Ok(()),
-                false => Err(TestError {
-                    expected_result,
-                    result,
-                }),
+                false => Err(TestError { expected_result, result }),
             }
         }
 
-        fn run_test(sig_script: String, script_pub_key: String) -> Result<(), UnifiedError> {
-            let script_sig =
-                opcodes::parse_short_form(sig_script).map_err(UnifiedError::ScriptBuilderError)?;
-            let script_pub_key = ScriptPublicKey::from_vec(
-                0,
-                opcodes::parse_short_form(script_pub_key)
-                    .map_err(UnifiedError::ScriptBuilderError)?,
-            );
+        fn run_test(
+            sig_script: String,
+            script_pub_key: String,
+            kip10_enabled: bool,
+            runtime_sig_op_counting: bool,
+        ) -> Result<(), UnifiedError> {
+            let script_sig = opcodes::parse_short_form(sig_script).map_err(UnifiedError::ScriptBuilderError)?;
+            let script_pub_key =
+                ScriptPublicKey::from_vec(0, opcodes::parse_short_form(script_pub_key).map_err(UnifiedError::ScriptBuilderError)?);
 
             // Create transaction
             let tx = create_spending_transaction(script_sig, script_pub_key.clone());
@@ -1203,16 +1407,17 @@ mod bitcoind_tests {
 
             // Run transaction
             let sig_cache = Cache::new(10_000);
-            let mut reused_values = SigHashReusedValues::new();
+            let reused_values = SigHashReusedValuesUnsync::new();
             let mut vm = TxScriptEngine::from_transaction_input(
                 &populated_tx,
                 &populated_tx.tx().inputs[0],
                 0,
                 &populated_tx.entries[0],
-                &mut reused_values,
+                &reused_values,
                 &sig_cache,
-            )
-            .map_err(UnifiedError::TxScriptError)?;
+                kip10_enabled,
+                runtime_sig_op_counting,
+            );
             vm.execute().map_err(UnifiedError::TxScriptError)
         }
 
@@ -1245,15 +1450,11 @@ mod bitcoind_tests {
                 Err(ue) => match ue {
                     UnifiedError::TxScriptError(e) => match e {
                         TxScriptError::NumberTooBig(_) => vec!["UNKNOWN_ERROR"],
+                        TxScriptError::Serialization(_) => vec!["UNKNOWN_ERROR"],
                         TxScriptError::PubKeyFormat => vec!["PUBKEYFORMAT"],
                         TxScriptError::EvalFalse => vec!["EVAL_FALSE"],
                         TxScriptError::EmptyStack => {
-                            vec![
-                                "EMPTY_STACK",
-                                "EVAL_FALSE",
-                                "UNBALANCED_CONDITIONAL",
-                                "INVALID_ALTSTACK_OPERATION",
-                            ]
+                            vec!["EMPTY_STACK", "EVAL_FALSE", "UNBALANCED_CONDITIONAL", "INVALID_ALTSTACK_OPERATION"]
                         }
                         TxScriptError::NullFail => vec!["NULLFAIL"],
                         TxScriptError::SigLength(_) => vec!["NULLFAIL"],
@@ -1306,26 +1507,43 @@ mod bitcoind_tests {
 
     #[test]
     fn test_bitcoind_tests() {
-        let file = File::open(
-            Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("test-data")
-                .join("script_tests.json"),
-        )
-        .expect("Could not find test file");
-        let reader = BufReader::new(file);
+        // Script test files are split into two versions to test behavior before and after KIP-10:
+        //
+        // - script_tests.json: Tests basic script functionality with KIP-10 disabled (kip10_enabled=false)
+        // - script_tests-kip10.json: Tests expanded functionality with KIP-10 enabled (kip10_enabled=true)
+        //
+        // KIP-10 introduces two major changes:
+        //
+        // 1. Support for 8-byte integer arithmetic (previously limited to 4 bytes)
+        //    This enables working with larger numbers in scripts and reduces artificial constraints
+        //
+        // 2. Transaction introspection opcodes:
+        //    - OpTxInputCount (0xb3): Get number of inputs
+        //    - OpTxOutputCount (0xb4): Get number of outputs
+        //    - OpTxInputIndex (0xb9): Get current input index
+        //    - OpTxInputAmount (0xbe): Get input amount
+        //    - OpTxInputSpk (0xbf): Get input script public key
+        //    - OpTxOutputAmount (0xc2): Get output amount
+        //    - OpTxOutputSpk (0xc3): Get output script public key
+        //
+        // These changes were added to support mutual transactions and auto-compounding addresses.
+        // When KIP-10 is disabled (pre-activation), the new opcodes will return an InvalidOpcode error
+        // and arithmetic is limited to 4 bytes. When enabled, scripts gain full access to transaction
+        // data and 8-byte arithmetic capabilities.
+        for runtime_sig_op_counting in [false, true] {
+            for (file_name, kip10_enabled) in [("script_tests.json", false), ("script_tests-kip10.json", true)] {
+                let file = File::open(Path::new(env!("CARGO_MANIFEST_DIR")).join("test-data").join(file_name))
+                    .expect("Could not find test file");
+                let reader = BufReader::new(file);
 
-        // Read the JSON contents of the file as an instance of `User`.
-        let tests: Vec<JsonTestRow> = serde_json::from_reader(reader).expect("Failed Parsing {:?}");
-        let mut had_errors = 0;
-        let total_tests = tests.len();
-        for row in tests {
-            if let Err(error) = row.test_row() {
-                println!("Test: {:?} failed: {:?}", row.clone(), error);
-                had_errors += 1;
+                // Read the JSON contents of the file as an instance of `User`.
+                let tests: Vec<JsonTestRow> = serde_json::from_reader(reader).expect("Failed Parsing {:?}");
+                for row in tests {
+                    if let Err(error) = row.test_row(kip10_enabled, runtime_sig_op_counting) {
+                        panic!("Test: {:?} failed for {}: {:?}", row.clone(), file_name, error);
+                    }
+                }
             }
-        }
-        if had_errors > 0 {
-            panic!("{}/{} json tests failed", had_errors, total_tests)
         }
     }
 }

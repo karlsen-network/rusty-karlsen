@@ -5,13 +5,24 @@ use crate::processes::window::WindowManager;
 use karlsen_consensus_core::header::Header;
 
 impl HeaderProcessor {
-    pub(super) fn pre_pow_validation(
-        &self,
-        ctx: &mut HeaderProcessingContext,
-        header: &Header,
-    ) -> BlockProcessResult<()> {
+    pub(super) fn pre_pow_validation(&self, ctx: &mut HeaderProcessingContext, header: &Header) -> BlockProcessResult<()> {
+        self.check_parents_limit(ctx, header)?;
         self.check_pruning_violation(ctx)?;
         self.check_difficulty_and_daa_score(ctx, header)?;
+        Ok(())
+    }
+
+    // TODO (post HF): move back to pre_ghostdag_validation (substitute for check_parents_limit_upper_bound)
+    fn check_parents_limit(&self, ctx: &mut HeaderProcessingContext, header: &Header) -> BlockProcessResult<()> {
+        if header.direct_parents().is_empty() {
+            return Err(RuleError::NoParents);
+        }
+
+        let max_block_parents = self.max_block_parents.get(ctx.selected_parent_daa_score()) as usize;
+        if header.direct_parents().len() > max_block_parents {
+            return Err(RuleError::TooManyParents(header.direct_parents().len(), max_block_parents));
+        }
+
         Ok(())
     }
 
@@ -21,43 +32,32 @@ impl HeaderProcessor {
         // We check that the new block is in the future of the pruning point by verifying that at least
         // one of its parents is in the pruning point future (or the pruning point itself). Otherwise,
         // the Prunality proof implies that the block can be discarded.
-        if !self
-            .reachability_service
-            .is_dag_ancestor_of_any(ctx.pruning_point(), &mut known_parents.iter().copied())
-        {
+        if !self.reachability_service.is_dag_ancestor_of_any(ctx.pruning_point(), &mut known_parents.iter().copied()) {
             return Err(RuleError::PruningViolation(ctx.pruning_point()));
         }
         Ok(())
     }
 
-    fn check_difficulty_and_daa_score(
-        &self,
-        ctx: &mut HeaderProcessingContext,
-        header: &Header,
-    ) -> BlockProcessResult<()> {
+    fn check_difficulty_and_daa_score(&self, ctx: &mut HeaderProcessingContext, header: &Header) -> BlockProcessResult<()> {
         let ghostdag_data = ctx.ghostdag_data();
         let daa_window = self.window_manager.block_daa_window(ghostdag_data)?;
 
         if daa_window.daa_score != header.daa_score {
-            return Err(RuleError::UnexpectedHeaderDaaScore(
-                daa_window.daa_score,
-                header.daa_score,
-            ));
+            return Err(RuleError::UnexpectedHeaderDaaScore(daa_window.daa_score, header.daa_score));
         }
 
-        let mut expected_bits = self
-            .window_manager
-            .calculate_difficulty_bits(ghostdag_data, &daa_window);
+        let mut expected_bits = self.window_manager.calculate_difficulty_bits(ghostdag_data, &daa_window);
         ctx.mergeset_non_daa = Some(daa_window.mergeset_non_daa);
 
-        if header.daa_score <= (self.hf_daa_score + self.difficulty_window_size as u64)
-            && header.daa_score >= self.hf_daa_score
+        let khashv2_activation_score = self.khashv2_activation.daa_score();
+        if header.daa_score <= (khashv2_activation_score + self.difficulty_window_size as u64)
+            && header.daa_score >= khashv2_activation_score
         {
             expected_bits = self.genesis.bits;
         }
 
         if header.bits != expected_bits {
-            return Err(RuleError::UnexpectedDifficulty(header.bits, expected_bits));
+            return Err(RuleError::UnexpectedDifficulty(header.hash, header.bits, expected_bits));
         }
 
         ctx.block_window_for_difficulty = Some(daa_window.window);

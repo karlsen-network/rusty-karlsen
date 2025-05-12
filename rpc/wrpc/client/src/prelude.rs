@@ -1,3 +1,5 @@
+//! Re-exports of the most commonly used types and traits.
+
 pub use crate::client::{ConnectOptions, ConnectStrategy};
 pub use crate::{KarlsenRpcClient, Resolver, WrpcEncoding};
 pub use karlsen_consensus_core::network::{NetworkId, NetworkType};

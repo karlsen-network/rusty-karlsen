@@ -1,61 +1,54 @@
-Please note - this is an alpha version of the software, and not all features are currently functional.
+Before you start, you must configure the default network setting.  There are currently
+3 networks available.  `mainnet`, `testnet-10` and `testnet-11`.  If you wish to experiment,
+you should select `testnet-11` by entering `network testnet-11`
 
-If you are using the desktop or web version of this software, you can adjust the terminal font size with Ctrl+'+' or Ctrl+'-' (use Command on MacOS).
+The `server` command configures the target server.  You can connect to any Rusty Karlsen
+node that has wRPC enabled with `--rpclisten-borsh=0.0.0.0`. If the server setting 
+is set to 'public' the node will connect to the public node infrastructure.
 
-For the desktop version, you can press Ctrl+M (Command on MacOS) to bring up metrics.
-
-Type `help` to view the full list of commands. To exit the application, type `exit`. On Windows, you can also use `Alt+F4`, and on MacOS, use `Command+Q` to exit.
-
----
-
-Before starting, you need to configure the default network setting. Currently, three networks are available: `mainnet`, `testnet-1`, and `testnet-11`. While this software is in the alpha stage, you should avoid using it on the mainnet. For experimentation, select `testnet-1` by entering `network testnet-1`.
-
-The `server` command configures the target server. You can connect to any Rusty Karlsen node with User RPC enabled using `--rpclisten-borsh=public`. If running the node within KOS, it is restricted to listen to a local IP address.
-
-Both the network and server settings are stored in the application and are used when running a local node or connecting to a remote one.
+Both network and server values are stored in the application settings and are 
+used when running a local node or connecting to a remote node.
 
 ---
 
-Use `node start` to start the node. Type `node` to view an overview of commands. The `node mute` command toggles node log output (alternatively, you can use `node logs`). The `node select` command allows you to choose between locally installed versions if running in a development environment. You can also specify an absolute path by typing `node select <path to rusty karlsen binary>`.
+`wallet create [<name>]` Use this command to create a local wallet. The <name> argument 
+is optional (the default wallet name is "karlsen") and allows you to create multiple 
+named wallets.  Only one wallet can be opened at a time. Keep in mind that a wallet can have multiple
+accounts, as such you only need one wallet, unless, for example, you want to separate wallets for 
+personal and business needs (but you can also create isolated accounts within a wallet).
 
-For developers, the `node select` command scans the 'target' folder for debug and release builds, allowing you to switch between builds at runtime.
+Make sure to record your mnemonic, even if working with a testnet, not to lose your
+testnet KLS.
 
-Once your node is running, connect to it using the `connect` command.
-
-If the `server` setting is configured to your local host when starting the node, the `connect` action will occur automatically.
-
-`wallet create [<name>]` - Use this command to create a local wallet. The `<name>` argument is optional (the default wallet name is "karlsen"), allowing you to create multiple named wallets. Only one wallet can be open at a time. Remember, a wallet can have multiple accounts, so you may only need one wallet unless you want to separate wallets for personal and business use (though you can also create isolated accounts within a wallet).
-
-Be sure to record your mnemonic, even when working with a testnet, to avoid losing your testnet KLS.
-
-`open <name>` - Opens the wallet (the wallet is opened automatically after creation).
+`open <name>` - opens the wallet (the wallet is open automatically after creation).
 
 `list` - Lists all wallet accounts and their balances.
 
-`select <account-name>` - Selects an active account. The `<account-name>` can be the first few letters of the account name or ID.
+`select <account-name>` - Selects an active account. The <account-name> can be the first few letters of the name or id of the account.
 
-`account create bip32 [<name>]` - Creates additional HD wallet accounts linked to the wallet's default private key.
+`account create bip32 [<name>]` - Allows you to create additional HD wallet accounts linked to the default private key of your wallet.
 
-`address` - Displays the address of the selected account.
+`address` - shows your selected account address
 
-Note - you can click on the address to copy it to the clipboard. When on the mainnet, Ctrl+Clicking on addresses, transactions, and block hashes will open a new browser window with an explorer.
+Before you transact: `mute` option (enabled by default) toggles mute on/off. Mute enables terminal
+output of internal framework events.  Rust and JavaScript/TypeScript applications integrating with this platform 
+are meant to update their state by monitoring event notifications. Mute allows you to see these events in
+the terminal.  When mute is off, all events are displayed in the terminal.  When mute is on, you can use 'track'
+command to enable specific event notification.
 
-Before transacting: The `mute` option (enabled by default) toggles mute on/off. Mute controls terminal output of internal framework events. Rust and JavaScript/TypeScript applications integrating with this platform update their state by monitoring event notifications. Mute allows you to see these events in the terminal. When mute is off, all events are displayed. When mute is on, use the `track` command to enable specific event notifications.
+`transfer <account-name> <amount>` - Transfers from the active to a different account. For example 'transfer p 1' will transfer 1 KLS from
+the selected account to an account named 'pete' (starts with a 'p' letter)
 
-`transfer <account-name> <amount>` - Transfers funds from the active account to a different account. For example, 'transfer p 1' transfers 1 KLS from the selected account to an account starting with 'p'.
+`send <address> <amount>` - Send funds to a destination address .
 
-`send <address> <amount>` - Sends funds to a specified address.
+`estimate <amount>` - Provides a fee and UTXO consumption estimate for a transaction of a given amount.
 
-`estimate <amount>` - Provides a fee and UTXO consumption estimate for a transaction of a specified amount.
+`sweep` - Sweeps account UTXOs to reduce the UTXO size.
 
-`sweep` - Sweeps account UTXOs to reduce their size.
+`history list` - Shows previous account transactions.
 
-`history list` - Displays a list of previous account transactions.
-
-`history details` - Displays previous account transactions with extended information.
-
-Once your node is synced, you can begin mining.
+`history details` - Show previous account transactions with extended information.
 
 `monitor` - A test screen environment that periodically updates account balances.
 
-`rpc` - Allows you to execute RPC methods against the node (note that not all methods are currently available).
+`rpc` - Allows you to execute RPC methods against the node (not all methods are currently available)

@@ -14,6 +14,7 @@ karlsen-core.workspace = true
 karlsen-consensus-core.workspace = true
 karlsen-consensus-notify.workspace = true
 karlsen-p2p-lib.workspace = true
+karlsen-p2p-mining.workspace = true
 karlsen-utils.workspace = true
 karlsen-utils-tower.workspace = true
 karlsen-hashes.workspace = true

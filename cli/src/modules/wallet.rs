@@ -6,13 +6,11 @@ use crate::wizards;
 pub struct Wallet;
 
 impl Wallet {
-    async fn main(
-        self: Arc<Self>,
-        ctx: &Arc<dyn Context>,
-        mut argv: Vec<String>,
-        cmd: &str,
-    ) -> Result<()> {
+    async fn main(self: Arc<Self>, ctx: &Arc<dyn Context>, mut argv: Vec<String>, cmd: &str) -> Result<()> {
         let ctx = ctx.clone().downcast_arc::<KarlsenCli>()?;
+
+        let guard = ctx.wallet().guard();
+        let guard = guard.lock().await;
 
         if argv.is_empty() {
             return self.display_help(ctx, argv).await;
@@ -53,7 +51,7 @@ impl Wallet {
 
                 let wallet_name = wallet_name.as_deref();
                 let import_with_mnemonic = op.as_str() == "import";
-                wizards::wallet::create(&ctx, wallet_name, import_with_mnemonic).await?;
+                wizards::wallet::create(&ctx, guard.into(), wallet_name, import_with_mnemonic).await?;
             }
             "open" => {
                 let name = if let Some(name) = argv.first().cloned() {
@@ -72,8 +70,8 @@ impl Wallet {
                 let (wallet_secret, _) = ctx.ask_wallet_secret(None).await?;
                 let _ = ctx.notifier().show(Notification::Processing).await;
                 let args = WalletOpenArgs::default_with_legacy_accounts();
-                ctx.wallet().open(&wallet_secret, name, args).await?;
-                ctx.wallet().activate_accounts(None).await?;
+                ctx.wallet().open(&wallet_secret, name, args, &guard).await?;
+                ctx.wallet().activate_accounts(None, &guard).await?;
             }
             "close" => {
                 ctx.wallet().close().await?;
@@ -91,10 +89,7 @@ impl Wallet {
                         store.set_user_hint(Some(hint.into())).await?;
                     }
                 } else {
-                    tprintln!(
-                        ctx,
-                        "usage:\n'wallet hint <text>' or 'wallet hint remove' to remove the hint"
-                    );
+                    tprintln!(ctx, "usage:\n'wallet hint <text>' or 'wallet hint remove' to remove the hint");
                 }
             }
             v => {
@@ -119,10 +114,7 @@ impl Wallet {
                 Legacy wallets can only be imported as accounts. \
                 \r\n",
                 ),
-                (
-                    "open [<name>]",
-                    "Open an existing wallet (shorthand: 'open [<name>]')",
-                ),
+                ("open [<name>]", "Open an existing wallet (shorthand: 'open [<name>]')"),
                 ("close", "Close an opened wallet (shorthand: 'close')"),
                 ("hint", "Change the wallet phishing hint"),
             ],

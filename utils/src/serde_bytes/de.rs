@@ -19,8 +19,7 @@ where
             deserializer.deserialize_str(FromHexVisitor::default())
         } else {
             // serde::Deserialize for &[u8] is already optimized, so simply forward to that.
-            serde::Deserialize::deserialize(deserializer)
-                .and_then(|bts| T::try_from(bts).map_err(serde::de::Error::custom))
+            serde::Deserialize::deserialize(deserializer).and_then(|bts| T::try_from(bts).map_err(serde::de::Error::custom))
         }
     }
 }
@@ -30,12 +29,9 @@ pub struct FromHexVisitor<'de, T: FromHex> {
     lifetime: std::marker::PhantomData<&'de ()>,
 }
 
-impl<'de, T: FromHex> Default for FromHexVisitor<'de, T> {
+impl<T: FromHex> Default for FromHexVisitor<'_, T> {
     fn default() -> Self {
-        Self {
-            marker: Default::default(),
-            lifetime: Default::default(),
-        }
+        Self { marker: Default::default(), lifetime: Default::default() }
     }
 }
 

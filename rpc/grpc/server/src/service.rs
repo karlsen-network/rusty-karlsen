@@ -64,7 +64,7 @@ impl AsyncService for GrpcService {
         let manager = Manager::new(self.rpc_max_clients);
         let grpc_adaptor = Adaptor::server(
             self.net_address,
-            self.config.bps(),
+            self.config.bps().upper_bound(),
             manager,
             self.core_service.clone(),
             self.core_service.notifier(),
@@ -87,11 +87,7 @@ impl AsyncService for GrpcService {
                     debug!("GRPC, Adaptor terminated successfully");
                 }
                 Err(err) => {
-                    warn!(
-                        "{} error while stopping the connection handler: {}",
-                        Self::IDENT,
-                        err
-                    );
+                    warn!("{} error while stopping the connection handler: {}", Self::IDENT, err);
                 }
             }
 
