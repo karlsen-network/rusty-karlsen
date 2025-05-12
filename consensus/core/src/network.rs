@@ -6,7 +6,7 @@
 //!
 //! The suffix is used to differentiate between multiple networks of the same type and is used
 //! explicitly with `testnet` networks, allowing declaration of testnet versions such as
-//! `testnet-10`, `testnet-11`, etc.
+//! `testnet-1`, `testnet-11`, etc.
 //!
 
 #![allow(non_snake_case)]

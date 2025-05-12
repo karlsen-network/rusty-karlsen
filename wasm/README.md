@@ -102,7 +102,7 @@ NOTES:
 - `npm install` will install NodeJs types for TypeScript and W3C websocket modules
 - `npm install -g typedoc` is needed for the release build to generate documentation
 - `node init` creates a local `examples/data/config.json` that contains a private key (mnemonic) use across NodeJS examples. You can override address used in some examples by specifying the address as a command line argument.
-- Majority of examples will accept following arguments: `node <script> [address] [mainnet|testnet-10|testnet-11] [--address <address>] [--network <mainnet|testnet-10|testnet-11>] [--encoding <borsh|json>]`.
+- Majority of examples will accept following arguments: `node <script> [address] [mainnet|testnet-1] [--address <address>] [--network <mainnet|testnet-1>] [--encoding <borsh|json>]`.
 
     By default all wRPC connections use Borsh binary encoding.
 
@@ -174,7 +174,7 @@ let {
 const rpc = new RpcClient({
     url: "127.0.0.1", 
     encoding: Encoding.Borsh, 
-    network : "testnet-10"
+    network : "testnet-1"
 });
 
 (async () => {
