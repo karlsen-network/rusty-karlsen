@@ -3,7 +3,7 @@
 
 Kaspa is about to take a significant leap with the **Crescendo Hardfork**, as detailed in [KIP14](https://github.com/kaspanet/kips/blob/master/kip-0014.md), transitioning from 1 to 10 blocks per second. To ensure a stable rollout, **Testnet 10 (TN10)** will first undergo this shift on approximately **March 6, 2025, 18:30 UTC**. By running TN10 and providing feedback, you help prepare for a smooth mainnet upgrade, tentatively planned for the end of April or early May.
 
-Karlsen is taking a major step forward with the **Pulse Hardfork**, following the same technological advancements as Kaspa's Crescendo Hardfork, as outlined in [KIP14](https://github.com/kaspanet/kips/blob/master/kip-0014.md),. This upgrade transitions the network from 1 block per second to 10 blocks per second. To ensure a smooth deployment, Karlsen Testnet 10 (KTN10) will first adopt these changes around <date_to_define> UTC. By running KTN10 and providing feedback, you contribute to a successful mainnet upgrade, tentatively scheduled for the end of April or early May.
+Karlsen is taking a major step forward with the **Pulse Hardfork**, following the same technological advancements as Kaspa's Crescendo Hardfork, as outlined in [KIP14](https://github.com/kaspanet/kips/blob/master/kip-0014.md). This upgrade transitions the network from 1 block per second to 10 blocks per second. To ensure a smooth deployment, Karlsen Testnet 1 (TN1) will first adopt these changes around **May 14, 2025, 7:30 UTC**. By running TN1 and providing feedback, you contribute to a successful mainnet upgrade, tentatively scheduled for the end of April or early May.
 
 ---
 
@@ -26,21 +26,20 @@ While the minimum specs suffice to sync and maintain a TN1 node with the acceler
 
 ---
 
-## 1. Install & Run Your KTN10 Node
+## 1. Install & Run Your TN1 Node
 
-1. **Obtain Karlsen 2.3.0 binaries**  
-   Download and extract the official [2.3.0 release](https://github.com/karlsen-network/rusty-karlsen/releases/tag/v2.3.0), or build from the `master` branch by following the instructions in the project README.
+1. **Obtain Karlsen 3.0.0 binaries**  
+   Download and extract the official [3.0.0 release](https://github.com/karlsen-network/rusty-karlsen/releases/tag/v3.0.0), or build from the `master` branch by following the instructions in the project README.
 
-2. **Launch the Node**  
-   While KTN10 is the default netsuffix, specifying it explicitly is recommended:
+2. **Launch the Node**
 
    ```
-   karlsend --testnet --netsuffix=10 --utxoindex
+   karlsend --testnet --utxoindex
    ```
 
    *(If running from source code:)*  
    ```
-   cargo run --bin karlsend --release -- --testnet --netsuffix=10 --utxoindex
+   cargo run --bin karlsend --release -- --testnet --utxoindex
    ```
 
 Leave this process running. Closing it will stop your node.
@@ -62,7 +61,7 @@ Leave this process running. Closing it will stop your node.
   rothschild
   ```
 
-   This outputs a private key and a public address. Fund your wallet by mining to it or obtaining test coins from other KTN10 participants.
+   This outputs a private key and a public address. Fund your wallet by mining to it or obtaining test coins from other TN1 participants.
 
 2. **Broadcast Transactions**  
   ```
@@ -73,26 +72,25 @@ Leave this process running. Closing it will stop your node.
 
 ---
 
-## 3. Mining on KTN10
+## 3. Mining on TN1
 
 1. **Download the Miner**  
-   Use the latest Kaspa CPU miner [release](https://github.com/karlsen-network/karlsen-miner/releases) which supports KTN10.
+   Use the latest Kaspa CPU miner [release](https://github.com/karlsen-network/karlsen-miner/releases/latest) which supports TN1.
 
 2. **Start Mining**  
   ```
-  karlsen-miner --testnet --mining-address <your-address> -p 42210 -t 1
+  karlsen-miner --testnet --mining-address <your-address> -p 42210
   ```
 
-   Replace <your-address> with your KTN10 address (e.g., from Rothschild) if you want to mine and generate transactions simultaneously.
+   Replace <your-address> with your TN1 address (e.g., from Rothschild) if you want to mine and generate transactions simultaneously.
 
 ---
 
 ## Summary & Next Steps
 
 - **Node Sync:**  
-  `karlsend --testnet --netsuffix=10 --utxoindex`
+  `karlsend --testnet --utxoindex`
 - **Transaction Generation:**  
   `rothschild --private-key <your-private-key> -t=10`
 - **Mining:**  
-  `karlsen-miner --testnet --mining-address <your-address> -p 42210 -t 1`  
-
+  `karlsen-miner --testnet --mining-address <your-address> -p 42210`  
