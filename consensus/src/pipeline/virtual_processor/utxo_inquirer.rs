@@ -28,8 +28,7 @@ impl VirtualStateProcessor {
     ) -> Result<SignableTransaction, UtxoInquirerError> {
         let retention_period_root_daa_score = self
             .headers_store
-            .get_compact_header_data(retention_period_root_hash)
-            .map(|compact_header| compact_header.daa_score)
+            .get_daa_score(retention_period_root_hash)
             .map_err(|_| UtxoInquirerError::MissingCompactHeaderForBlockHash(retention_period_root_hash))?;
 
         if accepting_block_daa_score < retention_period_root_daa_score {

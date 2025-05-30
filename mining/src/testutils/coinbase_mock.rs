@@ -29,23 +29,12 @@ impl CoinbaseManagerMock {
 
     pub(super) fn serialize_coinbase_payload(&self, data: &CoinbaseData) -> Vec<u8> {
         let script_pub_key_len = data.miner_data.script_public_key.script().len();
-        let payload: Vec<u8> = data
-            .blue_score
-            .to_le_bytes()
-            .iter()
-            .copied() // Blue score                   (u64)
-            .chain(data.subsidy.to_le_bytes().iter().copied()) // Subsidy                      (u64)
-            .chain(
-                data.miner_data
-                    .script_public_key
-                    .version()
-                    .to_le_bytes()
-                    .iter()
-                    .copied(),
-            ) // Script public key version    (u16)
-            .chain((script_pub_key_len as u8).to_le_bytes().iter().copied()) // Script public key length     (u8)
-            .chain(data.miner_data.script_public_key.script().iter().copied()) // Script public key
-            .chain(data.miner_data.extra_data.iter().copied()) // Extra data
+        let payload: Vec<u8> = data.blue_score.to_le_bytes().iter().copied()                    // Blue score                   (u64)
+            .chain(data.subsidy.to_le_bytes().iter().copied())                                  // Subsidy                      (u64)
+            .chain(data.miner_data.script_public_key.version().to_le_bytes().iter().copied())   // Script public key version    (u16)
+            .chain((script_pub_key_len as u8).to_le_bytes().iter().copied())                    // Script public key length     (u8)
+            .chain(data.miner_data.script_public_key.script().iter().copied())                  // Script public key            
+            .chain(data.miner_data.extra_data.iter().copied())                                  // Extra data
             .collect();
 
         payload
@@ -55,14 +44,9 @@ impl CoinbaseManagerMock {
         let script_pub_key_len = miner_data.script_public_key.script().len();
         payload.truncate(LENGTH_OF_BLUE_SCORE + LENGTH_OF_SUBSIDY);
         payload.extend(
-            miner_data
-                .script_public_key
-                .version()
-                .to_le_bytes()
-                .iter()
-                .copied() // Script public key version (u16)
+            miner_data.script_public_key.version().to_le_bytes().iter().copied() // Script public key version (u16)
                 .chain((script_pub_key_len as u8).to_le_bytes().iter().copied()) // Script public key length  (u8)
-                .chain(miner_data.script_public_key.script().iter().copied()) // Script public key
+                .chain(miner_data.script_public_key.script().iter().copied())    // Script public key
                 .chain(miner_data.extra_data.iter().copied()), // Extra data
         );
 

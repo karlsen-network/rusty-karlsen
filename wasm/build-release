@@ -4,6 +4,11 @@
 # make the script fail for any failed command
 set -e
 
+# required for getrandom crate
+# Workaround for Rust 1.87.0
+# https://github.com/rust-lang/rust/issues/141048
+export RUSTFLAGS="--cfg getrandom_backend=\"wasm_js\" -Ctarget-cpu=mvp"
+
 rm -rf release/*
 rm -rf web/*
 rm -rf nodejs/*

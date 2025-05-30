@@ -302,8 +302,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build wasm release
-        env:
-          RUSTFLAGS: '--cfg getrandom_backend="wasm_js"'
         run: |
           pushd .
           cd wasm

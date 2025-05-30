@@ -205,8 +205,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build WASM32 SDK
-        env:
-          RUSTFLAGS: '--cfg getrandom_backend="wasm_js"'
         run: |
           mkdir sdk || true
           cd wasm
