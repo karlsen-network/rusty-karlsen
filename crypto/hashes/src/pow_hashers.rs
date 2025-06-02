@@ -44,18 +44,22 @@ pub trait HashData {
     fn as_bytes(&self) -> &[u8];
     fn as_bytes_mut(&mut self) -> &mut [u8];
 
+    #[inline(always)]
     fn get_as_u32(&self, index: usize) -> u32 {
         u32::from_le_bytes(self.as_bytes()[index * SIZE_U32..index * SIZE_U32 + SIZE_U32].try_into().unwrap())
     }
 
+    #[inline(always)]
     fn set_as_u32(&mut self, index: usize, value: u32) {
         self.as_bytes_mut()[index * SIZE_U32..index * SIZE_U32 + SIZE_U32].copy_from_slice(&value.to_le_bytes())
     }
 
+    #[inline(always)]
     fn get_as_u64(&self, index: usize) -> u64 {
         u64::from_le_bytes(self.as_bytes()[index * SIZE_U64..index * SIZE_U64 + SIZE_U64].try_into().unwrap())
     }
 
+    #[inline(always)]
     fn set_as_u64(&mut self, index: usize, value: u64) {
         self.as_bytes_mut()[index * SIZE_U64..index * SIZE_U64 + SIZE_U64].copy_from_slice(&value.to_le_bytes())
     }
@@ -65,18 +69,22 @@ pub trait HashData {
 pub struct Hash256([u8; 32]);
 
 impl HashData for Hash256 {
+    #[inline(always)]
     fn new() -> Self {
         Self([0; 32])
     }
 
+    #[inline(always)]
     fn from_hash(hash: &Hash) -> Self {
         Self(hash.0)
     }
 
+    #[inline(always)]
     fn as_bytes(&self) -> &[u8] {
         &self.0
     }
 
+    #[inline(always)]
     fn as_bytes_mut(&mut self) -> &mut [u8] {
         &mut self.0
     }
@@ -86,11 +94,13 @@ impl HashData for Hash256 {
 pub struct Hash512([u8; 64]);
 
 impl HashData for Hash512 {
+    #[inline(always)]
     fn new() -> Self {
         Self([0; 64])
     }
 
     //Todo check if filled with 0
+    #[inline(always)]
     fn from_hash(hash: &Hash) -> Self {
         let mut result = Self::new();
         let (first_half, _) = result.0.split_at_mut(hash.0.len());
@@ -98,10 +108,12 @@ impl HashData for Hash512 {
         result
     }
 
+    #[inline(always)]
     fn as_bytes(&self) -> &[u8] {
         &self.0
     }
 
+    #[inline(always)]
     fn as_bytes_mut(&mut self) -> &mut [u8] {
         &mut self.0
     }
@@ -110,6 +122,7 @@ impl HashData for Hash512 {
 impl BitXor<&Hash512> for &Hash512 {
     type Output = Hash512;
 
+    #[inline(always)]
     fn bitxor(self, rhs: &Hash512) -> Self::Output {
         let mut hash = Hash512::new();
 
@@ -125,11 +138,13 @@ impl BitXor<&Hash512> for &Hash512 {
 pub struct Hash1024([u8; 128]);
 
 impl HashData for Hash1024 {
+    #[inline(always)]
     fn new() -> Self {
         Self([0; 128])
     }
 
     //Todo check if filled with 0
+    #[inline(always)]
     fn from_hash(hash: &Hash) -> Self {
         let mut result = Self::new();
         let (first_half, _) = result.0.split_at_mut(hash.0.len());
@@ -137,16 +152,19 @@ impl HashData for Hash1024 {
         result
     }
 
+    #[inline(always)]
     fn as_bytes(&self) -> &[u8] {
         &self.0
     }
 
+    #[inline(always)]
     fn as_bytes_mut(&mut self) -> &mut [u8] {
         &mut self.0
     }
 }
 
 impl Hash1024 {
+    #[inline(always)]
     fn from_512s(first: &Hash512, second: &Hash512) -> Self {
         let mut hash = Self::new();
         let (first_half, second_half) = hash.0.split_at_mut(first.0.len());
@@ -193,6 +211,7 @@ lazy_static! {
     };
 }
 
+#[inline(always)]
 fn get_dataset_item(index: usize) -> Hash1024 {
     let dataset = FULL_DATASET.get_or_init(|| {
         let mut full_dataset = vec![Hash1024::new(); FULL_DATASET_NUM_ITEMS as usize].into_boxed_slice();
@@ -202,6 +221,7 @@ fn get_dataset_item(index: usize) -> Hash1024 {
     dataset[index]
 }
 
+#[inline(always)]
 fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash512], num_threads: usize) {
     info!("prebuilding dataset using {} threads", num_threads);
     let start = std::time::Instant::now();
@@ -252,6 +272,7 @@ impl Context {
         }
     }*/
 
+    #[inline(always)]
     fn build_light_cache(cache: &mut [Hash512]) {
         let mut item: Hash512 = Hash512::new();
         PowFishHash::keccak(&mut item.0, &SEED.0);
@@ -279,7 +300,7 @@ impl Context {
 }
 
 impl PowFishHash {
-    #[inline]
+    #[inline(always)]
     //pub fn fishhash_kernel(context: &mut Context, seed: &Hash512) -> Hash256 {
     pub fn fishhash_kernel(seed: &Hash) -> Hash {
         let seed_hash512 = Hash512::from_hash(seed);
@@ -349,7 +370,7 @@ impl PowFishHash {
         Hash::from_bytes(mix_hash.0)
     }
 
-    #[inline]
+    #[inline(always)]
     //pub fn fishhash_kernel(context: &mut Context, seed: &Hash512) -> Hash256 {
     pub fn fishhashplus_kernel(seed: &Hash) -> Hash {
         let seed_hash512 = Hash512::from_hash(seed);
@@ -416,12 +437,14 @@ impl PowFishHash {
         Hash::from_bytes(mix_hash.0)
     }
 
+    #[inline(always)]
     pub fn keccak(out: &mut [u8], data: &[u8]) {
         let mut hasher = tiny_keccak::Keccak::v512();
         hasher.update(data);
         hasher.finalize(out);
     }
 
+    #[inline(always)]
     fn keccak_in_place(data: &mut [u8]) {
         //TODO remove tiny_keccak with asm keccak
         let mut hasher = tiny_keccak::Keccak::v512();
@@ -429,10 +452,12 @@ impl PowFishHash {
         hasher.finalize(data);
     }
 
+    #[inline(always)]
     fn fnv1(u: u32, v: u32) -> u32 {
         u.wrapping_mul(FNV_PRIME) ^ v
     }
 
+    #[inline(always)]
     fn fnv1_512(u: Hash512, v: Hash512) -> Hash512 {
         let mut r = Hash512::new();
 
@@ -443,6 +468,7 @@ impl PowFishHash {
         r
     }
 
+    #[inline(always)]
     fn calculate_dataset_item_1024(light_cache: &[Hash512], index: usize) -> Hash1024 {
         let seed0 = (index * 2) as u32;
         let seed1 = seed0 + 1;
@@ -497,7 +523,7 @@ impl PowFishHash {
 }
 
 impl PowB3Hash {
-    #[inline]
+    #[inline(always)]
     pub fn new(pre_pow_hash: Hash, timestamp: u64) -> Self {
         let mut hasher = blake3::Hasher::new();
         hasher.update(&pre_pow_hash.as_bytes());
@@ -534,7 +560,7 @@ impl PowHash {
         3784524041015224902, 1082795874807940378, 13952716920571277634, 13411128033953605860, 15060696040649351053,
         9928834659948351306, 5237849264682708699, 12825353012139217522, 6706187291358897596, 196324915476054915,
     ];
-    #[inline]
+    #[inline(always)]
     pub fn new(pre_pow_hash: Hash, timestamp: u64) -> Self {
         let mut start = Self::INITIAL_STATE;
         for (pre_pow_word, state_word) in pre_pow_hash.iter_le_u64().zip(start.iter_mut()) {
@@ -569,7 +595,7 @@ impl KHeavyHash {
         8596393687355028144, 570094237299545110, 9119540418498120711, 16901969272480492857, 13372017233735502424,
         14372891883993151831, 5171152063242093102, 10573107899694386186, 6096431547456407061, 1592359455985097269,
     ];
-    #[inline]
+    #[inline(always)]
     pub fn hash(in_hash: Hash) -> Hash {
         let mut state = Self::INITIAL_STATE;
         for (pre_pow_word, state_word) in in_hash.iter_le_u64().zip(state.iter_mut()) {
