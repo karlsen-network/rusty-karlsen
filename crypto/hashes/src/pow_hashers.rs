@@ -195,17 +195,16 @@ lazy_static! {
 
 fn get_dataset_item(index: usize) -> Hash1024 {
     let dataset = FULL_DATASET.get_or_init(|| {
-        info!("prebuilding_dataset...");
         let mut full_dataset = vec![Hash1024::new(); FULL_DATASET_NUM_ITEMS as usize].into_boxed_slice();
         prebuild_dataset(&mut full_dataset, &LIGHT_CACHE, num_cpus::get_physical());
-        info!("prebuilding_dataset done");
         full_dataset
     });
     dataset[index]
 }
 
 fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash512], num_threads: usize) {
-    info!("prebuilding_dataset using {} threads", num_threads);
+    info!("prebuilding dataset using {} threads", num_threads);
+    let start = std::time::Instant::now();
 
     let total_items = full_dataset.len();
     let progress = Arc::new(AtomicUsize::new(0));
@@ -223,9 +222,9 @@ fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash512],
                 for (i, item) in chunk.iter_mut().enumerate() {
                     *item = PowFishHash::calculate_dataset_item_1024(light_cache, chunk_start + i);
                     let done = progress.fetch_add(1, Ordering::Relaxed) + 1;
-                    if done % 1_000_000 == 0 {
+                    if done % 4_000_000 == 0 {
                         let percent = done * 100 / total_items;
-                        info!("dataset generation: {}% ({}/{})", percent, done, total_items);
+                        info!("prebuilding full dataset: {}% ({}/{})", percent, done, total_items);
                     }
                 }
             });
@@ -238,7 +237,7 @@ fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash512],
         }
     });
 
-    info!("dataset generation complete");
+    info!("prebuilding full dataset done in {:.1}s", start.elapsed().as_secs_f64());
 }
 
 impl Context {
