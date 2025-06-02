@@ -14,9 +14,8 @@ no-asm = ["keccak"]
 
 [dependencies]
 lazy_static = "1.4.0"
-memmap2 = "0.9"
-log = "0.4"
-num_cpus = "1.16"
+log.workspace = true
+num_cpus.workspace = true
 blake2b_simd.workspace = true
 borsh.workspace = true
 faster-hex.workspace = true

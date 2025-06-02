@@ -1,10 +1,10 @@
 use crate::Hash;
+use lazy_static::lazy_static;
+use log::info;
 use std::ops::BitXor;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tiny_keccak::Hasher;
-
-use lazy_static::lazy_static;
 
 #[derive(Clone)]
 pub struct PowB3Hash {
@@ -174,8 +174,7 @@ pub struct Context {
     //pub use_full_dataset: bool,
 }
 
-static mut FULL_DATASET: Option<Box<[Hash1024]>> = None;
-static DATASET_INIT: std::sync::Once = std::sync::Once::new();
+static FULL_DATASET: OnceLock<Box<[Hash1024]>> = OnceLock::new();
 
 lazy_static! {
     static ref LIGHT_CACHE: Box<[Hash512]> = {
@@ -194,35 +193,22 @@ lazy_static! {
     };
 }
 
-pub fn initialize_dag() {
-    DATASET_INIT.call_once(|| {
-        println!("prebuilding_dataset...");
-        let mut full_dataset = vec![Hash1024::new(); FULL_DATASET_NUM_ITEMS as usize].into_boxed_slice();
-        prebuild_dataset(&mut full_dataset, &LIGHT_CACHE, 8);
-
-        unsafe {
-            FULL_DATASET = Some(full_dataset);
-        }
-        println!("prebuilding_dataset done");
-    });
-}
-
 fn get_dataset_item(index: usize) -> Hash1024 {
-    unsafe {
-        match (*std::ptr::addr_of!(FULL_DATASET)).as_ref() {
-            Some(dataset) => dataset[index],
-            None => PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, index),
-        }
-    }
+    let dataset = FULL_DATASET.get_or_init(|| {
+        info!("prebuilding_dataset...");
+        let mut full_dataset = vec![Hash1024::new(); FULL_DATASET_NUM_ITEMS as usize].into_boxed_slice();
+        prebuild_dataset(&mut full_dataset, &LIGHT_CACHE, num_cpus::get_physical());
+        info!("prebuilding_dataset done");
+        full_dataset
+    });
+    dataset[index]
 }
 
 fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash512], num_threads: usize) {
-    println!("prebuilding_dataset using {} threads", num_threads);
+    info!("prebuilding_dataset using {} threads", num_threads);
 
     let total_items = full_dataset.len();
     let progress = Arc::new(AtomicUsize::new(0));
-    let last_percent = Arc::new(AtomicUsize::new(0));
-
     std::thread::scope(|scope| {
         let mut threads = Vec::with_capacity(num_threads);
 
@@ -230,23 +216,16 @@ fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash512],
         let chunks = full_dataset.chunks_mut(batch_size);
 
         for (index, chunk) in chunks.enumerate() {
-            let start = index * batch_size;
+            let chunk_start = index * batch_size;
             let progress = Arc::clone(&progress);
-            let last_percent = Arc::clone(&last_percent);
 
             let thread_handle = scope.spawn(move || {
                 for (i, item) in chunk.iter_mut().enumerate() {
-                    *item = PowFishHash::calculate_dataset_item_1024(light_cache, start + i);
-
+                    *item = PowFishHash::calculate_dataset_item_1024(light_cache, chunk_start + i);
                     let done = progress.fetch_add(1, Ordering::Relaxed) + 1;
-                    let percent = done * 100 / total_items;
-
-                    if percent % 5 == 0 {
-                        let last = last_percent.load(Ordering::Relaxed);
-                        if percent > last && last_percent.compare_exchange(last, percent, Ordering::Relaxed, Ordering::Relaxed).is_ok()
-                        {
-                            println!("dataset generation: {}%", percent);
-                        }
+                    if done % 1_000_000 == 0 {
+                        let percent = done * 100 / total_items;
+                        info!("dataset generation: {}% ({}/{})", percent, done, total_items);
                     }
                 }
             });
@@ -259,7 +238,7 @@ fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash512],
         }
     });
 
-    println!("dataset generation complete");
+    info!("dataset generation complete");
 }
 
 impl Context {
@@ -304,8 +283,6 @@ impl PowFishHash {
     #[inline]
     //pub fn fishhash_kernel(context: &mut Context, seed: &Hash512) -> Hash256 {
     pub fn fishhash_kernel(seed: &Hash) -> Hash {
-        initialize_dag();
-
         let seed_hash512 = Hash512::from_hash(seed);
         let mut mix = Hash1024::from_512s(&seed_hash512, &seed_hash512);
         // Fishhash
@@ -376,8 +353,6 @@ impl PowFishHash {
     #[inline]
     //pub fn fishhash_kernel(context: &mut Context, seed: &Hash512) -> Hash256 {
     pub fn fishhashplus_kernel(seed: &Hash) -> Hash {
-        initialize_dag();
-
         let seed_hash512 = Hash512::from_hash(seed);
         let mut mix = Hash1024::from_512s(&seed_hash512, &seed_hash512);
         // Fishhash
