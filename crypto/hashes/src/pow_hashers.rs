@@ -2,7 +2,7 @@ use crate::Hash;
 use lazy_static::lazy_static;
 use log::info;
 use std::ops::BitXor;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock};
 use tiny_keccak::Hasher;
 
@@ -37,6 +37,8 @@ const SEED: Hash256 = Hash256([
 
 const SIZE_U32: usize = std::mem::size_of::<u32>();
 const SIZE_U64: usize = std::mem::size_of::<u64>();
+
+pub static FISHHASH_FULL_DATASET: AtomicBool = AtomicBool::new(false);
 
 pub trait HashData {
     fn new() -> Self;
@@ -213,16 +215,20 @@ lazy_static! {
 
 #[inline(always)]
 fn get_dataset_item(index: usize) -> Hash1024 {
-    let dataset = FULL_DATASET.get_or_init(|| {
-        let mut full_dataset = vec![Hash1024::new(); FULL_DATASET_NUM_ITEMS as usize].into_boxed_slice();
-        prebuild_dataset(&mut full_dataset, &LIGHT_CACHE, num_cpus::get_physical());
-        full_dataset
-    });
-    dataset[index]
+    if FISHHASH_FULL_DATASET.load(Ordering::Relaxed) {
+        let dataset = FULL_DATASET.get_or_init(|| {
+            let mut full_dataset = vec![Hash1024::new(); FULL_DATASET_NUM_ITEMS as usize].into_boxed_slice();
+            prebuild_dataset(&mut full_dataset, &LIGHT_CACHE, num_cpus::get_physical());
+            full_dataset
+        });
+        dataset[index]
+    } else {
+        PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, index)
+    }
 }
 
 #[inline(always)]
-fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash512], num_threads: usize) {
+pub fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash512], num_threads: usize) {
     info!("prebuilding dataset using {} threads", num_threads);
     let start = std::time::Instant::now();
 
@@ -469,7 +475,7 @@ impl PowFishHash {
     }
 
     #[inline(always)]
-    fn calculate_dataset_item_1024(light_cache: &[Hash512], index: usize) -> Hash1024 {
+    pub fn calculate_dataset_item_1024(light_cache: &[Hash512], index: usize) -> Hash1024 {
         let seed0 = (index * 2) as u32;
         let seed1 = seed0 + 1;
 

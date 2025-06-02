@@ -91,6 +91,8 @@ pub struct Args {
     pub disable_grpc: bool,
     pub ram_scale: f64,
     pub retention_period_days: Option<f64>,
+    #[serde(rename = "full-dataset")]
+    pub full_dataset: bool,
 }
 
 impl Default for Args {
@@ -142,6 +144,7 @@ impl Default for Args {
             disable_grpc: false,
             ram_scale: 1.0,
             retention_period_days: None,
+            full_dataset: false,
         }
     }
 }
@@ -379,6 +382,7 @@ a large RAM (~64GB) can set this value to ~3.0-4.0 and gain superior performance
                 .value_parser(clap::value_parser!(f64))
                 .help("The number of total days of data to keep.")
         )
+        .arg(arg!(--"full-dataset" "Precompute fishhash lookup table in RAM (~4.8GB) for faster header verification and reduced compute load"))
         ;
 
     #[cfg(feature = "devnet-prealloc")]
@@ -459,6 +463,7 @@ impl Args {
             disable_grpc: arg_match_unwrap_or::<bool>(&m, "nogrpc", defaults.disable_grpc),
             ram_scale: arg_match_unwrap_or::<f64>(&m, "ram-scale", defaults.ram_scale),
             retention_period_days: m.get_one::<f64>("retention-period-days").cloned().or(defaults.retention_period_days),
+            full_dataset: arg_match_unwrap_or::<bool>(&m, "full-dataset", defaults.full_dataset),
 
             #[cfg(feature = "devnet-prealloc")]
             num_prealloc_utxos: m.get_one::<u64>("num-prealloc-utxos").cloned(),
