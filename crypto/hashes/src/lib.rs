@@ -1,5 +1,5 @@
 mod hashers;
-mod pow_hashers;
+pub mod pow_hashers;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use karlsen_utils::{

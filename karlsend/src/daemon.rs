@@ -235,6 +235,13 @@ pub fn create_core_with_runtime(runtime: &Runtime, args: &Args, fd_total_budget:
         exit(1);
     }
 
+    karlsen_hashes::pow_hashers::FISHHASH_FULL_DATASET.store(args.full_dataset, std::sync::atomic::Ordering::Relaxed);
+    if args.full_dataset {
+        info!("Generating full lookup table in RAM (~4.8GB) for faster header verification");
+    } else {
+        info!("Using light cache mode (~75MB RAM) with on-demand computation");
+    }
+
     let config = Arc::new(
         ConfigBuilder::new(network.into())
             .adjust_perf_params_to_consensus_params()
