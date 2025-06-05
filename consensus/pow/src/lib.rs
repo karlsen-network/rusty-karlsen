@@ -27,6 +27,9 @@ impl State {
         Self { target, hasher }
     }
 
+    #[inline]
+    #[must_use]
+    /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
     fn calculate_pow_khashv2plus(&self, nonce: u64) -> Uint256 {
         // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
@@ -41,15 +44,8 @@ impl State {
 
     #[inline]
     #[must_use]
-    /// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-    pub fn calculate_pow(&self, nonce: u64) -> Uint256 {
-        self.calculate_pow_khashv2plus(nonce)
-    }
-
-    #[inline]
-    #[must_use]
     pub fn check_pow(&self, nonce: u64) -> (bool, Uint256) {
-        let pow = self.calculate_pow(nonce);
+        let pow = self.calculate_pow_khashv2plus(nonce);
         // The pow hash must be less or equal than the claimed target.
         (pow <= self.target, pow)
     }
