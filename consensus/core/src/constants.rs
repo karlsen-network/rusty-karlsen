@@ -1,7 +1,4 @@
 /// BLOCK_VERSION represents the current block version
-pub const BLOCK_VERSION: u16 = BLOCK_VERSION_KHASHV1;
-
-pub const BLOCK_VERSION_KHASHV1: u16 = 1;
 pub const BLOCK_VERSION_KHASHV2: u16 = 2;
 
 /// TX_VERSION is the current latest supported transaction version.

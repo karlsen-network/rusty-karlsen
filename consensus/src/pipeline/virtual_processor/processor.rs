@@ -6,8 +6,6 @@ use crate::{
         },
         storage::ConsensusStorage,
     },
-    // constants::BLOCK_VERSION,
-    constants::BLOCK_VERSION_KHASHV1,
     constants::BLOCK_VERSION_KHASHV2,
     errors::RuleError,
     model::{
@@ -124,8 +122,6 @@ pub struct VirtualStateProcessor {
     pub(super) genesis: GenesisBlock,
     pub(super) max_block_parents: ForkedParam<u8>,
     pub(super) mergeset_size_limit: ForkedParam<u64>,
-    pub(super) khashv2_activation: ForkActivation,
-    pub(super) difficulty_window_size: usize,
 
     // Stores
     pub(super) statuses_store: Arc<RwLock<DbStatusesStore>>,
@@ -210,8 +206,6 @@ impl VirtualStateProcessor {
             genesis: params.genesis.clone(),
             max_block_parents: params.max_block_parents(),
             mergeset_size_limit: params.mergeset_size_limit(),
-            khashv2_activation: params.khashv2_activation,
-            difficulty_window_size: params.prior_difficulty_window_size,
 
             db,
             statuses_store: storage.statuses_store.clone(),
@@ -1074,16 +1068,7 @@ impl VirtualStateProcessor {
             )
             .unwrap();
         txs.insert(0, coinbase.tx);
-        let version =
-            if self.khashv2_activation.is_active(virtual_state.daa_score) { BLOCK_VERSION_KHASHV2 } else { BLOCK_VERSION_KHASHV1 };
-        // todo: check bits to lower difficulty
-        let mut bits = virtual_state.bits;
-        let khashv2_daa_score = self.khashv2_activation.daa_score();
-        if virtual_state.daa_score <= (khashv2_daa_score + self.difficulty_window_size as u64)
-            && self.khashv2_activation.is_active(virtual_state.daa_score)
-        {
-            bits = self.genesis.bits;
-        }
+        let version = BLOCK_VERSION_KHASHV2;
         let parents_by_level = self.parents_manager.calc_block_parents(pruning_info.pruning_point, &virtual_state.parents);
 
         // Hash according to hardfork activation
@@ -1105,7 +1090,7 @@ impl VirtualStateProcessor {
             accepted_id_merkle_root,
             utxo_commitment,
             u64::max(min_block_time, unix_now()),
-            bits,
+            virtual_state.bits,
             0,
             virtual_state.daa_score,
             virtual_state.ghostdag_data.blue_work,

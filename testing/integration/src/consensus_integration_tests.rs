@@ -29,7 +29,9 @@ use karlsen_consensus_core::block::Block;
 use karlsen_consensus_core::blockhash::new_unique;
 use karlsen_consensus_core::blockstatus::BlockStatus;
 use karlsen_consensus_core::coinbase::MinerData;
-use karlsen_consensus_core::constants::{BLOCK_VERSION, SOMPI_PER_KARLSEN, STORAGE_MASS_PARAMETER, TRANSIENT_BYTE_TO_MASS_FACTOR};
+use karlsen_consensus_core::constants::{
+    BLOCK_VERSION_KHASHV2, SOMPI_PER_KARLSEN, STORAGE_MASS_PARAMETER, TRANSIENT_BYTE_TO_MASS_FACTOR,
+};
 use karlsen_consensus_core::errors::block::{BlockProcessResult, RuleError};
 use karlsen_consensus_core::header::Header;
 use karlsen_consensus_core::mining_rules::MiningRules;
@@ -413,10 +415,10 @@ async fn header_in_isolation_validation_test() {
 
     {
         let mut block = block.clone();
-        let block_version = BLOCK_VERSION - 1;
+        let block_version = BLOCK_VERSION_KHASHV2 - 1;
         block.header.version = block_version;
         match consensus.validate_and_insert_block(block.to_immutable()).virtual_state_task.await {
-            Err(RuleError::WrongBlockVersion(wrong_version, _wanted_block_version)) => {
+            Err(RuleError::WrongBlockVersion(wrong_version)) => {
                 assert_eq!(wrong_version, block_version)
             }
             res => {
@@ -845,7 +847,6 @@ impl KarlsendGoParams {
             skip_proof_of_work: self.SkipProofOfWork,
             max_block_level: self.MaxBlockLevel,
             pruning_proof_m: self.PruningProofM,
-            khashv2_activation: MAINNET_PARAMS.khashv2_activation,
             crescendo: CRESCENDO,
             crescendo_activation: ForkActivation::never(),
         }
@@ -1282,7 +1283,7 @@ async fn bounded_merge_depth_test() {
 
     let mut selected_chain = vec![config.genesis.hash];
     for i in 1..(config.prior_merge_depth + 3) {
-        let hash: Hash = i.into();
+        let hash: Hash = (i + 1).into();
         consensus.add_block_with_parents(hash, vec![*selected_chain.last().unwrap()]).await.unwrap();
         selected_chain.push(hash);
     }
@@ -1862,6 +1863,7 @@ async fn run_kip10_activation_test() {
     // This triggers storage mass population
     let _ = consensus.validate_mempool_transaction(&mut tx, &TransactionValidationArgs::default());
     let tx = tx.tx.unwrap_or_clone();
+
     // Test 1: Build empty block, then manually insert invalid tx and verify consensus rejects it
     {
         let miner_data = MinerData::new(ScriptPublicKey::from_vec(0, vec![]), vec![]);
@@ -1911,6 +1913,7 @@ async fn payload_test() {
         cb.finalize();
         (cb.id(), cb.outputs[0].value)
     };
+
     consensus.validate_and_insert_block(funding_block.to_immutable()).virtual_state_task.await.unwrap();
     let mut txx = Transaction::new(
         0,

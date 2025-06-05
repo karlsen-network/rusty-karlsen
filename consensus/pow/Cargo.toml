@@ -23,12 +23,5 @@ wasm-bindgen.workspace = true
 workflow-wasm.workspace = true
 num.workspace = true
 
-[dev-dependencies]
-criterion.workspace = true
-
-[[bench]]
-name = "bench"
-harness = false
-
 [lints]
 workspace = true

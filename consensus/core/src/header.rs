@@ -76,7 +76,7 @@ impl Header {
     /// WARNING: To be used for test purposes only
     pub fn from_precomputed_hash(hash: Hash, parents: Vec<Hash>) -> Header {
         Header {
-            version: crate::constants::BLOCK_VERSION,
+            version: crate::constants::BLOCK_VERSION_KHASHV2,
             hash,
             parents_by_level: vec![parents],
             hash_merkle_root: Default::default(),

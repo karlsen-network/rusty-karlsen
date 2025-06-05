@@ -252,7 +252,6 @@ pub struct Params {
     pub skip_proof_of_work: bool,
     pub max_block_level: BlockLevel,
     pub pruning_proof_m: u64,
-    pub khashv2_activation: ForkActivation,
 
     /// Activation rules for when to enable using the payload field in transactions
     pub crescendo: CrescendoParams,
@@ -528,8 +527,7 @@ pub const MAINNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 225,
     pruning_proof_m: 1000,
-    khashv2_activation: ForkActivation::new(26_962_009), // HF DAAscore to switch to khashv2 (Fri Sep 13 01:37:00 PM UTC 2024)
-
+    // khashv2_activation: ForkActivation::new(26_962_009), // HF DAAscore to switch to khashv2 (Fri Sep 13 01:37:00 PM UTC 2024)
     crescendo: CRESCENDO,
     // Temp: use a value which will trigger upper_bound/after calculations but is not actually scheduled.
     // We want the pre-release to test the influence of this change on mainnet nodes as well
@@ -582,7 +580,6 @@ pub const TESTNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
-    khashv2_activation: ForkActivation::always(),
     crescendo: CRESCENDO,
     crescendo_activation: ForkActivation::new(19_169_625),
 };
@@ -631,7 +628,6 @@ pub const SIMNET_PARAMS: Params = Params {
     skip_proof_of_work: true, // For simnet only, PoW can be simulated by default
     max_block_level: 250,
     pruning_proof_m: PRUNING_PROOF_M,
-    khashv2_activation: ForkActivation::always(),
 
     crescendo: CRESCENDO,
     crescendo_activation: ForkActivation::new(42_000),
@@ -684,7 +680,6 @@ pub const DEVNET_PARAMS: Params = Params {
     skip_proof_of_work: false,
     max_block_level: 250,
     pruning_proof_m: 1000,
-    khashv2_activation: ForkActivation::always(),
 
     crescendo: CRESCENDO,
     crescendo_activation: ForkActivation::never(),

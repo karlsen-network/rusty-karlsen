@@ -9,9 +9,6 @@ include.workspace = true
 license.workspace = true
 repository.workspace = true
 
-[features]
-no-asm = ["keccak"]
-
 [dependencies]
 lazy_static = "1.4.0"
 log.workspace = true
@@ -30,18 +27,5 @@ sha2.workspace = true
 wasm-bindgen.workspace = true
 workflow-wasm.workspace = true
 
-[target.'cfg(any(target_os = "windows", not(target_arch = "x86_64")))'.dependencies]
-keccak.workspace = true
-blake3.workspace = true
-
-[dev-dependencies]
-criterion.workspace = true
-rand.workspace = true
-sha3.workspace = true
-
 [build-dependencies]
 cc.workspace = true
-
-[[bench]]
-name = "bench"
-harness = false
