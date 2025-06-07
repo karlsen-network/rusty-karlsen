@@ -1074,8 +1074,10 @@ impl VirtualStateProcessor {
             )
             .unwrap();
         txs.insert(0, coinbase.tx);
-        let version =
-            if self.khashv2_activation.is_active(virtual_state.daa_score) { BLOCK_VERSION_KHASHV2 } else { BLOCK_VERSION_KHASHV1 };
+        let version = match self.khashv2_activation.is_active(virtual_state.daa_score) {
+            true => BLOCK_VERSION_KHASHV2,
+            false => BLOCK_VERSION_KHASHV1,
+        };
         // todo: check bits to lower difficulty
         let mut bits = virtual_state.bits;
         let khashv2_daa_score = self.khashv2_activation.daa_score();

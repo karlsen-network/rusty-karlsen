@@ -1282,7 +1282,7 @@ async fn bounded_merge_depth_test() {
 
     let mut selected_chain = vec![config.genesis.hash];
     for i in 1..(config.prior_merge_depth + 3) {
-        let hash: Hash = i.into();
+        let hash: Hash = (i + 1).into();
         consensus.add_block_with_parents(hash, vec![*selected_chain.last().unwrap()]).await.unwrap();
         selected_chain.push(hash);
     }
@@ -1862,6 +1862,7 @@ async fn run_kip10_activation_test() {
     // This triggers storage mass population
     let _ = consensus.validate_mempool_transaction(&mut tx, &TransactionValidationArgs::default());
     let tx = tx.tx.unwrap_or_clone();
+
     // Test 1: Build empty block, then manually insert invalid tx and verify consensus rejects it
     {
         let miner_data = MinerData::new(ScriptPublicKey::from_vec(0, vec![]), vec![]);
@@ -1911,6 +1912,7 @@ async fn payload_test() {
         cb.finalize();
         (cb.id(), cb.outputs[0].value)
     };
+
     consensus.validate_and_insert_block(funding_block.to_immutable()).virtual_state_task.await.unwrap();
     let mut txx = Transaction::new(
         0,
