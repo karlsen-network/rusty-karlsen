@@ -5,7 +5,6 @@ use crate::model::services::reachability::ReachabilityService;
 use crate::model::stores::statuses::StatusesStoreReader;
 use karlsen_consensus_core::blockhash::BlockHashExtensions;
 use karlsen_consensus_core::blockstatus::BlockStatus::StatusInvalid;
-use karlsen_consensus_core::config::params::ForkActivation;
 use karlsen_consensus_core::header::Header;
 use karlsen_consensus_core::BlockLevel;
 use karlsen_core::time::unix_now;
@@ -15,18 +14,14 @@ use karlsen_pow::calc_level_from_pow;
 impl HeaderProcessor {
     /// Validates the header in isolation including pow check against header declared bits.
     /// Returns the block level as computed from pow state or a rule error if such was encountered
-    pub(super) fn validate_header_in_isolation(
-        &self,
-        header: &Header,
-        khashv2_activation: ForkActivation,
-    ) -> BlockProcessResult<BlockLevel> {
+    pub(super) fn validate_header_in_isolation(&self, header: &Header) -> BlockProcessResult<BlockLevel> {
         /*
         println!("header daa_score : {:?}", header.daa_score);
         println!("header blue_score : {:?}", header.blue_score);
         println!("header hash : {:?}", header.hash);
         println!("header hash_merkle_root : {:?}", header.hash_merkle_root);
         */
-        self.check_header_version(header, khashv2_activation)?;
+        self.check_header_version(header)?;
         self.check_block_timestamp_in_isolation(header)?;
         self.check_parents_limit_upper_bound(header)?;
         Self::check_parents_not_origin(header)?;
@@ -39,14 +34,13 @@ impl HeaderProcessor {
         Ok(())
     }
 
-    // TODO : setup dual block version managment
-    fn check_header_version(&self, header: &Header, khashv2_activation: ForkActivation) -> BlockProcessResult<()> {
-        if khashv2_activation.is_active(header.daa_score) && header.version != constants::BLOCK_VERSION_KHASHV2 {
-            return Err(RuleError::WrongBlockVersion(header.version, constants::BLOCK_VERSION_KHASHV2));
-        } else if !khashv2_activation.is_active(header.daa_score) && header.version != constants::BLOCK_VERSION_KHASHV1 {
-            return Err(RuleError::WrongBlockVersion(header.version, constants::BLOCK_VERSION_KHASHV1));
+    fn check_header_version(&self, header: &Header) -> BlockProcessResult<()> {
+        match (self.khashv2_activation.is_active(header.daa_score), header.version) {
+            (true, constants::BLOCK_VERSION_KHASHV2) => Ok(()),
+            (false, constants::BLOCK_VERSION_KHASHV1) => Ok(()),
+            (true, v) => Err(RuleError::WrongBlockVersion(v, constants::BLOCK_VERSION_KHASHV2)),
+            (false, v) => Err(RuleError::WrongBlockVersion(v, constants::BLOCK_VERSION_KHASHV1)),
         }
-        Ok(())
     }
 
     fn check_block_timestamp_in_isolation(&self, header: &Header) -> BlockProcessResult<()> {

@@ -19,7 +19,6 @@ pub struct State {
     pub(crate) target: Uint256,
     // PRE_POW_HASH || TIME || 32 zero byte padding; without NONCE
     pub(crate) hasher: PowB3Hash,
-    //pub(crate) fishhasher: PowFishHash,
     pub(crate) header_version: u16,
 }
 
@@ -39,6 +38,7 @@ impl State {
         Self { matrix, target, hasher, /*fishhasher,*/ header_version }
     }
 
+    #[inline]
     fn calculate_pow_khashv1(&self, nonce: u64) -> Uint256 {
         // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
@@ -46,19 +46,7 @@ impl State {
         Uint256::from_le_bytes(hash.as_bytes())
     }
 
-    #[allow(dead_code)]
-    fn calculate_pow_khashv2(&self, nonce: u64) -> Uint256 {
-        // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
-        let hash = self.hasher.clone().finalize_with_nonce(nonce);
-        //println!("hash-1 : {:?}", hash);
-        let hash = PowFishHash::fishhash_kernel(&hash);
-        //println!("hash-2 : {:?}", hash);
-        //last b3 hash
-        let hash = PowB3Hash::hash(hash);
-        //println!("hash-3 : {:?}", hash);
-        Uint256::from_le_bytes(hash.as_bytes())
-    }
-
+    #[inline]
     fn calculate_pow_khashv2plus(&self, nonce: u64) -> Uint256 {
         // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
