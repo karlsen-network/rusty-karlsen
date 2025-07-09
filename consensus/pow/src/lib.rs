@@ -66,10 +66,7 @@ impl State {
         match self.header_version {
             constants::BLOCK_VERSION_KHASHV1 => self.calculate_pow_khashv1(nonce),
             constants::BLOCK_VERSION_KHASHV2 => self.calculate_pow_khashv2plus(nonce),
-            _ => {
-                // Fallback to v1
-                self.calculate_pow_khashv1(nonce)
-            }
+            _ => unreachable!("wrong block version: {}", self.header_version), // should never happen because this is checked in pre_ghostdag_validation
         }
     }
 
