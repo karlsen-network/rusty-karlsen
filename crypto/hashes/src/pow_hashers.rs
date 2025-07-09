@@ -18,16 +18,12 @@ pub struct PowHash([u64; 25]);
 pub struct KHeavyHash;
 
 #[derive(Clone)]
-pub struct PowFishHash {
-    // set the cache here not hasher
-    //pub context: Context,
-}
+pub struct PowFishHash;
 
 const FNV_PRIME: u32 = 0x01000193;
 const FULL_DATASET_ITEM_PARENTS: u32 = 512;
 const NUM_DATASET_ACCESSES: u32 = 32;
 const LIGHT_CACHE_ROUNDS: i32 = 3;
-
 const LIGHT_CACHE_NUM_ITEMS: u32 = 1179641;
 const FULL_DATASET_NUM_ITEMS: u32 = 37748717;
 const SEED: Hash256 = Hash256([
@@ -39,6 +35,15 @@ const SIZE_U32: usize = std::mem::size_of::<u32>();
 const SIZE_U64: usize = std::mem::size_of::<u64>();
 
 pub static FISHHASH_FULL_DATASET: AtomicBool = AtomicBool::new(false);
+static FULL_DATASET: OnceLock<Box<[Hash1024]>> = OnceLock::new();
+
+lazy_static! {
+    static ref LIGHT_CACHE: Box<[Hash512]> = {
+        let mut light_cache = vec![Hash512::new(); LIGHT_CACHE_NUM_ITEMS as usize].into_boxed_slice();
+        PowFishHash::build_light_cache(&mut light_cache);
+        light_cache
+    };
+}
 
 pub trait HashData {
     fn new() -> Self;
@@ -101,7 +106,6 @@ impl HashData for Hash512 {
         Self([0; 64])
     }
 
-    //Todo check if filled with 0
     #[inline(always)]
     fn from_hash(hash: &Hash) -> Self {
         let mut result = Self::new();
@@ -127,11 +131,9 @@ impl BitXor<&Hash512> for &Hash512 {
     #[inline(always)]
     fn bitxor(self, rhs: &Hash512) -> Self::Output {
         let mut hash = Hash512::new();
-
         for i in 0..64 {
             hash.0[i] = self.0[i] ^ rhs.0[i]
         }
-
         hash
     }
 }
@@ -145,7 +147,6 @@ impl HashData for Hash1024 {
         Self([0; 128])
     }
 
-    //Todo check if filled with 0
     #[inline(always)]
     fn from_hash(hash: &Hash) -> Self {
         let mut result = Self::new();
@@ -172,45 +173,8 @@ impl Hash1024 {
         let (first_half, second_half) = hash.0.split_at_mut(first.0.len());
         first_half.copy_from_slice(&first.0);
         second_half.copy_from_slice(&second.0);
-
         hash
     }
-
-    /*fn from_256s(first: &Hash256, second: &Hash256) -> Self {
-        //filled with 0 by default
-        let mut hash = Self::new();
-        let (first_half, second_half) = hash.0.split_at_mut(first.0.len() * 2);
-        first_half.copy_from_slice(&first.0);
-        second_half.copy_from_slice(&second.0);
-
-        hash
-    }*/
-}
-
-#[derive(Clone)]
-pub struct Context {
-    //pub light_cache: Box<[Hash512]>,
-    //pub full_dataset: Option<Box<[Hash1024]>>,
-    //pub use_full_dataset: bool,
-}
-
-static FULL_DATASET: OnceLock<Box<[Hash1024]>> = OnceLock::new();
-
-lazy_static! {
-    static ref LIGHT_CACHE: Box<[Hash512]> = {
-        //vec![Hash512::new(); LIGHT_CACHE_NUM_ITEMS as usize].into_boxed_slice()
-
-        //println!("light cache processing started");
-        let mut light_cache = vec![Hash512::new(); LIGHT_CACHE_NUM_ITEMS as usize].into_boxed_slice();
-        //println!("light_cache[10] : {:?}", light_cache[10]);
-        //println!("light_cache[42] : {:?}", light_cache[42]);
-        Context::build_light_cache(&mut light_cache);
-        //println!("light_cache[10] : {:?}", light_cache[10]);
-        //println!("light_cache[42] : {:?}", light_cache[42]);
-        //println!("light cache processing done");
-
-        light_cache
-    };
 }
 
 #[inline(always)]
@@ -234,9 +198,9 @@ pub fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash5
 
     let total_items = full_dataset.len();
     let progress = Arc::new(AtomicUsize::new(0));
+
     std::thread::scope(|scope| {
         let mut threads = Vec::with_capacity(num_threads);
-
         let batch_size = full_dataset.len() / num_threads;
         let chunks = full_dataset.chunks_mut(batch_size);
 
@@ -266,61 +230,13 @@ pub fn prebuild_dataset(full_dataset: &mut Box<[Hash1024]>, light_cache: &[Hash5
     info!("prebuilding full dataset done in {:.1}s", start.elapsed().as_secs_f64());
 }
 
-impl Context {
-    /*pub fn new(full: bool) -> Self {
-        // Vec into boxed sliced, because you can't allocate an array directly on
-        // the heap in rust
-        // https://stackoverflow.com/questions/25805174/creating-a-fixed-size-array-on-heap-in-rust/68122278#68122278
-
-        Context {
-            //light_cache : *LIGHT_CACHE ,
-            //full_dataset,
-        }
-    }*/
-
-    #[inline(always)]
-    fn build_light_cache(cache: &mut [Hash512]) {
-        let mut item: Hash512 = Hash512::new();
-        PowFishHash::keccak(&mut item.0, &SEED.0);
-        cache[0] = item;
-
-        for cache_item in cache.iter_mut().take(LIGHT_CACHE_NUM_ITEMS as usize).skip(1) {
-            PowFishHash::keccak_in_place(&mut item.0);
-            *cache_item = item;
-        }
-
-        for _ in 0..LIGHT_CACHE_ROUNDS {
-            for i in 0..LIGHT_CACHE_NUM_ITEMS {
-                // First index: 4 first bytes of the item as little-endian integer
-                let t: u32 = cache[i as usize].get_as_u32(0);
-                let v: u32 = t % LIGHT_CACHE_NUM_ITEMS;
-
-                // Second index
-                let w: u32 = (LIGHT_CACHE_NUM_ITEMS.wrapping_add(i.wrapping_sub(1))) % LIGHT_CACHE_NUM_ITEMS;
-
-                let x = &cache[v as usize] ^ &cache[w as usize];
-                PowFishHash::keccak(&mut cache[i as usize].0, &x.0);
-            }
-        }
-    }
-}
-
 impl PowFishHash {
     #[inline(always)]
     pub fn fishhashplus_kernel(seed: &Hash) -> Hash {
         let seed_hash512 = Hash512::from_hash(seed);
         let mut mix = Hash1024::from_512s(&seed_hash512, &seed_hash512);
-        // Fishhash
-        /*
-        for _ in 0..NUM_DATASET_ACCESSES as usize {
-            // Calculate new fetching indexes
-            let p0 = mix.get_as_u32(0) % FULL_DATASET_NUM_ITEMS;
-            let p1 = mix.get_as_u32(4) % FULL_DATASET_NUM_ITEMS;
-            let p2 = mix.get_as_u32(8) % FULL_DATASET_NUM_ITEMS;
-        */
-        // FishhashPlus
+
         for i in 0..NUM_DATASET_ACCESSES {
-            // Calculate new fetching indexes
             let mut mix_group: [u32; 8] = [0; 8];
 
             for (c, mix_group_elem) in mix_group.iter_mut().enumerate() {
@@ -331,13 +247,7 @@ impl PowFishHash {
             let p0 = (mix_group[0] ^ mix_group[3] ^ mix_group[6]) % FULL_DATASET_NUM_ITEMS;
             let p1 = (mix_group[1] ^ mix_group[4] ^ mix_group[7]) % FULL_DATASET_NUM_ITEMS;
             let p2 = (mix_group[2] ^ mix_group[5] ^ i) % FULL_DATASET_NUM_ITEMS;
-            /*
-            let fetch0 = PowFishHash::lookup(context, p0 as usize);
-            let mut fetch1 = PowFishHash::lookup(context, p1 as usize);
-            let mut fetch2 = PowFishHash::lookup(context, p2 as usize);
-            */
 
-            // Use dataset lookup if available, otherwise on-demand
             let fetch0 = get_dataset_item(p0 as usize);
             let mut fetch1 = get_dataset_item(p1 as usize);
             let mut fetch2 = get_dataset_item(p2 as usize);
@@ -350,11 +260,7 @@ impl PowFishHash {
 
             // Final computation of new mix
             for j in 0..16 {
-                mix.set_as_u64(
-                    j,
-                    //fetch0.get_as_u64(j) * fetch1.get_as_u64(j) + fetch2.get_as_u64(j),
-                    fetch0.get_as_u64(j).wrapping_mul(fetch1.get_as_u64(j)).wrapping_add(fetch2.get_as_u64(j)),
-                );
+                mix.set_as_u64(j, fetch0.get_as_u64(j).wrapping_mul(fetch1.get_as_u64(j)).wrapping_add(fetch2.get_as_u64(j)));
             }
         }
 
@@ -373,6 +279,29 @@ impl PowFishHash {
     }
 
     #[inline(always)]
+    fn build_light_cache(cache: &mut [Hash512]) {
+        let mut item: Hash512 = Hash512::new();
+        PowFishHash::keccak(&mut item.0, &SEED.0);
+        cache[0] = item;
+
+        for cache_item in cache.iter_mut().take(LIGHT_CACHE_NUM_ITEMS as usize).skip(1) {
+            PowFishHash::keccak_in_place(&mut item.0);
+            *cache_item = item;
+        }
+
+        for _ in 0..LIGHT_CACHE_ROUNDS {
+            for i in 0..LIGHT_CACHE_NUM_ITEMS {
+                let t: u32 = cache[i as usize].get_as_u32(0);
+                let v: u32 = t % LIGHT_CACHE_NUM_ITEMS;
+                let w: u32 = (LIGHT_CACHE_NUM_ITEMS.wrapping_add(i.wrapping_sub(1))) % LIGHT_CACHE_NUM_ITEMS;
+
+                let x = &cache[v as usize] ^ &cache[w as usize];
+                PowFishHash::keccak(&mut cache[i as usize].0, &x.0);
+            }
+        }
+    }
+
+    #[inline(always)]
     pub fn keccak(out: &mut [u8], data: &[u8]) {
         let mut hasher = tiny_keccak::Keccak::v512();
         hasher.update(data);
@@ -381,7 +310,6 @@ impl PowFishHash {
 
     #[inline(always)]
     fn keccak_in_place(data: &mut [u8]) {
-        //TODO remove tiny_keccak with asm keccak
         let mut hasher = tiny_keccak::Keccak::v512();
         hasher.update(data);
         hasher.finalize(data);
@@ -395,11 +323,9 @@ impl PowFishHash {
     #[inline(always)]
     fn fnv1_512(u: Hash512, v: Hash512) -> Hash512 {
         let mut r = Hash512::new();
-
         for i in 0..r.0.len() / SIZE_U32 {
             r.set_as_u32(i, PowFishHash::fnv1(u.get_as_u32(i), v.get_as_u32(i)));
         }
-
         r
     }
 
@@ -433,28 +359,6 @@ impl PowFishHash {
 
         Hash1024::from_512s(&mix0, &mix1)
     }
-
-    /*fn lookup(index: usize) -> Hash1024 {
-        PowFishHash::calculate_dataset_item_1024(&*LIGHT_CACHE, index)
-    }*/
-
-    /*fn lookup(context: &mut Context, index: usize) -> Hash1024 {
-        //PowFishHash::calculate_dataset_item_1024(&context.light_cache, index);
-        PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, index)
-        /*
-        match &mut context.full_dataset {
-            Some(dataset) => {
-                let item = &mut dataset[index];
-                if item.get_as_u64(0) == 0 {
-                    *item = PowFishHash::calculate_dataset_item_1024(&context.light_cache, index);
-                }
-
-                *item
-            }
-            None => PowFishHash::calculate_dataset_item_1024(&context.light_cache, index),
-        }
-        */
-    }*/
 }
 
 impl PowB3Hash {
@@ -463,8 +367,7 @@ impl PowB3Hash {
         let mut hasher = blake3::Hasher::new();
         hasher.update(&pre_pow_hash.as_bytes());
         hasher.update(&timestamp.to_le_bytes());
-        let array: [u8; 32] = [0; 32];
-        hasher.update(&array);
+        hasher.update(&[0u8; 32]);
         Self { hasher }
     }
 
@@ -475,11 +378,11 @@ impl PowB3Hash {
         Hash(*hash.as_bytes())
     }
 
-    pub fn hash(my_hash: Hash) -> Hash {
+    #[inline(always)]
+    pub fn hash(input_hash: Hash) -> Hash {
         let mut hasher = blake3::Hasher::new();
-        hasher.update(&my_hash.as_bytes());
-        let hash = hasher.finalize();
-        Hash(*hash.as_bytes())
+        hasher.update(&input_hash.as_bytes());
+        Hash(*hasher.finalize().as_bytes())
     }
 }
 
