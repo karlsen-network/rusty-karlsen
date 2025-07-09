@@ -340,3 +340,4 @@ strip = false
 
 [workspace.lints.clippy]
 empty_docs = "allow"
+uninlined_format_args = "allow"

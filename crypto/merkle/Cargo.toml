@@ -11,3 +11,6 @@ repository.workspace = true
 
 [dependencies]
 karlsen-hashes.workspace = true
+
+[lints]
+workspace = true

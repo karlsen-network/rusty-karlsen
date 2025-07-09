@@ -75,3 +75,6 @@ karlsen-txscript-errors.workspace = true
 heap = ["dhat"]
 html_reports = []
 devnet-prealloc = ["karlsend/devnet-prealloc"]
+
+[lints]
+workspace = true
