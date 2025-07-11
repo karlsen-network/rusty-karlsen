@@ -481,13 +481,117 @@ mod keccak256 {
 #[cfg(test)]
 mod tests {
 
-    use super::{KHeavyHash, PowHash};
+    use super::{KHeavyHash, PowB3Hash, PowFishHash, PowHash};
+    use crate::pow_hashers::FISHHASH_FULL_DATASET;
     use crate::Hash;
     use sha3::digest::{ExtendableOutput, Update, XofReader};
     use sha3::{CShake256, CShake256Core};
+    use std::sync::atomic::Ordering;
 
     const PROOF_OF_WORK_DOMAIN: &[u8] = b"ProofOfWorkHash";
     const HEAVY_HASH_DOMAIN: &[u8] = b"HeavyHash";
+
+    #[test]
+    fn test_powb3hash() {
+        let timestamp: u64 = 5435345234;
+        let nonce: u64 = 432432432;
+        let pre_pow_hash = Hash::from_bytes([42; 32]);
+
+        let hasher = PowB3Hash::new(pre_pow_hash, timestamp);
+        let hash1 = hasher.finalize_with_nonce(nonce);
+
+        #[rustfmt::skip]
+        let expected_hash1 = [
+            0xf0, 0xaf, 0xbc, 0xd9, 0x40, 0x1f, 0x24, 0xcf,
+            0x83, 0x74, 0x41, 0x8e, 0x39, 0x1e, 0x14, 0x58,
+            0xa6, 0xdf, 0x76, 0x45, 0x44, 0x1d, 0xd5, 0xdc,
+            0x9c, 0xfe, 0x8d, 0xc9, 0xe7, 0x61, 0xe6, 0x7d
+        ];
+
+        println!("hash1: {:?}", hash1.as_bytes());
+        assert_eq!(hash1.as_bytes(), expected_hash1, "PowB3Hash output changed!");
+    }
+
+    #[test]
+    fn test_powfishhash() {
+        FISHHASH_FULL_DATASET.store(false, Ordering::Relaxed);
+
+        // B3 hash as input to PowFishHash
+        #[rustfmt::skip]
+        let input_hash = Hash::from_bytes([
+            0xf0, 0xaf, 0xbc, 0xd9, 0x40, 0x1f, 0x24, 0xcf, 
+            0x83, 0x74, 0x41, 0x8e, 0x39, 0x1e, 0x14, 0x58, 
+            0xa6, 0xdf, 0x76, 0x45, 0x44, 0x1d, 0xd5, 0xdc, 
+            0x9c, 0xfe, 0x8d, 0xc9, 0xe7, 0x61, 0xe6, 0x7d,
+        ]);
+
+        let fishhash_output = PowFishHash::fishhashplus_kernel(&input_hash);
+
+        #[rustfmt::skip]
+        let expected_fishhash = [
+            0xf5, 0x7e, 0x96, 0xfd, 0x7f, 0xef, 0x6a, 0xcc,
+            0xc5, 0xda, 0xac, 0xc9, 0xea, 0xa1, 0xd0, 0x12,
+            0xf9, 0x14, 0x5d, 0xa6, 0x14, 0x88, 0xd8, 0x84,
+            0xa8, 0xfa, 0x4c, 0xe6, 0xb5, 0x72, 0x88, 0xbe
+        ];
+
+        println!("fishhash output: {:?}", fishhash_output.as_bytes());
+        assert_eq!(fishhash_output.as_bytes(), expected_fishhash, "FishHash output changed!");
+    }
+
+    #[test]
+    #[ignore] // this is expensive to run
+    fn test_khashv2() {
+        // avoid dataset building
+        FISHHASH_FULL_DATASET.store(false, Ordering::Relaxed);
+
+        let timestamp: u64 = 5435345234;
+        let nonce: u64 = 432432432;
+        let pre_pow_hash = Hash::from_bytes([42; 32]);
+
+        // Step 1: PowB3Hash (PRE_POW_HASH || TIME || 32 zero padding || NONCE)
+        let hasher = PowB3Hash::new(pre_pow_hash, timestamp);
+        let hash1 = hasher.finalize_with_nonce(nonce);
+
+        #[rustfmt::skip]
+        let expected_hash1 = [
+            0xf0, 0xaf, 0xbc, 0xd9, 0x40, 0x1f, 0x24, 0xcf,
+            0x83, 0x74, 0x41, 0x8e, 0x39, 0x1e, 0x14, 0x58,
+            0xa6, 0xdf, 0x76, 0x45, 0x44, 0x1d, 0xd5, 0xdc,
+            0x9c, 0xfe, 0x8d, 0xc9, 0xe7, 0x61, 0xe6, 0x7d
+        ];
+
+        println!("hash1: {:?}", hash1.as_bytes());
+        assert_eq!(hash1.as_bytes(), expected_hash1, "Step 1 PowB3Hash output changed!");
+
+        // Step 2: PowFishHash
+        let hash2 = PowFishHash::fishhashplus_kernel(&hash1);
+
+        #[rustfmt::skip]
+        let expected_hash2 = [
+            0xf5, 0x7e, 0x96, 0xfd, 0x7f, 0xef, 0x6a, 0xcc,
+            0xc5, 0xda, 0xac, 0xc9, 0xea, 0xa1, 0xd0, 0x12,
+            0xf9, 0x14, 0x5d, 0xa6, 0x14, 0x88, 0xd8, 0x84,
+            0xa8, 0xfa, 0x4c, 0xe6, 0xb5, 0x72, 0x88, 0xbe
+        ];
+
+        println!("hash2: {:?}", hash2.as_bytes());
+        assert_eq!(hash2.as_bytes(), expected_hash2, "Step 2 FishHash output changed!");
+
+        // Step 3: Final B3 hash
+        let hash3 = PowB3Hash::hash(hash2);
+
+        #[rustfmt::skip]
+        let expected_hash3 = [
+            0x71, 0xe8, 0xa7, 0xff, 0x50, 0xf4, 0xeb, 0xa6,
+            0x7f, 0xbf, 0x00, 0xaf, 0x44, 0x9c, 0x12, 0xe6,
+            0xe7, 0x4b, 0x1e, 0xdf, 0xc1, 0x57, 0x7b, 0x59,
+            0xc4, 0x1c, 0x77, 0x92, 0x2e, 0x54, 0x6f, 0x87
+        ];
+
+        println!("hashs3: {:?}", hash3.as_bytes());
+        assert_eq!(hash3.as_bytes(), expected_hash3, "Step 3 final PowB3Hash output changed!");
+    }
 
     #[test]
     fn test_pow_hash() {
