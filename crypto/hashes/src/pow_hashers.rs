@@ -1,5 +1,4 @@
 use crate::Hash;
-use lazy_static::lazy_static;
 use log::info;
 use std::ops::BitXor;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -20,30 +19,31 @@ pub struct KHeavyHash;
 #[derive(Clone)]
 pub struct PowFishHash;
 
+struct FishHashContext {
+    light_cache: Box<[Hash512]>,
+    full_dataset: Option<Box<[Hash1024]>>,
+}
+
 const FNV_PRIME: u32 = 0x01000193;
 const FULL_DATASET_ITEM_PARENTS: u32 = 512;
 const NUM_DATASET_ACCESSES: u32 = 32;
 const LIGHT_CACHE_ROUNDS: i32 = 3;
 const LIGHT_CACHE_NUM_ITEMS: u32 = 1179641;
 const FULL_DATASET_NUM_ITEMS: u32 = 37748717;
+
+#[rustfmt::skip]
 const SEED: Hash256 = Hash256([
-    0xeb, 0x01, 0x63, 0xae, 0xf2, 0xab, 0x1c, 0x5a, 0x66, 0x31, 0x0c, 0x1c, 0x14, 0xd6, 0x0f, 0x42, 0x55, 0xa9, 0xb3, 0x9b, 0x0e,
-    0xdf, 0x26, 0x53, 0x98, 0x44, 0xf1, 0x17, 0xad, 0x67, 0x21, 0x19,
+    0xeb, 0x01, 0x63, 0xae, 0xf2, 0xab, 0x1c, 0x5a, 
+    0x66, 0x31, 0x0c, 0x1c, 0x14, 0xd6, 0x0f, 0x42, 
+    0x55, 0xa9, 0xb3, 0x9b, 0x0e, 0xdf, 0x26, 0x53, 
+    0x98, 0x44, 0xf1, 0x17, 0xad, 0x67, 0x21, 0x19,
 ]);
 
 const SIZE_U32: usize = std::mem::size_of::<u32>();
 const SIZE_U64: usize = std::mem::size_of::<u64>();
 
 pub static FISHHASH_FULL_DATASET: AtomicBool = AtomicBool::new(false);
-static FULL_DATASET: OnceLock<Box<[Hash1024]>> = OnceLock::new();
-
-lazy_static! {
-    static ref LIGHT_CACHE: Box<[Hash512]> = {
-        let mut light_cache = vec![Hash512::new(); LIGHT_CACHE_NUM_ITEMS as usize].into_boxed_slice();
-        PowFishHash::build_light_cache(&mut light_cache);
-        light_cache
-    };
-}
+static CONTEXT: OnceLock<FishHashContext> = OnceLock::new();
 
 pub trait HashData {
     fn new() -> Self;
@@ -178,16 +178,25 @@ impl Hash1024 {
 }
 
 #[inline(always)]
-fn get_dataset_item(index: usize) -> Hash1024 {
-    if FISHHASH_FULL_DATASET.load(Ordering::Relaxed) {
-        let dataset = FULL_DATASET.get_or_init(|| {
+fn lookup(index: usize) -> Hash1024 {
+    let context = CONTEXT.get_or_init(|| {
+        let mut light_cache = vec![Hash512::new(); LIGHT_CACHE_NUM_ITEMS as usize].into_boxed_slice();
+        PowFishHash::build_light_cache(&mut light_cache);
+
+        let full_dataset = if FISHHASH_FULL_DATASET.load(Ordering::Relaxed) {
             let mut full_dataset = vec![Hash1024::new(); FULL_DATASET_NUM_ITEMS as usize].into_boxed_slice();
-            prebuild_dataset(&mut full_dataset, &LIGHT_CACHE, num_cpus::get_physical());
-            full_dataset
-        });
-        dataset[index]
-    } else {
-        PowFishHash::calculate_dataset_item_1024(&LIGHT_CACHE, index)
+            prebuild_dataset(&mut full_dataset, &light_cache, num_cpus::get());
+            Some(full_dataset)
+        } else {
+            None
+        };
+
+        FishHashContext { light_cache, full_dataset }
+    });
+
+    match &context.full_dataset {
+        Some(dataset) => dataset[index],
+        None => PowFishHash::calculate_dataset_item_1024(&context.light_cache, index),
     }
 }
 
@@ -237,6 +246,7 @@ impl PowFishHash {
         let mut mix = Hash1024::from_512s(&seed_hash512, &seed_hash512);
 
         for i in 0..NUM_DATASET_ACCESSES {
+            // Calculate new fetching indexes
             let mut mix_group: [u32; 8] = [0; 8];
 
             for (c, mix_group_elem) in mix_group.iter_mut().enumerate() {
@@ -248,9 +258,9 @@ impl PowFishHash {
             let p1 = (mix_group[1] ^ mix_group[4] ^ mix_group[7]) % FULL_DATASET_NUM_ITEMS;
             let p2 = (mix_group[2] ^ mix_group[5] ^ i) % FULL_DATASET_NUM_ITEMS;
 
-            let fetch0 = get_dataset_item(p0 as usize);
-            let mut fetch1 = get_dataset_item(p1 as usize);
-            let mut fetch2 = get_dataset_item(p2 as usize);
+            let fetch0 = lookup(p0 as usize);
+            let mut fetch1 = lookup(p1 as usize);
+            let mut fetch2 = lookup(p2 as usize);
 
             // Modify fetch1 and fetch2
             for j in 0..32 {
@@ -280,6 +290,7 @@ impl PowFishHash {
 
     #[inline(always)]
     fn build_light_cache(cache: &mut [Hash512]) {
+        info!("light cache processing started");
         let mut item: Hash512 = Hash512::new();
         PowFishHash::keccak(&mut item.0, &SEED.0);
         cache[0] = item;
@@ -291,14 +302,20 @@ impl PowFishHash {
 
         for _ in 0..LIGHT_CACHE_ROUNDS {
             for i in 0..LIGHT_CACHE_NUM_ITEMS {
+                // First index: 4 first bytes of the item as little-endian integer
                 let t: u32 = cache[i as usize].get_as_u32(0);
                 let v: u32 = t % LIGHT_CACHE_NUM_ITEMS;
+
+                // Second index
                 let w: u32 = (LIGHT_CACHE_NUM_ITEMS.wrapping_add(i.wrapping_sub(1))) % LIGHT_CACHE_NUM_ITEMS;
 
                 let x = &cache[v as usize] ^ &cache[w as usize];
                 PowFishHash::keccak(&mut cache[i as usize].0, &x.0);
             }
         }
+        info!("light_cache[10] : {:?}", cache[10]);
+        info!("light_cache[42] : {:?}", cache[42]);
+        info!("light cache processing done");
     }
 
     #[inline(always)]

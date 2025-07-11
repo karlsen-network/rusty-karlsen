@@ -13,7 +13,6 @@ repository.workspace = true
 no-asm = ["keccak"]
 
 [dependencies]
-lazy_static = "1.4.0"
 log.workspace = true
 num_cpus.workspace = true
 blake2b_simd.workspace = true
