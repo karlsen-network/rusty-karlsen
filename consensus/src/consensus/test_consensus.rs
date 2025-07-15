@@ -11,7 +11,7 @@ use karlsen_consensus_notify::{notification::Notification, root::ConsensusNotifi
 use karlsen_consensusmanager::{ConsensusFactory, ConsensusInstance, DynConsensusCtl};
 use karlsen_core::{core::Core, service::Service};
 use karlsen_database::utils::DbLifetime;
-use karlsen_hashes::Hash;
+use karlsen_hashes::{pow_hashers::FishHashContext, Hash};
 use karlsen_notify::subscription::context::SubscriptionContext;
 use parking_lot::RwLock;
 
@@ -52,6 +52,10 @@ impl TestConsensus {
         let notification_root = Arc::new(ConsensusNotificationRoot::new(notification_sender));
         let counters = Default::default();
         let tx_script_cache_counters = Default::default();
+
+        // use light cache
+        let fish_context = Arc::new(FishHashContext::new(false, None));
+
         let consensus = Arc::new(Consensus::new(
             db,
             Arc::new(config.clone()),
@@ -61,6 +65,7 @@ impl TestConsensus {
             tx_script_cache_counters,
             0,
             Arc::new(MiningRules::default()),
+            fish_context,
         ));
         let block_builder = TestBlockBuilder::new(consensus.virtual_processor.clone());
 
@@ -73,6 +78,10 @@ impl TestConsensus {
         let notification_root = Arc::new(ConsensusNotificationRoot::with_context(notification_sender, context));
         let counters = Default::default();
         let tx_script_cache_counters = Default::default();
+
+        // use light cache
+        let fish_context = Arc::new(FishHashContext::new(false, None));
+
         let consensus = Arc::new(Consensus::new(
             db,
             Arc::new(config.clone()),
@@ -82,6 +91,7 @@ impl TestConsensus {
             tx_script_cache_counters,
             0,
             Arc::new(MiningRules::default()),
+            fish_context,
         ));
         let block_builder = TestBlockBuilder::new(consensus.virtual_processor.clone());
 
@@ -95,6 +105,10 @@ impl TestConsensus {
         let notification_root = Arc::new(ConsensusNotificationRoot::new(dummy_notification_sender));
         let counters = Default::default();
         let tx_script_cache_counters = Default::default();
+
+        // use light cache
+        let fish_context = Arc::new(FishHashContext::new(false, None));
+
         let consensus = Arc::new(Consensus::new(
             db,
             Arc::new(config.clone()),
@@ -104,6 +118,7 @@ impl TestConsensus {
             tx_script_cache_counters,
             0,
             Arc::new(MiningRules::default()),
+            fish_context,
         ));
         let block_builder = TestBlockBuilder::new(consensus.virtual_processor.clone());
 

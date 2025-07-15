@@ -18,6 +18,7 @@ use crate::{
 };
 use itertools::Itertools;
 use karlsen_consensus_core::mass::MassCalculator;
+use karlsen_hashes::pow_hashers::FishHashContext;
 use karlsen_txscript::caches::TxScriptCacheCounters;
 use std::sync::{atomic::AtomicBool, Arc};
 
@@ -77,6 +78,7 @@ impl ConsensusServices {
         config: Arc<Config>,
         tx_script_cache_counters: Arc<TxScriptCacheCounters>,
         is_consensus_exiting: Arc<AtomicBool>,
+        fish_context: Arc<FishHashContext>,
     ) -> Arc<Self> {
         let params = &config.params;
 
@@ -189,6 +191,7 @@ impl ConsensusServices {
             params.anticone_finalization_depth(),
             params.ghostdag_k(),
             is_consensus_exiting,
+            fish_context,
         ));
 
         let sync_manager = SyncManager::new(

@@ -28,7 +28,7 @@ use karlsen_consensus_core::{
 };
 use karlsen_core::info;
 use karlsen_database::{prelude::StoreResultExtensions, utils::DbLifetime};
-use karlsen_hashes::Hash;
+use karlsen_hashes::{pow_hashers::FishHashContext, Hash};
 use karlsen_pow::calc_block_level;
 use thiserror::Error;
 
@@ -131,6 +131,7 @@ pub struct PruningProofManager {
     ghostdag_k: ForkedParam<KType>,
 
     is_consensus_exiting: Arc<AtomicBool>,
+    fish_context: Arc<FishHashContext>,
 }
 
 impl PruningProofManager {
@@ -149,6 +150,7 @@ impl PruningProofManager {
         anticone_finalization_depth: ForkedParam<u64>,
         ghostdag_k: ForkedParam<KType>,
         is_consensus_exiting: Arc<AtomicBool>,
+        fish_context: Arc<FishHashContext>,
     ) -> Self {
         Self {
             db,
@@ -186,6 +188,8 @@ impl PruningProofManager {
             level_relations_services: (0..=max_block_level)
                 .map(|level| MTRelationsService::new(storage.relations_stores.clone().clone(), level))
                 .collect_vec(),
+
+            fish_context,
         }
     }
 
@@ -214,7 +218,7 @@ impl PruningProofManager {
                 continue;
             }
 
-            let block_level = calc_block_level(header, self.max_block_level);
+            let block_level = calc_block_level(header, self.max_block_level, self.fish_context.clone());
             self.headers_store.insert(header.hash, header.clone(), block_level).unwrap();
         }
 

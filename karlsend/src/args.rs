@@ -382,7 +382,7 @@ a large RAM (~64GB) can set this value to ~3.0-4.0 and gain superior performance
                 .value_parser(clap::value_parser!(f64))
                 .help("The number of total days of data to keep.")
         )
-        .arg(arg!(--"full-dataset" "Precompute fishhash lookup table in RAM (~4.8GB) for faster header verification and reduced compute load"))
+        .arg(arg!(--"full-dataset" "Build full fishhash/khashv2 dataset (~4.6GB) for faster header verification and reduced compute load, otherwise use light cache (~75MB) with on-demand computation"))
         ;
 
     #[cfg(feature = "devnet-prealloc")]

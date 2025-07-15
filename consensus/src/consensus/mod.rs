@@ -83,7 +83,7 @@ use itertools::Itertools;
 use karlsen_consensusmanager::{SessionLock, SessionReadGuard};
 
 use karlsen_database::prelude::{StoreResultEmptyTuple, StoreResultExtensions};
-use karlsen_hashes::Hash;
+use karlsen_hashes::{pow_hashers::FishHashContext, Hash};
 use karlsen_muhash::MuHash;
 use karlsen_txscript::caches::TxScriptCacheCounters;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -164,6 +164,7 @@ impl Consensus {
         tx_script_cache_counters: Arc<TxScriptCacheCounters>,
         creation_timestamp: u64,
         mining_rules: Arc<MiningRules>,
+        fish_context: Arc<FishHashContext>,
     ) -> Self {
         let params = &config.params;
         let perf_params = &config.perf;
@@ -185,6 +186,7 @@ impl Consensus {
             config.clone(),
             tx_script_cache_counters,
             is_consensus_exiting.clone(),
+            fish_context.clone(),
         );
 
         //
@@ -241,6 +243,7 @@ impl Consensus {
             &services,
             pruning_lock.clone(),
             counters.clone(),
+            fish_context,
         ));
 
         let body_processor = Arc::new(BlockBodyProcessor::new(

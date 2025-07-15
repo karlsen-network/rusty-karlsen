@@ -28,7 +28,7 @@ use karlsen_core::{
 };
 use karlsen_database::prelude::ConnBuilder;
 use karlsen_database::{create_temp_db, load_existing_db};
-use karlsen_hashes::Hash;
+use karlsen_hashes::{pow_hashers::FishHashContext, Hash};
 use karlsen_perf_monitor::{builder::Builder, counters::CountersSnapshot};
 use karlsen_utils::fd_budget;
 use simulator::network::KarlsenNetworkSimulator;
@@ -232,6 +232,10 @@ fn main_impl(mut args: Args) {
         };
         let (dummy_notification_sender, _) = unbounded();
         let notification_root = Arc::new(ConsensusNotificationRoot::new(dummy_notification_sender));
+
+        // light cache
+        let fish_context = Arc::new(FishHashContext::new(false, None));
+
         let consensus = Arc::new(Consensus::new(
             db,
             config.clone(),
@@ -241,6 +245,7 @@ fn main_impl(mut args: Args) {
             Default::default(),
             unix_now(),
             Arc::new(MiningRules::default()),
+            fish_context,
         ));
         (consensus, lifetime)
     } else {
@@ -304,6 +309,10 @@ fn main_impl(mut args: Args) {
     let (_lifetime2, db2) = create_temp_db!(ConnBuilder::default().with_parallelism(num_cpus::get()).with_files_limit(default_fd));
     let (dummy_notification_sender, _) = unbounded();
     let notification_root = Arc::new(ConsensusNotificationRoot::new(dummy_notification_sender));
+
+    // light cache
+    let fish_context2 = Arc::new(FishHashContext::new(false, None));
+
     let consensus2 = Arc::new(Consensus::new(
         db2,
         config.clone(),
@@ -313,6 +322,7 @@ fn main_impl(mut args: Args) {
         Default::default(),
         unix_now(),
         Arc::new(MiningRules::default()),
+        fish_context2,
     ));
     let handles2 = consensus2.run_processors();
     if args.headers_first {
