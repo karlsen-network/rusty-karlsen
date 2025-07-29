@@ -31,7 +31,6 @@ impl State {
         // Zero out the time and nonce.
         let pre_pow_hash = hashing::header::hash_override_nonce_time(header, 0, 0);
         // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-        //let hasher = PowHash::new(pre_pow_hash, header.timestamp);
         let hasher = PowB3Hash::new(pre_pow_hash, header.timestamp);
         let matrix = Matrix::generate(pre_pow_hash);
         //let fishhasher = PowFishHash::new();
