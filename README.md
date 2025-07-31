@@ -70,9 +70,8 @@ mainnet 1bps DAG.
 For the current KarlsenHashv2 algorithm, miners can use:
 
 - **Official miners:**
-  - [CPU miner](https://github.com/karlsen-network/karlsend/releases/latest) (integrated in Golang `karlsend` v2.1.0+)
-  - [GPU miner](https://github.com/karlsen-network/karlsen-miner/releases/latest) (reference implementation)
-    - Note: Users must generate a DAG file following instructions in the [README.md](https://github.com/karlsen-network/karlsend/blob/master/README.md?plain=1#L82)
+  - [CPU miner](https://github.com/karlsen-network/karlsen-miner-cpu)
+  - [GPU miner](https://github.com/karlsen-network/karlsen-miner)
 - **Third-party miners with KarlsenHashv2 support:**
   - [lolMiner](https://github.com/Lolliedieb/lolMiner-releases)
   - [BzMiner](https://github.com/bzminer/bzminer)
