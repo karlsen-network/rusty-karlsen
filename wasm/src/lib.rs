@@ -181,8 +181,9 @@ cfg_if::cfg_if! {
         }
 
         pub use karlsen_consensus_wasm::*;
-        pub use karlsen_wallet_keys::prelude::*;
         pub use karlsen_wallet_core::wasm::*;
+        pub use karlsen_wallet_keys::prelude::*;
+        pub use karlsen_bip32::wasm::*;
 
     } else if #[cfg(feature = "wasm32-core")] {
 
@@ -210,6 +211,7 @@ cfg_if::cfg_if! {
         pub use karlsen_consensus_wasm::*;
         pub use karlsen_wallet_keys::prelude::*;
         pub use karlsen_wallet_core::wasm::*;
+        pub use karlsen_bip32::wasm::*;
 
     } else if #[cfg(feature = "wasm32-rpc")] {
 
@@ -225,8 +227,8 @@ cfg_if::cfg_if! {
 
         pub use karlsen_addresses::{Address, Version as AddressVersion};
         pub use karlsen_wallet_keys::prelude::*;
-        pub use karlsen_bip32::*;
         pub use karlsen_wasm_core::types::*;
+        pub use karlsen_bip32::wasm::*;
 
     }
 }

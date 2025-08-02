@@ -3,6 +3,7 @@ use crate::imports::*;
 use crate::result::Result;
 use karlsen_bip32::{Language, Mnemonic, WordCount};
 use karlsen_wallet_core::account::MULTISIG_ACCOUNT_KIND;
+use karlsen_wallet_core::storage::keydata::PrvKeyDataVariantKind;
 // use karlsen_wallet_core::runtime::wallet::AccountCreateArgsBip32;
 // use karlsen_wallet_core::runtime::{PrvKeyDataArgs, PrvKeyDataCreateArgs};
 // use karlsen_wallet_core::storage::AccountKind;
@@ -66,7 +67,7 @@ async fn create_multisig(ctx: &Arc<KarlsenCli>, account_name: Option<String>, mn
     for _ in 0..prv_keys_len {
         let bip39_mnemonic = Secret::from(Mnemonic::random(mnemonic_phrase_word_count, Language::default())?.phrase());
 
-        let prv_key_data_create_args = PrvKeyDataCreateArgs::new(None, None, bip39_mnemonic); // can be optimized with Rc<WalletSecret>
+        let prv_key_data_create_args = PrvKeyDataCreateArgs::new(None, None, bip39_mnemonic, PrvKeyDataVariantKind::Mnemonic); // can be optimized with Rc<WalletSecret>
         let prv_key_data_id = wallet.create_prv_key_data(&wallet_secret, prv_key_data_create_args).await?;
 
         prv_key_data_args.push(PrvKeyDataArgs::new(prv_key_data_id, None));
