@@ -311,13 +311,12 @@ jobs:
           cd wasm
           bash build-release
           popd
-          mv wasm/release/karlsen-wasm32-sdk.zip wasm/release/karlsen-wasm32-sdk-${{ env.SHORT_SHA }}.zip
 
       - name: Upload WASM build to GitHub 
         uses: actions/upload-artifact@v4
         with: 
-          name: karlsen-wasm32-sdk-${{ env.SHORT_SHA }}.zip
-          path: wasm/release/karlsen-wasm32-sdk-${{ env.SHORT_SHA }}.zip
+          name: karlsen-wasm32-sdk-${{ env.SHORT_SHA }}
+          path: wasm/release/
           
   build-release:
     name: Build Linux Release
