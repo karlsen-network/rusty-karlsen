@@ -1,4 +1,3 @@
-use crate::ibd::IbdFlow;
 use crate::v5::{
     address::{ReceiveAddressesFlow, SendAddressesFlow},
     blockrelay::{flow::HandleRelayInvsFlow, handle_requests::HandleRelayBlockRequests},
@@ -12,20 +11,22 @@ use crate::v5::{
     request_pruning_point_utxo_set::RequestPruningPointUtxoSetFlow,
     txrelay::flow::{RelayTransactionsFlow, RequestTransactionsFlow},
 };
+pub(crate) mod request_block_bodies;
 use crate::{flow_context::FlowContext, flow_trait::Flow};
+
+use crate::ibd::IbdFlow;
 use karlsen_p2p_lib::{KarlsendMessagePayloadType, Router, SharedIncomingRoute};
 use karlsen_utils::channel;
+use request_block_bodies::HandleBlockBodyRequests;
 use std::sync::Arc;
 
 use crate::v6::request_pruning_point_and_anticone::PruningPointAndItsAnticoneRequestsFlow;
-
-pub(crate) mod request_pruning_point_and_anticone;
 
 pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
     // IBD flow <-> invs flow communication uses a job channel in order to always
     // maintain at most a single pending job which can be updated
     let (ibd_sender, relay_receiver) = channel::job();
-    let body_only_ibd_permitted = false;
+    let body_only_ibd_permitted = true;
     let mut flows: Vec<Box<dyn Flow>> = vec![
         Box::new(IbdFlow::new(
             ctx.clone(),
@@ -39,6 +40,7 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
                 KarlsendMessagePayloadType::DoneBlocksWithTrustedData,
                 KarlsendMessagePayloadType::IbdChainBlockLocator,
                 KarlsendMessagePayloadType::IbdBlock,
+                KarlsendMessagePayloadType::BlockBody,
                 KarlsendMessagePayloadType::TrustedData,
                 KarlsendMessagePayloadType::PruningPoints,
                 KarlsendMessagePayloadType::PruningPointProof,
@@ -91,6 +93,11 @@ pub fn register(ctx: FlowContext, router: Arc<Router>) -> Vec<Box<dyn Flow>> {
             ctx.clone(),
             router.clone(),
             router.subscribe(vec![KarlsendMessagePayloadType::RequestIbdBlocks]),
+        )),
+        Box::new(HandleBlockBodyRequests::new(
+            ctx.clone(),
+            router.clone(),
+            router.subscribe(vec![KarlsendMessagePayloadType::RequestBlockBodies]),
         )),
         Box::new(HandleAntipastRequests::new(
             ctx.clone(),
