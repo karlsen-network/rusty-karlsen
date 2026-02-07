@@ -269,7 +269,7 @@ from!(item: RpcResult<&karlsen_rpc_core::GetSubnetworkResponse>, protowire::GetS
 // ~~~
 
 from!(item: &karlsen_rpc_core::GetVirtualChainFromBlockRequest, protowire::GetVirtualChainFromBlockRequestMessage, {
-    Self { start_hash: item.start_hash.to_string(), include_accepted_transaction_ids: item.include_accepted_transaction_ids }
+    Self { start_hash: item.start_hash.to_string(), include_accepted_transaction_ids: item.include_accepted_transaction_ids, min_confirmation_count: item.min_confirmation_count }
 });
 from!(item: RpcResult<&karlsen_rpc_core::GetVirtualChainFromBlockResponse>, protowire::GetVirtualChainFromBlockResponseMessage, {
     Self {
@@ -759,7 +759,7 @@ try_from!(item: &protowire::GetSubnetworkResponseMessage, RpcResult<karlsen_rpc_
 });
 
 try_from!(item: &protowire::GetVirtualChainFromBlockRequestMessage, karlsen_rpc_core::GetVirtualChainFromBlockRequest, {
-    Self { start_hash: RpcHash::from_str(&item.start_hash)?, include_accepted_transaction_ids: item.include_accepted_transaction_ids }
+    Self { start_hash: RpcHash::from_str(&item.start_hash)?, include_accepted_transaction_ids: item.include_accepted_transaction_ids, min_confirmation_count: item.min_confirmation_count }
 });
 try_from!(item: &protowire::GetVirtualChainFromBlockResponseMessage, RpcResult<karlsen_rpc_core::GetVirtualChainFromBlockResponse>, {
     Self {
