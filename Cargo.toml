@@ -341,25 +341,25 @@ strip = false
 # CI optimization: Keep debug fast to compile, but optimize hot-path crates
 # so tests run at reasonable speed without full release builds.
 
-[profile.dev.package.kaspa-consensus]
+[profile.dev.package.karlsen-consensus]
 opt-level = 2
 
-[profile.dev.package.kaspa-consensus-core]
+[profile.dev.package.karlsen-consensus-core]
 opt-level = 2
 
-[profile.dev.package.kaspa-hashes]
+[profile.dev.package.karlsen-hashes]
 opt-level = 2
 
-[profile.dev.package.kaspa-math]
+[profile.dev.package.karlsen-math]
 opt-level = 2
 
-[profile.dev.package.kaspa-muhash]
+[profile.dev.package.karlsen-muhash]
 opt-level = 2
 
-[profile.dev.package.kaspa-pow]
+[profile.dev.package.karlsen-pow]
 opt-level = 2
 
-[profile.dev.package.kaspa-txscript]
+[profile.dev.package.karlsen-txscript]
 opt-level = 2
 
 # External crates used heavily by consensus/crypto
