@@ -40,3 +40,6 @@ tokio = { workspace = true, features = ["rt", "macros", "rt-multi-thread"] }
 [features]
 heap = ["dhat", "karlsen-alloc/heap"]
 semaphore-trace = ["karlsen-utils/semaphore-trace"]
+
+[lints]
+workspace = true

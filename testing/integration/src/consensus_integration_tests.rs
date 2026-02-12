@@ -46,7 +46,7 @@ use karlsen_consensusmanager::ConsensusManager;
 use karlsen_core::task::tick::TickService;
 use karlsen_core::time::unix_now;
 use karlsen_database::utils::get_karlsen_tempdir;
-use karlsen_hashes::Hash;
+use karlsen_hashes::{pow_hashers::FishHashContext, Hash};
 use karlsen_utils::arc::ArcExtensions;
 
 use crate::common;
@@ -1754,6 +1754,9 @@ async fn staging_consensus_test() {
     let counters = Arc::new(ProcessingCounters::default());
     let tx_script_cache_counters = Arc::new(TxScriptCacheCounters::default());
 
+    // light cache
+    let fish_context = Arc::new(FishHashContext::new(false, None));
+
     let consensus_factory = Arc::new(ConsensusFactory::new(
         meta_db,
         &config,
@@ -1764,6 +1767,7 @@ async fn staging_consensus_test() {
         tx_script_cache_counters,
         200,
         Arc::new(MiningRules::default()),
+        fish_context,
     ));
     let consensus_manager = Arc::new(ConsensusManager::new(consensus_factory));
 

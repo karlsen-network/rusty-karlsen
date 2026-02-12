@@ -14,6 +14,7 @@ use karlsen_database::{
     registry::DatabaseStorePrefixes,
 };
 
+use karlsen_hashes::pow_hashers::FishHashContext;
 use karlsen_txscript::caches::TxScriptCacheCounters;
 use karlsen_utils::mem_size::MemSizeEstimator;
 use parking_lot::RwLock;
@@ -255,6 +256,7 @@ pub struct Factory {
     tx_script_cache_counters: Arc<TxScriptCacheCounters>,
     fd_budget: i32,
     mining_rules: Arc<MiningRules>,
+    fish_context: Arc<FishHashContext>,
 }
 
 impl Factory {
@@ -268,6 +270,7 @@ impl Factory {
         tx_script_cache_counters: Arc<TxScriptCacheCounters>,
         fd_budget: i32,
         mining_rules: Arc<MiningRules>,
+        fish_context: Arc<FishHashContext>,
     ) -> Self {
         assert!(fd_budget > 0, "fd_budget has to be positive");
         let mut config = config.clone();
@@ -286,6 +289,7 @@ impl Factory {
             tx_script_cache_counters,
             fd_budget,
             mining_rules,
+            fish_context,
         };
         factory.delete_inactive_consensus_entries();
         factory
@@ -329,6 +333,7 @@ impl ConsensusFactory for Factory {
             self.tx_script_cache_counters.clone(),
             entry.creation_timestamp,
             self.mining_rules.clone(),
+            self.fish_context.clone(),
         ));
 
         // We write the new active entry only once the instance was created successfully.
@@ -364,6 +369,7 @@ impl ConsensusFactory for Factory {
             self.tx_script_cache_counters.clone(),
             entry.creation_timestamp,
             self.mining_rules.clone(),
+            self.fish_context.clone(),
         ));
 
         (ConsensusInstance::new(session_lock, consensus.clone()), Arc::new(Ctl::new(self.management_store.clone(), db, consensus)))

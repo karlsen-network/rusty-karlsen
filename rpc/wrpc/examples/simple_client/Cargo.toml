@@ -16,3 +16,6 @@ karlsen-rpc-core.workspace = true
 karlsen-wrpc-client.workspace = true
 tokio.workspace = true
 
+
+[lints]
+workspace = true

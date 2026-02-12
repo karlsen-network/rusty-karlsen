@@ -110,7 +110,7 @@ impl HeaderProcessor {
     }
 
     fn check_pow_and_calc_block_level(&self, header: &Header) -> BlockProcessResult<BlockLevel> {
-        let state = karlsen_pow::State::new(header);
+        let state = karlsen_pow::State::new(header, self.fish_context.clone());
         let (passed, pow) = state.check_pow(header.nonce);
         if passed || self.skip_proof_of_work {
             Ok(calc_level_from_pow(pow, self.max_block_level))

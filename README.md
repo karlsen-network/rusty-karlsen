@@ -58,21 +58,22 @@ and was written from scratch and integrated in [rusty-karlsen](https://github.co
 
 During testnet experiments, three algorithms were evaluated: `khashv1` (Blockversion 1),
 `khashv1.5` (based on FishHash), and `khashv2` (Blockversion 2, based on FishHashPlus).
-After security review of FishHash ([audit proposal](https://github.com/Lolliedieb/FishHashMiner/tree/audit_proposal)),
+After [security review](https://ironfish-static.s3.amazonaws.com/%5B202402%5DIron+Fish+FishHash+-+Summary+Report+with+Fix+Review.pdf) 
+of FishHash ([audit proposal](https://github.com/Lolliedieb/FishHashMiner/tree/audit_proposal)),
 FishHashPlus was selected as the foundation for KarlsenHashv2.
 
-KarlsenHashv2 is designed to be GPU-friendly, fostering a more
-decentralized mining landscape by reducing the effectiveness
-of other hardware. It is FPGA/ASIC resistant and represents
-the world's first implementation of FishHash in Rust on a
-mainnet 1bps DAG.
+[KarlsenHashv2](https://github.com/karlsen-network/fish-hash-plus) is designed to be
+GPU-friendly, fostering a more decentralized mining landscape by reducing the
+effectiveness of specialized mining hardware. It is FPGA/ASIC resistant because it 
+transitions from compute-bound to memory bandwidth-bound operations, where specialized
+hardware gains minimal advantage since all devices use fundamentally similar
+memory chips with comparable performance.
 
 For the current KarlsenHashv2 algorithm, miners can use:
 
 - **Official miners:**
-  - [CPU miner](https://github.com/karlsen-network/karlsend/releases/latest) (integrated in Golang `karlsend` v2.1.0+)
-  - [GPU miner](https://github.com/karlsen-network/karlsen-miner/releases/latest) (reference implementation)
-    - Note: Users must generate a DAG file following instructions in the [README.md](https://github.com/karlsen-network/karlsend/blob/master/README.md?plain=1#L82)
+  - [CPU miner](https://github.com/karlsen-network/karlsen-miner-cpu)
+  - [GPU miner](https://github.com/karlsen-network/karlsen-miner)
 - **Third-party miners with KarlsenHashv2 support:**
   - [lolMiner](https://github.com/Lolliedieb/lolMiner-releases)
   - [BzMiner](https://github.com/bzminer/bzminer)

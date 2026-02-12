@@ -32,6 +32,7 @@ use karlsen_consensus::{
 };
 use karlsen_consensusmanager::ConsensusManager;
 use karlsen_core::task::runtime::AsyncRuntime;
+use karlsen_hashes::pow_hashers::FishHashContext;
 use karlsen_index_processor::service::IndexService;
 use karlsen_mining::{
     manager::{MiningManager, MiningManagerProxy},
@@ -233,13 +234,6 @@ pub fn create_core_with_runtime(runtime: &Runtime, args: &Args, fd_total_budget:
     if let Err(err) = validate_args(args) {
         println!("{}", err);
         exit(1);
-    }
-
-    karlsen_hashes::pow_hashers::FISHHASH_FULL_DATASET.store(args.full_dataset, std::sync::atomic::Ordering::Relaxed);
-    if args.full_dataset {
-        info!("Generating full lookup table in RAM (~4.8GB) for faster header verification");
-    } else {
-        info!("Using light cache mode (~75MB RAM) with on-demand computation");
     }
 
     let config = Arc::new(
@@ -515,6 +509,14 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
     let p2p_tower_counters = Arc::new(TowerConnectionCounters::default());
     let grpc_tower_counters = Arc::new(TowerConnectionCounters::default());
 
+    // create a new cache context for fishhash/khashv2
+    let fish_context = Arc::new(FishHashContext::new(args.full_dataset, None));
+    if args.full_dataset {
+        info!("building full dataset (~4.6GB)");
+    } else {
+        info!("using light cache (~75MB)");
+    }
+
     // Use `num_cpus` background threads for the consensus database as recommended by rocksdb
     let mining_rules = Arc::new(MiningRules::default());
     let consensus_db_parallelism = num_cpus::get();
@@ -528,6 +530,7 @@ do you confirm? (answer y/n or pass --yes to the Karlsend command line to confir
         tx_script_cache_counters.clone(),
         fd_remaining,
         mining_rules.clone(),
+        fish_context,
     ));
     let consensus_manager = Arc::new(ConsensusManager::new(consensus_factory));
     let consensus_monitor = Arc::new(ConsensusMonitor::new(processing_counters.clone(), tick_service.clone()));

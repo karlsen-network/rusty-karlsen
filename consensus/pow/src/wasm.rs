@@ -3,12 +3,14 @@ use js_sys::BigInt;
 use karlsen_consensus_client::Header;
 use karlsen_consensus_client::HeaderT;
 use karlsen_consensus_core::hashing;
+use karlsen_hashes::pow_hashers::FishHashContext;
 use karlsen_hashes::Hash;
 use karlsen_hashes::PowB3Hash;
 use karlsen_math::Uint256;
 use karlsen_utils::hex::FromHex;
 use karlsen_utils::hex::ToHex;
 use num::Float;
+use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 use workflow_wasm::convert::TryCastFromJs;
 use workflow_wasm::error::Error;
@@ -46,11 +48,13 @@ impl PoW {
 
         let header_version = header.version;
 
+        let fish_context = Arc::new(FishHashContext::new(false, None));
+
         // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
         let hasher = PowB3Hash::new(pre_pow_hash, timestamp.unwrap_or(header.timestamp));
         let matrix = Matrix::generate(pre_pow_hash);
 
-        Ok(Self { inner: crate::State { matrix, target, hasher, header_version }, pre_pow_hash })
+        Ok(Self { inner: crate::State { matrix, target, hasher, header_version, fish_context }, pre_pow_hash })
     }
 
     /// The target based on the provided bits.
@@ -83,6 +87,8 @@ impl PoW {
         // Convert the pre_pow_hash from hex string to Hash
         let pre_pow_hash = Hash::from_hex(pre_pow_hash).map_err(|err| Error::custom(format!("{err:?}")))?;
 
+        let fish_context = Arc::new(FishHashContext::new(false, None));
+
         // Generate the target from compact target bits if provided
         let target = Uint256::from_compact_target_bits(target_bits.unwrap_or_default());
 
@@ -90,7 +96,7 @@ impl PoW {
         let matrix = Matrix::generate(pre_pow_hash);
         let hasher = PowB3Hash::new(pre_pow_hash, timestamp);
 
-        Ok(PoW { inner: crate::State { matrix, target, hasher, header_version }, pre_pow_hash })
+        Ok(PoW { inner: crate::State { matrix, target, hasher, header_version, fish_context }, pre_pow_hash })
     }
 }
 

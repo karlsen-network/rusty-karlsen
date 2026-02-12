@@ -41,7 +41,7 @@ use karlsen_consensus_core::{
 };
 use karlsen_consensusmanager::SessionLock;
 use karlsen_database::prelude::{StoreResultEmptyTuple, StoreResultExtensions};
-use karlsen_hashes::Hash;
+use karlsen_hashes::{pow_hashers::FishHashContext, Hash};
 use karlsen_utils::vec::VecExtensions;
 use parking_lot::RwLock;
 use rayon::ThreadPool;
@@ -130,6 +130,7 @@ pub struct HeaderProcessor {
     pub(super) crescendo_activation: ForkActivation,
     pub(super) khashv2_activation: ForkActivation,
     pub(super) difficulty_window_size: usize,
+    pub(super) fish_context: Arc<FishHashContext>,
 
     // DB
     db: Arc<DB>,
@@ -178,6 +179,7 @@ impl HeaderProcessor {
         services: &Arc<ConsensusServices>,
         pruning_lock: SessionLock,
         counters: Arc<ProcessingCounters>,
+        fish_context: Arc<FishHashContext>,
     ) -> Self {
         Self {
             receiver,
@@ -219,6 +221,7 @@ impl HeaderProcessor {
             crescendo_activation: params.crescendo_activation,
             khashv2_activation: params.khashv2_activation,
             difficulty_window_size: params.prior_difficulty_window_size,
+            fish_context,
         }
     }
 

@@ -67,3 +67,6 @@ serde_with = "3.7.0"
 heap = ["dhat", "karlsen-alloc/heap"]
 devnet-prealloc = ["karlsen-consensus/devnet-prealloc"]
 semaphore-trace = ["karlsen-utils/semaphore-trace"]
+
+[lints]
+workspace = true

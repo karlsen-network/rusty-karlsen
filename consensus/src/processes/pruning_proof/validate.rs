@@ -50,7 +50,7 @@ impl PruningProofManager {
         let mut proof_stores_and_processes = self.init_validate_pruning_point_proof_stores_and_processes(proof)?;
         let proof_pp_header = proof[0].last().expect("checked if empty");
         let proof_pp = proof_pp_header.hash;
-        let proof_pp_level = calc_block_level(proof_pp_header, self.max_block_level);
+        let proof_pp_level = calc_block_level(proof_pp_header, self.max_block_level, self.fish_context.clone());
         let proof_selected_tip_by_level =
             self.populate_stores_for_validate_pruning_point_proof(proof, &mut proof_stores_and_processes, true)?;
         let proof_ghostdag_stores = proof_stores_and_processes.ghostdag_stores;
@@ -248,6 +248,7 @@ impl PruningProofManager {
         let proof_pp = proof_pp_header.hash;
 
         let mut selected_tip_by_level = vec![None; self.max_block_level as usize + 1];
+        let total_start = std::time::Instant::now();
         for level in (0..=self.max_block_level).rev() {
             // Before processing this level, check if the process is exiting so we can end early
             if self.is_consensus_exiting.load(Ordering::Relaxed) {
@@ -260,7 +261,7 @@ impl PruningProofManager {
             let level_idx = level as usize;
             let mut selected_tip = None;
             for (i, header) in proof[level as usize].iter().enumerate() {
-                let (header_level, pow_passes) = calc_block_level_check_pow(header, self.max_block_level);
+                let (header_level, pow_passes) = calc_block_level_check_pow(header, self.max_block_level, self.fish_context.clone());
                 if header_level < level {
                     return Err(PruningImportError::PruningProofWrongBlockLevel(header.hash, header_level, level));
                 }
@@ -339,6 +340,10 @@ impl PruningProofManager {
             }
 
             selected_tip_by_level[level_idx] = selected_tip;
+        }
+
+        if log_validating {
+            info!("All levels validation completed in {:?}", total_start.elapsed());
         }
 
         Ok(selected_tip_by_level.into_iter().map(|selected_tip| selected_tip.unwrap()).collect())

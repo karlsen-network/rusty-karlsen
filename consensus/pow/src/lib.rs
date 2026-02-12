@@ -7,10 +7,11 @@ pub mod wasm;
 pub mod xoshiro;
 
 use std::cmp::max;
+use std::sync::Arc;
 
 use crate::matrix::Matrix;
 use karlsen_consensus_core::{constants, hashing, header::Header, BlockLevel};
-use karlsen_hashes::{PowB3Hash, PowFishHash};
+use karlsen_hashes::{pow_hashers::FishHashContext, PowB3Hash, PowFishHash};
 use karlsen_math::Uint256;
 
 /// State is an intermediate data structure with pre-computed values to speed up mining.
@@ -20,22 +21,22 @@ pub struct State {
     // PRE_POW_HASH || TIME || 32 zero byte padding; without NONCE
     pub(crate) hasher: PowB3Hash,
     pub(crate) header_version: u16,
+    pub(crate) fish_context: Arc<FishHashContext>,
 }
 
 impl State {
     #[inline]
-    pub fn new(header: &Header) -> Self {
+    pub fn new(header: &Header, fish_context: Arc<FishHashContext>) -> Self {
         let target = Uint256::from_compact_target_bits(header.bits);
         // Zero out the time and nonce.
         let pre_pow_hash = hashing::header::hash_override_nonce_time(header, 0, 0);
         // PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
-        //let hasher = PowHash::new(pre_pow_hash, header.timestamp);
         let hasher = PowB3Hash::new(pre_pow_hash, header.timestamp);
         let matrix = Matrix::generate(pre_pow_hash);
         //let fishhasher = PowFishHash::new();
         let header_version = header.version;
 
-        Self { matrix, target, hasher, /*fishhasher,*/ header_version }
+        Self { matrix, target, hasher, fish_context, header_version }
     }
 
     #[inline]
@@ -51,7 +52,7 @@ impl State {
         // Hasher already contains PRE_POW_HASH || TIME || 32 zero byte padding; so only the NONCE is missing
         let hash = self.hasher.clone().finalize_with_nonce(nonce);
         //println!("hash-1 : {:?}", hash);
-        let hash = PowFishHash::fishhashplus_kernel(&hash);
+        let hash = PowFishHash::fishhashplus_kernel(&hash, &self.fish_context);
         //println!("hash-2 : {:?}", hash);
         //last b3 hash
         let hash = PowB3Hash::hash(hash);
@@ -66,10 +67,7 @@ impl State {
         match self.header_version {
             constants::BLOCK_VERSION_KHASHV1 => self.calculate_pow_khashv1(nonce),
             constants::BLOCK_VERSION_KHASHV2 => self.calculate_pow_khashv2plus(nonce),
-            _ => {
-                // Fallback to v1
-                self.calculate_pow_khashv1(nonce)
-            }
+            _ => unreachable!("wrong block version: {}", self.header_version), // should never happen because this is checked in pre_ghostdag_validation
         }
     }
 
@@ -82,17 +80,21 @@ impl State {
     }
 }
 
-pub fn calc_block_level(header: &Header, max_block_level: BlockLevel) -> BlockLevel {
-    let (block_level, _) = calc_block_level_check_pow(header, max_block_level);
+pub fn calc_block_level(header: &Header, max_block_level: BlockLevel, fish_context: Arc<FishHashContext>) -> BlockLevel {
+    let (block_level, _) = calc_block_level_check_pow(header, max_block_level, fish_context);
     block_level
 }
 
-pub fn calc_block_level_check_pow(header: &Header, max_block_level: BlockLevel) -> (BlockLevel, bool) {
+pub fn calc_block_level_check_pow(
+    header: &Header,
+    max_block_level: BlockLevel,
+    fish_context: Arc<FishHashContext>,
+) -> (BlockLevel, bool) {
     if header.parents_by_level.is_empty() {
         return (max_block_level, true); // Genesis has the max block level
     }
 
-    let state = State::new(header);
+    let state = State::new(header, fish_context);
     let (passed, pow) = state.check_pow(header.nonce);
     let block_level = calc_level_from_pow(pow, max_block_level);
     (block_level, passed)

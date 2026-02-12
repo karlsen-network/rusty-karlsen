@@ -13,6 +13,7 @@ use karlsen_consensus_core::block::Block;
 use karlsen_database::prelude::ConnBuilder;
 use karlsen_database::utils::DbLifetime;
 use karlsen_database::{create_permanent_db, create_temp_db};
+use karlsen_hashes::pow_hashers::FishHashContext;
 use karlsen_utils::fd_budget;
 use karlsen_utils::sim::Simulation;
 
@@ -79,6 +80,10 @@ impl KarlsenNetworkSimulator {
 
             let (dummy_notification_sender, _) = unbounded();
             let notification_root = Arc::new(ConsensusNotificationRoot::new(dummy_notification_sender));
+
+            // light cache
+            let fish_context = Arc::new(FishHashContext::new(false, None));
+
             let consensus = Arc::new(Consensus::new(
                 db,
                 self.config.clone(),
@@ -88,6 +93,7 @@ impl KarlsenNetworkSimulator {
                 Default::default(),
                 unix_now(),
                 Arc::new(MiningRules::default()),
+                fish_context,
             ));
             let handles = consensus.run_processors();
             let (sk, pk) = secp.generate_keypair(&mut rng);
