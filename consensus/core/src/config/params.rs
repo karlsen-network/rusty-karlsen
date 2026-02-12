@@ -482,7 +482,7 @@ impl From<NetworkId> for Params {
 }
 
 pub const MAINNET_PARAMS: Params = Params {
-    dns_seeders: &["mainnet-dnsseed-1.karlsencoin.com", "mainnet-dnsseed-2.karlsencoin.com", "mainnet-dnsseed-3.karlsencoin.com"],
+    dns_seeders: &["mainnet-dnsseed-1.karlsencoin.com", "mainnet-dnsseed-2.karlsencoin.com"],
     net: NetworkId::new(NetworkType::Mainnet),
     genesis: GENESIS,
     prior_ghostdag_k: LEGACY_DEFAULT_GHOSTDAG_K,

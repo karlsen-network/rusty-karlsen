@@ -74,9 +74,8 @@ impl ScriptBuilder {
         &self.script
     }
 
-    #[cfg(any(test, target_arch = "wasm32"))]
-    pub fn extend(&mut self, data: &[u8]) {
-        self.script.extend(data);
+    pub fn script_mut(&mut self) -> &mut Vec<u8> {
+        &mut self.script
     }
 
     pub fn drain(&mut self) -> Vec<u8> {
@@ -292,7 +291,7 @@ mod tests {
             expected: Vec<u8>,
         }
 
-        let tests = vec![
+        let tests = [
             Test { name: "push OP_FALSE", opcodes: vec![OpFalse], expected: vec![OpFalse] },
             Test { name: "push OP_TRUE", opcodes: vec![OpTrue], expected: vec![OpTrue] },
             Test { name: "push OP_0", opcodes: vec![Op0], expected: vec![Op0] },

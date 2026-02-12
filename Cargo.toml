@@ -63,7 +63,7 @@ members = [
 
 [workspace.package]
 rust-version = "1.82.0"
-version = "3.0.1"
+version = "3.0.2"
 authors = ["Karlsen developers"]
 license = "ISC"
 repository = "https://github.com/karlsen-network/rusty-karlsen"
@@ -80,62 +80,62 @@ include = [
 ]
 
 [workspace.dependencies]
-# karlsen-testing-integration = { version = "3.0.1", path = "testing/integration" }
-karlsen-addresses = { version = "3.0.1", path = "crypto/addresses" }
-karlsen-addressmanager = { version = "3.0.1", path = "components/addressmanager" }
-karlsen-bip32 = { version = "3.0.1", path = "wallet/bip32" }
-karlsen-cli = { version = "3.0.1", path = "cli" }
-karlsen-connectionmanager = { version = "3.0.1", path = "components/connectionmanager" }
-karlsen-consensus = { version = "3.0.1", path = "consensus" }
-karlsen-consensus-core = { version = "3.0.1", path = "consensus/core" }
-karlsen-consensus-client = { version = "3.0.1", path = "consensus/client" }
-karlsen-consensus-notify = { version = "3.0.1", path = "consensus/notify" }
-karlsen-consensus-wasm = { version = "3.0.1", path = "consensus/wasm" }
-karlsen-consensusmanager = { version = "3.0.1", path = "components/consensusmanager" }
-karlsen-core = { version = "3.0.1", path = "core" }
-karlsen-daemon = { version = "3.0.1", path = "daemon" }
-karlsen-database = { version = "3.0.1", path = "database" }
-karlsen-grpc-client = { version = "3.0.1", path = "rpc/grpc/client" }
-karlsen-grpc-core = { version = "3.0.1", path = "rpc/grpc/core" }
-karlsen-grpc-server = { version = "3.0.1", path = "rpc/grpc/server" }
-karlsen-hashes = { version = "3.0.1", path = "crypto/hashes" }
-karlsen-index-core = { version = "3.0.1", path = "indexes/core" }
-karlsen-index-processor = { version = "3.0.1", path = "indexes/processor" }
-karlsen-math = { version = "3.0.1", path = "math" }
-karlsen-merkle = { version = "3.0.1", path = "crypto/merkle" }
-karlsen-metrics-core = { version = "3.0.1", path = "metrics/core" }
-karlsen-mining = { version = "3.0.1", path = "mining" }
-karlsen-mining-errors = { version = "3.0.1", path = "mining/errors" }
-karlsen-muhash = { version = "3.0.1", path = "crypto/muhash" }
-karlsen-notify = { version = "3.0.1", path = "notify" }
-karlsen-p2p-flows = { version = "3.0.1", path = "protocol/flows" }
-karlsen-p2p-lib = { version = "3.0.1", path = "protocol/p2p" }
-karlsen-p2p-mining = { version = "3.0.1", path = "protocol/mining" }
-karlsen-perf-monitor = { version = "3.0.1", path = "metrics/perf_monitor" }
-karlsen-pow = { version = "3.0.1", path = "consensus/pow" }
-karlsen-rpc-core = { version = "3.0.1", path = "rpc/core" }
-karlsen-rpc-macros = { version = "3.0.1", path = "rpc/macros" }
-karlsen-rpc-service = { version = "3.0.1", path = "rpc/service" }
-karlsen-txscript = { version = "3.0.1", path = "crypto/txscript" }
-karlsen-txscript-errors = { version = "3.0.1", path = "crypto/txscript/errors" }
-karlsen-utils = { version = "3.0.1", path = "utils" }
-karlsen-utils-tower = { version = "3.0.1", path = "utils/tower" }
-karlsen-utxoindex = { version = "3.0.1", path = "indexes/utxoindex" }
-karlsen-wallet = { version = "3.0.1", path = "wallet/native" }
-karlsen-wallet-cli-wasm = { version = "3.0.1", path = "wallet/wasm" }
-karlsen-wallet-keys = { version = "3.0.1", path = "wallet/keys" }
-karlsen-wallet-pskt = { version = "3.0.1", path = "wallet/pskt" }
-karlsen-wallet-core = { version = "3.0.1", path = "wallet/core" }
-karlsen-wallet-macros = { version = "3.0.1", path = "wallet/macros" }
-karlsen-wasm = { version = "3.0.1", path = "wasm" }
-karlsen-wasm-core = { version = "3.0.1", path = "wasm/core" }
-karlsen-wrpc-client = { version = "3.0.1", path = "rpc/wrpc/client" }
-karlsen-wrpc-proxy = { version = "3.0.1", path = "rpc/wrpc/proxy" }
-karlsen-wrpc-server = { version = "3.0.1", path = "rpc/wrpc/server" }
-karlsen-wrpc-wasm = { version = "3.0.1", path = "rpc/wrpc/wasm" }
-karlsen-wrpc-example-subscriber = { version = "3.0.1", path = "rpc/wrpc/examples/subscriber" }
-karlsend = { version = "3.0.1", path = "karlsend" }
-karlsen-alloc = { version = "3.0.1", path = "utils/alloc" }
+# karlsen-testing-integration = { version = "3.0.2", path = "testing/integration" }
+karlsen-addresses = { version = "3.0.2", path = "crypto/addresses" }
+karlsen-addressmanager = { version = "3.0.2", path = "components/addressmanager" }
+karlsen-bip32 = { version = "3.0.2", path = "wallet/bip32" }
+karlsen-cli = { version = "3.0.2", path = "cli" }
+karlsen-connectionmanager = { version = "3.0.2", path = "components/connectionmanager" }
+karlsen-consensus = { version = "3.0.2", path = "consensus" }
+karlsen-consensus-core = { version = "3.0.2", path = "consensus/core" }
+karlsen-consensus-client = { version = "3.0.2", path = "consensus/client" }
+karlsen-consensus-notify = { version = "3.0.2", path = "consensus/notify" }
+karlsen-consensus-wasm = { version = "3.0.2", path = "consensus/wasm" }
+karlsen-consensusmanager = { version = "3.0.2", path = "components/consensusmanager" }
+karlsen-core = { version = "3.0.2", path = "core" }
+karlsen-daemon = { version = "3.0.2", path = "daemon" }
+karlsen-database = { version = "3.0.2", path = "database" }
+karlsen-grpc-client = { version = "3.0.2", path = "rpc/grpc/client" }
+karlsen-grpc-core = { version = "3.0.2", path = "rpc/grpc/core" }
+karlsen-grpc-server = { version = "3.0.2", path = "rpc/grpc/server" }
+karlsen-hashes = { version = "3.0.2", path = "crypto/hashes" }
+karlsen-index-core = { version = "3.0.2", path = "indexes/core" }
+karlsen-index-processor = { version = "3.0.2", path = "indexes/processor" }
+karlsen-math = { version = "3.0.2", path = "math" }
+karlsen-merkle = { version = "3.0.2", path = "crypto/merkle" }
+karlsen-metrics-core = { version = "3.0.2", path = "metrics/core" }
+karlsen-mining = { version = "3.0.2", path = "mining" }
+karlsen-mining-errors = { version = "3.0.2", path = "mining/errors" }
+karlsen-muhash = { version = "3.0.2", path = "crypto/muhash" }
+karlsen-notify = { version = "3.0.2", path = "notify" }
+karlsen-p2p-flows = { version = "3.0.2", path = "protocol/flows" }
+karlsen-p2p-lib = { version = "3.0.2", path = "protocol/p2p" }
+karlsen-p2p-mining = { version = "3.0.2", path = "protocol/mining" }
+karlsen-perf-monitor = { version = "3.0.2", path = "metrics/perf_monitor" }
+karlsen-pow = { version = "3.0.2", path = "consensus/pow" }
+karlsen-rpc-core = { version = "3.0.2", path = "rpc/core" }
+karlsen-rpc-macros = { version = "3.0.2", path = "rpc/macros" }
+karlsen-rpc-service = { version = "3.0.2", path = "rpc/service" }
+karlsen-txscript = { version = "3.0.2", path = "crypto/txscript" }
+karlsen-txscript-errors = { version = "3.0.2", path = "crypto/txscript/errors" }
+karlsen-utils = { version = "3.0.2", path = "utils" }
+karlsen-utils-tower = { version = "3.0.2", path = "utils/tower" }
+karlsen-utxoindex = { version = "3.0.2", path = "indexes/utxoindex" }
+karlsen-wallet = { version = "3.0.2", path = "wallet/native" }
+karlsen-wallet-cli-wasm = { version = "3.0.2", path = "wallet/wasm" }
+karlsen-wallet-keys = { version = "3.0.2", path = "wallet/keys" }
+karlsen-wallet-pskt = { version = "3.0.2", path = "wallet/pskt" }
+karlsen-wallet-core = { version = "3.0.2", path = "wallet/core" }
+karlsen-wallet-macros = { version = "3.0.2", path = "wallet/macros" }
+karlsen-wasm = { version = "3.0.2", path = "wasm" }
+karlsen-wasm-core = { version = "3.0.2", path = "wasm/core" }
+karlsen-wrpc-client = { version = "3.0.2", path = "rpc/wrpc/client" }
+karlsen-wrpc-proxy = { version = "3.0.2", path = "rpc/wrpc/proxy" }
+karlsen-wrpc-server = { version = "3.0.2", path = "rpc/wrpc/server" }
+karlsen-wrpc-wasm = { version = "3.0.2", path = "rpc/wrpc/wasm" }
+karlsen-wrpc-example-subscriber = { version = "3.0.2", path = "rpc/wrpc/examples/subscriber" }
+karlsend = { version = "3.0.2", path = "karlsend" }
+karlsen-alloc = { version = "3.0.2", path = "utils/alloc" }
 
 # external
 aes = "0.8.3"
@@ -173,14 +173,14 @@ downcast = "0.11.0"
 downcast-rs = "1.2.0"
 duration-string = "0.4.0"
 enum-primitive-derive = "0.3.0"
-event-listener = "2.5.3" # TODO "3.0.1"
+event-listener = "2.5.3" # TODO "3.0.2"
 evpkdf = "0.2.0"
 faster-hex = "0.9.0"
 fixedstr = { version = "0.5.4", features = ["serde"] }
 flate2 = "1.0.28"
 futures = { version = "0.3.29" }
 futures-util = { version = "0.3.29", default-features = false, features = ["alloc"] }
-getrandom = { version = "0.3.3", features = ["wasm_js"] }
+getrandom = { version = "0.3.4", features = ["wasm_js"] }
 h2 = "0.4.6"
 # h2 = "0.3.21"
 heapless = "0.8.0"
@@ -226,7 +226,7 @@ rayon = "1.8.0"
 regex = "1.10.2"
 ripemd = { version = "0.1.3", default-features = false }
 rlimit = "0.10.1"
-rocksdb = "0.22.0"
+rocksdb = "0.24.0"
 rv = "0.16.4"
 secp256k1 = { version = "0.29.0", features = [
     "global-context",
@@ -259,7 +259,7 @@ tonic = { version = "0.12.3", features = ["tls-webpki-roots", "gzip", "transport
 tonic-build = { version = "0.12.3", features = ["prost"] }
 triggered = "0.1.2"
 uuid = { version = "1.16.0", features = ["v4", "fast-rng", "serde", "js"] }
-wasm-bindgen = { version = "0.2.100", features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2.106", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.43"
 wasm-bindgen-test = "0.3.50"
 web-sys = "0.3.70"
@@ -337,6 +337,52 @@ overflow-checks = true
 inherits = "release"
 debug = true
 strip = false
+
+# CI optimization: Keep debug fast to compile, but optimize hot-path crates
+# so tests run at reasonable speed without full release builds.
+
+[profile.dev.package.karlsen-consensus]
+opt-level = 2
+
+[profile.dev.package.karlsen-consensus-core]
+opt-level = 2
+
+[profile.dev.package.karlsen-hashes]
+opt-level = 2
+
+[profile.dev.package.karlsen-math]
+opt-level = 2
+
+[profile.dev.package.karlsen-muhash]
+opt-level = 2
+
+[profile.dev.package.karlsen-pow]
+opt-level = 2
+
+[profile.dev.package.karlsen-txscript]
+opt-level = 2
+
+# External crates used heavily by consensus/crypto
+[profile.dev.package.blake2b_simd]
+opt-level = 2
+
+[profile.dev.package.blake3]
+opt-level = 2
+
+[profile.dev.package.rand_chacha]
+opt-level = 2
+
+[profile.dev.package.malachite-base]
+opt-level = 2
+
+[profile.dev.package.malachite-nz]
+opt-level = 2
+
+[profile.dev.package.secp256k1]
+opt-level = 2
+
+[profile.dev.package.sha2]
+opt-level = 2
 
 [workspace.lints.clippy]
 empty_docs = "allow"

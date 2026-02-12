@@ -84,10 +84,8 @@ jobs:
           cp target/x86_64-unknown-linux-musl/release/rothschild bin/
           cp target/x86_64-unknown-linux-musl/release/karlsen-wallet bin/
           archive="bin/rusty-karlsen-${{ github.event.release.tag_name }}-linux-musl-amd64.zip"
-          asset_name="rusty-karlsen-${{ github.event.release.tag_name }}-linux-musl-amd64.zip"
           zip -r "${archive}" ./bin/*
           echo "archive=${archive}" >> $GITHUB_ENV
-          echo "asset_name=${asset_name}" >> $GITHUB_ENV
 
       - name: Build on Windows for windows-msvc/amd64
         if: matrix.TARGET == 'windows-msvc/amd64'
@@ -171,9 +169,10 @@ jobs:
           sudo update-alternatives --install /usr/bin/c++ c++ /usr/lib/llvm-15/bin/clang++ 0
 
       - name: Install gcc-multilib
-
-        # gcc-multilib allows clang to find gnu libraries properly.
-        run: sudo apt install -y gcc-multilib
+        # gcc-multilib allows clang to find gnu libraries properly
+        run: |
+          sudo apt-get update
+          sudo apt install -y gcc-multilib
 
       - name: Install stable toolchain
         if: steps.install_llvm.outcome == 'success' && steps.install_llvm.conclusion == 'success'
@@ -206,13 +205,12 @@ jobs:
 
       - name: Build WASM32 SDK
         run: |
-          mkdir sdk || true
           cd wasm
           bash build-release
-          mv release/karlsen-wasm32-sdk.zip ../sdk/karlsen-wasm32-sdk-${{ github.event.release.tag_name }}.zip
+          cd release
+          zip -q -r karlsen-wasm32-sdk-${{ github.event.release.tag_name }}.zip karlsen-wasm32-sdk
 
       - name: Upload WASM32 SDK
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            sdk/*.zip
+          files: wasm/release/*.zip

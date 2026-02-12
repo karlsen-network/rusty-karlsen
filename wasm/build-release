@@ -4,11 +4,6 @@
 # make the script fail for any failed command
 set -e
 
-# required for getrandom crate
-# Workaround for Rust 1.87.0
-# https://github.com/rust-lang/rust/issues/141048
-export RUSTFLAGS="--cfg getrandom_backend=\"wasm_js\" -Ctarget-cpu=mvp"
-
 rm -rf release/*
 rm -rf web/*
 rm -rf nodejs/*
@@ -88,8 +83,3 @@ cp LICENSE release/karlsen-wasm32-sdk/LICENSE
 
 node build/package-sizes.js
 cp package-sizes.js release/karlsen-wasm32-sdk/package-sizes.js
-
-pushd .
-cd release
-zip -q -r karlsen-wasm32-sdk.zip karlsen-wasm32-sdk
-popd

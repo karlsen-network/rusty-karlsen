@@ -46,6 +46,8 @@ pub enum KarlsendMessagePayloadType {
     IbdChainBlockLocator,
     RequestAntipast,
     RequestNextPruningPointAndItsAnticoneBlocks,
+    BlockBody,
+    RequestBlockBodies,
 }
 
 impl From<&KarlsendMessagePayload> for KarlsendMessagePayloadType {
@@ -102,6 +104,8 @@ impl From<&KarlsendMessagePayload> for KarlsendMessagePayloadType {
             KarlsendMessagePayload::RequestNextPruningPointAndItsAnticoneBlocks(_) => {
                 KarlsendMessagePayloadType::RequestNextPruningPointAndItsAnticoneBlocks
             }
+            KarlsendMessagePayload::BlockBody(_) => KarlsendMessagePayloadType::BlockBody,
+            KarlsendMessagePayload::RequestBlockBodies(_) => KarlsendMessagePayloadType::RequestBlockBodies,
         }
     }
 }
